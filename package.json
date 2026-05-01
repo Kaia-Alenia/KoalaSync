@@ -1,0 +1,13 @@
+{
+  "name": "koalasync",
+  "version": "1.2.1",
+  "description": "KoalaSync Build Scripts",
+  "private": true,
+  "scripts": {
+    "build:extension": "node scripts/build-extension.js"
+  },
+  "devDependencies": {
+    "archiver": "^7.0.1",
+    "fs-extra": "^11.2.0"
+  }
+}

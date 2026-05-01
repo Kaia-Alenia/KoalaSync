@@ -22,10 +22,6 @@
       "128": "icons/icon128.png"
     }
   },
-  "background": {
-    "service_worker": "background.js",
-    "type": "module"
-  },
   "content_scripts": [
     {
       "matches": ["https://koalasync.shik3i.net/*"],

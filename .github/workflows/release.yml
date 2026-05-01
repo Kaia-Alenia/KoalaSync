@@ -52,19 +52,17 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Sync Protocol Constants
+      - name: Build Extensions
         run: |
-          chmod +x ./scripts/sync-constants.sh
-          ./scripts/sync-constants.sh
-
-      - name: Create Extension Zip
-        run: |
-          zip -r koala-sync-extension.zip extension/ -x "*.DS_Store*"
+          npm install
+          npm run build:extension
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
         with:
-          files: koala-sync-extension.zip
+          files: |
+            dist/koalasync-chrome.zip
+            dist/koalasync-firefox.zip
           name: Release ${{ github.ref_name }}
           generate_release_notes: true
           draft: false
