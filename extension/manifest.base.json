@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "KoalaSync",
   "version": "1.2.1",
-  "description": "Synchronize video playback across different tabs and users.",
+  "description": "Watch party extension to synchronize video playback on YouTube, Twitch, Netflix, and HTML5 sites in real-time with friends.",
   "permissions": [
     "storage",
     "tabs",

@@ -1,11 +1,31 @@
 <!DOCTYPE html>
-<html lang="de">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Impressum | KoalaSync</title>
+    <title>Impressum / Legal Notice | KoalaSync</title>
     <link rel="stylesheet" href="style.css">
     <link rel="icon" type="image/png" href="assets/logo.png">
+    <script>
+        (function() {
+            var savedLang = localStorage.getItem('koala_lang');
+            var browserLang = navigator.language.startsWith('de') ? 'de' : 'en';
+            var activeLang = savedLang || browserLang;
+            document.documentElement.classList.add('lang-' + activeLang);
+            document.documentElement.lang = activeLang;
+        })();
+        
+        function toggleLanguage(e) {
+            if(e) e.preventDefault();
+            var html = document.documentElement;
+            var currentIsEnglish = html.classList.contains('lang-en');
+            var newLang = currentIsEnglish ? 'de' : 'en';
+            html.classList.remove('lang-en', 'lang-de');
+            html.classList.add('lang-' + newLang);
+            html.lang = newLang;
+            localStorage.setItem('koala_lang', newLang);
+        }
+    </script>
 </head>
 <body>
     <div class="bg-blobs">
@@ -21,55 +41,92 @@
                 <span>KoalaSync</span>
             </a>
             <div class="nav-links">
-                <a href="index.html">Home</a>
+                <a href="index.html"><span lang="de">Startseite</span><span lang="en">Home</span></a>
                 <a href="https://github.com/shik3i/KoalaSync" target="_blank">GitHub</a>
+                <a class="lang-toggle" onclick="toggleLanguage(event)">🌍 EN/DE</a>
             </div>
         </div>
     </nav>
 
     <main class="legal-content">
         <div class="legal-card" data-reveal style="padding: 2rem;">
-            <h1>Impressum</h1>
-            <p style="text-align: center; text-transform: uppercase; letter-spacing: 0.1em; font-size: 0.8rem; border-bottom: 1px solid var(--glass-border); padding-bottom: 1.5rem; margin-bottom: 2rem;">
+            <h1 lang="de">Impressum</h1>
+            <h1 lang="en">Legal Notice</h1>
+            <p lang="de" style="text-align: center; text-transform: uppercase; letter-spacing: 0.1em; font-size: 0.8rem; border-bottom: 1px solid var(--glass-border); padding-bottom: 1.5rem; margin-bottom: 2rem;">
                 Transparenz & Identifikation
+            </p>
+            <p lang="en" style="text-align: center; text-transform: uppercase; letter-spacing: 0.1em; font-size: 0.8rem; border-bottom: 1px solid var(--glass-border); padding-bottom: 1.5rem; margin-bottom: 2rem;">
+                Transparency & Identification
             </p>
 
             <section>
-                <h2>Betreiber & Kontakt</h2>
-                <p>Administrator KoalaSync (Privatperson)</p>
-                <p>E-Mail: <span style="color: var(--accent); cursor: pointer; text-decoration: underline;" onclick="this.innerHTML='koalasync_admin' + '@' + 'koalamail.rocks'">[E-Mail anzeigen]</span></p>
+                <h2>
+                    <span lang="de">Betreiber & Kontakt</span>
+                    <span lang="en">Operator & Contact</span>
+                </h2>
+                <p lang="de">Administrator KoalaSync (Privatperson)</p>
+                <p lang="en">Administrator KoalaSync (Private Individual)</p>
+                <p lang="de">E-Mail: <span style="color: var(--accent); cursor: pointer; text-decoration: underline;" onclick="this.innerHTML='koalasync_admin' + '@' + 'koalamail.rocks'">[E-Mail anzeigen]</span></p>
+                <p lang="en">E-Mail: <span style="color: var(--accent); cursor: pointer; text-decoration: underline;" onclick="this.innerHTML='koalasync_admin' + '@' + 'koalamail.rocks'">[Show Email]</span></p>
             </section>
 
             <section style="opacity: 0.8;">
-                <h2>Privatprojekt-Hinweis</h2>
-                <p>
+                <h2>
+                    <span lang="de">Privatprojekt-Hinweis</span>
+                    <span lang="en">Private Project Notice</span>
+                </h2>
+                <p lang="de">
                     Diese Website ist ein rein privates Hobby-Projekt und dient keinen geschäftsmäßigen Zwecken. 
                     Eine Impressumspflicht nach § 5 DDG (ehemals TMG) besteht daher nicht. 
                     Diese Angaben erfolgen rein freiwillig zur Transparenz gegenüber der Community.
                 </p>
+                <p lang="en">
+                    This website is a purely private hobby project and does not serve any commercial purposes.
+                    Therefore, there is no obligation to provide a legal notice according to § 5 DDG (formerly TMG).
+                    This information is provided voluntarily for transparency towards the community.
+                </p>
             </section>
 
             <section>
-                <h2>Haftung für Inhalte</h2>
-                <p>
+                <h2>
+                    <span lang="de">Haftung für Inhalte</span>
+                    <span lang="en">Liability for Content</span>
+                </h2>
+                <p lang="de">
                     Gemäß § 7 Abs.1 DDG sind wir für eigene Inhalte verantwortlich. Nach §§ 8 bis 10 DDG sind wir jedoch nicht verpflichtet, 
                     übermittelte oder gespeicherte fremde Informationen zu überwachen.
                 </p>
-            </section>
-
-            <section>
-                <h2>Haftung für Links</h2>
-                <p>
-                    Unser Angebot enthält Links zu externen Websites Dritter. Auf deren Inhalte haben wir keinen Einfluss und 
-                    können daher keine Gewähr für diese fremden Inhalte übernehmen.
+                <p lang="en">
+                    According to § 7 Abs.1 DDG we are responsible for our own content. According to §§ 8 to 10 DDG, however, we are not obligated to monitor transmitted or stored third-party information.
                 </p>
             </section>
 
             <section>
-                <h2>Urheberrecht</h2>
-                <p>
+                <h2>
+                    <span lang="de">Haftung für Links</span>
+                    <span lang="en">Liability for Links</span>
+                </h2>
+                <p lang="de">
+                    Unser Angebot enthält Links zu externen Websites Dritter. Auf deren Inhalte haben wir keinen Einfluss und 
+                    können daher keine Gewähr für diese fremden Inhalte übernehmen.
+                </p>
+                <p lang="en">
+                    Our offer contains links to external third-party websites. We have no influence on their content and therefore cannot assume any liability for these external contents.
+                </p>
+            </section>
+
+            <section>
+                <h2>
+                    <span lang="de">Urheberrecht</span>
+                    <span lang="en">Copyright</span>
+                </h2>
+                <p lang="de">
                     Die durch die Seitenbetreiber erstellten Inhalte auf diesen Seiten unterliegen dem deutschen Urheberrecht. 
                     Vervielfältigung, Bearbeitung und jede Art der Verwertung außerhalb der Grenzen des Urheberrechtes bedürfen der schriftlichen Zustimmung.
+                </p>
+                <p lang="en">
+                    The content and works created by the site operators on these pages are subject to German copyright law.
+                    Duplication, processing, and any kind of exploitation outside the limits of copyright require written consent.
                 </p>
             </section>
         </div>
@@ -78,10 +135,11 @@
     <footer>
         <div class="container">
             <p>&copy; 2026 KoalaSync. Open source under the MIT License.</p>
-            <p style="font-size: 0.8rem; margin-top: 0.5rem;">No data is stored on our servers. Pure RAM-based relay.</p>
+            <p lang="de" style="font-size: 0.8rem; margin-top: 0.5rem;">Keine Daten werden auf unseren Servern gespeichert. Reines RAM-basiertes Relay.</p>
+            <p lang="en" style="font-size: 0.8rem; margin-top: 0.5rem;">No data is stored on our servers. Pure RAM-based relay.</p>
             <div style="margin-top: 1.5rem; font-size: 0.8rem; display: flex; justify-content: center; gap: 1.5rem;">
-                <a href="impressum.html" style="color: var(--text-muted); text-decoration: none;">Impressum</a>
-                <a href="datenschutz.html" style="color: var(--text-muted); text-decoration: none;">Datenschutz</a>
+                <a href="impressum.html" style="color: var(--text-muted); text-decoration: none;"><span lang="de">Impressum</span><span lang="en">Legal Notice</span></a>
+                <a href="datenschutz.html" style="color: var(--text-muted); text-decoration: none;"><span lang="de">Datenschutz</span><span lang="en">Privacy Policy</span></a>
             </div>
         </div>
     </footer>

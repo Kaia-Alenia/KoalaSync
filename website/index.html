@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>KoalaSync | Real-time Video Synchronization for Friends</title>
+    <title lang="en">KoalaSync | Real-time Video Synchronization for Friends</title>
+    <title lang="de">KoalaSync | Echtzeit-Video-Synchronisation für Freunde</title>
     <meta name="description" content="Watch YouTube, Twitch, and HTML5 videos perfectly synchronized with friends. KoalaSync is a privacy-first, open-source Chrome extension.">
     
     <link rel="stylesheet" href="style.css">
@@ -12,6 +13,36 @@
     <meta property="og:description" content="Watch together, stay in sync. Privacy-first video synchronization.">
     <meta property="og:image" content="assets/hero.png">
     <meta property="og:type" content="website">
+
+    <script>
+        (function() {
+            var savedLang = localStorage.getItem('koala_lang');
+            var browserLang = navigator.language.startsWith('de') ? 'de' : 'en';
+            var activeLang = savedLang || browserLang;
+            document.documentElement.classList.add('lang-' + activeLang);
+            document.documentElement.lang = activeLang;
+        })();
+        
+        function toggleLanguage(e) {
+            if(e) e.preventDefault();
+            var html = document.documentElement;
+            var currentIsEnglish = html.classList.contains('lang-en');
+            var newLang = currentIsEnglish ? 'de' : 'en';
+            html.classList.remove('lang-en', 'lang-de');
+            html.classList.add('lang-' + newLang);
+            html.lang = newLang;
+            localStorage.setItem('koala_lang', newLang);
+            
+            // Toggle title tags
+            var titleEn = document.querySelector('title[lang="en"]');
+            var titleDe = document.querySelector('title[lang="de"]');
+            if (newLang === 'de') {
+                document.title = titleDe ? titleDe.textContent : 'KoalaSync';
+            } else {
+                document.title = titleEn ? titleEn.textContent : 'KoalaSync';
+            }
+        }
+    </script>
 </head>
 <body>
 
@@ -28,9 +59,10 @@
                 <span>KoalaSync</span>
             </div>
             <div class="nav-links">
-                <a href="#features">Features</a>
-                <a href="#how-it-works">How it works</a>
+                <a href="#features"><span lang="en">Features</span><span lang="de">Funktionen</span></a>
+                <a href="#how-it-works"><span lang="en">How it works</span><span lang="de">So funktioniert's</span></a>
                 <a href="https://github.com/Shik3i/KoalaSync" target="_blank">GitHub</a>
+                <a class="lang-toggle" onclick="toggleLanguage(event)">🌍 EN/DE</a>
             </div>
         </div>
     </nav>
@@ -38,13 +70,19 @@
     <header class="hero">
         <div class="container hero-grid">
             <div class="hero-text">
-                <div class="version-badge" data-reveal>v1.2.0 OUT NOW</div>
-                <h1 data-reveal>Watch Together.<br>Sync Perfectly.</h1>
-                <p data-reveal>KoalaSync brings friends closer through synchronized video playback. No lag, no tracking, just shared moments.</p>
+                <div class="version-badge" data-reveal><span lang="en">v1.2.0 OUT NOW</span><span lang="de">v1.2.0 JETZT VERFÜGBAR</span></div>
+                <h1 data-reveal>
+                    <span lang="en">Watch Together.<br>Sync Perfectly.</span>
+                    <span lang="de">Gemeinsam schauen.<br>Perfekt synchron.</span>
+                </h1>
+                <h2 class="hero-subtitle" data-reveal>
+                    <span lang="en">The ultimate free watch party extension for YouTube, Twitch, and local MP4s.</span>
+                    <span lang="de">Die ultimative, kostenlose Watch-Party-Erweiterung für YouTube, Twitch und lokale MP4s.</span>
+                </h2>
                 <div class="cta-group" data-reveal>
                     <a href="#" class="btn btn-primary">
                         <img src="assets/chrome.svg" width="20" style="filter: brightness(100)">
-                        Add to Chrome
+                        <span lang="en">Add to Chrome</span><span lang="de">Zu Chrome hinzufügen</span>
                     </a>
                     <a href="https://github.com/Shik3i/KoalaSync" class="btn btn-secondary">
                         GitHub Repo
@@ -56,29 +94,37 @@
 
     <section id="features">
         <div class="container">
-            <h2 style="font-size: 2.5rem; text-align: center; margin-bottom: 1rem;">Why KoalaSync?</h2>
-            <p style="text-align: center; color: var(--text-muted); margin-bottom: 4rem;">Built for performance, privacy, and simplicity.</p>
+            <h2 style="font-size: 2.5rem; text-align: center; margin-bottom: 1rem;">
+                <span lang="en">Why KoalaSync?</span><span lang="de">Warum KoalaSync?</span>
+            </h2>
+            <p style="text-align: center; color: var(--text-muted); margin-bottom: 4rem;">
+                <span lang="en">Built for performance, privacy, and simplicity.</span><span lang="de">Entwickelt für Leistung, Privatsphäre und Einfachheit.</span>
+            </p>
             
             <div class="features-grid">
                 <div class="feature-card" data-reveal>
                     <div class="feature-icon">⚡</div>
-                    <h3>Real-time Sync</h3>
-                    <p>Proprietary two-phase synchronization protocol ensures sub-millisecond precision across all peers.</p>
+                    <h3><span lang="en">Real-time Sync</span><span lang="de">Echtzeit-Synchronisation</span></h3>
+                    <p lang="en">Proprietary two-phase synchronization protocol ensures sub-millisecond precision across all peers.</p>
+                    <p lang="de">Das proprietäre Zwei-Phasen-Synchronisationsprotokoll gewährleistet Sub-Millisekunden-Präzision für alle Teilnehmer.</p>
                 </div>
                 <div class="feature-card" data-reveal>
                     <div class="feature-icon">🎬</div>
-                    <h3>Episode Auto-Sync</h3>
-                    <p>New in v1.2.0: Perfectly sync series binges. All peers wait until everyone has loaded the next episode.</p>
+                    <h3><span lang="en">Episode Auto-Sync</span><span lang="de">Automatische Episoden-Synchronisation</span></h3>
+                    <p lang="en">New in v1.2.0: Perfectly sync series binges. All peers wait until everyone has loaded the next episode.</p>
+                    <p lang="de">Neu in v1.2.0: Perfekt synchronisiertes Serien-Bingeing. Alle warten, bis jeder die nächste Episode geladen hat.</p>
                 </div>
                 <div class="feature-card" data-reveal>
                     <div class="feature-icon">🛡️</div>
-                    <h3>Privacy First</h3>
-                    <p>Zero data persistence. Our relay server runs entirely in RAM and collects no telemetry or logs.</p>
+                    <h3><span lang="en">Privacy First</span><span lang="de">Privatsphäre zuerst</span></h3>
+                    <p lang="en">Zero data persistence. Our relay server runs entirely in RAM and collects no telemetry or logs.</p>
+                    <p lang="de">Keine Datenspeicherung. Unser Relay-Server läuft komplett im RAM und sammelt weder Telemetrie noch Logs.</p>
                 </div>
                 <div class="feature-card" data-reveal>
                     <div class="feature-icon">⭐</div>
-                    <h3>Smart Match</h3>
-                    <p>Find the right tab instantly. KoalaSync highlights and sorts matching video tabs for you.</p>
+                    <h3><span lang="en">Smart Match</span><span lang="de">Intelligente Zuordnung</span></h3>
+                    <p lang="en">Find the right tab instantly. KoalaSync highlights and sorts matching video tabs for you.</p>
+                    <p lang="de">Finden Sie sofort den richtigen Tab. KoalaSync markiert und sortiert passende Video-Tabs für Sie.</p>
                 </div>
             </div>
 
@@ -87,30 +133,35 @@
 
     <section id="how-it-works" style="background: rgba(255,255,255,0.02)">
         <div class="container">
-            <h2 style="font-size: 2.5rem; text-align: center; margin-bottom: 4rem;">Getting Started</h2>
+            <h2 style="font-size: 2.5rem; text-align: center; margin-bottom: 4rem;">
+                <span lang="en">Getting Started</span><span lang="de">Loslegen</span>
+            </h2>
             
             <div class="steps">
                 <div class="step">
                     <div class="step-text" data-reveal>
                         <div class="step-num">01</div>
-                        <h3>Install Extension</h3>
-                        <p>Add KoalaSync to your browser from the Chrome Web Store or download the latest developer ZIP from GitHub.</p>
+                        <h3><span lang="en">Install Extension</span><span lang="de">Erweiterung installieren</span></h3>
+                        <p lang="en">Add KoalaSync to your browser from the Chrome Web Store or download the latest developer ZIP from GitHub.</p>
+                        <p lang="de">Fügen Sie KoalaSync aus dem Chrome Web Store zu Ihrem Browser hinzu oder laden Sie die neueste Entwickler-ZIP von GitHub herunter.</p>
                     </div>
                     <div style="background: var(--card); height: 200px; border-radius: 20px; border: 1px solid var(--glass-border);"></div>
                 </div>
                 <div class="step">
                     <div class="step-text" data-reveal>
                         <div class="step-num">02</div>
-                        <h3>Create a Room</h3>
-                        <p>Open the extension, enter a Room ID and Password, and hit Join. Your secure synchronization space is ready.</p>
+                        <h3><span lang="en">Create a Room</span><span lang="de">Raum erstellen</span></h3>
+                        <p lang="en">Open the extension, enter a Room ID and Password, and hit Join. Your secure synchronization space is ready.</p>
+                        <p lang="de">Öffnen Sie die Erweiterung, geben Sie eine Raum-ID und ein Passwort ein und klicken Sie auf Beitreten. Ihr sicherer Synchronisationsraum ist bereit.</p>
                     </div>
                     <div style="background: var(--card); height: 200px; border-radius: 20px; border: 1px solid var(--glass-border);"></div>
                 </div>
                 <div class="step">
                     <div class="step-text" data-reveal>
                         <div class="step-num">03</div>
-                        <h3>Share & Sync</h3>
-                        <p>Send the invite link to your friends. Once they join, select your video tab and enjoy perfectly synced playback.</p>
+                        <h3><span lang="en">Share & Sync</span><span lang="de">Teilen & Synchronisieren</span></h3>
+                        <p lang="en">Send the invite link to your friends. Once they join, select your video tab and enjoy perfectly synced playback.</p>
+                        <p lang="de">Senden Sie den Einladungslink an Ihre Freunde. Sobald sie beitreten, wählen Sie Ihren Video-Tab aus und genießen Sie die perfekt synchronisierte Wiedergabe.</p>
                     </div>
                     <div style="background: var(--card); height: 200px; border-radius: 20px; border: 1px solid var(--glass-border);"></div>
                 </div>
@@ -120,19 +171,24 @@
 
     <section style="text-align: center;">
         <div class="container">
-            <h2 data-reveal>Ready to sync?</h2>
-            <p data-reveal style="margin-bottom: 2rem; color: var(--text-muted);">Join thousands of users watching together.</p>
-            <a href="https://github.com/Shik3i/KoalaSync" class="btn btn-primary" data-reveal>View on GitHub</a>
+            <h2 data-reveal><span lang="en">Ready to sync?</span><span lang="de">Bereit zum Synchronisieren?</span></h2>
+            <p data-reveal style="margin-bottom: 2rem; color: var(--text-muted);">
+                <span lang="en">Join thousands of users watching together.</span><span lang="de">Schließen Sie sich Tausenden von Nutzern an, die bereits zusammen schauen.</span>
+            </p>
+            <a href="https://github.com/Shik3i/KoalaSync" class="btn btn-primary" data-reveal>
+                <span lang="en">View on GitHub</span><span lang="de">Auf GitHub ansehen</span>
+            </a>
         </div>
     </section>
 
     <footer>
         <div class="container">
             <p>&copy; 2026 KoalaSync. Open source under the MIT License.</p>
-            <p style="font-size: 0.8rem; margin-top: 0.5rem;">No data is stored on our servers. Pure RAM-based relay.</p>
+            <p lang="en" style="font-size: 0.8rem; margin-top: 0.5rem;">No data is stored on our servers. Pure RAM-based relay.</p>
+            <p lang="de" style="font-size: 0.8rem; margin-top: 0.5rem;">Keine Daten werden auf unseren Servern gespeichert. Reines RAM-basiertes Relay.</p>
             <div style="margin-top: 1.5rem; font-size: 0.8rem; display: flex; justify-content: center; gap: 1.5rem;">
-                <a href="impressum.html" style="color: var(--text-muted); text-decoration: none;">Impressum</a>
-                <a href="datenschutz.html" style="color: var(--text-muted); text-decoration: none;">Datenschutz</a>
+                <a href="impressum.html" style="color: var(--text-muted); text-decoration: none;"><span lang="en">Legal Notice</span><span lang="de">Impressum</span></a>
+                <a href="datenschutz.html" style="color: var(--text-muted); text-decoration: none;"><span lang="en">Privacy Policy</span><span lang="de">Datenschutz</span></a>
             </div>
         </div>
     </footer>

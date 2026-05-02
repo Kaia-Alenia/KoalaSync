@@ -1,11 +1,31 @@
 <!DOCTYPE html>
-<html lang="de">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Datenschutz | KoalaSync</title>
+    <title>Datenschutz / Privacy Policy | KoalaSync</title>
     <link rel="stylesheet" href="style.css">
     <link rel="icon" type="image/png" href="assets/logo.png">
+    <script>
+        (function() {
+            var savedLang = localStorage.getItem('koala_lang');
+            var browserLang = navigator.language.startsWith('de') ? 'de' : 'en';
+            var activeLang = savedLang || browserLang;
+            document.documentElement.classList.add('lang-' + activeLang);
+            document.documentElement.lang = activeLang;
+        })();
+        
+        function toggleLanguage(e) {
+            if(e) e.preventDefault();
+            var html = document.documentElement;
+            var currentIsEnglish = html.classList.contains('lang-en');
+            var newLang = currentIsEnglish ? 'de' : 'en';
+            html.classList.remove('lang-en', 'lang-de');
+            html.classList.add('lang-' + newLang);
+            html.lang = newLang;
+            localStorage.setItem('koala_lang', newLang);
+        }
+    </script>
 </head>
 <body>
     <div class="bg-blobs">
@@ -21,53 +41,108 @@
                 <span>KoalaSync</span>
             </a>
             <div class="nav-links">
-                <a href="index.html">Home</a>
+                <a href="index.html"><span lang="de">Startseite</span><span lang="en">Home</span></a>
                 <a href="https://github.com/shik3i/KoalaSync" target="_blank">GitHub</a>
+                <a class="lang-toggle" onclick="toggleLanguage(event)">🌍 EN/DE</a>
             </div>
         </div>
     </nav>
 
     <main class="legal-content">
         <div class="legal-card" data-reveal style="padding: 2rem;">
-            <h1>Datenschutz</h1>
-            <p style="text-align: center; text-transform: uppercase; letter-spacing: 0.1em; font-size: 0.8rem; border-bottom: 1px solid var(--glass-border); padding-bottom: 1.5rem; margin-bottom: 2rem;">
+            <h1 lang="de">Datenschutz</h1>
+            <h1 lang="en">Privacy Policy</h1>
+            <p lang="de" style="text-align: center; text-transform: uppercase; letter-spacing: 0.1em; font-size: 0.8rem; border-bottom: 1px solid var(--glass-border); padding-bottom: 1.5rem; margin-bottom: 2rem;">
                 Sicherheit & Privatsphäre
+            </p>
+            <p lang="en" style="text-align: center; text-transform: uppercase; letter-spacing: 0.1em; font-size: 0.8rem; border-bottom: 1px solid var(--glass-border); padding-bottom: 1.5rem; margin-bottom: 2rem;">
+                Security & Privacy
             </p>
 
             <section>
-                <h2>1. Hosting & Logfiles</h2>
-                <p>
+                <h2>
+                    <span lang="de">1. Hosting & Logfiles</span>
+                    <span lang="en">1. Hosting & Logfiles</span>
+                </h2>
+                <p lang="de">
                     Diese Seite wird auf einem privaten Server gehostet. Zur Gewährleistung der Stabilität werden standardmäßige Server-Logs (IP, Browser, Zeit) erhoben, aber nicht mit Personen verknüpft und nach 7 Tagen automatisch gelöscht.
                 </p>
+                <p lang="en">
+                    This site is hosted on a private server. To ensure stability, standard server logs (IP, browser, time) are collected, but not linked to individuals and are automatically deleted after 7 days.
+                </p>
             </section>
 
             <section>
-                <h2>2. Keine Drittanbieter & Tracking</h2>
-                <p>
+                <h2>
+                    <span lang="de">2. Keine Drittanbieter & Open Source</span>
+                    <span lang="en">2. No Third Parties & Open Source</span>
+                </h2>
+                <p lang="de">
                     KoalaSync verzichtet bewusst auf Analyse-Tools, Tracking-Cookies oder Werbenetzwerke. Wir laden keine Ressourcen von Drittanbietern (wie Google Fonts) nach, um Ihre Privatsphäre maximal zu schützen.
                 </p>
+                <p lang="de" style="margin-top: 0.5rem;">
+                    Da KoalaSync vollständig Open Source ist, kann zudem jede Zeile Code auf unserem <a href="https://github.com/shik3i/KoalaSync" target="_blank" style="color: var(--accent);">GitHub-Repository</a> öffentlich eingesehen und auf Sicherheit geprüft werden.
+                </p>
+                <p lang="en">
+                    KoalaSync deliberately avoids analytics tools, tracking cookies, or advertising networks. We do not load any third-party resources (such as Google Fonts) to maximize the protection of your privacy.
+                </p>
+                <p lang="en" style="margin-top: 0.5rem;">
+                    Since KoalaSync is 100% open-source, every single line of code can also be publicly viewed and audited for security on our <a href="https://github.com/shik3i/KoalaSync" target="_blank" style="color: var(--accent);">GitHub repository</a>.
+                </p>
             </section>
 
             <section>
-                <h2>3. Relay-Server Architektur</h2>
-                <p>
+                <h2>
+                    <span lang="de">3. Relay-Server Architektur</span>
+                    <span lang="en">3. Relay Server Architecture</span>
+                </h2>
+                <p lang="de">
                     Unser Relay-Server arbeitet ausschließlich im Arbeitsspeicher (RAM). Nachrichten zwischen Teilnehmern werden nicht auf Festplatten gespeichert und sind flüchtig. Sobald ein Raum geschlossen wird, werden alle zugehörigen Metadaten sofort gelöscht.
                 </p>
+                <p lang="en">
+                    Our relay server operates exclusively in memory (RAM). Messages between participants are not stored on hard drives and are volatile. As soon as a room is closed, all associated metadata is immediately deleted.
+                </p>
             </section>
 
             <section>
-                <h2>4. Brute-Force Schutz</h2>
-                <p>
+                <h2>
+                    <span lang="de">4. Browser-Erweiterung (Extension)</span>
+                    <span lang="en">4. Browser Extension</span>
+                </h2>
+                <p lang="de">
+                    Um die geräteübergreifende Synchronisation zu ermöglichen, erfasst die KoalaSync Browser-Erweiterung temporär Daten des aktuell aktiven Video-Tabs (z. B. Tab-Titel, Medien-Metadaten wie den Videotitel sowie den Wiedergabestatus). Diese Daten werden ausschließlich zur Synchronisation an die anderen Teilnehmer in Ihrem Raum gesendet. Es wird ausdrücklich <strong>kein allgemeiner Browserverlauf (Browsing History)</strong> ausgelesen, gespeichert oder übermittelt.
+                </p>
+                <p lang="en">
+                    To enable cross-device synchronization, the KoalaSync browser extension temporarily captures data from the currently active video tab (e.g., tab title, media metadata like the video title, and playback state). This data is exclusively sent to other participants in your room for synchronization. We explicitly <strong>do not read, store, or transmit your general browsing history</strong>.
+                </p>
+            </section>
+
+            <section>
+                <h2>
+                    <span lang="de">5. Brute-Force Schutz</span>
+                    <span lang="en">5. Brute-Force Protection</span>
+                </h2>
+                <p lang="de">
                     Zur Sicherheit unserer Nutzer speichern wir fehlgeschlagene Login-Versuche (IP-Adresse und Raum-ID) für maximal 15 Minuten im RAM, um automatisierte Angriffe zu verhindern. Diese Daten werden danach rückstandslos gelöscht.
                 </p>
+                <p lang="en">
+                    For the security of our users, we store failed login attempts (IP address and room ID) for a maximum of 15 minutes in RAM to prevent automated attacks. This data is deleted without a trace afterwards.
+                </p>
             </section>
 
             <section>
-                <h2>5. Ihre Rechte</h2>
-                <p>
+                <h2>
+                    <span lang="de">6. Ihre Rechte</span>
+                    <span lang="en">6. Your Rights</span>
+                </h2>
+                <p lang="de">
                     Sie haben das Recht auf Auskunft, Berichtigung oder Löschung Ihrer Daten. Da wir jedoch keine personenbezogenen Daten dauerhaft speichern, ist eine Zuordnung zu Ihrer Person in der Regel technisch nicht möglich.
                 </p>
-                <p>Kontakt bei Fragen: <span style="color: var(--accent); cursor: pointer; text-decoration: underline;" onclick="this.innerHTML='koalasync_datenschutz' + '@' + 'koalamail.rocks'">[E-Mail anzeigen]</span></p>
+                <p lang="en">
+                    You have the right to information, correction, or deletion of your data. However, since we do not store any personal data permanently, linking data to your person is technically impossible in most cases.
+                </p>
+                <p lang="de">Kontakt bei Fragen: <span style="color: var(--accent); cursor: pointer; text-decoration: underline;" onclick="this.innerHTML='koalasync_datenschutz' + '@' + 'koalamail.rocks'">[E-Mail anzeigen]</span></p>
+                <p lang="en">Contact for questions: <span style="color: var(--accent); cursor: pointer; text-decoration: underline;" onclick="this.innerHTML='koalasync_datenschutz' + '@' + 'koalamail.rocks'">[Show Email]</span></p>
             </section>
         </div>
     </main>
@@ -75,10 +150,11 @@
     <footer>
         <div class="container">
             <p>&copy; 2026 KoalaSync. Open source under the MIT License.</p>
-            <p style="font-size: 0.8rem; margin-top: 0.5rem;">No data is stored on our servers. Pure RAM-based relay.</p>
+            <p lang="de" style="font-size: 0.8rem; margin-top: 0.5rem;">Keine Daten werden auf unseren Servern gespeichert. Reines RAM-basiertes Relay.</p>
+            <p lang="en" style="font-size: 0.8rem; margin-top: 0.5rem;">No data is stored on our servers. Pure RAM-based relay.</p>
             <div style="margin-top: 1.5rem; font-size: 0.8rem; display: flex; justify-content: center; gap: 1.5rem;">
-                <a href="impressum.html" style="color: var(--text-muted); text-decoration: none;">Impressum</a>
-                <a href="datenschutz.html" style="color: var(--text-muted); text-decoration: none;">Datenschutz</a>
+                <a href="impressum.html" style="color: var(--text-muted); text-decoration: none;"><span lang="de">Impressum</span><span lang="en">Legal Notice</span></a>
+                <a href="datenschutz.html" style="color: var(--text-muted); text-decoration: none;"><span lang="de">Datenschutz</span><span lang="en">Privacy Policy</span></a>
             </div>
         </div>
     </footer>

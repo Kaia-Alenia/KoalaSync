@@ -176,13 +176,14 @@ nav {
     -webkit-text-fill-color: transparent;
 }
 
-.hero-text p {
+.hero-text p, .hero-subtitle {
     font-size: 1.5rem;
     color: var(--text-muted);
     margin-bottom: 3rem;
     max-width: 700px;
     margin-left: auto;
     margin-right: auto;
+    font-weight: 400;
 }
 
 .cta-group {
@@ -405,4 +406,22 @@ footer {
     .legal-card {
         padding: 1.5rem;
     }
+}
+
+/* --- Language Toggle --- */
+html.lang-en [lang="de"],
+html.lang-de [lang="en"] {
+    display: none !important;
+}
+
+.lang-toggle {
+    cursor: pointer;
+    font-weight: 600;
+    user-select: none;
+    color: var(--text-muted);
+    transition: color 0.3s;
+}
+
+.lang-toggle:hover {
+    color: var(--accent);
 }
