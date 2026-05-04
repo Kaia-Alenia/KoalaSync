@@ -14,7 +14,8 @@
     }
     window.koalaSyncInjected = true;
 
-    // Local Protocol Constants (Mirroring shared/constants.js)
+    // --- SHARED_EVENTS_INJECT_START ---
+    // This block is automatically updated by /scripts/build-extension.js
     const EVENTS = {
         PLAY: "play",
         PAUSE: "pause",
@@ -26,6 +27,7 @@
         EPISODE_LOBBY: "episode_lobby",
         EPISODE_READY: "episode_ready"
     };
+    // --- SHARED_EVENTS_INJECT_END ---
 
     let expectedEvents = new Set();
     let expectedTimeouts = {};

@@ -37,17 +37,51 @@ console.log('✓ constants.js and blacklist.js synced to extension/shared/');
 const baseManifest = JSON.parse(fs.readFileSync(baseManifestPath, 'utf8'));
 
 // Helper to copy files, ignoring manifest.json and manifest.base.json
+// Also injects shared constants into content.js
 function copyExtensionFiles(targetDir) {
   fs.mkdirSync(targetDir, { recursive: true });
+  
+  // Read master constants for injection
+  const masterConstantsPath = path.join(rootDir, 'shared', 'constants.js');
+  const constantsContent = fs.readFileSync(masterConstantsPath, 'utf8');
+  
+  // Extract the EVENTS object using regex
+  const eventsMatch = constantsContent.match(/export const EVENTS = ({[\s\S]+?});/);
+  if (!eventsMatch) {
+    throw new Error('CRITICAL: Could not find EVENTS object in shared/constants.js');
+  }
+  const eventsObject = eventsMatch[1];
+  
   const items = fs.readdirSync(extDir);
   for (const item of items) {
     if (item === 'manifest.json' || item === 'manifest.base.json') continue;
+    
     const srcPath = path.join(extDir, item);
     const destPath = path.join(targetDir, item);
+    
     if (fs.lstatSync(srcPath).isDirectory()) {
       fs.cpSync(srcPath, destPath, { recursive: true });
     } else {
-      fs.copyFileSync(srcPath, destPath);
+      if (item === 'content.js') {
+        // Perform injection
+        let content = fs.readFileSync(srcPath, 'utf8');
+        const startMarker = '// --- SHARED_EVENTS_INJECT_START ---';
+        const endMarker = '// --- SHARED_EVENTS_INJECT_END ---';
+        
+        const pattern = new RegExp(`${startMarker}[\\s\\S]+?${endMarker}`);
+        const replacement = `${startMarker}\n    // This block is automatically updated by /scripts/build-extension.js\n    const EVENTS = ${eventsObject};\n    ${endMarker}`;
+        
+        if (pattern.test(content)) {
+          content = content.replace(pattern, replacement);
+          fs.writeFileSync(destPath, content);
+          console.log('✓ Injected shared events into content.js');
+        } else {
+          console.warn('⚠️ WARNING: Markers not found in content.js, skipping injection.');
+          fs.copyFileSync(srcPath, destPath);
+        }
+      } else {
+        fs.copyFileSync(srcPath, destPath);
+      }
     }
   }
 }

@@ -15,10 +15,16 @@ KoalaSync is a premium, lightweight Browser Extension and Relay Server for synch
 - `server/`: Node.js + Socket.IO Relay Server (Containerized).
 - `website/`: Marketing landing page & **Invitation Bridge**.
 - `shared/`: Protocol constants and domain blacklist.
-- `scripts/`: Development utilities for protocol synchronization.
+- `scripts/`: Development utilities (Build & Sync).
+- `docs/`: Technical documentation ([ARCHITECTURE.md](docs/ARCHITECTURE.md), [SYNC_GUIDE.md](docs/SYNC_GUIDE.md)).
 
-> [!NOTE]
-> For deep technical dives, see [ARCHITECTURE.md](ARCHITECTURE.md) and [SYNC_GUIDE.md](SYNC_GUIDE.md).
+## 🔒 Privacy & Security
+KoalaSync is built for users who value privacy. 
+- **Zero Collection**: We do not collect or sell your data.
+- **Zero Telemetry**: No analytics or tracking scripts.
+- **Zero Dependencies**: The extension uses 100% Vanilla JS for maximum security.
+- **Self-Hostable**: Full Docker support for private relay servers.
+See [PRIVACY.md](PRIVACY.md) for our full commitment.
 
 ## Key Features
 - **Global Synchronization**: Synchronize Play, Pause, and Seeking on any website with a `<video>` tag.
