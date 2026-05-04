@@ -3,15 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title lang="en">KoalaSync | Real-time Video Synchronization for Friends</title>
-    <title lang="de">KoalaSync | Echtzeit-Video-Synchronisation für Freunde</title>
+    <title>KoalaSync | Real-time Video Synchronization for Friends</title>
     <meta name="description" content="Watch YouTube, Twitch, and HTML5 videos perfectly synchronized with friends. KoalaSync is a privacy-first, open-source Chrome extension.">
     
     <link rel="stylesheet" href="style.css">
     <link rel="icon" type="image/png" href="assets/logo.png">
     <meta property="og:title" content="KoalaSync | Sync your videos">
     <meta property="og:description" content="Watch together, stay in sync. Privacy-first video synchronization.">
-    <meta property="og:image" content="assets/hero.png">
+    <meta property="og:image" content="https://koalasync.shik3i.net/assets/logo.png">
     <meta property="og:type" content="website">
 
     <script>
@@ -21,6 +20,8 @@
             var activeLang = savedLang || browserLang;
             document.documentElement.classList.add('lang-' + activeLang);
             document.documentElement.lang = activeLang;
+            var titles = { en: 'KoalaSync | Real-time Video Synchronization for Friends', de: 'KoalaSync | Echtzeit-Video-Synchronisation für Freunde' };
+            document.title = titles[activeLang] || titles.en;
         })();
         
         function toggleLanguage(e) {
@@ -32,15 +33,8 @@
             html.classList.add('lang-' + newLang);
             html.lang = newLang;
             localStorage.setItem('koala_lang', newLang);
-            
-            // Toggle title tags
-            var titleEn = document.querySelector('title[lang="en"]');
-            var titleDe = document.querySelector('title[lang="de"]');
-            if (newLang === 'de') {
-                document.title = titleDe ? titleDe.textContent : 'KoalaSync';
-            } else {
-                document.title = titleEn ? titleEn.textContent : 'KoalaSync';
-            }
+            var titles = { en: 'KoalaSync | Real-time Video Synchronization for Friends', de: 'KoalaSync | Echtzeit-Video-Synchronisation für Freunde' };
+            document.title = titles[newLang] || titles.en;
         }
     </script>
 </head>
@@ -58,6 +52,7 @@
                 <img src="assets/logo.png" alt="KoalaSync Logo">
                 <span>KoalaSync</span>
             </div>
+            <button class="hamburger" onclick="document.querySelector('.nav-links').classList.toggle('open')" aria-label="Menu">☰</button>
             <div class="nav-links">
                 <a href="#features"><span lang="en">Features</span><span lang="de">Funktionen</span></a>
                 <a href="#how-it-works"><span lang="en">How it works</span><span lang="de">So funktioniert's</span></a>
@@ -83,6 +78,10 @@
                     <a href="#" class="btn btn-primary">
                         <img src="assets/chrome.svg" width="20" style="filter: brightness(100)">
                         <span lang="en">Add to Chrome</span><span lang="de">Zu Chrome hinzufügen</span>
+                    </a>
+                    <a href="#" class="btn btn-primary" style="background: #e66000;">
+                        🦊
+                        <span lang="en">Add to Firefox</span><span lang="de">Zu Firefox hinzufügen</span>
                     </a>
                     <a href="https://github.com/Shik3i/KoalaSync" class="btn btn-secondary">
                         GitHub Repo

@@ -161,14 +161,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (success) {
                 if (icon) icon.textContent = '✅';
-                title.textContent = 'Erfolgreich!';
+                const isDE = document.documentElement.classList.contains('lang-de');
+                title.textContent = isDE ? 'Erfolgreich!' : 'Success!';
                 
                 let count = 3;
                 const updateCountdown = () => {
-                    desc.innerHTML = `Du bist dem Raum beigetreten. <br><span style="color:var(--accent); font-weight:bold;">Dieser Tab schließt sich in ${count} Sekunden...</span>`;
+                    const closingMsg = isDE 
+                        ? `Du bist dem Raum beigetreten. <br><span style="color:var(--accent); font-weight:bold;">Dieser Tab schließt sich in ${count} Sekunden...</span>`
+                        : `You joined the room. <br><span style="color:var(--accent); font-weight:bold;">This tab will close in ${count} seconds...</span>`;
+                    desc.innerHTML = closingMsg;
                     if (count <= 0) {
                         window.close();
-                        desc.textContent = 'Beitritt erfolgreich! Du kannst diesen Tab jetzt manuell schließen.';
+                        desc.textContent = isDE ? 'Beitritt erfolgreich! Du kannst diesen Tab jetzt manuell schließen.' : 'Joined successfully! You can close this tab manually.';
                     } else {
                         count--;
                         setTimeout(updateCountdown, 1000);
@@ -176,12 +180,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 };
                 updateCountdown();
                 
-                actions.innerHTML = '<button class="primary" onclick="window.close()" style="background:var(--success); width: 100%;">TAB JETZT SCHLIESSEN</button>';
+                const closeLabel = isDE ? 'TAB JETZT SCHLIESSEN' : 'CLOSE TAB NOW';
+                actions.innerHTML = `<button class="primary" onclick="window.close()" style="background:var(--success); width: 100%;">${closeLabel}</button>`;
             } else {
                 if (icon) icon.textContent = '❌';
-                title.textContent = 'Fehler';
-                desc.textContent = `Beitritt fehlgeschlagen: ${message}`;
-                actions.innerHTML = '<button class="primary" onclick="location.reload()" style="width: 100%;">ERNEUT VERSUCHEN</button>';
+                const isDE = document.documentElement.classList.contains('lang-de');
+                title.textContent = isDE ? 'Fehler' : 'Error';
+                desc.textContent = isDE ? `Beitritt fehlgeschlagen: ${message}` : `Join failed: ${message}`;
+                const retryLabel = isDE ? 'ERNEUT VERSUCHEN' : 'TRY AGAIN';
+                actions.innerHTML = `<button class="primary" onclick="location.reload()" style="width: 100%;">${retryLabel}</button>`;
             }
         } else {
             const banner = document.getElementById('koala-banner');
