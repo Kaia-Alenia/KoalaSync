@@ -52,6 +52,29 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Extract version from tag
+        id: version
+        run: echo "VERSION=${GITHUB_REF_NAME#v}" >> $GITHUB_OUTPUT
+
+      - name: Inject version into source files
+        run: |
+          VERSION=${{ steps.version.outputs.VERSION }}
+          echo "Injecting version $VERSION from tag $GITHUB_REF_NAME..."
+
+          # 1. extension/manifest.base.json
+          jq --arg v "$VERSION" '.version = $v' extension/manifest.base.json > tmp.json && mv tmp.json extension/manifest.base.json
+          echo "  ✓ manifest.base.json -> $VERSION"
+
+          # 2. shared/constants.js — APP_VERSION
+          sed -i "s/export const APP_VERSION = '.*'/export const APP_VERSION = '$VERSION'/" shared/constants.js
+          echo "  ✓ shared/constants.js -> $VERSION"
+
+          # 3. package.json
+          jq --arg v "$VERSION" '.version = $v' package.json > tmp.json && mv tmp.json package.json
+          echo "  ✓ package.json -> $VERSION"
+
+          echo "Version injection complete."
+
       - name: Build Extensions
         run: |
           npm install

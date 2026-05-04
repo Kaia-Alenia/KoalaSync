@@ -22,7 +22,7 @@ if (!fs.existsSync(extSharedDir)) {
   fs.mkdirSync(extSharedDir, { recursive: true });
 }
 
-const sharedFiles = ['constants.js', 'blacklist.js'];
+const sharedFiles = ['constants.js', 'blacklist.js', 'README.md'];
 for (const file of sharedFiles) {
   const src = path.join(masterSharedDir, file);
   const dest = path.join(extSharedDir, file);
@@ -31,7 +31,7 @@ for (const file of sharedFiles) {
   }
   fs.copyFileSync(src, dest);
 }
-console.log('✓ constants.js and blacklist.js synced to extension/shared/');
+console.log('✓ constants.js, blacklist.js, and README.md synced to extension/shared/');
 
 // Read the base manifest
 const baseManifest = JSON.parse(fs.readFileSync(baseManifestPath, 'utf8'));

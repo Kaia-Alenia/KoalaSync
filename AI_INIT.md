@@ -15,7 +15,7 @@ KoalaSync is a specialized tool for **synchronized video playback** across multi
 - **Identity**: Users are identified by a unique hex `peerId` combined with a customizable `username`.
 
 ## 2. Repository Structure
-- `extension/`: Chrome Extension (Manifest V3). Contains background service worker, content scripts, and popup UI.
+- `extension/`: Browser Extension (Chrome & Firefox, Manifest V3). Contains background service worker, content scripts, and popup UI.
 - `server/`: Node.js Relay Server using Socket.IO (WebSocket-only).
 - `website/`: **Landing Page** & Invitation Bridge (Marketing, Tutorials, and Downloads).
 - `shared/`: **Single Source of Truth** for protocol constants and event names.
@@ -86,12 +86,11 @@ The following features are critical and must not be removed or fundamentally alt
 ### Releasing a New Version (CRITICAL WORKFLOW FOR AI AGENTS)
 > [!CAUTION]
 > **AI AGENTS MUST FOLLOW THIS EXACT SEQUENCE WHEN RELEASING A NEW VERSION OR TAGGING.**
-> The extension version is read from the `manifest.json` and `constants.js`, NOT the Git tag. If you skip steps 1-3, the release will contain the old version numbers.
-1. **Update `version`** in `extension/manifest.json`.
-2. **Update `APP_VERSION`** in `shared/constants.js`.
-3. Commit these changes with message `chore: bump version to X.X.X` and push to `main`.
-4. Create and push a new tag. **MANDATORY**: Tags MUST start with a `v` (e.g., `v1.3.1`). The GitHub Actions release workflow is strictly configured to ignore any tags without the `v` prefix.
-5. Verify the release builds on GitHub Actions.
+> The CI pipeline automatically injects the version from the git tag into `manifest.base.json`, `shared/constants.js`, and `package.json`. You do NOT need to manually bump version numbers.
+1. Commit all code changes and push to `main`.
+2. Create and push a new tag. **MANDATORY**: Tags MUST start with a `v` (e.g., `v1.4.0`). The GitHub Actions release workflow is strictly configured to ignore any tags without the `v` prefix.
+3. The CI will extract the version from the tag (e.g., `v1.4.0` → `1.4.0`), inject it into all source files, build the extension artifacts, publish the Docker image, and create a GitHub Release.
+4. Verify the release builds on GitHub Actions.
 
 ### Adding a Protocol Event
 1. Add the event name to `shared/constants.js`.
