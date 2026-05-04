@@ -16,7 +16,7 @@ This document describes the communication flows and internal logic of the KoalaS
 ## 2. Media Event Synchronization
 When a user interacts with a video:
 1. **Detection**: `content.js` listens to native events (`play`, `pause`, `seeked`) on the `<video>` element.
-2. **Prevention of Loops**: Uses `lastTargetState` to distinguish between user actions and programmatic actions triggered by the extension.
+2. **Prevention of Loops**: Uses an `expectedEvents` Set to distinguish between user actions and programmatic actions. Expected events are consumed on match and expire via timeout.
 3. **Reporting**: `content.js` sends a `CONTENT_EVENT` to `background.js`.
 4. **Relay**: The Server forwards the event to all other peers in the room.
 5. **Execution**: Remote peers receive the command and call `video.play()`, `video.pause()`, or `video.currentTime = targetTime`.

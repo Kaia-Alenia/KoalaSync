@@ -85,12 +85,17 @@ setInterval(() => {
 
 const eventCounts = new Map(); // socketId -> { count, resetTime }
 
-// Clean up connection counts to prevent memory leak
+// Clean up connection counts and event counts to prevent memory leak
 setInterval(() => {
     const now = Date.now();
     for (const [ip, entry] of connectionCounts.entries()) {
         if (now > entry.resetTime) {
             connectionCounts.delete(ip);
+        }
+    }
+    for (const [socketId, entry] of eventCounts.entries()) {
+        if (now > entry.resetTime) {
+            eventCounts.delete(socketId);
         }
     }
 }, 60000);
@@ -182,6 +187,12 @@ io.on('connection', (socket) => {
     if (clientVersion) {
         const [cMaj, cMin, cPatch] = clientVersion.split('.').map(Number);
         const [mMaj, mMin, mPatch] = MIN_VERSION.split('.').map(Number);
+        if (isNaN(cMaj) || isNaN(cMin) || isNaN(cPatch)) {
+            log('AUTH', `Invalid version format (${clientVersion}) from ${clientIp}`);
+            socket.emit(EVENTS.ERROR, { message: 'Invalid version format' });
+            socket.disconnect(true);
+            return;
+        }
         const tooOld = cMaj < mMaj || (cMaj === mMaj && cMin < mMin) || (cMaj === mMaj && cMin === mMin && cPatch < mPatch);
         if (tooOld) {
             log('AUTH', `Version too old (${clientVersion}) from ${clientIp}`);
@@ -200,15 +211,17 @@ io.on('connection', (socket) => {
             return;
         }
         if (!payload || typeof payload.roomId !== 'string') return;
-        const { password, peerId, protocolVersion } = payload;
 
-        // --- M-2: Sanitize and clamp all string fields ---
-        const roomId   = String(payload.roomId   || '').substring(0, 64);
+        // --- S-1 & S-5: Sanitize and clamp all incoming fields ---
+        const password        = typeof payload.password === 'string' ? payload.password.substring(0, 128) : null;
+        const peerId          = typeof payload.peerId === 'string' ? payload.peerId.substring(0, 16) : null;
+        const protocolVersion = typeof payload.protocolVersion === 'string' ? payload.protocolVersion.substring(0, 16) : null;
+        const roomId   = String(payload.roomId || '').replace(/[^a-zA-Z0-9\-]/g, '').substring(0, 64);
         const username = typeof payload.username  === 'string' ? payload.username.substring(0, 30)  : null;
         const tabTitle = typeof payload.tabTitle  === 'string' ? payload.tabTitle.substring(0, 100) : null;
         const mediaTitle = typeof payload.mediaTitle === 'string' ? payload.mediaTitle.substring(0, 100) : null;
 
-        if (!roomId) return; // Guard: empty after sanitization
+        if (!roomId || !peerId) return; // Guard: empty or invalid after sanitization
 
         try {
             // Protocol check
@@ -329,24 +342,45 @@ io.on('connection', (socket) => {
                 if (room) {
                     room.lastActivity = Date.now();
                     
-                    // Update peer metadata and lastSeen
-                    // Sanitize mutable string fields to enforce the same length
-                    // limits as JOIN_ROOM — the relay path is otherwise unbounded.
-                    const clamp = (val, max) => typeof val === 'string' ? val.substring(0, max) : val;
+                    // --- S-2 & S-3: Sanitize ALL relay fields (strings, numbers, booleans) ---
+                    const clamp    = (val, max) => typeof val === 'string' ? val.substring(0, max) : undefined;
+                    const clampNum = (val, min, max) => typeof val === 'number' && Number.isFinite(val) ? Math.max(min, Math.min(max, val)) : undefined;
+                    const validState = (val) => (val === 'playing' || val === 'paused') ? val : undefined;
+                    const validBool  = (val) => typeof val === 'boolean' ? val : undefined;
+
                     const existing = room.peerData.get(socket.id) || { peerId: mapping.peerId };
                     room.peerData.set(socket.id, { 
                         ...existing,
-                        username:      data.username      !== undefined ? clamp(data.username, 30)   : existing.username,
-                        tabTitle:      data.tabTitle      !== undefined ? clamp(data.tabTitle, 100)  : existing.tabTitle,
-                        mediaTitle:    data.mediaTitle    !== undefined ? clamp(data.mediaTitle, 100) : existing.mediaTitle,
-                        playbackState: data.playbackState !== undefined ? data.playbackState          : existing.playbackState,
-                        currentTime:   data.currentTime   !== undefined ? data.currentTime            : existing.currentTime,
-                        volume:        data.volume        !== undefined ? data.volume                 : existing.volume,
-                        muted:         data.muted         !== undefined ? data.muted                  : existing.muted,
+                        username:      data.username      !== undefined ? (clamp(data.username, 30)   ?? existing.username)      : existing.username,
+                        tabTitle:      data.tabTitle      !== undefined ? (clamp(data.tabTitle, 100)  ?? existing.tabTitle)      : existing.tabTitle,
+                        mediaTitle:    data.mediaTitle    !== undefined ? (clamp(data.mediaTitle, 100) ?? existing.mediaTitle)   : existing.mediaTitle,
+                        playbackState: data.playbackState !== undefined ? (validState(data.playbackState) ?? existing.playbackState) : existing.playbackState,
+                        currentTime:   data.currentTime   !== undefined ? (clampNum(data.currentTime, 0, 86400) ?? existing.currentTime)   : existing.currentTime,
+                        volume:        data.volume        !== undefined ? (clampNum(data.volume, 0, 1) ?? existing.volume)                 : existing.volume,
+                        muted:         data.muted         !== undefined ? (validBool(data.muted) ?? existing.muted)                       : existing.muted,
                         lastSeen: Date.now()
                     });
 
-                    socket.to(mapping.roomId).emit(eventName, { ...data, senderId: mapping.peerId });
+                    // --- S-3: Construct clean relay payload — never forward raw client data ---
+                    const relayPayload = {
+                        senderId:        mapping.peerId,
+                        currentTime:     clampNum(data.currentTime, 0, 86400),
+                        targetTime:      clampNum(data.targetTime, 0, 86400),
+                        playbackState:   validState(data.playbackState),
+                        username:        clamp(data.username, 30),
+                        tabTitle:        clamp(data.tabTitle, 100),
+                        mediaTitle:      clamp(data.mediaTitle, 100),
+                        volume:          clampNum(data.volume, 0, 1),
+                        muted:           validBool(data.muted),
+                        peerId:          typeof data.peerId === 'string' ? data.peerId.substring(0, 16) : undefined,
+                        status:          typeof data.status === 'string' ? data.status.substring(0, 16) : undefined,
+                        expectedTitle:   clamp(data.expectedTitle, 100),
+                        title:           clamp(data.title, 100),
+                        actionTimestamp:  clampNum(data.actionTimestamp, 0, Number.MAX_SAFE_INTEGER),
+                    };
+                    // Strip undefined keys for clean wire format
+                    Object.keys(relayPayload).forEach(k => relayPayload[k] === undefined && delete relayPayload[k]);
+                    socket.to(mapping.roomId).emit(eventName, relayPayload);
                 }
             }
         });
@@ -371,7 +405,8 @@ io.on('connection', (socket) => {
 
         socket.on(EVENTS.EVENT_ACK, (data) => {
             if (!data || typeof data !== 'object') return;
-            if (!data.targetId) return;
+            if (typeof data.targetId !== 'string') return;
+            if (data.actionTimestamp !== undefined && (typeof data.actionTimestamp !== 'number' || !Number.isFinite(data.actionTimestamp))) return;
             
             const senderMapping = socketToRoom.get(socket.id);
             const targetSocketId = peerToSocket.get(data.targetId);

@@ -4,13 +4,15 @@ KoalaSync is designed with a **Security-First & Volatile** architecture. This me
 
 ## 1. Data Processing (In-Memory Only)
 KoalaSync does not use a database. All active session data exists only in the server's RAM and is purged immediately when no longer needed.
-- **Session Data**: To synchronize playback, the server must temporarily hold your `peerId`, `username`, and the `title` of the video you are watching. This is deleted as soon as you leave the room.
+- **Session Data**: To synchronize playback, the server must temporarily hold your `peerId`, `username`, and the `title` of the video you are watching. Additionally, playback metadata (`mediaTitle`, `playbackState`, `currentTime`, `volume`, `muted`) is held per peer for the duration of the session. All of this is deleted as soon as you leave the room.
 - **Room Passwords**: If you set a room password, it is stored only as a secure **bcrypt hash** in RAM. The server never sees or stores your plaintext password.
+- **Routing Maps**: The server maintains ephemeral lookup tables (`socketToRoom`, `peerToSocket`) to route messages between peers. These contain only transport identifiers and are purged on disconnect.
 
 ## 2. Security & Rate Limiting
 To prevent abuse and brute-force attacks, the following data is processed:
 - **Brute-Force Protection**: If multiple failed password attempts are detected, the server stores the `IP address` and `Room ID` in a temporary RAM-based lockout list for a maximum of 15 minutes.
 - **Connection Rate Limiting**: IP addresses are tracked for 60 seconds to prevent connection-flooding (DoS) attacks.
+- **Event Rate Limiting**: Per-socket event counters are tracked for 10-second windows to prevent event-spamming. These are keyed by ephemeral socket IDs and cleaned up periodically.
 - **Console Logging**: The official relay server (`sync.shik3i.net`) outputs connection events (including IP addresses) to the server console for real-time monitoring. These logs are ephemeral and are not archived, sold, or linked to any persistent user identity.
 
 ## 3. Extension Permissions
@@ -21,7 +23,7 @@ The browser extension requires the following permissions:
 
 ## 4. Zero Third-Party Requests
 KoalaSync is completely self-contained:
-- **No CDNs or CDNs**: All scripts and styles are self-hosted.
+- **No CDNs or External Libraries**: All scripts and styles are self-hosted.
 - **No Analytics**: We do not use Google Analytics, tracking pixels, or any third-party telemetry.
 - **No External Fonts**: We use system font stacks to prevent tracking via font services.
 

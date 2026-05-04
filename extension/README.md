@@ -1,6 +1,6 @@
-# KoalaSync Chrome Extension
+# KoalaSync Browser Extension
 
-A Manifest V3 Chrome Extension for synchronized video playback across any website.
+A Manifest V3 Browser Extension (Chrome & Firefox) for synchronized video playback across any website.
 
 ## Key Features
 - **Manifest V3**: Optimized Service Worker architecture with session persistence.
