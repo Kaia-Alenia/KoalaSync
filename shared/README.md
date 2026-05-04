@@ -4,7 +4,7 @@ This directory contains constants and protocol definitions used by both the exte
 
 ## Syncing with the Extension
 > [!IMPORTANT]
-> Every time this file is modified, you must run `scripts/sync-constants.sh` to keep the extension's copy up to date.
+> Every time this file is modified, you must run `node scripts/build-extension.js` to keep the extension's copy up to date.
 
 Because Chrome Extensions cannot load files outside their root directory, `constants.js` must be copied to `extension/shared/constants.js` whenever it is modified.
 

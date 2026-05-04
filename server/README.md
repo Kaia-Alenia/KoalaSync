@@ -34,5 +34,6 @@ npm start
 
 ## Security
 - **Rate Limiting**: IP-based connection limits and socket-based event limits.
-- **Token Handshake**: Requires a valid token defined in `shared/constants.js`.
+- **Token Handshake**: Requires a valid token defined in the root `shared/constants.js`.
+- **Single Source of Truth**: The server imports constants directly from the root `shared/` directory.
 - **In-Memory**: Rooms are automatically pruned after 2 hours of inactivity.
