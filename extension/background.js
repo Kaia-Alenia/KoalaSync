@@ -204,6 +204,9 @@ async function connect() {
     if (isConnecting) return;
     isConnecting = true;
 
+    const isCurrentSlowRetry = isSlowReconnectAttempt;
+    isSlowReconnectAttempt = false;
+
     let finalUrl = '';
     try {
         // --- Phase 1: Storage ---
@@ -235,7 +238,7 @@ async function connect() {
             return;
         }
 
-        if (reconnectFailed && !isSlowReconnectAttempt) {
+        if (reconnectFailed && !isCurrentSlowRetry) {
             isConnecting = false;
             scheduleSlowReconnect(); // Keep checking in the background
             return;
