@@ -213,6 +213,18 @@ nav {
     box-shadow: 0 20px 25px -5px var(--accent-glow);
 }
 
+.btn-firefox {
+    background: #e66000;
+    color: white;
+    box-shadow: 0 10px 15px -3px rgba(230, 96, 0, 0.3);
+}
+
+.btn-firefox:hover {
+    background: #ff7300;
+    transform: translateY(-2px);
+    box-shadow: 0 20px 25px -5px rgba(230, 96, 0, 0.4);
+}
+
 .btn-secondary {
     background: var(--card);
     color: var(--text);

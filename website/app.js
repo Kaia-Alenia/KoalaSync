@@ -71,11 +71,26 @@ document.addEventListener('DOMContentLoaded', () => {
                         
                         if (actions) {
                             if (!isInstalled) {
-                                actions.innerHTML = `
-                                    <a href="#" class="primary" style="text-align:center; text-decoration:none; display:block; padding: 1.2rem; background: var(--accent); color: white; border-radius: 12px; font-weight: 700;">GET IT ON CHROME WEBSTORE</a>
-                                    <a href="https://github.com/shik3i/KoalaSync" style="text-align:center; color:var(--accent); text-decoration:underline; font-size:0.85rem; margin-top:0.8rem; display:block; font-weight: 600;">Download via GitHub</a>
-                                    <p style="text-align:center; font-size:0.8rem; opacity:0.7; margin-top: 1.2rem; color: var(--text-muted);">The extension is required to join and sync videos.</p>
-                                `;
+                                const isFirefox = navigator.userAgent.includes('Firefox');
+                                if (isFirefox) {
+                                    actions.innerHTML = `
+                                        <a href="https://addons.mozilla.org/de/firefox/addon/koalasync/" class="primary btn-firefox" style="text-align:center; text-decoration:none; display:block; padding: 1.2rem; border-radius: 12px; font-weight: 700;">GET IT ON MOZILLA ADD-ONS</a>
+                                        <a href="https://github.com/shik3i/KoalaSync" style="text-align:center; color:#e66000; text-decoration:underline; font-size:0.85rem; margin-top:0.8rem; display:block; font-weight: 600;">Download via GitHub</a>
+                                        <p style="text-align:center; font-size:0.8rem; opacity:0.7; margin-top: 1.2rem; color: var(--text-muted);">
+                                            <span lang="en">The extension is required to join and sync videos.</span>
+                                            <span lang="de">Die Erweiterung ist erforderlich, um beizutreten und Videos zu synchronisieren.</span>
+                                        </p>
+                                    `;
+                                } else {
+                                    actions.innerHTML = `
+                                        <a href="#" class="primary" style="text-align:center; text-decoration:none; display:block; padding: 1.2rem; background: var(--accent); color: white; border-radius: 12px; font-weight: 700;">GET IT ON CHROME WEBSTORE</a>
+                                        <a href="https://github.com/shik3i/KoalaSync" style="text-align:center; color:var(--accent); text-decoration:underline; font-size:0.85rem; margin-top:0.8rem; display:block; font-weight: 600;">Download via GitHub</a>
+                                        <p style="text-align:center; font-size:0.8rem; opacity:0.7; margin-top: 1.2rem; color: var(--text-muted);">
+                                            <span lang="en">The extension is required to join and sync videos.</span>
+                                            <span lang="de">Die Erweiterung ist erforderlich, um beizutreten und Videos zu synchronisieren.</span>
+                                        </p>
+                                    `;
+                                }
                             } else {
                                 actions.innerHTML = `
                                     <div class="joining-spinner" style="text-align:center; padding: 1rem;">
