@@ -34,8 +34,17 @@ sync.koalastuff.net {
     file_server
     encode zstd gzip
 
-    # Security Headers
+    # Static Caching for high-performance PageSpeed (1 year with validation)
+    @static {
+        file
+        path *.ico *.css *.js *.png *.svg *.webp
+    }
+    header @static Cache-Control "public, max-age=31536000, must-revalidate"
+
+    # Security Headers & Content Security Policy (CSP)
     header {
+        # Strict Content Security Policy (restricts scripts and connections to self, forbids frames)
+        Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; connect-src 'self'; img-src 'self' data:; object-src 'none'; frame-ancestors 'none';"
         # Prevent FLoC tracking
         Permissions-Policy interest-cohort=()
         # Security best practices
