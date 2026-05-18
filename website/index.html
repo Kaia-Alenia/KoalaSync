@@ -112,123 +112,151 @@
                     <div class="mock-body">
                         <!-- ROOM TAB -->
                         <div id="mock-room" class="mock-screen active">
-                            <div class="mock-joined-room">
-                                <span class="mock-room-name">brave-eagle-80</span>
-                                <span class="mock-server-badge">Official Server</span>
+                            <div class="mock-joined-room" style="display: flex; justify-content: space-between; align-items: center; border-left: 4px solid var(--accent); padding: 8px 10px; background: var(--card); border-radius: 8px; margin-bottom: 12px;">
+                                <div style="display: flex; flex-direction: column;">
+                                    <span style="font-size: 0.6rem; text-transform: uppercase; color: var(--text-muted); font-weight: 700; line-height: 1;"><span lang="en">Active Room</span><span lang="de">Aktiver Raum</span></span>
+                                    <span class="mock-room-name" style="font-weight: 700; color: var(--accent); font-size: 0.9rem; letter-spacing: 0.5px; margin-top: 2px;">brave-eagle-80</span>
+                                </div>
+                                <span class="mock-server-badge" style="font-size: 0.6rem; color: var(--text-muted);"><span lang="en">Official Server</span><span lang="de">Offizieller Server</span></span>
                             </div>
                             <div class="mock-card">
-                                <div class="mock-label">Invite Link</div>
+                                <div class="mock-label"><span lang="en">Invite Link</span><span lang="de">Einladungs-Link</span></div>
                                 <div class="mock-invite-box">
                                     <input type="text" class="mock-input" value="https://sync.koalastuff.net/join.html#join:brave-eagle-80:pass" readonly>
-                                    <button class="mock-btn" style="padding: 0.35rem 0.5rem;" onclick="navigator.clipboard.writeText('https://sync.koalastuff.net/join.html#join:brave-eagle-80:pass')">Copy</button>
+                                    <button class="mock-btn" style="padding: 0.35rem 0.5rem;" onclick="navigator.clipboard.writeText('https://sync.koalastuff.net/join.html#join:brave-eagle-80:pass')"><span lang="en">Copy</span><span lang="de">Kopieren</span></button>
                                 </div>
                             </div>
-                            <div class="mock-card" style="flex: 1; display: flex; flex-direction: column; overflow: hidden;">
-                                <div class="mock-label">Peers in Room</div>
+                            <div class="mock-card" style="margin-bottom: 12px;">
+                                <div class="mock-label"><span lang="en">Peers in Room</span><span lang="de">Teilnehmer im Raum</span></div>
                                 <div class="mock-peer-list">
                                     <div class="mock-peer-item">
                                         <div class="mock-peer-header">
                                             <span class="mock-peer-name">CoolUsername</span>
-                                            <span class="mock-peer-meta">YOU</span>
+                                            <span class="mock-peer-meta"><span lang="en">YOU</span><span lang="de">ICH</span></span>
                                         </div>
                                         <div class="mock-peer-tab">🎬 Germany's Next Flopmodel - S21E12</div>
-                                        <div class="mock-peer-status"><span style="color:#22c55e;">●</span> 0:55 • Playing</div>
+                                        <div class="mock-peer-status"><span style="color:#22c55e;">●</span> 0:55 • <span lang="en">Playing</span><span lang="de">Wiedergabe</span></div>
                                     </div>
                                     <div class="mock-peer-item">
                                         <div class="mock-peer-header">
                                             <span class="mock-peer-name">KoalaPC</span>
-                                            <span class="mock-peer-meta">Peer</span>
+                                            <span class="mock-peer-meta"><span lang="en">Peer</span><span lang="de">Partner</span></span>
                                         </div>
                                         <div class="mock-peer-tab">🎬 Germany's Next Flopmodel - S21E12</div>
-                                        <div class="mock-peer-status"><span style="color:#22c55e;">●</span> 0:55 • Playing</div>
+                                        <div class="mock-peer-status"><span style="color:#22c55e;">●</span> 0:55 • <span lang="en">Playing</span><span lang="de">Wiedergabe</span></div>
                                     </div>
                                 </div>
                             </div>
-                            <button class="mock-btn" style="background:#ef4444; width:100%; margin-top:auto;">Leave Room</button>
+                            <button class="mock-btn" style="background:#ef4444; width:100%; border: none; padding: 10px; border-radius: 8px; color: white; font-weight: 700; cursor: pointer; border: 1px solid #ef4444;"><span lang="en">Leave Room</span><span lang="de">Raum verlassen</span></button>
                         </div>
 
                         <!-- SYNC TAB -->
                         <div id="mock-sync" class="mock-screen">
-                            <div class="mock-target-box">
-                                ⭐ MATCH: Germany's Next Flopmodel - S21E12
+                            <div class="mock-form-group" style="margin-bottom: 12px;">
+                                <label style="display: block; font-size: 11px; text-transform: uppercase; color: var(--text-muted); margin-bottom: 4px; font-weight: 700;">
+                                    <span lang="en">Target Tab (Video Source)</span><span lang="de">Ziel-Tab (Video-Quelle)</span>
+                                </label>
+                                <select class="mock-input" style="width: 100%; box-sizing: border-box; background: var(--card); border: 1px solid #334155; color: white; padding: 8px; border-radius: 8px; font-family: inherit; font-size: 0.75rem; outline: none; cursor: default;">
+                                    <option>🎬 Germany's Next Flopmodel - S21E12</option>
+                                </select>
                             </div>
-                            <div class="mock-card">
-                                <div class="mock-label">Remote Control</div>
-                                <div class="mock-ctrl-buttons">
-                                    <button class="mock-btn mock-btn-play">▶ Play</button>
-                                    <button class="mock-btn mock-btn-pause">⏸ Pause</button>
-                                    <button class="mock-btn mock-btn-force">⚡ Force Sync Everyone</button>
-                                </div>
+                            
+                            <label style="display: block; font-size: 11px; text-transform: uppercase; color: var(--text-muted); margin-bottom: 4px; font-weight: 700;">
+                                <span lang="en">Remote Control</span><span lang="de">Fernsteuerung</span>
+                            </label>
+                            <div style="display: flex; gap: 8px; margin-bottom: 12px;">
+                                <button class="mock-btn mock-btn-play" style="flex: 1; background: #22c55e; color: white; padding: 8px; border-radius: 8px; font-weight: 700; border: none; cursor: pointer;"><span lang="en">▶ Play</span><span lang="de">▶ Start</span></button>
+                                <button class="mock-btn mock-btn-pause" style="flex: 1; background: #ef4444; color: white; padding: 8px; border-radius: 8px; font-weight: 700; border: none; cursor: pointer;"><span lang="en">⏸ Pause</span><span lang="de">⏸ Pause</span></button>
                             </div>
-                            <div class="mock-card">
-                                <div class="mock-label">Last Activity Status</div>
-                                <div class="mock-status-display">
-                                    <span style="font-weight: 700;">PAUSE</span>
-                                    <span class="mock-status-pill">● In Sync</span>
+                            <button class="mock-btn mock-btn-force" style="background: linear-gradient(135deg, #6366f1, #a855f7); width: 100%; padding: 10px; color: white; border: none; font-weight: 700; border-radius: 8px; margin-bottom: 15px; cursor: pointer;">
+                                <span lang="en">⚡ Force Sync Everyone</span><span lang="de">⚡ Synchronisation erzwingen</span>
+                            </button>
+
+                            <label style="display: block; font-size: 11px; text-transform: uppercase; color: var(--text-muted); margin-bottom: 4px; font-weight: 700;">
+                                <span lang="en">Last Activity Status</span><span lang="de">Letzte Aktivität</span>
+                            </label>
+                            <div class="mock-card" style="margin-bottom: 15px; min-height: 70px; background: var(--card); border: 1px solid #334155; padding: 10px; border-radius: 8px; display: flex; flex-direction: column; justify-content: center; gap: 4px;">
+                                <div style="display: flex; justify-content: space-between; align-items: center;">
+                                    <span style="font-weight: 700; color: #ef4444; font-size: 0.8rem;">PAUSE</span>
+                                    <span style="font-size: 0.65rem; color: #22c55e; font-weight: 700;">● In Sync</span>
                                 </div>
-                                <div class="mock-log-item">
-                                    Pause triggered by CoolUsername
+                                <div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 2px;">
+                                    <span lang="en">Pause triggered by CoolUsername</span><span lang="de">Pause ausgelöst durch CoolUsername</span>
                                 </div>
                             </div>
                         </div>
 
                         <!-- SETTINGS TAB -->
                         <div id="mock-settings" class="mock-screen">
-                            <div class="mock-card">
-                                <div class="mock-label">Your Username</div>
-                                <input type="text" class="mock-input" value="CoolUsername" readonly>
+                            <div class="mock-form-group" style="margin-bottom: 12px;">
+                                <label style="display: block; font-size: 11px; text-transform: uppercase; color: var(--text-muted); margin-bottom: 4px; font-weight: 700;">
+                                    <span lang="en">Your Username</span><span lang="de">Dein Benutzername</span>
+                                </label>
+                                <input type="text" class="mock-input" value="CoolUsername" readonly style="width:100%; box-sizing:border-box; background: var(--card); border: 1px solid #334155; color: white; padding: 8px; border-radius: 8px;">
                             </div>
-                            <div class="mock-card" style="flex: 1;">
-                                <div class="mock-label">Preferences</div>
-                                <div class="mock-settings-row">
-                                    <input type="checkbox" id="chk-noise" checked disabled>
-                                    <div>
-                                        <label for="chk-noise">Filter Noise Tabs</label>
-                                        <p>Hide common non-video websites from the target selector.</p>
-                                    </div>
-                                </div>
-                                <div class="mock-settings-row">
-                                    <input type="checkbox" id="chk-binge" checked disabled>
-                                    <div>
-                                        <label for="chk-binge">Auto-Sync Next Episode</label>
-                                        <p>Automatically sync transitions between series episodes.</p>
-                                    </div>
-                                </div>
+
+                            <div style="display: flex; align-items: center; justify-content: space-between; background: var(--card); padding: 10px; border-radius: 8px; margin-bottom: 8px; border: 1px solid #334155;">
+                                <label style="margin: 0; font-size: 11px; text-transform: uppercase; color: var(--text-muted); font-weight: 700; cursor: pointer;" for="chk-noise">
+                                    <span lang="en">Filter Noise Tabs</span><span lang="de">Noise-Tabs filtern</span>
+                                </label>
+                                <input type="checkbox" id="chk-noise" checked disabled style="width: auto; cursor: not-allowed;">
                             </div>
-                            <button class="mock-btn" style="background:#4b5563; width:100%;">Regenerate Peer ID</button>
+
+                            <div style="display: flex; align-items: center; justify-content: space-between; background: var(--card); padding: 10px; border-radius: 8px; margin-bottom: 12px; border: 1px solid #334155;">
+                                <label style="margin: 0; font-size: 11px; text-transform: uppercase; color: var(--text-muted); font-weight: 700; cursor: pointer;" for="chk-binge">
+                                    <span lang="en">Auto-Sync Next Episode</span><span lang="de">Nächste Folge auto-syncen</span>
+                                </label>
+                                <input type="checkbox" id="chk-binge" checked disabled style="width: auto; cursor: not-allowed;">
+                            </div>
+
+                            <div style="font-size: 0.65rem; color: var(--text-muted); padding: 4px; line-height: 1.3;">
+                                <p style="margin: 2px 0;">• <span lang="en">Username helps others identify you.</span><span lang="de">Benutzername hilft anderen, dich zu erkennen.</span></p>
+                                <p style="margin: 2px 0;">• <span lang="en">Noise filtering hides common non-video sites.</span><span lang="de">Noise-Filterung blendet allgemeine Seiten aus.</span></p>
+                            </div>
+
+                            <div style="margin-top: auto; padding-top: 8px; border-top: 1px solid #334155;">
+                                <label style="display: block; font-size: 11px; text-transform: uppercase; color: var(--text-muted); margin-bottom: 4px; font-weight: 700;">
+                                    <span lang="en">Troubleshooting</span><span lang="de">Fehlerbehebung</span>
+                                </label>
+                                <button class="mock-btn" style="background:#334155; width:100%; border: none; padding: 8px; border-radius: 8px; color: white; font-weight: 600; cursor: pointer;">
+                                    <span lang="en">Regenerate Peer ID</span><span lang="de">Peer ID regenerieren</span>
+                                </button>
+                            </div>
                         </div>
 
                         <!-- DEV TAB -->
                         <div id="mock-dev" class="mock-screen">
-                            <div class="mock-card">
-                                <div class="mock-label">Diagnostics</div>
-                                <div class="mock-diagnostic-grid">
-                                    <div class="mock-diag-box">
-                                        <div class="mock-label" style="margin-bottom:0.1rem; font-size:0.55rem;">Ready State</div>
-                                        <span class="diag-val">HAVE_ENOUGH_DATA</span>
-                                    </div>
-                                    <div class="mock-diag-box">
-                                        <div class="mock-label" style="margin-bottom:0.1rem; font-size:0.55rem;">Seek Delta</div>
-                                        <span class="diag-val">0.05s</span>
-                                    </div>
-                                    <div class="mock-diag-box">
-                                        <div class="mock-label" style="margin-bottom:0.1rem; font-size:0.55rem;">Buffered</div>
-                                        <span class="diag-val">300.2s</span>
-                                    </div>
-                                    <div class="mock-diag-box">
-                                        <div class="mock-label" style="margin-bottom:0.1rem; font-size:0.55rem;">Engine State</div>
-                                        <span class="diag-val" style="color:#22c55e;">SYNCED</span>
-                                    </div>
-                                </div>
+                            <label style="display: block; font-size: 11px; text-transform: uppercase; color: var(--text-muted); margin-bottom: 4px; font-weight: 700;">
+                                <span lang="en">Connection Status</span><span lang="de">Verbindungsstatus</span>
+                            </label>
+                            <div style="display:flex; align-items:center; gap: 10px; background: var(--card); border: 1px solid #334155; padding: 10px; border-radius: 8px; margin-bottom: 12px;">
+                                <span class="status-dot status-online" style="width: 8px; height: 8px; border-radius: 50%; display: inline-block; background: #22c55e; box-shadow: 0 0 8px #22c55e;"></span>
+                                <span style="flex:1; font-size: 0.75rem; font-weight: 600; color: white;">
+                                    <span lang="en">Connected</span><span lang="de">Verbunden</span>
+                                </span>
+                                <button class="mock-btn" style="width: auto; padding: 4px 8px; font-size: 0.65rem; border: none; background: #334155; color: white; border-radius: 6px; cursor: pointer;">
+                                    <span lang="en">Copy Logs</span><span lang="de">Logs kopieren</span>
+                                </button>
                             </div>
-                            <div class="mock-card" style="flex: 1; overflow: hidden;">
-                                <div class="mock-label">Event Stream</div>
-                                <div style="font-family:monospace; font-size:0.65rem; color:#10b981; line-height:1.4;">
-                                    <div>[18:37:32] EVENT: PLAY -&gt; ACK</div>
-                                    <div>[18:37:32] FORCE_SYNC -&gt; 0.05s diff</div>
-                                    <div>[18:37:38] EVENT: PAUSE -&gt; BROADCAST</div>
-                                    <div style="color:var(--text-muted);">[18:37:42] content_heartbeat: active</div>
-                                </div>
+
+                            <label style="display: block; font-size: 11px; text-transform: uppercase; color: var(--text-muted); margin-bottom: 4px; font-weight: 700;">
+                                <span lang="en">Video Debug Info</span><span lang="de">Video-Debug-Info</span>
+                            </label>
+                            <div style="background: var(--card); border: 1px solid #334155; padding: 10px; border-radius: 8px; font-size: 0.65rem; font-family: monospace; color: var(--text-muted); line-height: 1.4; margin-bottom: 12px;">
+                                <div>readyState: HAVE_ENOUGH_DATA</div>
+                                <div>seekDelta: 0.05s</div>
+                                <div>buffered: 300.2s</div>
+                                <div>engineState: <span style="color:#22c55e; font-weight:700;">SYNCED</span></div>
+                            </div>
+
+                            <label style="display: block; font-size: 11px; text-transform: uppercase; color: var(--text-muted); margin-bottom: 4px; font-weight: 700;">
+                                <span lang="en">Logs (Last 50)</span><span lang="de">Protokoll (Letzte 50)</span>
+                            </label>
+                            <div style="max-height: 75px; overflow-y: auto; font-size: 0.6rem; font-family: monospace; background: #000; padding: 8px; border-radius: 8px; color: #ccc; line-height: 1.4;">
+                                <div style="color:#22c55e;">[18:37:32] EVENT: PLAY -&gt; ACK</div>
+                                <div>[18:37:32] FORCE_SYNC -&gt; 0.05s diff</div>
+                                <div>[18:37:38] EVENT: PAUSE -&gt; BROADCAST</div>
+                                <div style="color:var(--text-muted);">[18:37:42] content_heartbeat: active</div>
                             </div>
                         </div>
                     </div>
@@ -417,36 +445,32 @@
                     </button>
                     
                     <div id="pane-docker" class="terminal-pane active">
-                        <pre><code><span class="t-key">version:</span> <span class="t-str">"3.8"</span>
-
-<span class="t-key">services:</span>
-  <span class="t-key">koalasync:</span>
+                        <pre><code><span class="t-key">services:</span>
+  <span class="t-key">koala-sync:</span>
     <span class="t-key">image:</span> <span class="t-str">ghcr.io/shik3i/koalasync:latest</span>
-    <span class="t-key">container_name:</span> <span class="t-str">koalasync-relay</span>
-    <span class="t-key">ports:</span>
-      <span class="t-key">-</span> <span class="t-str">"3000:3000"</span>
-    <span class="t-key">environment:</span>
-      <span class="t-key">-</span> <span class="t-str">NODE_ENV=production</span>
-      <span class="t-key">-</span> <span class="t-str">PORT=3000</span>
+    <span class="t-key">container_name:</span> <span class="t-str">KoalaSync</span>
     <span class="t-key">restart:</span> <span class="t-str">always</span>
-    <span class="t-key">logging:</span>
-      <span class="t-key">driver:</span> <span class="t-str">"json-file"</span>
-      <span class="t-key">options:</span>
-        <span class="t-key">max-size:</span> <span class="t-str">"10m"</span></code></pre>
+    <span class="t-comment"># Access internally by proxying to container port 3000</span>
+    <span class="t-key">environment:</span>
+      <span class="t-key">-</span> <span class="t-str">TZ=Europe/Berlin</span>
+      <span class="t-key">-</span> <span class="t-str">PORT=3000</span>
+      <span class="t-key">-</span> <span class="t-str">MIN_VERSION=1.0.0</span>
+      <span class="t-key">-</span> <span class="t-str">MAX_ROOMS=100</span>
+      <span class="t-key">-</span> <span class="t-str">MAX_PEERS_PER_ROOM=50</span>
+    <span class="t-key">pids_limit:</span> <span class="t-val">2048</span></code></pre>
                     </div>
 
                     <div id="pane-caddy" class="terminal-pane">
-                        <pre><code><span class="t-comment"># Reverse proxy for your secure WebSocket relay server</span>
-<span class="t-key">sync.yourdomain.com</span> {
-    <span class="t-key">reverse_proxy</span> <span class="t-val">localhost:3000</span>
+                        <pre><code><span class="t-key">sync.koalastuff.net</span> {
+    <span class="t-comment"># Specify the web root inside the container</span>
+    <span class="t-key">root</span> <span class="t-val">*</span> <span class="t-str">/var/www/html</span>
 
-    <span class="t-key">header</span> {
-        <span class="t-comment"># Security policies</span>
-        <span class="t-key">Permissions-Policy</span> <span class="t-str">"interest-cohort=()"</span>
-        <span class="t-key">Strict-Transport-Security</span> <span class="t-str">"max-age=31536000; includeSubDomains; preload"</span>
-        <span class="t-key">X-Content-Type-Options</span> <span class="t-str">"nosniff"</span>
-        <span class="t-key">X-Frame-Options</span> <span class="t-str">"DENY"</span>
-    }
+    <span class="t-comment"># Enable static file server to deliver HTML, CSS, JS</span>
+    <span class="t-key">file_server</span>
+}
+
+<span class="t-key">syncserver.koalastuff.net</span> {
+    <span class="t-key">reverse_proxy</span> <span class="t-val">KoalaSync:3000</span>
 }</code></pre>
                     </div>
                 </div>
