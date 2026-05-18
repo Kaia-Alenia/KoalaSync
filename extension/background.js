@@ -634,9 +634,9 @@ function handleServerEvent(event, data) {
                             peer.muted = data.muted !== undefined ? data.muted : peer.muted;
 
                             // Race condition guard: ignore heartbeat playbackState/currentTime 
-                            // if we applied a reactive user action in the last 1.5 seconds.
+                            // if we applied a reactive user action in the last 1.0 second.
                             const timeSinceReactive = peer.lastReactiveUpdate ? (Date.now() - peer.lastReactiveUpdate) : Infinity;
-                            const ignoreStatus = timeSinceReactive < 1500;
+                            const ignoreStatus = timeSinceReactive < 1000;
 
                             if (!ignoreStatus) {
                                 peer.playbackState = data.playbackState !== undefined ? data.playbackState : peer.playbackState;
