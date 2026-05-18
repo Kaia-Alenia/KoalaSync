@@ -161,7 +161,10 @@ async function run() {
       };
       manifest.browser_specific_settings = {
         gecko: {
-          id: "koalasync@koalastuff.net"
+          id: "koalasync@koalastuff.net",
+          data_collection_permissions: {
+            required: ["none"]
+          }
         }
       };
       return manifest;
