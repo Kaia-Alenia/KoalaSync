@@ -31,9 +31,19 @@
             font-size: 18px;
             margin: 0 0 16px 0;
             color: var(--accent);
-            text-align: center;
             letter-spacing: 1px;
             text-transform: uppercase;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        h1 img {
+            width: 24px;
+            height: 24px;
+            object-fit: contain;
+            border-radius: 4px;
         }
 
         /* Tabs */
@@ -192,7 +202,7 @@
     </style>
 </head>
 <body>
-    <h1>KoalaSync</h1>
+    <h1><img src="icons/icon128.png" alt="KoalaSync Logo">KoalaSync</h1>
 
     <div class="tabs">
         <button class="tab-btn active" data-tab="tab-room">Room</button>
