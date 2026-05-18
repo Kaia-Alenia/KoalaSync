@@ -98,10 +98,11 @@ The following features are critical and must not be removed or fundamentally alt
 > [!CAUTION]
 > **AI AGENTS MUST FOLLOW THIS EXACT SEQUENCE WHEN RELEASING A NEW VERSION OR TAGGING.**
 > The CI pipeline automatically injects the version from the git tag into `manifest.base.json`, `shared/constants.js`, and `package.json`. You do NOT need to manually bump version numbers.
-1. Commit all code changes and push to `main`.
-2. Create and push a new tag. **MANDATORY**: Tags MUST start with a `v` (e.g., `v1.4.0`). The GitHub Actions release workflow is strictly configured to ignore any tags without the `v` prefix.
-3. The CI will extract the version from the tag (e.g., `v1.4.0` → `1.4.0`), inject it into all source files, build the extension artifacts, publish the Docker image, and create a GitHub Release.
-4. Verify the release builds on GitHub Actions.
+1. **MANDATORY SYNTAX CHECK**: Before staging, committing, or pushing any changes, you **MUST** run a syntax validation check using `node -c` on every single modified JavaScript file (e.g., `node -c extension/background.js` and `node -c extension/content.js`). **NEVER** commit or push code that fails this check.
+2. Commit all verified code changes and push to `main`.
+3. Create and push a new tag. **MANDATORY**: Tags MUST start with a `v` (e.g., `v1.4.0`). The GitHub Actions release workflow is strictly configured to ignore any tags without the `v` prefix.
+4. The CI will extract the version from the tag (e.g., `v1.4.0` → `1.4.0`), inject it into all source files, build the extension artifacts, publish the Docker image, and create a GitHub Release.
+5. Verify the release builds on GitHub Actions.
 
 ### Adding a Protocol Event
 1. Add the event name to `shared/constants.js`.
