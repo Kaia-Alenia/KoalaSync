@@ -107,6 +107,7 @@ let reconnectStartTime = null; // New: track when reconnection started
 let reconnectFailed = false; // New: true if we hit the 5-min cap
 let slowReconnectTimer = null; // Infinite slow background reconnect timer
 let isSlowReconnectAttempt = false; // True during slow background reconnect execution
+let lastSlowReconnectAttempt = 0;
 
 // Force Sync Coordination
 let isForceSyncInitiator = false;
@@ -172,12 +173,19 @@ async function getPeerId() {
 async function getSettings() {
     return new Promise(resolve => {
         chrome.storage.sync.get(['serverUrl', 'useCustomServer', 'roomId', 'password', 'username'], (data) => {
+            let username = data.username;
+            if (!username) {
+                const adjs = ['Happy', 'Cool', 'Fast', 'Smart', 'Brave', 'Calm', 'Sneaky', 'Lazy', 'Wild', 'Chill', 'Lucky', 'Epic'];
+                const nouns = ['Koala', 'Panda', 'Tiger', 'Eagle', 'Fox', 'Bear', 'Wolf', 'Lion', 'Hawk', 'Seal', 'Owl', 'Shark'];
+                username = `${adjs[Math.floor(Math.random() * adjs.length)]}${nouns[Math.floor(Math.random() * nouns.length)]}`;
+                chrome.storage.sync.set({ username });
+            }
             resolve({
                 serverUrl: data.serverUrl || '',
                 useCustomServer: data.useCustomServer || false,
                 roomId: data.roomId || '',
                 password: data.password || '',
-                username: data.username || ''
+                username: username
             });
         });
     });
@@ -240,8 +248,7 @@ async function connect() {
 
         if (reconnectFailed && !isCurrentSlowRetry) {
             isConnecting = false;
-            scheduleSlowReconnect(); // Keep checking in the background
-            return;
+            return; // Let keepAlive alarm handle the 5-min retry interval
         }
 
         broadcastConnectionStatus('connecting');
@@ -429,7 +436,6 @@ function scheduleReconnect() {
     isSlowReconnectAttempt = false;
 
     if (reconnectFailed) {
-        scheduleSlowReconnect();
         return;
     }
     
@@ -441,7 +447,6 @@ function scheduleReconnect() {
         chrome.storage.session.set({ reconnectFailed: true });
         addLog('Reconnection failed after 5 minutes. Entering slow background retry mode.', 'error');
         broadcastConnectionStatus('reconnect_failed');
-        scheduleSlowReconnect();
         return;
     }
     
@@ -452,19 +457,7 @@ function scheduleReconnect() {
     }, reconnectDelay);
 }
 
-function scheduleSlowReconnect() {
-    if (slowReconnectTimer || socket || isConnecting) return;
-    
-    slowReconnectTimer = setTimeout(async () => {
-        slowReconnectTimer = null;
-        await ensureState();
-        if (reconnectFailed && !socket && !isConnecting) {
-            addLog('Performing background reconnection attempt...', 'info');
-            isSlowReconnectAttempt = true;
-            connect();
-        }
-    }, 300000); // 5 minutes (300,000ms)
-}
+// Slow reconnect logic is now handled in the keepAlive alarm
 
 function emit(event, data) {
     if (socket && socket.readyState === WebSocket.OPEN && isNamespaceJoined) {
@@ -589,17 +582,16 @@ function handleServerEvent(event, data) {
                 addToHistory(event, data.senderId);
                 showNotification(data.senderId, event);
 
-                // Force Sync Execute Remote Reactive Update
-                updateLocalPeerState(data.senderId, {
-                    playbackState: 'playing'
-                });
+                // (The sender's state is updated below with everyone else)
             }
 
-            // Reset reactive update locks for all peers so the next playing heartbeat is accepted immediately
+            // Force Sync Execute Remote Reactive Update:
+            // Set all peers to playing and apply a reactive lock to block stale heartbeats
             if (currentRoom && Array.isArray(currentRoom.peers)) {
                 currentRoom.peers.forEach(peer => {
                     if (peer && typeof peer === 'object') {
-                        peer.lastReactiveUpdate = 0;
+                        peer.playbackState = 'playing';
+                        peer.lastReactiveUpdate = Date.now();
                     }
                 });
                 if (storageInitialized) chrome.storage.session.set({ currentRoom });
@@ -749,19 +741,23 @@ function executeForceSync() {
         forceSyncDeadline: null 
     });
 
-    // Reset reactive update locks for all peers so the next playing heartbeat is accepted immediately
+    // Set all peers to playing and apply a reactive lock to block stale heartbeats
     if (currentRoom && Array.isArray(currentRoom.peers)) {
         currentRoom.peers.forEach(peer => {
             if (peer && typeof peer === 'object') {
-                peer.lastReactiveUpdate = 0;
+                peer.playbackState = 'playing';
+                peer.lastReactiveUpdate = Date.now();
             }
         });
         if (storageInitialized) chrome.storage.session.set({ currentRoom });
         chrome.runtime.sendMessage({ type: 'PEER_UPDATE', peers: currentRoom.peers }).catch(() => {});
     }
 
-    emit(EVENTS.FORCE_SYNC_EXECUTE, {});
-    routeToContent(EVENTS.FORCE_SYNC_EXECUTE, {});
+    const executionTimestamp = Date.now();
+    updateLastAction(EVENTS.FORCE_SYNC_EXECUTE, 'You', executionTimestamp);
+
+    emit(EVENTS.FORCE_SYNC_EXECUTE, { actionTimestamp: executionTimestamp });
+    routeToContent(EVENTS.FORCE_SYNC_EXECUTE, { actionTimestamp: executionTimestamp });
     addLog('Force Sync Executed', 'success');
 }
 
@@ -912,7 +908,16 @@ chrome.alarms.onAlarm.addListener(async (alarm) => {
     if (alarm.name === 'keepAlive') {
         chrome.storage.session.get('keepAlive', () => {});
         if (!socket || socket.readyState !== WebSocket.OPEN) {
-            connect();
+            if (reconnectFailed) {
+                if (Date.now() - lastSlowReconnectAttempt >= 300000) {
+                    lastSlowReconnectAttempt = Date.now();
+                    isSlowReconnectAttempt = true;
+                    addLog('Alarm triggered 5-min slow reconnect attempt', 'info');
+                    connect();
+                }
+            } else {
+                connect();
+            }
         } else if (currentRoom) {
             // Heartbeat Logic: Always include identity metadata
             const settings = await getSettings();
@@ -1256,7 +1261,7 @@ async function handleAsyncMessage(message, sender, sendResponse) {
 
         // Check setting
         const epSettings = await chrome.storage.sync.get(['autoSyncNextEpisode']);
-        if (!epSettings.autoSyncNextEpisode) {
+        if (epSettings.autoSyncNextEpisode === false) {
             addLog(`Episode change detected ("${newTitle}") but Auto-Sync is disabled.`, 'info');
             sendResponse({ status: 'disabled' });
             return;

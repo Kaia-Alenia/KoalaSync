@@ -54,12 +54,20 @@ let lastPeersJson = null;
 async function init() {
     // Load Settings
     const data = await chrome.storage.sync.get(['serverUrl', 'useCustomServer', 'roomId', 'password', 'filterNoise', 'username', 'autoSyncNextEpisode']);
+    let username = data.username;
+    if (!username) {
+        const adjs = ['Happy', 'Cool', 'Fast', 'Smart', 'Brave', 'Calm', 'Sneaky', 'Lazy', 'Wild', 'Chill', 'Lucky', 'Epic'];
+        const nouns = ['Koala', 'Panda', 'Tiger', 'Eagle', 'Fox', 'Bear', 'Wolf', 'Lion', 'Hawk', 'Seal', 'Owl', 'Shark'];
+        username = `${adjs[Math.floor(Math.random() * adjs.length)]}${nouns[Math.floor(Math.random() * nouns.length)]}`;
+        chrome.storage.sync.set({ username });
+    }
+    
     elements.serverUrl.value = data.serverUrl || '';
     elements.roomId.value = data.roomId || '';
     elements.password.value = data.password || '';
-    elements.username.value = data.username || '';
+    elements.username.value = username;
     elements.filterNoise.checked = data.filterNoise !== false;
-    elements.autoSyncNextEpisode.checked = !!data.autoSyncNextEpisode;
+    elements.autoSyncNextEpisode.checked = data.autoSyncNextEpisode !== false;
     
     // Set Version Info
     const versionEl = document.getElementById('appVersion');
@@ -744,7 +752,9 @@ elements.createRoomBtn.addEventListener('click', () => {
     const animals = ['koala', 'panda', 'tiger', 'eagle', 'fox', 'bear'];
     const adj = ['happy', 'cool', 'fast', 'smart', 'brave', 'calm'];
     const id = `${adj[Math.floor(Math.random() * adj.length)]}-${animals[Math.floor(Math.random() * animals.length)]}-${Math.floor(Math.random() * 100)}`;
-    const pass = Math.random().toString(36).substring(2, 8);
+    const array = new Uint32Array(1);
+    window.crypto.getRandomValues(array);
+    const pass = array[0].toString(36).substring(0, 6);
     
     elements.roomId.value = id;
     elements.password.value = pass;

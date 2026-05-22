@@ -10,7 +10,7 @@ This guide walks through the complete user flow of KoalaSync, from creating a ro
 2. The extension adds a small icon to your browser toolbar.
 3. On first install, a unique 8-character **Peer ID** is generated locally and stored in `chrome.storage.local`. This ID is never sent to any external service — it only travels to the relay server when you join a room.
 
-> **What's stored locally**: `peerId` (8-char hex), `username` (customizable), `serverUrl`, `filterNoise` preference. All stored via `chrome.storage.sync` and `chrome.storage.local`.
+> **What's stored locally**: `peerId` (8-char hex), `username` (customizable, defaults to a readable adjective-noun pair), `serverUrl`, `filterNoise` preference. All stored via `chrome.storage.sync` and `chrome.storage.local`.
 
 ---
 
@@ -109,7 +109,7 @@ Both users now need to select which browser tab contains the video to sync:
 4. Tabs with a **matching video title** are highlighted with a ⭐ prefix for easy identification.
 5. Selecting a tab causes `background.js` to set `currentTabId` and inject `content.js` into that tab via `chrome.scripting.executeScript`.
 
-> **What `content.js` does on injection**: Finds the first `<video>` element on the page and attaches event listeners for `play`, `pause`, `seeked`, `timeupdate`, and `volumechange`. It uses an `expectedEvents` Set to distinguish between user actions and programmatic actions (loop prevention).
+> **What `content.js` does on injection**: Finds the first `<video>` element on the page and attaches event listeners for `play`, `pause`, `seeked`, and `loadeddata`. (Time and volume state are tracked via a 15-second heartbeat interval, not continuous event listeners). It uses an `expectedEvents` Set to distinguish between user actions and programmatic actions (loop prevention).
 
 ---
 
@@ -155,7 +155,7 @@ While in a room, two heartbeats keep the session alive:
 
 | Heartbeat | Interval | Source | Purpose |
 |:----------|:---------|:-------|:--------|
-| **Background** | 30 seconds | `background.js` | Signals "I'm still connected" even without a video |
+| **Background** | 1 minute | `background.js` | Signals "I'm still connected" and handles 5-min auto-reconnect fallback |
 | **Content** | 15 seconds | `content.js` | Sends video metadata: `currentTime`, `mediaTitle`, `playbackState`, `volume`, `muted` |
 
 - **Server Reaper**: Every 2 minutes, the server checks for peers with no activity for 5+ minutes and disconnects them ("dead peer pruning").
