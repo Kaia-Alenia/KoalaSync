@@ -8,6 +8,7 @@ const elements = {
     copyInvite: document.getElementById('copyInvite'),
     targetTab: document.getElementById('targetTab'),
     forceSyncBtn: document.getElementById('forceSyncBtn'),
+    forceSyncMode: document.getElementById('forceSyncMode'),
     peerList: document.getElementById('peerList'),
     logList: document.getElementById('logList'),
     clearLogs: document.getElementById('clearLogs'),
@@ -53,7 +54,7 @@ let lastPeersJson = null;
 // --- Initialization ---
 async function init() {
     // Load Settings
-    const data = await chrome.storage.sync.get(['serverUrl', 'useCustomServer', 'roomId', 'password', 'filterNoise', 'username', 'autoSyncNextEpisode']);
+    const data = await chrome.storage.sync.get(['serverUrl', 'useCustomServer', 'roomId', 'password', 'filterNoise', 'username', 'autoSyncNextEpisode', 'forceSyncMode']);
     let username = data.username;
     if (!username) {
         const adjs = ['Happy', 'Cool', 'Fast', 'Smart', 'Brave', 'Calm', 'Sneaky', 'Lazy', 'Wild', 'Chill', 'Lucky', 'Epic'];
@@ -68,6 +69,7 @@ async function init() {
     elements.username.value = username;
     elements.filterNoise.checked = data.filterNoise !== false;
     elements.autoSyncNextEpisode.checked = data.autoSyncNextEpisode !== false;
+    elements.forceSyncMode.value = data.forceSyncMode || 'jump-to-others';
     
     // Set Version Info
     const versionEl = document.getElementById('appVersion');
@@ -483,7 +485,7 @@ function applyConnectionStatus(status) {
     // Preserve icons for Remote Control buttons
     elements.playBtn.textContent = '▶ Play';
     elements.pauseBtn.textContent = '⏸ Pause';
-    elements.forceSyncBtn.textContent = '⚡ Force Sync Everyone';
+    elements.forceSyncBtn.textContent = '⚡ Force Sync';
 }
 
 function updateHistory(history) {
@@ -650,6 +652,10 @@ elements.autoSyncNextEpisode.addEventListener('change', () => {
     chrome.storage.sync.set({ autoSyncNextEpisode: elements.autoSyncNextEpisode.checked });
 });
 
+elements.forceSyncMode.addEventListener('change', () => {
+    chrome.storage.sync.set({ forceSyncMode: elements.forceSyncMode.value });
+});
+
 elements.serverUrl.addEventListener('input', () => {
     chrome.storage.sync.set({ serverUrl: elements.serverUrl.value });
 });
@@ -783,10 +789,28 @@ elements.forceSyncBtn.addEventListener('click', async () => {
     const status = await new Promise(r => chrome.runtime.sendMessage({ type: 'GET_STATUS' }, r));
     if (!status || !status.targetTabId) return;
 
-    // Lockout to prevent spamming
+    const mode = elements.forceSyncMode.value;
+    let targetTime = null;
+
+    if (mode === 'jump-to-others') {
+        const peers = status.peers || [];
+        const otherTimes = peers
+            .filter(p => typeof p === 'object' && p.peerId !== localPeerId && p.currentTime != null && !isNaN(p.currentTime))
+            .map(p => p.currentTime);
+
+        if (otherTimes.length === 0) {
+            showError('No other peers with a known time. Switch to "Jump to Me".');
+            return;
+        }
+
+        otherTimes.sort((a, b) => a - b);
+        const mid = Math.floor(otherTimes.length / 2);
+        targetTime = otherTimes.length % 2 !== 0 ? otherTimes[mid] : (otherTimes[mid - 1] + otherTimes[mid]) / 2;
+    }
+
     const originalText = elements.forceSyncBtn.textContent;
     elements.forceSyncBtn.disabled = true;
-    elements.forceSyncBtn.textContent = 'Syncing...';
+    elements.forceSyncBtn.textContent = mode === 'jump-to-others' ? `Syncing to group (${formatTime(targetTime)})...` : 'Syncing...';
     setTimeout(() => {
         elements.forceSyncBtn.disabled = false;
         elements.forceSyncBtn.textContent = originalText;
@@ -802,26 +826,30 @@ elements.forceSyncBtn.addEventListener('click', async () => {
         });
     };
 
-    chrome.tabs.sendMessage(tabId, { action: 'get_current_time' }, (response) => {
-        if (chrome.runtime.lastError || !response || response.currentTime === undefined) {
-            chrome.scripting.executeScript({
-                target: { tabId },
-                files: ['content.js']
-            }).then(() => {
-                setTimeout(() => {
-                    chrome.tabs.sendMessage(tabId, { action: 'get_current_time' }, (retryResponse) => {
-                        if (retryResponse && retryResponse.currentTime !== undefined) {
-                            sendForceSync(retryResponse.currentTime);
-                        }
-                    });
-                }, 500);
-            }).catch(() => {
-                showError('Could not connect to video tab.');
-            });
-            return;
-        }
-        sendForceSync(response.currentTime);
-    });
+    if (mode === 'jump-to-me') {
+        chrome.tabs.sendMessage(tabId, { action: 'get_current_time' }, (response) => {
+            if (chrome.runtime.lastError || !response || response.currentTime === undefined) {
+                chrome.scripting.executeScript({
+                    target: { tabId },
+                    files: ['content.js']
+                }).then(() => {
+                    setTimeout(() => {
+                        chrome.tabs.sendMessage(tabId, { action: 'get_current_time' }, (retryResponse) => {
+                            if (retryResponse && retryResponse.currentTime !== undefined) {
+                                sendForceSync(retryResponse.currentTime);
+                            }
+                        });
+                    }, 500);
+                }).catch(() => {
+                    showError('Could not connect to video tab.');
+                });
+                return;
+            }
+            sendForceSync(response.currentTime);
+        });
+    } else {
+        sendForceSync(targetTime);
+    }
 });
 
 elements.playBtn.addEventListener('click', () => {

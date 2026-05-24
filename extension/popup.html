@@ -289,7 +289,13 @@
             <button id="pauseBtn" class="primary" style="flex:1; background: var(--error);">⏸ Pause</button>
         </div>
 
-        <button id="forceSyncBtn" class="primary" style="background: linear-gradient(135deg, #6366f1, #a855f7); width: 100%; margin-bottom: 15px;">⚡ Force Sync Everyone</button>
+        <div style="display: flex; gap: 8px; margin-bottom: 15px; align-items: stretch;">
+            <button id="forceSyncBtn" class="primary" style="background: linear-gradient(135deg, #6366f1, #a855f7); flex: 1;">⚡ Force Sync</button>
+            <select id="forceSyncMode" style="width: auto; min-width: 130px; background: var(--card); border: 1px solid #334155; color: white; padding: 10px 8px; border-radius: 8px; font-size: 11px; font-family: inherit; cursor: pointer; align-self: stretch;" title="Choose sync target">
+                <option value="jump-to-others">Jump to Others</option>
+                <option value="jump-to-me">Jump to Me</option>
+            </select>
+        </div>
 
         <!-- NEW: Last Action Status Card -->
         <label>Last Activity Status</label>
