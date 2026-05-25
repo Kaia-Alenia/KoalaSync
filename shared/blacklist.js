@@ -109,8 +109,10 @@ export const BLACKLIST_DOMAINS = [
     'myanimelist.net',
 
     // Development & Utilities
+    'koalastuff.net',
     'timer.koalastuff.net',
     'sync.koalastuff.net',
+    'snippets.koalastuff.net',
     'localhost',
     'zoom.us',
     'teams.microsoft.com',

@@ -59,8 +59,8 @@ async function init() {
     const data = await chrome.storage.sync.get(['serverUrl', 'useCustomServer', 'roomId', 'password', 'filterNoise', 'username', 'autoSyncNextEpisode', 'forceSyncMode', 'browserNotifications']);
     let username = data.username;
     if (!username) {
-        const adjs = ['Happy', 'Cool', 'Fast', 'Smart', 'Brave', 'Calm', 'Sneaky', 'Lazy', 'Wild', 'Chill', 'Lucky', 'Epic'];
-        const nouns = ['Koala', 'Panda', 'Tiger', 'Eagle', 'Fox', 'Bear', 'Wolf', 'Lion', 'Hawk', 'Seal', 'Owl', 'Shark'];
+        const adjs = ['Happy', 'Cool', 'Fast', 'Smart', 'Brave', 'Calm', 'Sneaky', 'Lazy', 'Wild', 'Chill', 'Lucky', 'Epic', 'Swift', 'Bold', 'Mighty', 'Cosmic', 'Neon', 'Shadow', 'Crystal', 'Thunder', 'Silent', 'Golden', 'Fierce', 'Noble', 'Mystic', 'Frozen', 'Blazing', 'Sapphire', 'Iron', 'Crimson'];
+        const nouns = ['Koala', 'Panda', 'Tiger', 'Eagle', 'Fox', 'Bear', 'Wolf', 'Lion', 'Hawk', 'Seal', 'Owl', 'Shark', 'Dragon', 'Phoenix', 'Falcon', 'Panther', 'Raven', 'Cobra', 'Lynx', 'Jaguar', 'Orca', 'Mantis', 'Viper', 'Condor', 'Badger', 'Otter', 'Rhino', 'Crane', 'Mongoose', 'Specter'];
         username = `${adjs[Math.floor(Math.random() * adjs.length)]}${nouns[Math.floor(Math.random() * nouns.length)]}`;
         chrome.storage.sync.set({ username });
     }
