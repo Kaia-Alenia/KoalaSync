@@ -11,15 +11,16 @@ This document describes the communication flows and internal logic of the KoalaS
      - **Protocol Version**: Client must match the server's protocol (currently `1.0.0`).
   3. Server responds with Engine.IO handshake (`0`) and the client joins the namespace (`40`).
 - **Room Join**: Background emits `JOIN_ROOM` containing `roomId`, `password`, `peerId`, and `username`.
-- **Deduplication**: If a user joins with a `peerId` that already has an active socket, the server kills the old socket to prevent "Ghost Peers".
+- **Deduplication**: If a user joins with a `peerId` that already has an active socket, the server kills the old socket to prevent "Ghost Peers". Deduplication re-validates after acquiring the room creation lock to avoid kicking the wrong socket during concurrent joins.
 
 ## 2. Media Event Synchronization
 When a user interacts with a video:
-1. **Detection**: `content.js` listens to native events (`play`, `pause`, `seeked`) on the `<video>` element.
-2. **Prevention of Loops**: Uses an `expectedEvents` Set to distinguish between user actions and programmatic actions. Expected events are consumed on match and expire via timeout.
+1. **Detection**: `content.js` listens to native events (`play`, `pause`, `seeked`) on the `<video>` element, including videos inside Shadow DOM (YouTube, Netflix, etc.).
+2. **Prevention of Loops**: Uses an `expectedEvents` Set to distinguish between user actions and programmatic actions. Expected events are consumed on match and expire via timeout. Timeout IDs are cleaned up immediately to prevent memory leaks.
 3. **Reporting**: `content.js` sends a `CONTENT_EVENT` to `background.js`.
 4. **Relay**: The Server forwards the event to all other peers in the room.
-5. **Execution**: Remote peers receive the command and call `video.play()`, `video.pause()`, or `video.currentTime = targetTime`.
+5. **Execution**: Remote peers receive the command via `SERVER_COMMAND` (which includes the original `senderId` for correct ACK routing) and call `video.play()`, `video.pause()`, or `video.currentTime = targetTime`.
+6. **ACK Routing**: `content.js` echoes the `commandSenderId` back in `CMD_ACK`, ensuring the `EVENT_ACK` is routed to the correct initiating peer even when multiple commands arrive concurrently.
 
 ## 3. Two-Phase Force Sync
 Ensures all peers are buffered and synchronized before resuming:
@@ -57,7 +58,11 @@ KoalaSync uses a megaphone routing approach to minimize server logic:
 ## 7. Security & Stability
 - **Service Worker Lifecycle**: Uses `chrome.alarms` (30s interval) to prevent the Manifest V3 service worker from suspending while in an active room. On wake, runtime state is restored from `chrome.storage.session` via `ensureState()`.
 - **Reconnect Visualization**: Badge shows "..." (orange) during reconnect. Popup displays "Reconnecting..." with attempt counter.
-- **Rate Limiting**: Server-side per-socket and per-IP rate limits to prevent sync-spamming or DoS.
+- **Rate Limiting**: Server-side per-socket and per-IP rate limits to prevent sync-spamming or DoS. Real client IP extracted via `x-forwarded-for` header behind proxies/CDNs.
+- **Room Creation Lock**: Per-room mutex prevents race conditions when multiple peers join a new room simultaneously.
+- **CORS**: Allows `chrome-extension://` origins for WebSocket fallback compatibility.
+- **Message Buffer**: `maxHttpBufferSize` set to 4KB to accommodate large `JOIN_ROOM` payloads.
+- **Process Guards**: `uncaughtException` and `unhandledRejection` handlers prevent silent server crashes.
 - **Noise Filtering**: Uses a curated blacklist of domains (Search Engines, Social Media) to declutter the "Target Tab" selector in the popup.
 - **Diagnostics**: A "Dev" tab provides real-time access to the underlying `<video>` state (`readyState`, `paused`, `currentTime`) for easier troubleshooting.
 
