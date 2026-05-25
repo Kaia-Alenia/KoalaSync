@@ -155,9 +155,11 @@ function updateUI(roomId, password, useCustomServer = false, serverUrl = '') {
     const inRoom = !!roomId;
     toggleUIState(inRoom);
     if (inRoom) {
-        const serverFlag = useCustomServer ? '1' : '0';
-        const encodedUrl = encodeURIComponent(serverUrl || '');
-        const invite = `${OFFICIAL_LANDING_PAGE_URL}/join.html#join:${roomId}:${password}:${serverFlag}:${encodedUrl}`;
+        let invite = `${OFFICIAL_LANDING_PAGE_URL}/join.html#join:${roomId}:${password}`;
+        if (useCustomServer) {
+            const encodedUrl = encodeURIComponent(serverUrl || '');
+            invite += `:1:${encodedUrl}`;
+        }
         elements.inviteLink.value = invite;
         
         if (window.justCreatedRoom) {
@@ -1417,6 +1419,7 @@ let onboardingStep = 0;
 function showOnboarding() {
     const overlay = document.getElementById('onboarding-overlay');
     if (!overlay) return;
+    document.body.style.minHeight = '400px';
     overlay.style.display = 'flex';
     renderOnboardingStep();
 }
@@ -1464,6 +1467,7 @@ function renderOnboardingStep() {
 function completeOnboarding() {
     const overlay = document.getElementById('onboarding-overlay');
     if (overlay) overlay.style.display = 'none';
+    document.body.style.minHeight = '';
     chrome.storage.sync.set({ onboardingComplete: true });
     
     const inRoom = elements.sectionActive && elements.sectionActive.style.display === 'block';
