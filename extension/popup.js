@@ -646,7 +646,7 @@ async function populateTabs(providedPeers = null, providedTargetTabId = null) {
         const matchOpt = options.find(o => o.textContent.includes('⭐ MATCH:'));
         if (matchOpt && elements.targetTab.options.length > 1) {
             elements.targetTab.value = matchOpt.value;
-            const tabTitle = matchOpt.text.replace('⭐ MATCH: ', '') || null;
+            const tabTitle = matchOpt.dataset.originalTitle || null;
             chrome.runtime.sendMessage({ type: 'SET_TARGET_TAB', tabId: parseInt(matchOpt.value), tabTitle });
         }
     }

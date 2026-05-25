@@ -292,7 +292,7 @@
 
     <div class="tabs">
         <button class="tab-btn active" data-tab="tab-room" title="Room settings and connection">Room</button>
-        <button class="tab-btn" data-tab="tab-sync">Sync</button>
+        <button class="tab-btn" data-tab="tab-sync" title="Video sync controls and remote actions">Sync</button>
         <button class="tab-btn" data-tab="tab-settings" title="Extension preferences">Settings</button>
         <button class="tab-btn" data-tab="tab-dev" title="Advanced Diagnostics & Logs">Status</button>
     </div>
@@ -424,12 +424,12 @@
     <!-- Settings Tab -->
     <div id="tab-settings" class="tab-content">
         <div class="form-group" style="display: flex; align-items: center; justify-content: space-between; background: var(--card); padding: 10px; border-radius: 8px; margin-bottom: 12px; border: 1px solid #334155;">
-            <label style="margin-bottom: 0;" title="Username helps others identify you.">Your Username ℹ️</label>
+            <label style="margin-bottom: 0;" title="Username helps others identify you.">Your Username</label>
             <input type="text" id="username" placeholder="Anonymous Koala" maxlength="20" style="width: 150px;">
         </div>
 
         <div class="form-group" style="display: flex; align-items: center; justify-content: space-between; background: var(--card); padding: 10px; border-radius: 8px; margin-bottom: 12px; border: 1px solid #334155;">
-            <label style="margin-bottom: 0; cursor: help;" title="Hides non-video sites like search engines or social media." title="Filters out non-video tabs and unrelated domains to keep the list clean">Hide Clutter Tabs</label>
+            <label style="margin-bottom: 0; cursor: help;" title="Filters out non-video tabs and unrelated domains to keep the list clean">Hide Clutter Tabs</label>
             <label class="toggle-switch">
                 <input type="checkbox" id="filterNoise" checked>
                 <span class="slider"></span>
@@ -437,7 +437,7 @@
         </div>
 
         <div class="form-group" style="display: flex; align-items: center; justify-content: space-between; background: var(--card); padding: 10px; border-radius: 8px; margin-bottom: 12px; border: 1px solid #334155;">
-            <label style="margin-bottom: 0; cursor: help;" title="Pauses automatically and waits for all peers when an episode changes, then sync-starts together." title="Automatically clicks 'Next Episode' on supported sites like Netflix when others do">Auto-Sync Next Episode</label>
+            <label style="margin-bottom: 0; cursor: help;" title="Pauses automatically and waits for all peers when an episode changes, then sync-starts together.">Auto-Sync Next Episode</label>
             <label class="toggle-switch">
                 <input type="checkbox" id="autoSyncNextEpisode">
                 <span class="slider"></span>
@@ -445,7 +445,7 @@
         </div>
 
         <div class="form-group" style="display: flex; align-items: center; justify-content: space-between; background: var(--card); padding: 10px; border-radius: 8px; margin-bottom: 12px; border: 1px solid #334155;">
-            <label style="margin-bottom: 0; cursor: help;" title="Automatically copies the invite link to your clipboard when creating a new room.">Auto-Copy Invite Link ℹ️</label>
+            <label style="margin-bottom: 0; cursor: help;" title="Automatically copies the invite link to your clipboard when creating a new room.">Auto-Copy Invite Link</label>
             <label class="toggle-switch">
                 <input type="checkbox" id="autoCopyInvite" checked>
                 <span class="slider"></span>
@@ -453,7 +453,7 @@
         </div>
 
         <div class="form-group" style="display: flex; align-items: center; justify-content: space-between; background: var(--card); padding: 10px; border-radius: 8px; margin-bottom: 12px; border: 1px solid #334155;">
-            <label style="margin-bottom: 0; cursor: help;" title="Shows native system notifications when someone joins/leaves or plays/pauses." title="Shows native system notifications when someone joins/leaves or plays/pauses.">Browser Notifications</label>
+            <label style="margin-bottom: 0; cursor: help;" title="Shows native system notifications when someone joins/leaves or plays/pauses.">Browser Notifications</label>
             <label class="toggle-switch">
                 <input type="checkbox" id="browserNotifications">
                 <span class="slider"></span>
