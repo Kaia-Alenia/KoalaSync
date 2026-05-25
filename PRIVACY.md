@@ -15,8 +15,7 @@ KoalaSync does not use a database. All active session data exists only in the se
 |:----------|:------------------|:---------------------|
 | Session data (peerId, username, video metadata) | Duration of session | User leaves room or disconnects |
 | Room state | 2 hours max | Last peer leaves, or inactivity timeout |
-| Failed auth lockout records | 15 minutes | Automatic expiry |
-| Auth failure records | 15 minutes | Periodic cleanup |
+| Auth failure records (lockout after 5 failed attempts) | 15 minutes | Periodic cleanup |
 | Connection rate-limit counters | 60 seconds | Automatic expiry |
 | Event rate-limit counters | 10 seconds | Automatic expiry + periodic cleanup |
 
