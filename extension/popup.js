@@ -270,6 +270,23 @@ function startInterpolation() {
     }, 1000);
 }
 
+function renderEmpty(container, type) {
+    const states = {
+        peers: { icon: '\u{1F465}', title: 'No peers yet', hint: 'Share your invite link to get started' },
+        history: { icon: '\u{1F4CB}', title: 'No activity yet', hint: 'Play, pause, or seek to see history' },
+        logs: { icon: '\u{1F4DD}', title: 'No logs', hint: 'Connection events will appear here' },
+        rooms: { icon: '\u{1F50D}', title: 'No active rooms', hint: 'Create a room or refresh to find public ones' }
+    };
+    const state = states[type] || { icon: '', title: '', hint: '' };
+    container.innerHTML = `
+        <div style="text-align:center; padding:16px 8px; color:var(--text-muted);">
+            <div style="font-size:24px; margin-bottom:6px;">${state.icon}</div>
+            <div style="font-size:12px; font-weight:600; margin-bottom:4px;">${state.title}</div>
+            <div style="font-size:10px; opacity:0.7;">${state.hint}</div>
+        </div>
+    `;
+}
+
 function updatePeerList(peers) {
     if (!peers) return;
     activePeers = peers;
@@ -296,10 +313,7 @@ function updatePeerList(peers) {
     const renderPeers = (container) => {
         container.innerHTML = '';
         if (peers.length === 0) {
-            const empty = document.createElement('div');
-            empty.style.cssText = 'text-align:center; color: var(--text-muted); font-size: 12px;';
-            empty.textContent = 'No peers connected';
-            container.appendChild(empty);
+            renderEmpty(container, 'peers');
             return;
         }
 
@@ -563,10 +577,7 @@ function updateHistory(history) {
     elements.historyList.innerHTML = '';
 
     if (history.length === 0) {
-        const empty = document.createElement('div');
-        empty.style.cssText = 'text-align:center; padding: 10px;';
-        empty.textContent = 'No activity yet';
-        elements.historyList.appendChild(empty);
+        renderEmpty(elements.historyList, 'history');
         return;
     }
 
@@ -614,10 +625,7 @@ function updateRoomList(rooms) {
     elements.publicRooms.innerHTML = '';
 
     if (!rooms || rooms.length === 0) {
-        const empty = document.createElement('div');
-        empty.style.cssText = 'text-align:center; padding: 10px; color:var(--text-muted);';
-        empty.textContent = 'No active rooms';
-        elements.publicRooms.appendChild(empty);
+        renderEmpty(elements.publicRooms, 'rooms');
         return;
     }
 
@@ -971,7 +979,11 @@ elements.copyInvite.addEventListener('click', () => {
 // --- Logs & Status ---
 async function refreshLogs() {
     chrome.runtime.sendMessage({ type: 'GET_LOGS' }, (logs) => {
-        if (logs && elements.logList) {
+        if (elements.logList) {
+            if (!logs || logs.length === 0) {
+                renderEmpty(elements.logList, 'logs');
+                return;
+            }
             elements.logList.innerHTML = '';
             logs.forEach(log => {
                 const entry = document.createElement('div');

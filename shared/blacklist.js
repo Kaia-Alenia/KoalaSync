@@ -110,9 +110,15 @@ export const BLACKLIST_DOMAINS = [
 
     // Development & Utilities
     'koalastuff.net',
-    'timer.koalastuff.net',
-    'sync.koalastuff.net',
+    'auth.koalastuff.net',
+    'blog.koalastuff.net',
+    'clicker.koalastuff.net',
+    'cookies.koalastuff.net',
+    'multibox.koalastuff.net',
     'snippets.koalastuff.net',
+    'status.koalastuff.net',
+    'sync.koalastuff.net',
+    'timer.koalastuff.net',
     'localhost',
     'zoom.us',
     'teams.microsoft.com',
