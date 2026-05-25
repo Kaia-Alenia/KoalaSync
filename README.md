@@ -30,17 +30,6 @@
 
 ---
 
-### 📂 Repository Structure
-
-- `extension/`: Browser Extension (Chrome & Firefox).
-- `server/`: Node.js + Socket.IO Relay Server (Containerized).
-- `website/`: Marketing landing page & Invitation Bridge.
-- `shared/`: **Single Source of Truth** for protocol constants.
-- `scripts/`: Automated build and synchronization utilities.
-- `docs/`: Technical deep-dives ([Architecture](docs/ARCHITECTURE.md), [Sync Guide](docs/SYNC_GUIDE.md)).
-
----
-
 ### 🚀 Quick Start
 
 #### For Users (Installation & Usage)
@@ -58,7 +47,20 @@ The easiest and safest way to install KoalaSync is directly through the official
 2. **Invite Friends:** Share the auto-copied invite link. Once they click it, they automatically join.
 3. **Pick a Video:** Navigate to the Sync Tab, select the tab playing your video, and grab some popcorn! 🍿
 
-#### For Developers (Building)
+---
+
+### 🛠️ For Developers & Self-Hosters
+
+#### 📂 Repository Structure
+
+- `extension/`: Browser Extension (Chrome & Firefox).
+- `server/`: Node.js + Socket.IO Relay Server (Containerized).
+- `website/`: Marketing landing page & Invitation Bridge.
+- `shared/`: **Single Source of Truth** for protocol constants.
+- `scripts/`: Automated build and synchronization utilities.
+- `docs/`: Technical deep-dives ([Architecture](docs/ARCHITECTURE.md), [Sync Guide](docs/SYNC_GUIDE.md)).
+
+#### Building from Source
 To build the extension from source and synchronize protocol constants:
 ```bash
 npm install
