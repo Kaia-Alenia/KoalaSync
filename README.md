@@ -4,7 +4,8 @@
   <a href="https://github.com/Shik3i/KoalaSync/actions/workflows/release.yml"><img src="https://github.com/Shik3i/KoalaSync/actions/workflows/release.yml/badge.svg" alt="Release Status"></a>
   <a href="https://github.com/Shik3i/KoalaSync/releases"><img src="https://img.shields.io/github/v/release/Shik3i/KoalaSync" alt="GitHub release"></a>
   <a href="LICENSE"><img src="https://img.shields.io/github/license/Shik3i/KoalaSync?color=blue" alt="License"></a>
-  <img src="https://img.shields.io/badge/Browser-Chrome%20|%20Firefox-blueviolet" alt="Cross Browser">
+  <a href="https://addons.mozilla.org/de/firefox/addon/koalasync/"><img src="https://img.shields.io/badge/Firefox-Download-orange?logo=firefoxbrowser&logoColor=white" alt="Firefox Add-on"></a>
+  <a href="https://chromewebstore.google.com/detail/koalasync/obbnmkmlaaddodakcbdljknjpagklifc"><img src="https://img.shields.io/badge/Chrome-Download-blue?logo=googlechrome&logoColor=white" alt="Chrome Extension"></a>
 </p>
 
 KoalaSync is a premium, lightweight Browser Extension and Relay Server for synchronized video playback across any website—YouTube, Twitch, Netflix, and custom HTML5 players. Built with a focus on **Data Sovereignty** and **Extreme Performance**.
