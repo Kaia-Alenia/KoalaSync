@@ -480,30 +480,30 @@ io.on('connection', (socket) => {
         }
     });
 
-        socket.on(EVENTS.EVENT_ACK, (data) => {
-            if (!checkEventRate(socket.id)) {
-                log('SECURITY', `Event rate limit exceeded for socket (ACK): ${socket.id}`);
-                socket.disconnect(true);
-                return;
-            }
-            if (!data || typeof data !== 'object') return;
-            if (typeof data.targetId !== 'string') return;
-            if (data.actionTimestamp !== undefined && (typeof data.actionTimestamp !== 'number' || !Number.isFinite(data.actionTimestamp))) return;
-            
-            const senderMapping = socketToRoom.get(socket.id);
-            const targetSocketId = peerToSocket.get(data.targetId);
-            const targetMapping = targetSocketId ? socketToRoom.get(targetSocketId) : null;
+    socket.on(EVENTS.EVENT_ACK, (data) => {
+        if (!checkEventRate(socket.id)) {
+            log('SECURITY', `Event rate limit exceeded for socket (ACK): ${socket.id}`);
+            socket.disconnect(true);
+            return;
+        }
+        if (!data || typeof data !== 'object') return;
+        if (typeof data.targetId !== 'string') return;
+        if (data.actionTimestamp !== undefined && (typeof data.actionTimestamp !== 'number' || !Number.isFinite(data.actionTimestamp))) return;
+        
+        const senderMapping = socketToRoom.get(socket.id);
+        const targetSocketId = peerToSocket.get(data.targetId);
+        const targetMapping = targetSocketId ? socketToRoom.get(targetSocketId) : null;
 
-            // Security: Only relay ACK if both peers are in the same room
-            if (senderMapping && targetMapping && senderMapping.roomId === targetMapping.roomId) {
-                io.to(targetSocketId).emit(EVENTS.EVENT_ACK, { 
-                    senderId: senderMapping.peerId,
-                    actionTimestamp: data.actionTimestamp
-                });
-            } else {
-                log('SECURITY', `Blocked cross-room ACK attempt from ${socket.id} to ${data.targetId}`);
-            }
-        });
+        // Security: Only relay ACK if both peers are in the same room
+        if (senderMapping && targetMapping && senderMapping.roomId === targetMapping.roomId) {
+            io.to(targetSocketId).emit(EVENTS.EVENT_ACK, { 
+                senderId: senderMapping.peerId,
+                actionTimestamp: data.actionTimestamp
+            });
+        } else {
+            log('SECURITY', `Blocked cross-room ACK attempt from ${socket.id} to ${data.targetId}`);
+        }
+    });
 
     socket.on('disconnect', () => {
         eventCounts.delete(socket.id);

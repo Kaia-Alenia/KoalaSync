@@ -40,5 +40,5 @@ export const EVENTS = {
 };
 
 export const HEARTBEAT_INTERVAL = 15000; // 15s
-export const FORCE_SYNC_TIMEOUT = 5000; // 5s timeout for ACKs
+export const FORCE_SYNC_TIMEOUT = 8500; // 8.5s timeout for force sync ACKs (must be > content.js poll timeout of 8s)
 export const EPISODE_LOBBY_TIMEOUT = 60000; // 60s timeout for episode lobby

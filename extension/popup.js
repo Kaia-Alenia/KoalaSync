@@ -57,6 +57,7 @@ let joinBtnTimeout = null;
 let forceSyncResetTimer = null;
 let popupIntervals = [];
 let populateTabsToken = null;
+let errorToken = 0;
 let forceSyncDone = false;
 
 // --- Initialization ---
@@ -838,6 +839,7 @@ function showToast(message, type = 'info', duration = 3000) {
 
 function showError(msg) {
     if (!elements.roomError) return;
+    const currentToken = ++errorToken;
     elements.roomError.textContent = msg;
     elements.roomError.style.display = 'block';
     elements.roomId.style.borderColor = 'var(--error)';
@@ -846,6 +848,7 @@ function showError(msg) {
     showToast(msg, 'error', 5000);
 
     setTimeout(() => {
+        if (currentToken !== errorToken) return;
         if (elements.roomError) elements.roomError.style.display = 'none';
         elements.roomId.style.borderColor = '';
         elements.password.style.borderColor = '';

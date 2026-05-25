@@ -1,4 +1,4 @@
-import { EVENTS, PROTOCOL_VERSION, OFFICIAL_SERVER_URL, OFFICIAL_SERVER_TOKEN, APP_VERSION, EPISODE_LOBBY_TIMEOUT } from './shared/constants.js';
+import { EVENTS, PROTOCOL_VERSION, OFFICIAL_SERVER_URL, OFFICIAL_SERVER_TOKEN, APP_VERSION, EPISODE_LOBBY_TIMEOUT, FORCE_SYNC_TIMEOUT } from './shared/constants.js';
 
 // --- State Management ---
 let socket = null;
@@ -849,7 +849,7 @@ function executeEpisodeLobby() {
 
     isForceSyncInitiator = true;
     forceSyncAcks.clear();
-    const deadline = Date.now() + 8500;
+    const deadline = Date.now() + FORCE_SYNC_TIMEOUT;
     const timestamp = Date.now();
     updateLastAction(EVENTS.FORCE_SYNC_PREPARE, 'You', timestamp);
     lastActionState.targetTime = 0.0;
@@ -869,7 +869,7 @@ function executeEpisodeLobby() {
             addLog('Force Sync (Episode): Timeout waiting for ACKs, executing anyway...', 'warn');
             executeForceSync();
         }
-    }, 8500);
+    }, FORCE_SYNC_TIMEOUT);
 }
 
 function checkEpisodeLobbyCompletion() {
@@ -1149,7 +1149,7 @@ async function handleAsyncMessage(message, sender, sendResponse) {
             if (message.action === EVENTS.FORCE_SYNC_PREPARE) {
                 isForceSyncInitiator = true;
                 forceSyncAcks.clear();
-                const deadline = Date.now() + 8500;
+                const deadline = Date.now() + FORCE_SYNC_TIMEOUT;
                 chrome.storage.session.set({ 
                     isForceSyncInitiator: true, 
                     forceSyncAcks: [], 
@@ -1164,7 +1164,7 @@ async function handleAsyncMessage(message, sender, sendResponse) {
                         addLog('Force Sync: Timeout waiting for ACKs, executing anyway...', 'warn');
                         executeForceSync();
                     }
-                }, 8500);
+                }, FORCE_SYNC_TIMEOUT);
             }
             addToHistory(message.action, 'You');
             emit(message.action, { ...message.payload, peerId });
