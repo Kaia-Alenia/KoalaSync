@@ -182,7 +182,7 @@ function updateLastActionUI(state, peers) {
     grid.style.cssText = 'display:grid; grid-template-columns: repeat(auto-fill, minmax(36px, 1fr)); gap: 5px;';
 
     peers.forEach(peer => {
-        const pId = typeof peer === 'object' ? peer.peerId : p;
+        const pId = typeof peer === 'object' ? peer.peerId : peer;
         if (pId === localPeerId) return;
         const pName = (typeof peer === 'object' && peer.username) ? peer.username : pId.substring(0, 4);
         const isAcked = state.acks.includes(pId) || pId === state.senderId;
@@ -423,16 +423,17 @@ async function populateTabs(providedPeers = null, providedTargetTabId = null) {
         return true;
     });
 
+    // Smart Matching Logic — exclude own tabTitle to prevent self-match (computed once)
+    const peerTitles = peerIds
+        .filter(p => (typeof p === 'object' ? p.peerId : p) !== localPeerId)
+        .map(p => (typeof p === 'object' ? p.tabTitle : null))
+        .filter(t => t && t.length > 3);
+
     filteredTabs.forEach(tab => {
         const option = document.createElement('option');
         option.value = tab.id;
         const title = (tab.title || 'Loading...');
         
-        // Smart Matching Logic — exclude own tabTitle to prevent self-match
-        const peerTitles = peerIds
-            .filter(p => (typeof p === 'object' ? p.peerId : p) !== localPeerId)
-            .map(p => (typeof p === 'object' ? p.tabTitle : null))
-            .filter(t => t && t.length > 3);
         const isMatch = peerTitles.some(pt => {
             const t1 = title.toLowerCase();
             const t2 = pt.toLowerCase();
@@ -914,6 +915,9 @@ async function refreshLogs() {
 chrome.runtime.onMessage.addListener((msg) => {
     if (msg.type === 'LOG_UPDATE') {
         refreshLogs();
+        if (msg.log && msg.log.type === 'error') {
+            showError(msg.log.message);
+        }
     } else if (msg.type === 'ACTION_UPDATE') {
         chrome.runtime.sendMessage({ type: 'GET_STATUS' }, (res) => {
             if (res && res.peers) updateLastActionUI(msg.state, res.peers);
@@ -936,8 +940,6 @@ chrome.runtime.onMessage.addListener((msg) => {
         updateHistory(msg.history);
     } else if (msg.type === 'ROOM_LIST') {
         updateRoomList(msg.rooms);
-    } else if (msg.type === 'LOG_UPDATE' && msg.log && msg.log.type === 'error') {
-        showError(msg.log.message);
     } else if (msg.type === 'JOIN_STATUS') {
         if (msg.success) {
             // Final confirmation of join from background

@@ -292,9 +292,11 @@
                     video.pause();
                     video.currentTime = payload.targetTime;
                     pollSeekReady(payload.targetTime).then((ready) => {
+                        chrome.runtime.sendMessage({ type: 'FORCE_SYNC_ACK' });
                         if (ready) {
-                            chrome.runtime.sendMessage({ type: 'FORCE_SYNC_ACK' });
                             scheduleProactiveHeartbeat();
+                        } else {
+                            reportLog('Force Sync: Seek ready timeout, proceeding anyway', 'warn');
                         }
                     });
                 }
@@ -397,8 +399,12 @@
         const eventState = action === EVENTS.PLAY ? 'playing' : (action === EVENTS.PAUSE ? 'paused' : (action === EVENTS.SEEK ? 'seek' : null));
         
         if (eventState && expectedEvents.has(eventState)) {
-            expectedEvents.delete(eventState); // Consume the match
-            return; // Ignore event caused by our programmatic action
+            expectedEvents.delete(eventState);
+            if (expectedTimeouts[eventState]) {
+                clearTimeout(expectedTimeouts[eventState]);
+                delete expectedTimeouts[eventState];
+            }
+            return;
         }
         
         chrome.runtime.sendMessage({
@@ -430,7 +436,11 @@
         // Step 1: Check expectedEvents (programmatic seek suppression)
         if (expectedEvents.has('seek')) {
             expectedEvents.delete('seek');
-            lastReportedSeekTime = current; // Update baseline so next user seek is relative to here
+            if (expectedTimeouts['seek']) {
+                clearTimeout(expectedTimeouts['seek']);
+                delete expectedTimeouts['seek'];
+            }
+            lastReportedSeekTime = current;
             // No log — this is routine programmatic behavior (Force Sync, lobby, peer command)
             return;
         }
