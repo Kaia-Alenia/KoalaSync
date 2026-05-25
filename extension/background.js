@@ -1167,6 +1167,15 @@ async function handleAsyncMessage(message, sender, sendResponse) {
                 }, FORCE_SYNC_TIMEOUT);
             }
             addToHistory(message.action, 'You');
+            
+            const isNonEssentialEvent = message.action === EVENTS.PLAY || message.action === EVENTS.PAUSE || message.action === EVENTS.SEEK;
+            const hasOtherPeers = currentRoom && Array.isArray(currentRoom.peers) && currentRoom.peers.length > 0;
+            
+            if (isNonEssentialEvent && !hasOtherPeers) {
+                sendResponse({ status: 'ok_solo' });
+                return;
+            }
+            
             emit(message.action, { ...message.payload, peerId });
             sendResponse({ status: 'ok' });
         };

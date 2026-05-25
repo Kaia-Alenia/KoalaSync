@@ -44,9 +44,10 @@ const httpServer = createServer(app);
 const io = new Server(httpServer, {
     cors: {
         origin: (origin, callback) => {
-            if (!origin || origin === 'https://sync.koalastuff.net' || origin.startsWith('chrome-extension://')) {
+            if (!origin || origin === 'https://sync.koalastuff.net' || origin.startsWith('chrome-extension://') || origin.startsWith('moz-extension://')) {
                 callback(null, true);
             } else {
+                log('CORS', `Rejected origin: ${origin}`);
                 callback(new Error('Not allowed by CORS'));
             }
         },
@@ -296,6 +297,7 @@ io.on('connection', (socket) => {
 
             const ip = socket._clientIp || socket.handshake.address;
             if (!checkAuthRate(ip, roomId)) {
+                log('AUTH', `Auth rate limit blocked ${ip} from room ${roomId.substring(0, 3)}***`);
                 socket.emit(EVENTS.ERROR, { message: "Too many failed attempts. Try again later." });
                 return;
             }
@@ -317,6 +319,7 @@ io.on('connection', (socket) => {
                     roomCreationLocks.set(roomId, lockPromise);
                     try {
                         if (rooms.size >= MAX_ROOMS) {
+                            log('ROOM', `Server at capacity: ${rooms.size}/${MAX_ROOMS} rooms — rejecting join`);
                             socket.emit(EVENTS.ERROR, { message: "Server capacity reached" });
                             return;
                         }
@@ -343,11 +346,13 @@ io.on('connection', (socket) => {
                 if (room.passwordHash) {
                     if (!password || !(await bcrypt.compare(password, room.passwordHash))) {
                         recordAuthFailure(ip, roomId);
+                        log('AUTH', `Invalid password from ${ip} for room ${roomId.substring(0, 3)}***`);
                         socket.emit(EVENTS.ERROR, { message: "Invalid password" });
                         return;
                     }
                 }
                 if (room.peers.size >= MAX_PEERS_PER_ROOM) {
+                    log('ROOM', `Room full (${room.peers.size}/${MAX_PEERS_PER_ROOM}): ${roomId.substring(0, 3)}***`);
                     socket.emit(EVENTS.ERROR, { message: "Room full" });
                     return;
                 }
