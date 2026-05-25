@@ -431,8 +431,11 @@ async function populateTabs(providedPeers = null, providedTargetTabId = null) {
         option.value = tab.id;
         const title = (tab.title || 'Loading...');
         
-        // Smart Matching Logic
-        const peerTitles = peerIds.map(p => p.tabTitle).filter(t => t && t.length > 3);
+        // Smart Matching Logic — exclude own tabTitle to prevent self-match
+        const peerTitles = peerIds
+            .filter(p => (typeof p === 'object' ? p.peerId : p) !== localPeerId)
+            .map(p => (typeof p === 'object' ? p.tabTitle : null))
+            .filter(t => t && t.length > 3);
         const isMatch = peerTitles.some(pt => {
             const t1 = title.toLowerCase();
             const t2 = pt.toLowerCase();

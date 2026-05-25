@@ -577,6 +577,9 @@
     setupListeners();
     schedulePeriodicHeartbeat();
 
+    // Immediate heartbeat on injection — populate peer data without waiting 15s
+    setTimeout(() => sendHeartbeat(), 300);
+
     // Episode Auto-Sync: Boot recovery — check if background has an active lobby
     chrome.runtime.sendMessage({ type: 'CONTENT_BOOT' }, (res) => {
         if (res && res.lobbyActive && res.expectedTitle) {
