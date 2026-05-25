@@ -94,6 +94,9 @@ The following features are critical and must not be removed or fundamentally alt
 
 ## 10. Common Workflows
 
+### ⚠️ Pre-Session Git Sync (MANDATORY)
+Before starting any task, committing, or pushing, you **MUST** run `git pull --rebase` to ensure your local branch is up-to-date with `origin/main`. CI pipelines and other agents may push commits concurrently. Skipping this step will cause merge conflicts and rejected pushes.
+
 ### Releasing a New Version (CRITICAL WORKFLOW FOR AI AGENTS)
 > [!CAUTION]
 > **AI AGENTS MUST FOLLOW THIS EXACT SEQUENCE WHEN RELEASING A NEW VERSION OR TAGGING.**
