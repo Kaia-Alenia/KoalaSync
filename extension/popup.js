@@ -667,7 +667,7 @@ function applyConnectionStatus(status) {
 
     if (elements.playBtn) elements.playBtn.textContent = '▶ Play';
     if (elements.pauseBtn) elements.pauseBtn.textContent = '⏸ Pause';
-    if (elements.forceSyncBtn) elements.forceSyncBtn.textContent = '⚡ Force Sync';
+    if (elements.forceSyncBtn) elements.forceSyncBtn.textContent = '⚡ SYNC';
 }
 
 function updateHistory(history) {
@@ -1164,8 +1164,8 @@ chrome.runtime.onMessage.addListener((msg) => {
                 'play': '▶ Play',
                 'pause': '⏸ Pause',
                 'seek': '⏩ Seek',
-                'force_sync_prepare': '⚡ Force Sync',
-                'force_sync_execute': '⚡ Force Play'
+                'force_sync_prepare': '⚡ Sync',
+                'force_sync_execute': '⚡ Sync Play'
             };
             const action = actionNames[state.action] || state.action;
             showToast(`${state.senderId} ${action}`, 'info', 2000);
@@ -1197,7 +1197,7 @@ chrome.runtime.onMessage.addListener((msg) => {
                 elements.forceSyncBtn.disabled = false;
                 elements.forceSyncBtn.textContent = '✅ Synced!';
                 setTimeout(() => {
-                    elements.forceSyncBtn.textContent = '⚡ Sync All Viewers';
+                    elements.forceSyncBtn.textContent = '⚡ SYNC';
                 }, 2000);
             }
         }
