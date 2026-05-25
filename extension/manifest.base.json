@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "KoalaSync",
-  "version": "1.8.5",
+  "version": "1.8.6",
   "description": "Watch party extension to synchronize video playback on YouTube, Twitch, Netflix, and HTML5 sites in real-time with friends.",
   "permissions": [
     "storage",
