@@ -109,6 +109,7 @@ async function init() {
             localPeerId = res.peerId;
             applyConnectionStatus(res.status);
             updatePeerList(res.peers);
+            lastKnownPeers = res.peers || [];
             if (res.lastActionState) updateLastActionUI(res.lastActionState, res.peers);
             
             // Populate Tabs using the background's targetTabId
