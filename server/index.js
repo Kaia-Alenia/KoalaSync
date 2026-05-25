@@ -206,6 +206,7 @@ io.on('connection', (socket) => {
     // Get real client IP behind proxy/CDN
     const forwardedFor = socket.handshake.headers['x-forwarded-for'];
     const clientIp = forwardedFor ? forwardedFor.split(',')[0].trim() : socket.handshake.address;
+    socket._clientIp = clientIp;
     
     // 1. Connection Rate Limit
     if (!checkConnectionRate(clientIp)) {
@@ -283,7 +284,7 @@ io.on('connection', (socket) => {
                 removePeerFromRoom(socket.id, oldMapping.roomId, 'room-switch');
             }
 
-            const ip = socket.handshake.address;
+            const ip = socket._clientIp || socket.handshake.address;
             if (!checkAuthRate(ip, roomId)) {
                 socket.emit(EVENTS.ERROR, { message: "Too many failed attempts. Try again later." });
                 return;

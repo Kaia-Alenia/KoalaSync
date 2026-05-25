@@ -366,7 +366,6 @@ async function connect() {
                 forceSyncDeadline: null 
             });
 
-            clearEpisodeLobbyState();
             
             if (currentRoom) {
                 currentRoom.peers = [];
