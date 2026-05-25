@@ -43,10 +43,16 @@ const httpServer = createServer(app);
 // Socket.IO setup with security constraints
 const io = new Server(httpServer, {
     cors: {
-        origin: ["https://sync.koalastuff.net"],
+        origin: (origin, callback) => {
+            if (!origin || origin === 'https://sync.koalastuff.net' || origin.startsWith('chrome-extension://')) {
+                callback(null, true);
+            } else {
+                callback(new Error('Not allowed by CORS'));
+            }
+        },
         methods: ["GET", "POST"]
     },
-    maxHttpBufferSize: 1024, // 1KB max per message
+    maxHttpBufferSize: 4096, // 4KB max per message (headroom for JOIN_ROOM payloads)
     transports: ['websocket'],
     allowUpgrades: false
 });
@@ -57,6 +63,7 @@ const io = new Server(httpServer, {
 const rooms = new Map();
 const socketToRoom = new Map();
 const peerToSocket = new Map(); // peerId -> socketId (Global lookup)
+const roomCreationLocks = new Map(); // roomId -> Promise (prevents race on room creation)
 
 function log(type, message, details = '') {
     const timestamp = new Date().toISOString();
@@ -93,15 +100,15 @@ function recordAuthFailure(ip, roomId) {
     failedAuthAttempts.set(key, record);
 }
 
-// Periodically clean up old auth failure records (every hour)
+// Periodically clean up old auth failure records (every 15 minutes)
 setInterval(() => {
     const now = Date.now();
     for (const [key, record] of failedAuthAttempts.entries()) {
-        if (now - record.lastAttempt > 60 * 60 * 1000) {
+        if (now - record.lastAttempt > 15 * 60 * 1000) {
             failedAuthAttempts.delete(key);
         }
     }
-}, 60 * 60 * 1000);
+}, 15 * 60 * 1000);
 
 const eventCounts = new Map(); // socketId -> { count, resetTime }
 const healthCounts = new Map(); // ip -> { count, resetTime }
@@ -115,7 +122,7 @@ setInterval(() => {
         }
     }
     for (const [socketId, entry] of eventCounts.entries()) {
-        if (now > entry.resetTime) {
+        if (now > entry.resetTime || !io.sockets.sockets.has(socketId)) {
             eventCounts.delete(socketId);
         }
     }
@@ -177,7 +184,8 @@ function removePeerFromRoom(socketId, roomId, reason) {
 
     // 2. Remove from global maps
     socketToRoom.delete(socketId);
-    if (peerToSocket.get(peerId) === socketId) {
+    const currentSocketId = peerToSocket.get(peerId);
+    if (currentSocketId === socketId) {
         peerToSocket.delete(peerId);
     }
 
@@ -195,7 +203,9 @@ function removePeerFromRoom(socketId, roomId, reason) {
 }
 
 io.on('connection', (socket) => {
-    const clientIp = socket.handshake.address;
+    // Get real client IP behind proxy/CDN
+    const forwardedFor = socket.handshake.headers['x-forwarded-for'];
+    const clientIp = forwardedFor ? forwardedFor.split(',')[0].trim() : socket.handshake.address;
     
     // 1. Connection Rate Limit
     if (!checkConnectionRate(clientIp)) {
@@ -216,7 +226,8 @@ io.on('connection', (socket) => {
     }
 
     if (clientVersion) {
-        const [cMaj, cMin, cPatch] = clientVersion.split('.').map(Number);
+        const parts = clientVersion.split('.').map(Number);
+        const cMaj = parts[0], cMin = parts[1], cPatch = parts[2] || 0;
         const [mMaj, mMin, mPatch] = MIN_VERSION.split('.').map(Number);
         if (isNaN(cMaj) || isNaN(cMin) || isNaN(cPatch)) {
             log('AUTH', `Invalid version format (${clientVersion}) from ${clientIp}`);
@@ -264,8 +275,8 @@ io.on('connection', (socket) => {
 
             // Cleanup old room if re-joining
             const oldMapping = socketToRoom.get(socket.id);
-            if (oldMapping && oldMapping.roomId === roomId) {
-                return; // Already in this room, ignore to prevent spam
+            if (oldMapping && oldMapping.roomId === roomId && oldMapping.peerId === peerId) {
+                return; // Already in this room with same peerId, ignore to prevent spam
             }
             if (oldMapping && oldMapping.roomId !== roomId) {
                 socket.leave(oldMapping.roomId);
@@ -281,21 +292,32 @@ io.on('connection', (socket) => {
             let room = rooms.get(roomId);
 
             if (!room) {
-                if (rooms.size >= MAX_ROOMS) {
-                    socket.emit(EVENTS.ERROR, { message: "Server capacity reached" });
-                    return;
+                // Acquire per-room creation lock to prevent race conditions
+                let lockPromise = roomCreationLocks.get(roomId);
+                if (lockPromise) {
+                    await lockPromise;
+                    room = rooms.get(roomId);
+                    if (room) {
+                        // Another concurrent request created it, fall through to password check
+                    }
                 }
+                if (!room) {
+                    if (rooms.size >= MAX_ROOMS) {
+                        socket.emit(EVENTS.ERROR, { message: "Server capacity reached" });
+                        return;
+                    }
 
-                const passwordHash = password ? await bcrypt.hash(password, 10) : null;
-                room = {
-                    passwordHash,
-                    peers: new Set(),
-                    peerIds: new Map(),
-                    peerData: new Map(), // socketId -> { peerId, tabTitle }
-                    lastActivity: Date.now()
-                };
-                rooms.set(roomId, room);
-                log('ROOM', `Created room: ${roomId.substring(0, 3)}***`);
+                    const passwordHash = password ? await bcrypt.hash(password, 10) : null;
+                    room = {
+                        passwordHash,
+                        peers: new Set(),
+                        peerIds: new Map(),
+                        peerData: new Map(),
+                        lastActivity: Date.now()
+                    };
+                    rooms.set(roomId, room);
+                    log('ROOM', `Created room: ${roomId.substring(0, 3)}***`);
+                }
             } else {
                 if (room.passwordHash) {
                     if (!password || !(await bcrypt.compare(password, room.passwordHash))) {
@@ -310,7 +332,6 @@ io.on('connection', (socket) => {
                 }
 
                 // Peer Deduplication: Remove existing socket for the same peerId
-                // Snapshot stale SIDs first to avoid mutating the Map during iteration
                 const dedupeSids = [];
                 for (const [sid, data] of room.peerData.entries()) {
                     if (data.peerId === peerId && sid !== socket.id) {
@@ -318,6 +339,10 @@ io.on('connection', (socket) => {
                     }
                 }
                 for (const sid of dedupeSids) {
+                    // Re-check: the socket might have been replaced by another concurrent join
+                    const currentMapping = room.peerData.get(sid);
+                    if (!currentMapping || currentMapping.peerId !== peerId) continue;
+                    
                     const oldSocket = io.sockets.sockets.get(sid);
                     if (oldSocket) {
                         oldSocket.emit(EVENTS.ERROR, { message: 'Deduplication: Another session with this ID joined. Disconnecting...' });
@@ -350,7 +375,9 @@ io.on('connection', (socket) => {
             log('ROOM', `Peer ${peerId} joined: ${roomId.substring(0, 3)}***`);
         } catch (err) {
             log('ERROR', `Join error for ${socket.id}`, err);
-            socket.emit(EVENTS.ERROR, { message: "Join error" });
+            if (socket.connected) {
+                socket.emit(EVENTS.ERROR, { message: "Join error" });
+            }
         }
     });
 
@@ -364,18 +391,19 @@ io.on('connection', (socket) => {
 
     relayEvents.forEach(eventName => {
         socket.on(eventName, (data) => {
-            if (!checkEventRate(socket.id)) {
-                log('SECURITY', `Event rate limit exceeded for socket: ${socket.id}`);
-                socket.disconnect(true);
-                return;
-            }
+            try {
+                if (!checkEventRate(socket.id)) {
+                    log('SECURITY', `Event rate limit exceeded for socket: ${socket.id}`);
+                    socket.disconnect(true);
+                    return;
+                }
 
-            if (!data || typeof data !== 'object') return; // Prevent null/invalid payload crash
+                if (!data || typeof data !== 'object') return;
 
-            const mapping = socketToRoom.get(socket.id);
-            if (mapping) {
-                const room = rooms.get(mapping.roomId);
-                if (room) {
+                const mapping = socketToRoom.get(socket.id);
+                if (mapping) {
+                    const room = rooms.get(mapping.roomId);
+                    if (room) {
                     room.lastActivity = Date.now();
                     
                     // --- S-2 & S-3: Sanitize ALL relay fields (strings, numbers, booleans) ---
@@ -417,7 +445,10 @@ io.on('connection', (socket) => {
                     // Strip undefined keys for clean wire format
                     Object.keys(relayPayload).forEach(k => relayPayload[k] === undefined && delete relayPayload[k]);
                     socket.to(mapping.roomId).emit(eventName, relayPayload);
+                    }
                 }
+            } catch (err) {
+                log('ERROR', `Relay handler error for ${eventName}: ${err.message}`);
             }
         });
     });
@@ -482,7 +513,11 @@ setInterval(() => {
     const roomCutoff = now - (2 * 60 * 60 * 1000); // 2 hours
     const peerCutoff = now - (5 * 60 * 1000);      // 5 minutes
     
-    for (const [roomId, room] of rooms) {
+    // Snapshot room keys to avoid mutation during iteration
+    const roomIds = Array.from(rooms.keys());
+    for (const roomId of roomIds) {
+        const room = rooms.get(roomId);
+        if (!room) continue; // Room may have been deleted between snapshot and now
         // 1. Prune dead peers
         // Snapshot keys first — we must not mutate peerData while iterating it.
         const staleSids = [];
@@ -494,14 +529,15 @@ setInterval(() => {
         for (const sid of staleSids) {
             // Gracefully evict the socket from the Socket.IO room if it is
             // still technically connected (zombie with no heartbeat).
-            const deadSocket = io.sockets.sockets.get(sid);
+            const deadSocket = io.sockets?.sockets?.get(sid);
             if (deadSocket) deadSocket.leave(roomId);
             log('CLEANUP', `Pruning dead peer from room ${roomId.substring(0, 3)}***`);
             removePeerFromRoom(sid, roomId, 'reaper');
         }
 
         // 2. Prune empty or inactive rooms
-        if (room.peers.size === 0 || room.lastActivity < roomCutoff) {
+        const currentRoom = rooms.get(roomId);
+        if (currentRoom && (currentRoom.peers.size === 0 || currentRoom.lastActivity < roomCutoff)) {
             io.to(roomId).emit(EVENTS.ERROR, { message: 'Room closed' });
             rooms.delete(roomId);
             log('CLEANUP', `Deleted room ${roomId.substring(0, 3)}*** (Empty/Inactive)`);
@@ -532,3 +568,11 @@ function gracefulShutdown(signal) {
 
 process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
 process.on('SIGINT',  () => gracefulShutdown('SIGINT'));
+
+process.on('uncaughtException', (err) => {
+    log('ERROR', `Uncaught exception: ${err.message}`, err.stack);
+});
+
+process.on('unhandledRejection', (reason) => {
+    log('ERROR', `Unhandled rejection: ${reason}`);
+});

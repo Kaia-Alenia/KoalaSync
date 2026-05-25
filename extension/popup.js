@@ -53,6 +53,10 @@ let localPeerId = null;
 let lastPeersJson = null;
 let lastKnownPeers = [];
 let isDevTabVisible = false;
+let joinBtnTimeout = null;
+let popupIntervals = [];
+let populateTabsToken = null;
+let forceSyncDone = false;
 
 // --- Initialization ---
 async function init() {
@@ -94,6 +98,11 @@ async function init() {
 
     // Initial Status Check
     chrome.runtime.sendMessage({ type: 'GET_STATUS' }, async (res) => {
+        if (chrome.runtime.lastError) {
+            console.warn('[Popup] Background not responding:', chrome.runtime.lastError.message);
+            await populateTabs();
+            return;
+        }
         if (res) {
             localPeerId = res.peerId;
             applyConnectionStatus(res.status);
@@ -117,7 +126,7 @@ async function init() {
     chrome.runtime.sendMessage({ type: 'GET_ROOM_LIST' });
 
     // Debug Info Refresh
-    setInterval(refreshDebugInfo, 2000);
+    popupIntervals.push(setInterval(refreshDebugInfo, 2000));
 
     // Show onboarding on first visit
     chrome.storage.sync.get(['onboardingComplete'], (data) => {
@@ -147,6 +156,13 @@ function updateUI(roomId, password, useCustomServer = false, serverUrl = '') {
         }
     } else {
         updatePeerList([]);
+        if (elements.inviteLink) elements.inviteLink.value = '';
+        if (elements.activeRoomId) elements.activeRoomId.textContent = '';
+        if (elements.activeServer) {
+            elements.activeServer.textContent = '';
+            elements.activeServer.title = '';
+        }
+        lastKnownPeers = [];
     }
 }
 
@@ -171,7 +187,8 @@ function updateLastActionUI(state, peers) {
     const senderPeer = safePeers.find(p => (p.peerId || p) === state.senderId);
     if (senderPeer && senderPeer.username) senderName = senderPeer.username;
 
-    const timeStr = new Date(state.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    const ts = state.timestamp ? new Date(state.timestamp) : new Date();
+    const timeStr = isNaN(ts.getTime()) ? '--:--' : ts.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
 
     elements.lastActionCard.innerHTML = '';
 
@@ -236,7 +253,7 @@ function updateLastActionUI(state, peers) {
 }
 
 function formatTime(seconds) {
-    if (seconds === null || seconds === undefined || isNaN(seconds)) return '--:--';
+    if (seconds === null || seconds === undefined || isNaN(seconds) || seconds < 0) return '--:--';
     const h = Math.floor(seconds / 3600);
     const m = Math.floor((seconds % 3600) / 60);
     const s = Math.floor(seconds % 60);
@@ -453,26 +470,44 @@ function detectPeerChanges(newPeers) {
 }
 
 async function populateTabs(providedPeers = null, providedTargetTabId = null) {
+    const token = {};
+    populateTabsToken = token;
+
     const data = await chrome.storage.sync.get(['filterNoise']);
     const isFilterActive = data.filterNoise !== false;
     
-    // Fallback if not provided directly
     let currentTargetTabId = providedTargetTabId;
     if (currentTargetTabId === null) {
         const status = await new Promise(r => chrome.runtime.sendMessage({ type: 'GET_STATUS' }, r));
-        currentTargetTabId = status?.targetTabId;
+        if (chrome.runtime.lastError) {
+            if (populateTabsToken !== token) return;
+            currentTargetTabId = null;
+        } else {
+            currentTargetTabId = status?.targetTabId;
+        }
     }
  
-    // Use provided peers or fetch if missing
     let peerIds = providedPeers;
     if (!peerIds) {
         const status = await new Promise(r => chrome.runtime.sendMessage({ type: 'GET_STATUS' }, r));
-        peerIds = status?.peers || [];
+        if (chrome.runtime.lastError) {
+            if (populateTabsToken !== token) return;
+            peerIds = [];
+        } else {
+            peerIds = status?.peers || [];
+        }
     }
 
-    const tabs = await chrome.tabs.query({});
+    let tabs = [];
+    try {
+        tabs = await chrome.tabs.query({});
+    } catch (e) {
+        console.warn('[Popup] tabs.query failed:', e.message);
+        if (populateTabsToken !== token) return;
+    }
     
-    // Clear existing options except placeholder
+    if (!elements.targetTab) return;
+    if (populateTabsToken !== token) return;
     while (elements.targetTab.options.length > 1) {
         elements.targetTab.remove(1);
     }
@@ -548,38 +583,44 @@ function applyConnectionStatus(status) {
     const reconnecting = status === 'reconnecting';
     const failed = status === 'reconnect_failed';
 
-    elements.connDot.className = 'status-dot ' + (connected ? 'status-online' : (failed ? 'status-offline' : ((connecting || reconnecting) ? 'status-online' : 'status-offline')));
-    
-    if (reconnecting) {
-        elements.connDot.style.background = '#f59e0b';
-        elements.connDot.style.boxShadow = '0 0 8px #f59e0b';
-    } else if (connecting) {
-        elements.connDot.style.background = '#fbbf24';
-        elements.connDot.style.boxShadow = '0 0 8px #fbbf24';
-    } else if (failed) {
-        elements.connDot.style.background = '#ef4444';
-        elements.connDot.style.boxShadow = 'none';
-    } else {
-        elements.connDot.style.background = '';
-        elements.connDot.style.boxShadow = '';
+    if (elements.connDot) {
+        elements.connDot.className = 'status-dot ' + (connected ? 'status-online' : (failed ? 'status-offline' : ((connecting || reconnecting) ? 'status-online' : 'status-offline')));
+        
+        if (reconnecting) {
+            elements.connDot.style.background = '#f59e0b';
+            elements.connDot.style.boxShadow = '0 0 8px #f59e0b';
+        } else if (connecting) {
+            elements.connDot.style.background = '#fbbf24';
+            elements.connDot.style.boxShadow = '0 0 8px #fbbf24';
+        } else if (failed) {
+            elements.connDot.style.background = '#ef4444';
+            elements.connDot.style.boxShadow = 'none';
+        } else {
+            elements.connDot.style.background = '';
+            elements.connDot.style.boxShadow = '';
+        }
     }
 
-    elements.connText.textContent = connected ? 'Connected' : (reconnecting ? 'Reconnecting...' : (connecting ? 'Connecting...' : (failed ? 'Failed' : 'Disconnected')));
-    elements.retryBtn.style.display = failed ? 'block' : 'none';
-
-    // Update Join Button during auto-transition
-    if (connecting || reconnecting) {
-        elements.joinBtn.disabled = true;
-        elements.joinBtn.textContent = connecting ? '🚀 Joining...' : '🔄 Reconnecting...';
-    } else {
-        elements.joinBtn.disabled = false;
-        elements.joinBtn.textContent = 'Join Room';
+    if (elements.connText) {
+        elements.connText.textContent = connected ? 'Connected' : (reconnecting ? 'Reconnecting...' : (connecting ? 'Connecting...' : (failed ? 'Failed' : 'Disconnected')));
+    }
+    if (elements.retryBtn) {
+        elements.retryBtn.style.display = failed ? 'block' : 'none';
     }
 
-    // Preserve icons for Remote Control buttons
-    elements.playBtn.textContent = '▶ Play';
-    elements.pauseBtn.textContent = '⏸ Pause';
-    elements.forceSyncBtn.textContent = '⚡ Force Sync';
+    if (elements.joinBtn) {
+        if (connecting || reconnecting) {
+            elements.joinBtn.disabled = true;
+            elements.joinBtn.textContent = connecting ? '🚀 Joining...' : '🔄 Reconnecting...';
+        } else {
+            elements.joinBtn.disabled = false;
+            elements.joinBtn.textContent = 'Join Room';
+        }
+    }
+
+    if (elements.playBtn) elements.playBtn.textContent = '▶ Play';
+    if (elements.pauseBtn) elements.pauseBtn.textContent = '⏸ Pause';
+    if (elements.forceSyncBtn) elements.forceSyncBtn.textContent = '⚡ Force Sync';
 }
 
 function updateHistory(history) {
@@ -682,39 +723,42 @@ function checkInviteLink() {
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
         const tab = tabs[0];
         if (tab && tab.url && tab.url.includes(OFFICIAL_LANDING_PAGE_URL) && tab.url.includes('#join:')) {
-            const rawHash = tab.url.split('#join:')[1];
-            const parts = rawHash.split(':');
-            if (parts.length >= 2) {
-                const roomId = parts.shift();
-                let useCustomServer = false;
-                let serverUrl = '';
+            try {
+                const rawHash = tab.url.split('#join:')[1];
+                if (!rawHash) return;
+                const parts = rawHash.split(':');
+                if (parts.length >= 2) {
+                    const roomId = parts.shift();
+                    let useCustomServer = false;
+                    let serverUrl = '';
 
-                // Smart Link: Parse Server Config if present
-                const last = parts[parts.length - 1];
-                const secondToLast = parts[parts.length - 2];
-                const decodedLast = decodeURIComponent(last || '');
-                const isCustom = secondToLast === '1' && (decodedLast.startsWith('ws://') || decodedLast.startsWith('wss://'));
-                const isOfficial = secondToLast === '0' && last === '';
+                    const last = parts[parts.length - 1];
+                    const secondToLast = parts[parts.length - 2];
+                    const decodedLast = decodeURIComponent(last || '');
+                    const isCustom = secondToLast === '1' && (decodedLast.startsWith('ws://') || decodedLast.startsWith('wss://'));
+                    const isOfficial = secondToLast === '0' && last === '';
 
-                if (parts.length >= 3 && (isCustom || isOfficial)) {
-                    serverUrl = decodeURIComponent(parts.pop());
-                    useCustomServer = parts.pop() === '1';
+                    if (parts.length >= 3 && (isCustom || isOfficial)) {
+                        serverUrl = decodeURIComponent(parts.pop());
+                        useCustomServer = parts.pop() === '1';
+                    }
+
+                    const password = parts.join(':');
+
+                    elements.roomId.value = roomId;
+                    elements.password.value = password;
+                    
+                    if (serverUrl || useCustomServer) {
+                        elements.serverUrl.value = serverUrl;
+                        setServerMode(useCustomServer);
+                        chrome.storage.sync.set({ serverUrl, useCustomServer });
+                    }
+
+                    elements.joinBtn.style.boxShadow = '0 0 15px var(--accent)';
+                    setTimeout(() => elements.joinBtn.style.boxShadow = '', 2000);
                 }
-
-                const password = parts.join(':');
-
-                elements.roomId.value = roomId;
-                elements.password.value = password;
-                
-                if (serverUrl || useCustomServer) {
-                    elements.serverUrl.value = serverUrl;
-                    setServerMode(useCustomServer);
-                    chrome.storage.sync.set({ serverUrl, useCustomServer });
-                }
-
-                // Visual feedback
-                elements.joinBtn.style.boxShadow = '0 0 15px var(--accent)';
-                setTimeout(() => elements.joinBtn.style.boxShadow = '', 2000);
+            } catch (_e) {
+                // Malformed invite link, ignore
             }
         }
     });
@@ -724,7 +768,11 @@ function setServerMode(custom) {
     elements.serverOfficial.classList.toggle('active', !custom);
     elements.serverCustom.classList.toggle('active', custom);
     elements.serverUrl.style.display = custom ? 'block' : 'none';
-    chrome.storage.sync.set({ useCustomServer: custom });
+    chrome.storage.sync.get(['useCustomServer'], (data) => {
+        if (data.useCustomServer !== custom) {
+            chrome.storage.sync.set({ useCustomServer: custom });
+        }
+    });
 }
 
 elements.serverOfficial.addEventListener('click', () => setServerMode(false));
@@ -812,6 +860,14 @@ elements.joinBtn.addEventListener('click', async () => {
     elements.joinBtn.disabled = true;
     elements.joinBtn.textContent = isCreating ? 'Creating Room...' : 'Joining...';
     
+    if (joinBtnTimeout) clearTimeout(joinBtnTimeout);
+    joinBtnTimeout = setTimeout(() => {
+        elements.joinBtn.disabled = false;
+        elements.joinBtn.textContent = 'Join Room';
+        joinBtnTimeout = null;
+        showError('Connection timed out. Please try again.');
+    }, 15000);
+    
     const serverUrl = elements.serverUrl.value.trim();
     const useCustom = elements.serverCustom.classList.contains('active');
 
@@ -846,6 +902,7 @@ elements.leaveBtn.addEventListener('click', async () => {
     await chrome.storage.sync.set({ roomId: '', password: '' });
     elements.roomId.value = '';
     elements.password.value = '';
+    lastKnownPeers = [];
     updateUI(null, null);
 });
 
@@ -882,7 +939,7 @@ elements.forceSyncBtn.addEventListener('click', async () => {
     if (elements.forceSyncBtn.disabled) return;
     
     const status = await new Promise(r => chrome.runtime.sendMessage({ type: 'GET_STATUS' }, r));
-    if (!status || !status.targetTabId) return;
+    if (chrome.runtime.lastError || !status || !status.targetTabId) return;
 
     const mode = elements.forceSyncMode.value;
     let targetTime = null;
@@ -910,10 +967,14 @@ elements.forceSyncBtn.addEventListener('click', async () => {
     const originalText = elements.forceSyncBtn.textContent;
     elements.forceSyncBtn.disabled = true;
     elements.forceSyncBtn.textContent = mode === 'jump-to-others' ? `Syncing to group (${formatTime(targetTime)})...` : 'Syncing...';
-    setTimeout(() => {
-        elements.forceSyncBtn.disabled = false;
-        elements.forceSyncBtn.textContent = originalText;
-    }, 5000);
+    forceSyncDone = false;
+    const forceSyncReset = () => {
+        if (!forceSyncDone) {
+            elements.forceSyncBtn.disabled = false;
+            elements.forceSyncBtn.textContent = originalText;
+        }
+    };
+    setTimeout(forceSyncReset, 12000);
 
     const tabId = parseInt(status.targetTabId);
 
@@ -934,6 +995,7 @@ elements.forceSyncBtn.addEventListener('click', async () => {
                 }).then(() => {
                     setTimeout(() => {
                         chrome.tabs.sendMessage(tabId, { action: 'get_current_time' }, (retryResponse) => {
+                            if (chrome.runtime.lastError) return;
                             if (retryResponse && retryResponse.currentTime !== undefined) {
                                 sendForceSync(retryResponse.currentTime);
                             }
@@ -941,6 +1003,9 @@ elements.forceSyncBtn.addEventListener('click', async () => {
                     }, 500);
                 }).catch(() => {
                     showError('Could not connect to video tab.');
+                    forceSyncDone = true;
+                    elements.forceSyncBtn.disabled = false;
+                    elements.forceSyncBtn.textContent = originalText;
                 });
                 return;
             }
@@ -985,6 +1050,8 @@ elements.copyInvite.addEventListener('click', () => {
             elements.copyInvite.style.background = '';
             elements.copyInvite.style.color = '';
         }, 2000);
+    }).catch(() => {
+        showToast('Failed to copy to clipboard', 'error');
     });
 });
 
@@ -1027,6 +1094,13 @@ chrome.runtime.onMessage.addListener((msg) => {
             const action = actionNames[state.action] || state.action;
             showToast(`${state.senderId} ${action}`, 'info', 2000);
         }
+        if (state && state.action === 'force_sync_execute') {
+            forceSyncDone = true;
+            if (elements.forceSyncBtn) {
+                elements.forceSyncBtn.disabled = false;
+                elements.forceSyncBtn.textContent = '⚡ Force Sync';
+            }
+        }
         chrome.runtime.sendMessage({ type: 'GET_STATUS' }, (res) => {
             if (res && res.peers) updateLastActionUI(msg.state, res.peers);
         });
@@ -1047,8 +1121,11 @@ chrome.runtime.onMessage.addListener((msg) => {
         }
         if (msg.status === 'reconnecting') {
             chrome.runtime.sendMessage({ type: 'GET_STATUS' }, (res) => {
+                if (chrome.runtime.lastError) return;
                 if (res && res.reconnectAttempts !== undefined) {
-                    elements.connText.textContent = `Reconnecting... (${res.reconnectAttempts})`;
+                    if (elements.connText) {
+                        elements.connText.textContent = `Reconnecting... (${res.reconnectAttempts})`;
+                    }
                 }
             });
         }
@@ -1086,6 +1163,8 @@ elements.copyLogs.addEventListener('click', () => {
             const original = elements.copyLogs.textContent;
             elements.copyLogs.textContent = 'Copied!';
             setTimeout(() => elements.copyLogs.textContent = original, 2000);
+        }).catch(() => {
+            showToast('Failed to copy to clipboard', 'error');
         });
     });
 });
@@ -1168,12 +1247,18 @@ function refreshDebugInfo() {
 }
 
 init();
-setInterval(() => {
+popupIntervals.push(setInterval(() => {
     if (isDevTabVisible) refreshLogs();
-}, 5000);
+}, 5000));
 
 window.addEventListener('unload', () => {
     stopInterpolation();
+    popupIntervals.forEach(clearInterval);
+    popupIntervals = [];
+    if (joinBtnTimeout) {
+        clearTimeout(joinBtnTimeout);
+        joinBtnTimeout = null;
+    }
 });
 
 // --- Episode Lobby UI ---

@@ -47,10 +47,14 @@
 
     function expectEvent(state) {
         expectedEvents.add(state);
-        if (expectedTimeouts[state]) clearTimeout(expectedTimeouts[state]);
+        if (expectedTimeouts[state]) {
+            clearTimeout(expectedTimeouts[state]);
+            delete expectedTimeouts[state];
+        }
         const timeout = state === 'seek' ? 10000 : 1500;
         expectedTimeouts[state] = setTimeout(() => {
             expectedEvents.delete(state);
+            delete expectedTimeouts[state];
         }, timeout);
     }
 
@@ -59,9 +63,16 @@
     }
 
     // --- Helper: find the best video element on the page ---
-    function findVideo() {
-        const videos = document.querySelectorAll('video');
-        return videos.length > 0 ? videos[0] : null;
+    function findVideo(root = document) {
+        const video = root.querySelector('video');
+        if (video) return video;
+        for (const el of root.querySelectorAll('*')) {
+            if (el.shadowRoot) {
+                const found = findVideo(el.shadowRoot);
+                if (found) return found;
+            }
+        }
+        return null;
     }
 
     // --- Episode Auto-Sync: Detection ---
@@ -169,7 +180,7 @@
                 reportLog(`Media Action Error: Invalid seek payload - ${JSON.stringify(data)}`, 'error');
                 return;
             }
-            data.targetTime = target;
+            data = { ...data, targetTime: target };
         }
 
         try {
@@ -259,7 +270,7 @@
     chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         if (message.action === 'get_current_time') {
             const video = findVideo();
-            sendResponse({ currentTime: video ? video.currentTime : undefined });
+            sendResponse({ currentTime: video ? video.currentTime : null });
             return true;
         }
 
@@ -292,13 +303,13 @@
                     video.pause();
                     video.currentTime = payload.targetTime;
                     pollSeekReady(payload.targetTime).then((ready) => {
-                        chrome.runtime.sendMessage({ type: 'FORCE_SYNC_ACK' });
+                        chrome.runtime.sendMessage({ type: 'FORCE_SYNC_ACK' }).catch(() => {});
                         if (ready) {
                             scheduleProactiveHeartbeat();
                         } else {
                             reportLog('Force Sync: Seek ready timeout, proceeding anyway', 'warn');
                         }
-                    });
+                    }).catch(() => {});
                 }
             } else if (action === EVENTS.FORCE_SYNC_EXECUTE) {
                 stopLobbyPoll(); // Clear any pending lobby on force sync
@@ -471,7 +482,7 @@
     };
 
 
-    let lastVideoSrc = null;
+    let lastVideoSrc = undefined;
 
     // Episode detection handler for loadeddata event
     const handleLoadedData = () => {
@@ -481,19 +492,22 @@
     function setupListeners() {
         const video = findVideo();
         if (video) {
-            video.removeEventListener('play', handlePlay);
-            video.removeEventListener('pause', handlePause);
-            video.removeEventListener('seeked', handleSeeked);
-            video.removeEventListener('loadeddata', handleLoadedData);
+            const existing = video._koalaHandlers;
+            if (existing) {
+                video.removeEventListener('play', existing.play);
+                video.removeEventListener('pause', existing.pause);
+                video.removeEventListener('seeked', existing.seeked);
+                video.removeEventListener('loadeddata', existing.loadeddata);
+            }
+            video._koalaHandlers = { play: handlePlay, pause: handlePause, seeked: handleSeeked, loadeddata: handleLoadedData };
 
             video.addEventListener('play', handlePlay);
             video.addEventListener('pause', handlePause);
             video.addEventListener('seeked', handleSeeked);
             video.addEventListener('loadeddata', handleLoadedData);
             video.dataset.koalaAttached = 'true';
-            lastVideoSrc = video.currentSrc || video.src;
+            lastVideoSrc = video.currentSrc || video.src || null;
 
-            // Initialize episode tracking title on first attach
             if (!lastKnownMediaTitle) {
                 lastKnownMediaTitle = getMediaTitle();
             }
@@ -508,19 +522,18 @@
         lastMutate = Date.now();
         const video = findVideo();
 
-        if (!video && lastVideoSrc) {
+        if (!video && lastVideoSrc !== undefined) {
             reportLog('Video element removed from page', 'warn');
-            lastVideoSrc = null;
+            lastVideoSrc = undefined;
             return;
         }
 
         if (!video) return;
 
-        const currentSrc = video.currentSrc || video.src;
+        const currentSrc = video.currentSrc || video.src || null;
 
-        if (!video.dataset.koalaAttached || (lastVideoSrc && currentSrc && lastVideoSrc !== currentSrc)) {
-            // If src changed, also check for episode transition
-            if (lastVideoSrc && currentSrc && lastVideoSrc !== currentSrc) {
+        if (!video.dataset.koalaAttached || (lastVideoSrc !== undefined && currentSrc && lastVideoSrc !== currentSrc)) {
+            if (lastVideoSrc !== undefined && currentSrc && lastVideoSrc !== currentSrc) {
                 checkEpisodeTransition();
             }
             setupListeners();
@@ -599,6 +612,7 @@
 
     // Episode Auto-Sync: Boot recovery — check if background has an active lobby
     chrome.runtime.sendMessage({ type: 'CONTENT_BOOT' }, (res) => {
+        if (chrome.runtime.lastError) return;
         if (res && res.lobbyActive && res.expectedTitle) {
             reportLog(`Boot: Active lobby detected for "${res.expectedTitle}"`, 'info');
             startLobbyPoll(res.expectedTitle);
