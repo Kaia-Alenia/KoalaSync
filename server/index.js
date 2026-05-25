@@ -3,7 +3,7 @@ import { createServer } from 'http';
 import { Server } from 'socket.io';
 import bcrypt from 'bcryptjs';
 import dotenv from 'dotenv';
-import { EVENTS, OFFICIAL_SERVER_TOKEN } from '../shared/constants.js';
+import { EVENTS, OFFICIAL_SERVER_TOKEN, PROTOCOL_VERSION } from '../shared/constants.js';
 
 dotenv.config();
 
@@ -125,12 +125,8 @@ function checkEventRate(socketId) {
  * @param {string}  socketId   - The socket.id being removed.
  * @param {string}  roomId     - The room it belongs to.
  * @param {string}  reason     - Log label ('disconnect', 'leave', 'reaper', 'dedupe', 'room-switch').
- * @param {boolean} [emitLeave=true] - Set false when the socket.io room leave
- *                                     is handled by the caller (e.g. reaper calls
- *                                     socket.leave() before us, or dedupe calls
- *                                     oldSocket.leave() before disconnecting).
  */
-function removePeerFromRoom(socketId, roomId, reason, emitLeave = true) {
+function removePeerFromRoom(socketId, roomId, reason) {
     const room = rooms.get(roomId);
     if (!room) return;
 
@@ -225,7 +221,7 @@ io.on('connection', (socket) => {
 
         try {
             // Protocol check
-            if (protocolVersion !== '1.0.0') {
+            if (protocolVersion !== PROTOCOL_VERSION) {
                 log('AUTH', `Protocol mismatch from ${peerId}: ${protocolVersion}`);
                 socket.emit(EVENTS.ERROR, { message: 'Incompatible protocol version' });
                 return;
@@ -279,17 +275,22 @@ io.on('connection', (socket) => {
                 }
 
                 // Peer Deduplication: Remove existing socket for the same peerId
+                // Snapshot stale SIDs first to avoid mutating the Map during iteration
+                const dedupeSids = [];
                 for (const [sid, data] of room.peerData.entries()) {
                     if (data.peerId === peerId && sid !== socket.id) {
-                        const oldSocket = io.sockets.sockets.get(sid);
-                        if (oldSocket) {
-                            oldSocket.emit(EVENTS.ERROR, { message: 'Deduplication: Another session with this ID joined. Disconnecting...' });
-                            oldSocket.leave(roomId);
-                            oldSocket.disconnect(true);
-                            log('DEDUPE', `Kicked old session for peer ${peerId}`);
-                        }
-                        removePeerFromRoom(sid, roomId, 'dedupe');
+                        dedupeSids.push(sid);
                     }
+                }
+                for (const sid of dedupeSids) {
+                    const oldSocket = io.sockets.sockets.get(sid);
+                    if (oldSocket) {
+                        oldSocket.emit(EVENTS.ERROR, { message: 'Deduplication: Another session with this ID joined. Disconnecting...' });
+                        oldSocket.leave(roomId);
+                        oldSocket.disconnect(true);
+                        log('DEDUPE', `Kicked old session for peer ${peerId}`);
+                    }
+                    removePeerFromRoom(sid, roomId, 'dedupe');
                 }
             }
 
@@ -404,6 +405,11 @@ io.on('connection', (socket) => {
     });
 
         socket.on(EVENTS.EVENT_ACK, (data) => {
+            if (!checkEventRate(socket.id)) {
+                log('SECURITY', `Event rate limit exceeded for socket (ACK): ${socket.id}`);
+                socket.disconnect(true);
+                return;
+            }
             if (!data || typeof data !== 'object') return;
             if (typeof data.targetId !== 'string') return;
             if (data.actionTimestamp !== undefined && (typeof data.actionTimestamp !== 'number' || !Number.isFinite(data.actionTimestamp))) return;

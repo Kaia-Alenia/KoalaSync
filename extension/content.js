@@ -519,7 +519,7 @@
             observerTimeout = setTimeout(checkVideo, 1000 - (now - lastMutate));
         }
     });
-    observer.observe(document.body, { childList: true, subtree: true });
+    observer.observe(document.documentElement, { childList: true, subtree: true });
 
     // --- SHARED_HEARTBEAT_INJECT_START ---
     const HEARTBEAT_INTERVAL_VAL = 15000;

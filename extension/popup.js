@@ -231,6 +231,13 @@ function getVolumeIcon(volume, muted) {
 let activePeers = [];
 let interpolationInterval = null;
 
+function stopInterpolation() {
+    if (interpolationInterval) {
+        clearInterval(interpolationInterval);
+        interpolationInterval = null;
+    }
+}
+
 function startInterpolation() {
     if (interpolationInterval) return;
     interpolationInterval = setInterval(() => {
@@ -249,7 +256,11 @@ function startInterpolation() {
 function updatePeerList(peers) {
     if (!peers) return;
     activePeers = peers;
-    if (!interpolationInterval) startInterpolation();
+    if (peers.length === 0) {
+        stopInterpolation();
+    } else if (!interpolationInterval) {
+        startInterpolation();
+    }
     
     // UI Throttle: Only re-render if the peer state actually changed (excluding time interpolation)
     const stateToHash = peers.map(p => ({
@@ -793,6 +804,10 @@ elements.forceSyncBtn.addEventListener('click', async () => {
     let targetTime = null;
 
     if (mode === 'jump-to-others') {
+        if (!localPeerId) {
+            showError('Identity not yet loaded. Wait a moment and try again.');
+            return;
+        }
         const peers = status.peers || [];
         const otherTimes = peers
             .filter(p => typeof p === 'object' && p.peerId !== localPeerId && p.currentTime != null && !isNaN(p.currentTime))
@@ -888,7 +903,7 @@ async function refreshLogs() {
             logs.forEach(log => {
                 const entry = document.createElement('div');
                 entry.className = `log-entry log-${log.type}`;
-                const timeStr = log.timestamp.split('T')[1].split('.')[0];
+                const timeStr = log.timestamp?.split('T')?.[1]?.split('.')[0] || '?';
                 entry.textContent = `[${timeStr}] ${log.message}`;
                 elements.logList.appendChild(entry);
             });

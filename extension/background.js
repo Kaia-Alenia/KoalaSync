@@ -360,6 +360,9 @@ async function connect() {
                 forceSyncAcks: [], 
                 forceSyncDeadline: null 
             });
+
+            // Cancel any active episode lobby
+            clearEpisodeLobbyState();
             
             if (currentRoom) {
                 currentRoom.peers = [];
@@ -412,6 +415,7 @@ function showNotification(senderName, action) {
     const label = action === 'play' ? 'started playback' : 
                   action === 'pause' ? 'paused playback' : 
                   action === 'seek' ? 'seeked the video' :
+                  action === 'force_sync_prepare' ? 'started force sync' :
                   action === 'force_sync_execute' ? 'synchronized everyone' : action;
     
     // Find username in current room if available
@@ -954,6 +958,9 @@ function leaveOldRoomIfSwitching(newRoomId) {
             forceSyncAcks: [], 
             forceSyncDeadline: null 
         });
+
+        // Cancel any active episode lobby
+        clearEpisodeLobbyState();
     }
 }
 
@@ -1051,9 +1058,7 @@ async function handleAsyncMessage(message, sender, sendResponse) {
     } else if (message.type === 'GET_HISTORY') {
         sendResponse(history);
     } else if (message.type === 'GET_ROOM_LIST') {
-        if (socket && socket.readyState === WebSocket.OPEN) {
-            socket.send(`42${JSON.stringify([EVENTS.GET_ROOMS])}`);
-        }
+        emit(EVENTS.GET_ROOMS, {});
         sendResponse({ status: 'ok' });
     } else if (message.type === 'WEB_JOIN_REQUEST') {
         const { roomId, password, useCustomServer, serverUrl } = message;
