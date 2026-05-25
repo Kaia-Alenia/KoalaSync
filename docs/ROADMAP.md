@@ -24,17 +24,6 @@ Stimmt, sind aufwändig. Praktische Ansätze:
 
 ---
 
-## Zukünftige Features (spätere Releases)
+## Zukünftige Features
 
-Diese Features wurden evaluiert aber sind nicht Teil der nächsten Release:
-
-| Feature | Aufwand | Nutzen | Status |
-|---------|---------|--------|--------|
-| Chat im Room | ~400 LOC | 9/10 | Geplant v1.6 |
-| Playback Speed Sync | ~150 LOC | 8/10 | Geplant v1.5 |
-| Room Host/Owner | ~350 LOC | 8/10 | Geplant v1.6 |
-| Auto-Reconnect mit State | ~250 LOC | 9/10 | Teilweise implementiert |
-| Multi-Video Support | ~300 LOC | 7/10 | Geplant v2.0 |
-| Volume Sync | ~120 LOC | 6/10 | Backlog |
-| Stats Dashboard | ~200 LOC | 6/10 | Backlog |
-| Custom Themes | ~80 LOC | 5/10 | Backlog |
+Neue Features werden nur nach expliziter Freigabe hinzugefügt.
