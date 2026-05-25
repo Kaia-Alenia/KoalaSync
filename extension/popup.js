@@ -1434,10 +1434,11 @@ function updateLobbyUI(lobby, peers) {
         peers.forEach(p => {
             const pId = typeof p === 'object' ? p.peerId : p;
             const pName = (typeof p === 'object' && p.username) ? p.username : pId;
+            const avatar = getAvatarForName(pName);
             const isReady = readySet.has(pId);
             const icon = isReady ? '\u2705' : '\u23f3';
             const label = isReady ? 'Ready' : 'Loading...';
-            peerLines.push(`${icon} ${pName} \u2014 ${label}`);
+            peerLines.push(`${icon} ${avatar} ${pName} \u2014 ${label}`);
         });
     }
 
