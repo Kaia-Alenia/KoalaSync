@@ -54,6 +54,7 @@ let lastPeersJson = null;
 let lastKnownPeers = [];
 let isDevTabVisible = false;
 let joinBtnTimeout = null;
+let forceSyncResetTimer = null;
 let popupIntervals = [];
 let populateTabsToken = null;
 let forceSyncDone = false;
@@ -974,8 +975,7 @@ elements.forceSyncBtn.addEventListener('click', async () => {
             elements.forceSyncBtn.textContent = originalText;
         }
     };
-    setTimeout(forceSyncReset, 12000);
-
+    forceSyncResetTimer = setTimeout(forceSyncReset, 12000);
     const tabId = parseInt(status.targetTabId);
 
     const sendForceSync = (time) => {
@@ -1096,6 +1096,10 @@ chrome.runtime.onMessage.addListener((msg) => {
         }
         if (state && state.action === 'force_sync_execute') {
             forceSyncDone = true;
+            if (forceSyncResetTimer) {
+                clearTimeout(forceSyncResetTimer);
+                forceSyncResetTimer = null;
+            }
             if (elements.forceSyncBtn) {
                 elements.forceSyncBtn.disabled = false;
                 elements.forceSyncBtn.textContent = '⚡ Force Sync';
@@ -1258,6 +1262,10 @@ window.addEventListener('unload', () => {
     if (joinBtnTimeout) {
         clearTimeout(joinBtnTimeout);
         joinBtnTimeout = null;
+    }
+    if (forceSyncResetTimer) {
+        clearTimeout(forceSyncResetTimer);
+        forceSyncResetTimer = null;
     }
 });
 

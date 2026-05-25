@@ -22,12 +22,22 @@ let restorationTask = null;
 function ensureState() {
     if (!restorationTask) {
         restorationTask = new Promise(resolve => {
+            let resolved = false;
+            const done = () => { if (!resolved) { resolved = true; resolve(); } };
+
+            const storageTimeout = setTimeout(() => {
+                addLog('Storage restoration timed out, continuing with defaults', 'warn');
+                storageInitialized = true;
+                done();
+            }, 10000);
+
             chrome.storage.session.get([
                 'logs', 'history', 'currentRoom', 'lastActionState', 
                 'eventQueue', 'isForceSyncInitiator', 'forceSyncAcks', 
                 'forceSyncDeadline', 'reconnectFailed', 'reconnectStartTime', 'currentTabId', 'currentTabTitle',
                 'episodeLobby'
             ], (data) => {
+                clearTimeout(storageTimeout);
                 if (data.currentTabId !== undefined) currentTabId = data.currentTabId;
                 if (data.currentTabTitle !== undefined) currentTabTitle = data.currentTabTitle;
                 // Merge data from storage with any early-arriving state
@@ -88,7 +98,7 @@ function ensureState() {
                     pendingHistory = [];
                 }
 
-                resolve();
+                done();
             });
         });
     }
@@ -369,6 +379,7 @@ async function connect() {
             
             if (currentRoom) {
                 currentRoom.peers = [];
+                if (storageInitialized) chrome.storage.session.set({ currentRoom });
                 chrome.runtime.sendMessage({ type: 'PEER_UPDATE', peers: [] }).catch(() => {});
             }
             broadcastConnectionStatus('disconnected');
@@ -959,7 +970,9 @@ chrome.alarms.onAlarm.addListener(async (alarm) => {
 function leaveOldRoomIfSwitching(newRoomId) {
     if (currentRoom && currentRoom.roomId !== newRoomId) {
         addLog(`Switching rooms: leaving ${currentRoom.roomId} to join ${newRoomId}`, 'info');
-        emit(EVENTS.LEAVE_ROOM, { peerId });
+        if (socket && socket.readyState === WebSocket.OPEN && isNamespaceJoined) {
+            emit(EVENTS.LEAVE_ROOM, { peerId });
+        }
         currentRoom = null;
         if (storageInitialized) chrome.storage.session.set({ currentRoom: null });
         chrome.runtime.sendMessage({ type: 'PEER_UPDATE', peers: [] }).catch(() => {});
