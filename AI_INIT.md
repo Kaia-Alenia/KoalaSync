@@ -108,6 +108,7 @@ Before starting any task, committing, or pushing, you **MUST** run `git pull --r
 2. Commit all verified code changes and push to `main`.
 3. Create and push a new tag. **MANDATORY**: Tags MUST start with a `v` (e.g., `v1.4.0`). The GitHub Actions release workflow is strictly configured to ignore any tags without the `v` prefix.
    - **🚫 TAG IMMUTABILITY**: Once a tag is pushed to `origin`, it is **PERMANENT**. You MUST **NEVER** reuse, move, or force-push an existing tag — not even to "fix" a mistake. If a release is missing a fix, increment the version and create a **new** tag (e.g., `v1.7.0` → `v1.7.1`). Tags are immutable identifiers; moving them breaks CI pipelines, corrupts the release history, and causes unreproducible builds.
+   - **🚫 WHEN NOT TO TAG**: Do NOT create a release tag for changes that do NOT affect the shipped extension or server artifacts. Website text changes, documentation updates (`.md` files), and landing page content do NOT require a version tag. Tags trigger the full CI pipeline (Docker build, extension packaging, GitHub Release) — running this for a typo fix wastes CI resources and creates meaningless releases. Only tag when extension code (`extension/`), server code (`server/`), or shared protocol constants (`shared/`) have changed.
 4. The CI will extract the version from the tag (e.g., `v1.4.0` → `1.4.0`), inject it into all source files, build the extension artifacts, publish the Docker image, and create a GitHub Release.
 5. Verify the release builds on GitHub Actions.
 
