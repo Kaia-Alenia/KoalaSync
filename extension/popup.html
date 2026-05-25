@@ -307,27 +307,27 @@
                 <summary style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; cursor: pointer; outline: none;">Manual Connect / Advanced</summary>
                 <div style="margin-top: 12px;">
             <div class="form-group">
-                <label>Server</label>
+                <label title="Select which KoalaSync server to use">Server</label>
                 <div style="display:flex; gap:4px; margin-bottom:8px;">
-                    <button id="serverOfficial" class="tab-btn active" style="flex:1; padding:6px; font-size:11px;">Official</button>
-                    <button id="serverCustom" class="tab-btn" style="flex:1; padding:6px; font-size:11px;">Custom</button>
+                    <button id="serverOfficial" class="tab-btn active" style="flex:1; padding:6px; font-size:11px;" title="Use the official reliable server">Official</button>
+                    <button id="serverCustom" class="tab-btn" style="flex:1; padding:6px; font-size:11px;" title="Connect to your own self-hosted server">Custom</button>
                 </div>
                 <input type="text" id="serverUrl" placeholder="wss://your-server:3000" style="display:none;">
             </div>
             <div class="form-group">
-                <label>Room ID</label>
-                <input type="text" id="roomId" placeholder="Leave empty to create">
+                <label title="The unique identifier for your sync room">Room ID</label>
+                <input type="text" id="roomId" placeholder="Enter Room ID" title="The unique ID of the room you want to join">
             </div>
             <div class="form-group">
-                <label>Password (Optional)</label>
-                <input type="password" id="password" placeholder="Room password">
+                <label title="Optional password to restrict room access">Password (Optional)</label>
+                <input type="password" id="password" placeholder="Room Password (optional)" title="Password for the room (leave empty if none)">
             </div>
             <div id="roomError" style="display:none; color:var(--error); font-size:11px; margin-bottom:8px; text-align:center;"></div>
             <button id="joinBtn" class="primary" title="Connect to the room">Join Room</button>
             
             <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 1.5rem; margin-bottom: 8px;">
-                <label style="margin:0;">Public Rooms</label>
-                <button id="refreshRooms" style="background:transparent; border:none; color:var(--accent); font-size:10px; cursor:pointer;">REFRESH</button>
+                <label style="margin:0;" title="List of publicly available rooms on this server">Public Rooms</label>
+                <button id="refreshRooms" class="secondary" style="background:transparent; border:none; color:var(--accent); font-size:10px; cursor:pointer;" title="Refresh the list of public rooms">REFRESH</button>
             </div>
             <div id="publicRooms" class="info-card" style="max-height: 120px; overflow-y: auto; padding: 4px;">
                 <div style="text-align:center; color: var(--text-muted); font-size: 11px; padding: 10px;">Refreshing...</div>
@@ -340,14 +340,14 @@
         <div id="section-active" style="display:none;">
             <div class="info-card" style="margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; border-left: 4px solid var(--accent);">
                 <div>
-                    <label style="margin-bottom: 0;">Active Room</label>
+                    <label style="margin-bottom: 0;" title="The room you are currently connected to">Active Room</label>
                     <div id="activeRoomId" style="font-weight: 700; color: var(--accent); font-size: 16px; letter-spacing: 1px;">NONE</div>
                 </div>
                 <div id="activeServer" style="font-size: 10px; color: var(--text-muted); text-align: right; max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">Official Server</div>
             </div>
 
             <div class="info-card" style="margin-bottom: 20px;">
-                <label>Invite Link</label>
+                <label title="Share this link with friends so they can join">Invite Link</label>
                 <div class="invite-box">
                     <input type="text" id="inviteLink" readonly>
                     <button id="copyInvite" class="secondary">📋</button>
@@ -355,7 +355,7 @@
             </div>
 
             <div style="margin-bottom: 20px;">
-                <label>Peers in Room</label>
+                <label title="Other users currently connected to this room">Peers in Room</label>
                 <div id="peerList" class="info-card">
                     <div style="text-align:center; color: var(--text-muted); font-size: 12px;">No peers connected</div>
                 </div>
@@ -370,7 +370,7 @@
         <!-- SYNC ACTIVE: Visible when in a room -->
         <div id="sync-active">
         <div class="form-group">
-            <label>Select Video</label>
+            <label title="Choose the browser tab containing the video to sync">Select Video</label>
             <select id="targetTab">
                 <option value="">-- Select a Tab --</option>
             </select>
@@ -394,7 +394,7 @@
         </div>
 
         <!-- NEW: Last Action Status Card -->
-        <label>Last Activity Status</label>
+        <label title="Shows the most recent play, pause, or seek command">Last Activity Status</label>
         <div id="lastActionCard" class="info-card" style="margin-bottom: 15px; max-height: 120px; overflow-y: auto;">
             <div style="text-align:center; color: var(--text-muted); font-size: 10px;">No recent commands</div>
         </div>
@@ -417,7 +417,7 @@
             <div style="font-size: 32px; margin-bottom: 12px;">🔒</div>
             <h3 style="margin: 0 0 8px 0; color: var(--accent); font-size: 15px;">Connect to a room first</h3>
             <p style="color: var(--text-muted); font-size: 12px; margin-bottom: 20px;">You need to join a room via an invite link or create a new one to sync videos.</p>
-            <button id="syncTabCreateRoomBtn" class="primary" style="padding: 12px; font-size: 14px; background: linear-gradient(135deg, #6366f1, #a855f7); box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);">Create New Room</button>
+            <button id="syncTabCreateRoomBtn" class="primary" style="padding: 12px; font-size: 14px; background: linear-gradient(135deg, #6366f1, #a855f7); box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);" title="Create a new random room and join it">Create New Room</button>
         </div>
     </div>
     
@@ -463,37 +463,37 @@
 
 
         <div style="margin-top: 15px; padding: 8px; border-top: 1px solid var(--card);">
-            <label>Troubleshooting</label>
-            <button id="regenId" class="secondary" style="width: 100%; font-size: 11px;">Regenerate Peer ID</button>
+            <label title="Tools for fixing connection issues">Troubleshooting</label>
+            <button id="regenId" class="secondary" style="width: 100%; font-size: 11px;" title="Regenerate your internal ID and reconnect">Regenerate Peer ID</button>
             <p style="font-size: 9px; color: var(--text-muted); margin-top: 5px; text-align: center;">Use this if you see "Duplicate Identity" errors.</p>
         </div>
     </div>
 
     <!-- Dev Tab -->
     <div id="tab-dev" class="tab-content">
-        <label>Connection Status</label>
+        <label title="Current WebSocket connection state">Connection Status</label>
         <div id="connStatus" class="info-card" style="display:flex; align-items:center; gap: 10px;">
             <span id="connDot" class="status-dot status-offline"></span>
             <span id="connText" style="flex:1;">Disconnected</span>
-            <button id="retryBtn" class="secondary" style="display:none; width: auto; padding: 4px 8px; font-size: 10px; margin: 0;">RETRY</button>
-            <button id="copyLogs" class="btn secondary" style="width: auto; padding: 4px 10px; font-size: 11px;">Copy Logs</button>
+            <button id="retryBtn" class="secondary" style="display:none; width: auto; padding: 4px 8px; font-size: 10px; margin: 0;" title="Attempt to reconnect to the server">RETRY</button>
+            <button id="copyLogs" class="btn secondary" style="width: auto; padding: 4px 10px; font-size: 11px;" title="Copy logs to clipboard for sharing">Copy Logs</button>
         </div>
 
-        <label>Video Debug Info</label>
+        <label title="Technical details about the currently selected video element">Video Debug Info</label>
         <div id="videoDebug" class="info-card" style="font-size: 10px; font-family: monospace; color: var(--text-muted); max-height: 250px; overflow-y: auto; line-height: 1.4;">
             No tab selected or video detected.
         </div>
 
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 8px;">
-            <label>Full Action History</label>
+            <label title="Chronological log of all sync commands in the room">Full Action History</label>
         </div>
         <div id="historyList" class="info-card" style="max-height: 120px; overflow-y: auto; font-size: 10px; margin-bottom: 15px;">
             <div style="text-align:center; color: var(--text-muted); font-size: 11px;">No activity yet</div>
         </div>
 
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 8px;">
-            <label>Logs (Last 50)</label>
-            <button id="clearLogs" style="background:transparent; border:none; color:var(--accent); font-size:10px; cursor:pointer;">CLEAR</button>
+            <label title="Technical connection logs for debugging">Logs (Last 50)</label>
+            <button id="clearLogs" style="background:transparent; border:none; color:var(--accent); font-size:10px; cursor:pointer;" title="Clear log output">CLEAR</button>
         </div>
         <div id="logList"></div>
         
@@ -512,8 +512,8 @@
             <h2 id="onboarding-title" style="color:var(--accent); margin:0 0 8px; font-size:16px;">Welcome to KoalaSync!</h2>
             <p id="onboarding-text" style="color:var(--text-muted); font-size:13px; margin:0 0 16px; line-height:1.4;">Let's get you started.</p>
             <div style="display:flex; gap:8px; justify-content:center;">
-                <button id="onboarding-skip" class="secondary" style="width:auto; padding:8px 16px;">Skip</button>
-                <button id="onboarding-next" class="primary" style="width:auto; padding:8px 16px;">Next</button>
+                <button id="onboarding-skip" class="secondary" style="width:auto; padding:8px 16px;" title="Skip the tutorial">Skip</button>
+                <button id="onboarding-next" class="primary" style="width:auto; padding:8px 16px;" title="Go to next step">Next</button>
             </div>
             <div id="onboarding-dots" style="margin-top:12px; display:flex; gap:6px; justify-content:center;"></div>
         </div>
