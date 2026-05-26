@@ -105,10 +105,11 @@ async function init() {
     if (elements.autoCopyInvite) elements.autoCopyInvite.checked = data.autoCopyInvite !== false;
     
     // Set Version Info
+    const versionTxt = `v${chrome.runtime.getManifest().version}`;
     const versionEl = document.getElementById('appVersion');
-    if (versionEl) {
-        versionEl.textContent = `v${chrome.runtime.getManifest().version}`;
-    }
+    if (versionEl) versionEl.textContent = versionTxt;
+    const popupVerEl = document.getElementById('popupVersion');
+    if (popupVerEl) popupVerEl.textContent = versionTxt;
 
     if (data.useCustomServer) {
         setServerMode(true);
