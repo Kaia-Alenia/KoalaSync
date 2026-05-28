@@ -1,4 +1,5 @@
 import { EVENTS, PROTOCOL_VERSION, OFFICIAL_SERVER_URL, OFFICIAL_SERVER_TOKEN, APP_VERSION, EPISODE_LOBBY_TIMEOUT, FORCE_SYNC_TIMEOUT } from './shared/constants.js';
+import { generateUsername } from './shared/names.js';
 
 // --- State Management ---
 let socket = null;
@@ -15,6 +16,8 @@ let pendingHistory = [];
 let eventQueue = [];
 let isNamespaceJoined = false;
 let lastActionState = { action: null, senderId: null, timestamp: 0, acks: [] };
+let localSeq = 0;                         // Monotonically increasing command sequence for this peer
+const lastSeqBySender = {};               // senderId → last received seq (stale command guard)
 
 // --- Boot Sequence Lock ---
 let restorationTask = null;
@@ -35,7 +38,7 @@ function ensureState() {
                 'logs', 'history', 'currentRoom', 'lastActionState', 
                 'eventQueue', 'isForceSyncInitiator', 'forceSyncAcks', 
                 'forceSyncDeadline', 'reconnectFailed', 'reconnectStartTime', 'currentTabId', 'currentTabTitle',
-                'episodeLobby'
+                'episodeLobby', 'localSeq'
             ], (data) => {
                 clearTimeout(storageTimeout);
                 if (data.currentTabId !== undefined) currentTabId = data.currentTabId;
@@ -83,6 +86,8 @@ function ensureState() {
                         cancelEpisodeLobby('Timeout (recovered)');
                     }
                 }
+
+                if (data.localSeq !== undefined && !isNaN(data.localSeq)) localSeq = data.localSeq;
 
                 storageInitialized = true;
                 
@@ -186,9 +191,7 @@ async function getSettings() {
             }
             let username = data.username;
             if (!username) {
-                const adjs = ['Happy', 'Cool', 'Fast', 'Smart', 'Brave', 'Calm', 'Sneaky', 'Lazy', 'Wild', 'Chill', 'Lucky', 'Epic', 'Swift', 'Bold', 'Mighty', 'Cosmic', 'Neon', 'Shadow', 'Crystal', 'Thunder', 'Silent', 'Golden', 'Fierce', 'Noble', 'Mystic', 'Frozen', 'Blazing', 'Sapphire', 'Iron', 'Crimson'];
-                const nouns = ['Koala', 'Panda', 'Tiger', 'Eagle', 'Fox', 'Bear', 'Wolf', 'Lion', 'Hawk', 'Seal', 'Owl', 'Shark', 'Dragon', 'Phoenix', 'Falcon', 'Panther', 'Raven', 'Cobra', 'Lynx', 'Jaguar', 'Orca', 'Mantis', 'Viper', 'Condor', 'Badger', 'Otter', 'Rhino', 'Crane', 'Mongoose', 'Specter'];
-                username = `${adjs[Math.floor(Math.random() * adjs.length)]}${nouns[Math.floor(Math.random() * nouns.length)]}`;
+                username = generateUsername();
                 chrome.storage.sync.set({ username }, () => {
                     resolve({
                         serverUrl: data.serverUrl || '',
@@ -576,6 +579,14 @@ function handleServerEvent(event, data) {
         case EVENTS.PAUSE:
         case EVENTS.SEEK:
         case EVENTS.FORCE_SYNC_PREPARE:
+            if (data.senderId && typeof data.seq === 'number') {
+                const lastSeq = lastSeqBySender[data.senderId];
+                if (lastSeq !== undefined && data.seq <= lastSeq) {
+                    addLog(`Ignored stale ${event} from ${data.senderId} (seq ${data.seq} <= ${lastSeq})`, 'warn');
+                    break;
+                }
+                lastSeqBySender[data.senderId] = data.seq;
+            }
             if (data.senderId) {
                 addToHistory(event, data.senderId);
                 showNotification(data.senderId, event);
@@ -592,6 +603,11 @@ function handleServerEvent(event, data) {
             routeToContent(event, data);
             break;
         case EVENTS.FORCE_SYNC_ACK:
+            if (data.senderId && typeof data.seq === 'number') {
+                const lastSeq = lastSeqBySender[data.senderId];
+                if (lastSeq !== undefined && data.seq <= lastSeq) break;
+                lastSeqBySender[data.senderId] = data.seq;
+            }
             if (isForceSyncInitiator) {
                 forceSyncAcks.add(data.senderId);
                 chrome.storage.session.set({ forceSyncAcks: Array.from(forceSyncAcks) });
@@ -621,6 +637,11 @@ function handleServerEvent(event, data) {
             }
             break;
         case EVENTS.FORCE_SYNC_EXECUTE:
+            if (data?.senderId && typeof data.seq === 'number') {
+                const lastSeq = lastSeqBySender[data.senderId];
+                if (lastSeq !== undefined && data.seq <= lastSeq) break;
+                lastSeqBySender[data.senderId] = data.seq;
+            }
             if (data?.senderId) {
                 addToHistory(event, data.senderId);
                 showNotification(data.senderId, event);
@@ -701,7 +722,7 @@ function handleServerEvent(event, data) {
                             peer.muted = data.muted !== undefined ? data.muted : peer.muted;
 
                             const timeSinceReactive = peer.lastReactiveUpdate ? (Date.now() - peer.lastReactiveUpdate) : Infinity;
-                            const ignoreStatus = timeSinceReactive < 1000;
+                            const ignoreStatus = timeSinceReactive < 300;
 
                             if (!ignoreStatus) {
                                 peer.playbackState = data.playbackState !== undefined ? data.playbackState : peer.playbackState;
@@ -797,8 +818,11 @@ function executeForceSync() {
     const executionTimestamp = Date.now();
     updateLastAction(EVENTS.FORCE_SYNC_EXECUTE, 'You', executionTimestamp);
 
-    emit(EVENTS.FORCE_SYNC_EXECUTE, { actionTimestamp: executionTimestamp });
-    routeToContent(EVENTS.FORCE_SYNC_EXECUTE, { actionTimestamp: executionTimestamp });
+    localSeq++;
+    chrome.storage.session.set({ localSeq });
+
+    emit(EVENTS.FORCE_SYNC_EXECUTE, { actionTimestamp: executionTimestamp, seq: localSeq });
+    routeToContent(EVENTS.FORCE_SYNC_EXECUTE, { actionTimestamp: executionTimestamp, seq: localSeq });
     addLog('Force Sync Executed', 'success');
 }
 
@@ -863,8 +887,10 @@ function executeEpisodeLobby() {
     });
 
     const syncPayload = { targetTime: 0.0 };
-    emit(EVENTS.FORCE_SYNC_PREPARE, { ...syncPayload, peerId, actionTimestamp: timestamp });
-    routeToContent(EVENTS.FORCE_SYNC_PREPARE, { ...syncPayload, actionTimestamp: timestamp });
+    localSeq++;
+    chrome.storage.session.set({ localSeq });
+    emit(EVENTS.FORCE_SYNC_PREPARE, { ...syncPayload, peerId, actionTimestamp: timestamp, seq: localSeq });
+    routeToContent(EVENTS.FORCE_SYNC_PREPARE, { ...syncPayload, actionTimestamp: timestamp, seq: localSeq });
 
     forceSyncTimeout = setTimeout(() => {
         if (isForceSyncInitiator) {
@@ -1137,10 +1163,13 @@ async function handleAsyncMessage(message, sender, sendResponse) {
     } else if (message.type === 'CONTENT_EVENT') {
         const processEvent = () => {
             const timestamp = Date.now();
+            localSeq++;
+            chrome.storage.session.set({ localSeq });
             updateLastAction(message.action, 'You', timestamp);
             lastActionState.targetTime = message.payload?.targetTime !== undefined ? message.payload.targetTime : message.payload?.currentTime;
             if (storageInitialized) chrome.storage.session.set({ lastActionState });
             message.payload.actionTimestamp = timestamp;
+            message.payload.seq = localSeq;
             
             // Local Reactive Update
             updateLocalPeerState(peerId, {
