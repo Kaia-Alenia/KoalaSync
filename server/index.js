@@ -342,6 +342,11 @@ io.on('connection', (socket) => {
                 }
             }
 
+            if (!room) {
+                socket.emit(EVENTS.ERROR, { message: "Join error" });
+                return;
+            }
+
             if (!createdByMe) {
                 if (room.passwordHash) {
                     if (!password || !(await bcrypt.compare(password, room.passwordHash))) {

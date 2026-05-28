@@ -976,6 +976,10 @@ async function routeToContent(action, payload) {
     const actionTimestamp = payload?.actionTimestamp || Date.now();
     const commandSenderId = payload?.senderId || null;
 
+    _routeToContentInternal(tabId, action, payload, actionTimestamp, commandSenderId, 0);
+}
+
+function _routeToContentInternal(tabId, action, payload, actionTimestamp, commandSenderId, retries) {
     chrome.tabs.sendMessage(tabId, { 
         type: 'SERVER_COMMAND',
         action,
@@ -983,12 +987,18 @@ async function routeToContent(action, payload) {
         actionTimestamp,
         commandSenderId
     }).catch(err => {
+        if (retries >= 3) {
+            addLog(`Content Script not responding in tab ${tabId} after ${retries} retries`, 'warn');
+            currentTabId = null;
+            updateBadgeStatus();
+            return;
+        }
         if (err.message.includes('Receiving end does not exist') || err.message.includes('Extension context invalidated')) {
             chrome.scripting.executeScript({
                 target: { tabId },
                 files: ['content.js']
             }).then(() => {
-                setTimeout(() => routeToContent(action, payload), 500);
+                setTimeout(() => _routeToContentInternal(tabId, action, payload, actionTimestamp, commandSenderId, retries + 1), 500);
             }).catch(_err => {
                 addLog(`Auto-reinject failed for tab ${tabId}`, 'warn');
             });
