@@ -95,8 +95,24 @@ function checkAuthRate(ip, roomId) {
 
 function recordAuthFailure(ip, roomId) {
     if (failedAuthAttempts.size > 50000) {
-        failedAuthAttempts.clear();
-        log('SECURITY', 'Cleared failedAuthAttempts map to prevent memory leak');
+        const now = Date.now();
+        // 1. Clear expired entries (> 15 mins)
+        for (const [key, record] of failedAuthAttempts.entries()) {
+            if (now - record.lastAttempt > 15 * 60 * 1000) {
+                failedAuthAttempts.delete(key);
+            }
+        }
+        
+        // 2. If still over 50k, perform LRU-style eviction on the oldest 10,000 entries
+        if (failedAuthAttempts.size > 50000) {
+            log('SECURITY', 'failedAuthAttempts size exceeded 50000. Performing LRU-style eviction.');
+            const sortedEntries = Array.from(failedAuthAttempts.entries())
+                .sort((a, b) => a[1].lastAttempt - b[1].lastAttempt);
+            
+            for (let i = 0; i < 10000 && i < sortedEntries.length; i++) {
+                failedAuthAttempts.delete(sortedEntries[i][0]);
+            }
+        }
     }
     const key = `${ip}:${roomId}`;
     const record = failedAuthAttempts.get(key) || { count: 0, lastAttempt: 0 };
@@ -429,7 +445,8 @@ io.on('connection', (socket) => {
         EVENTS.PLAY, EVENTS.PAUSE, EVENTS.SEEK, 
         EVENTS.PEER_STATUS, EVENTS.FORCE_SYNC_PREPARE, 
         EVENTS.FORCE_SYNC_ACK, EVENTS.FORCE_SYNC_EXECUTE,
-        EVENTS.EPISODE_LOBBY, EVENTS.EPISODE_READY
+        EVENTS.EPISODE_LOBBY, EVENTS.EPISODE_READY,
+        EVENTS.EPISODE_LOBBY_CANCEL
     ];
 
     relayEvents.forEach(eventName => {
@@ -501,7 +518,7 @@ io.on('connection', (socket) => {
                         if (!room.activeLobby.readyPeers.includes(mapping.peerId)) {
                             room.activeLobby.readyPeers.push(mapping.peerId);
                         }
-                    } else if ((eventName === EVENTS.FORCE_SYNC_PREPARE || eventName === EVENTS.FORCE_SYNC_EXECUTE) && room.activeLobby) {
+                    } else if ((eventName === EVENTS.FORCE_SYNC_PREPARE || eventName === EVENTS.FORCE_SYNC_EXECUTE || eventName === EVENTS.EPISODE_LOBBY_CANCEL) && room.activeLobby) {
                         room.activeLobby = null;
                     }
                     }

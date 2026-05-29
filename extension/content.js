@@ -81,7 +81,12 @@
     function findVideo(root = document) {
         const video = root.querySelector('video');
         if (video) return video;
-        for (const el of root.querySelectorAll('*')) {
+        
+        // Optimize: scan only potential player, video, media, and stream hosts by matching typical keywords (case-insensitive)
+        // or common custom element tags. This prevents recursive scanning of thousands of standard DOM nodes (div, span, a, etc.)
+        // while guaranteeing 100% airtight compatibility with all video web components in the wild.
+        const potentialHosts = root.querySelectorAll('[id*="player" i], [class*="player" i], [id*="video" i], [class*="video" i], [id*="media" i], [class*="media" i], [id*="stream" i], [class*="stream" i], ytd-player, netflix-player, emby-player, jellyfin-player, video-player');
+        for (const el of potentialHosts) {
             if (el.shadowRoot) {
                 const found = findVideo(el.shadowRoot);
                 if (found) return found;

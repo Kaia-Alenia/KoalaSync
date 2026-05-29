@@ -49,7 +49,8 @@ const elements = {
     lobbyPeerStatus: document.getElementById('lobbyPeerStatus'),
     browserNotifications: document.getElementById('browserNotifications'),
     autoCopyInvite: document.getElementById('autoCopyInvite'),
-    syncTabCopyInvite: document.getElementById('syncTabCopyInvite')
+    syncTabCopyInvite: document.getElementById('syncTabCopyInvite'),
+    cancelLobbyBtn: document.getElementById('cancelLobbyBtn')
 };
 
 let localPeerId = null;
@@ -391,18 +392,20 @@ function updatePeerList(peers) {
             header.style.cssText = 'display:flex; justify-content:space-between; align-items:center; padding-right: 24px;';
 
             const nameSpan = document.createElement('span');
+            nameSpan.style.cssText = 'display: inline-flex; align-items: center; max-width: 200px; overflow: hidden; white-space: nowrap;';
             const avatar = getAvatarForName(pUsername || pId);
             if (pUsername) {
                 const u = document.createElement('span');
-                u.style.cssText = 'font-weight:600; color:white;';
+                u.style.cssText = 'font-weight:600; color:white; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 120px; display: inline-block;';
                 u.textContent = `${avatar} ${pUsername}`;
                 const i = document.createElement('span');
-                i.style.cssText = 'font-size:10px; opacity:0.6; font-style:italic;';
+                i.style.cssText = 'font-size:10px; opacity:0.6; font-style:italic; white-space: nowrap; flex-shrink: 0;';
                 i.textContent = ` (${pId})`;
                 nameSpan.appendChild(u);
                 nameSpan.appendChild(i);
             } else {
                 nameSpan.style.fontWeight = '600';
+                nameSpan.style.cssText = 'white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 170px;';
                 nameSpan.textContent = `${avatar} ${pId}`;
             }
 
@@ -994,9 +997,14 @@ elements.leaveBtn.addEventListener('click', async () => {
 });
 
 function handleCreateRoom() {
-    const generateId = () => Math.random().toString(36).substring(2, 8).toUpperCase();
-    const roomId = generateId();
-    const password = generateId();
+    const secureGenerateId = (length = 6) => {
+        const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+        const array = new Uint8Array(length);
+        self.crypto.getRandomValues(array);
+        return Array.from(array, byte => chars[byte % chars.length]).join('');
+    };
+    const roomId = secureGenerateId();
+    const password = secureGenerateId();
     elements.roomId.value = roomId;
     elements.password.value = password;
     window.justCreatedRoom = true;
@@ -1200,6 +1208,21 @@ if (elements.syncTabCopyInvite) {
                 elements.syncTabCopyInvite.textContent = original;
                 elements.syncTabCopyInvite.style.color = '';
             }, 2000);
+        });
+    });
+}
+
+if (elements.cancelLobbyBtn) {
+    elements.cancelLobbyBtn.addEventListener('click', () => {
+        chrome.runtime.sendMessage({ type: 'CANCEL_EPISODE_LOBBY' }, (response) => {
+            if (response && response.status === 'ok') {
+                showToast('Episode Lobby skipped.', 'info');
+                if (elements.episodeLobbyCard) {
+                    elements.episodeLobbyCard.style.display = 'none';
+                }
+            } else {
+                showToast('Failed to skip lobby.', 'error');
+            }
         });
     });
 }

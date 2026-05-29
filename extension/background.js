@@ -19,6 +19,7 @@ let lastActionState = { action: null, senderId: null, timestamp: 0, acks: [] };
 let localSeq = 0;                         // Monotonically increasing command sequence for this peer
 const lastSeqBySender = {};               // senderId → last received seq (stale command guard)
 const activePorts = new Set();            // New: track active content ports for keep-alive
+let expectedAcksCount = 0;                // Snapshot of peerCount when initiating Force Sync
 
 // --- Keep-Alive Port Listener ---
 chrome.runtime.onConnect.addListener((port) => {
@@ -53,9 +54,10 @@ function ensureState() {
                 'logs', 'history', 'currentRoom', 'lastActionState', 
                 'eventQueue', 'isForceSyncInitiator', 'forceSyncAcks', 
                 'forceSyncDeadline', 'reconnectFailed', 'reconnectStartTime', 'currentTabId', 'currentTabTitle',
-                'episodeLobby', 'localSeq', 'lastSeqBySender'
+                'episodeLobby', 'localSeq', 'lastSeqBySender', 'expectedAcksCount'
             ], (data) => {
                 clearTimeout(storageTimeout);
+                if (data.expectedAcksCount !== undefined) expectedAcksCount = data.expectedAcksCount;
                 if (data.currentTabId !== undefined) currentTabId = data.currentTabId;
                 if (data.currentTabTitle !== undefined) currentTabTitle = data.currentTabTitle;
                 // Merge data from storage with any early-arriving state
@@ -705,9 +707,9 @@ function handleServerEvent(event, data) {
                     });
                 }
 
-                // Check if all peers responded
-                const peerCount = currentRoom && Array.isArray(currentRoom.peers) ? currentRoom.peers.length : 1;
-                if (forceSyncAcks.size >= peerCount) {
+                // Check if all peers responded using the snapshot count
+                const targetCount = expectedAcksCount > 0 ? expectedAcksCount : (currentRoom && Array.isArray(currentRoom.peers) ? currentRoom.peers.length : 1);
+                if (forceSyncAcks.size >= targetCount) {
                     executeForceSync();
                 }
             }
@@ -786,8 +788,9 @@ function handleServerEvent(event, data) {
                     }
 
                     if (isForceSyncInitiator) {
-                        const peerCount = Array.isArray(currentRoom.peers) ? currentRoom.peers.length : 1;
-                        if (forceSyncAcks.size >= peerCount) {
+                        expectedAcksCount = Math.max(1, currentRoom.peers ? currentRoom.peers.length : 1);
+                        chrome.storage.session.set({ expectedAcksCount });
+                        if (forceSyncAcks.size >= expectedAcksCount) {
                             executeForceSync();
                         }
                     }
@@ -867,6 +870,13 @@ function handleServerEvent(event, data) {
                 }
             }
             break;
+        case EVENTS.EPISODE_LOBBY_CANCEL:
+            if (episodeLobby) {
+                const title = episodeLobby.expectedTitle;
+                clearEpisodeLobbyState();
+                addLog(`Episode lobby for "${title}" cancelled by ${data.senderId || 'peer'}`, 'warn');
+            }
+            break;
         default:
             addLog(`Received unknown event from server: ${event}`, 'warn');
             break;
@@ -877,10 +887,12 @@ function executeForceSync() {
     if (forceSyncTimeout) clearTimeout(forceSyncTimeout);
     isForceSyncInitiator = false;
     forceSyncAcks.clear();
+    expectedAcksCount = 0;
     chrome.storage.session.set({ 
         isForceSyncInitiator: false, 
         forceSyncAcks: [], 
-        forceSyncDeadline: null 
+        forceSyncDeadline: null,
+        expectedAcksCount: 0
     });
 
     // Set all peers to playing and apply a reactive lock to block stale heartbeats
@@ -934,6 +946,10 @@ function clearEpisodeLobbyState() {
 function cancelEpisodeLobby(reason) {
     if (!episodeLobby) return;
     const title = episodeLobby.expectedTitle;
+    
+    // Broadcast cancellation to room
+    emit(EVENTS.EPISODE_LOBBY_CANCEL, { peerId });
+
     clearEpisodeLobbyState();
     addLog(`Episode lobby cancelled: ${reason} for "${title}"`, 'warn');
 
@@ -955,6 +971,7 @@ function executeEpisodeLobby() {
 
     isForceSyncInitiator = true;
     forceSyncAcks.clear();
+    expectedAcksCount = currentRoom && Array.isArray(currentRoom.peers) ? currentRoom.peers.length : 1;
     const deadline = Date.now() + FORCE_SYNC_TIMEOUT;
     const timestamp = Date.now();
     updateLastAction(EVENTS.FORCE_SYNC_PREPARE, 'You', timestamp);
@@ -963,7 +980,8 @@ function executeEpisodeLobby() {
     chrome.storage.session.set({ 
         isForceSyncInitiator: true, 
         forceSyncAcks: [], 
-        forceSyncDeadline: deadline 
+        forceSyncDeadline: deadline,
+        expectedAcksCount: expectedAcksCount
     });
 
     const syncPayload = { targetTime: 0.0 };
@@ -1098,11 +1116,13 @@ function leaveOldRoomIfSwitching(newRoomId) {
         // Reset force sync states
         isForceSyncInitiator = false;
         forceSyncAcks.clear();
+        expectedAcksCount = 0;
         if (forceSyncTimeout) clearTimeout(forceSyncTimeout);
         chrome.storage.session.set({ 
             isForceSyncInitiator: false, 
             forceSyncAcks: [], 
-            forceSyncDeadline: null 
+            forceSyncDeadline: null,
+            expectedAcksCount: 0
         });
 
         // Cancel any active episode lobby
@@ -1177,6 +1197,7 @@ async function handleAsyncMessage(message, sender, sendResponse) {
         
         isForceSyncInitiator = false;
         forceSyncAcks.clear();
+        expectedAcksCount = 0;
         if (forceSyncTimeout) clearTimeout(forceSyncTimeout);
 
         // Cancel any active episode lobby
@@ -1187,7 +1208,8 @@ async function handleAsyncMessage(message, sender, sendResponse) {
             isForceSyncInitiator: false,
             forceSyncAcks: [],
             forceSyncDeadline: null,
-            episodeLobby: null
+            episodeLobby: null,
+            expectedAcksCount: 0
         });
         addLog('Left Room', 'info');
         chrome.runtime.sendMessage({ type: 'PEER_UPDATE', peers: [] }).catch(() => {});
@@ -1270,11 +1292,13 @@ async function handleAsyncMessage(message, sender, sendResponse) {
             if (message.action === EVENTS.FORCE_SYNC_PREPARE) {
                 isForceSyncInitiator = true;
                 forceSyncAcks.clear();
+                expectedAcksCount = currentRoom && Array.isArray(currentRoom.peers) ? currentRoom.peers.length : 1;
                 const deadline = Date.now() + FORCE_SYNC_TIMEOUT;
                 chrome.storage.session.set({ 
                     isForceSyncInitiator: true, 
                     forceSyncAcks: [], 
-                    forceSyncDeadline: deadline 
+                    forceSyncDeadline: deadline,
+                    expectedAcksCount: expectedAcksCount
                 });
                 addLog('Initiating Force Sync...', 'info');
                 
@@ -1500,6 +1524,13 @@ async function handleAsyncMessage(message, sender, sendResponse) {
         } else {
             sendResponse({ lobbyActive: false });
         }
+    } else if (message.type === 'CANCEL_EPISODE_LOBBY') {
+        if (episodeLobby) {
+            cancelEpisodeLobby('Cancelled by user');
+            sendResponse({ status: 'ok' });
+        } else {
+            sendResponse({ error: 'No active lobby' });
+        }
     } else {
         // Final fallback to prevent channel hanging
         sendResponse({ error: 'unhandled_message' });
@@ -1507,7 +1538,8 @@ async function handleAsyncMessage(message, sender, sendResponse) {
 }
 
 // Tab removal listener
-chrome.tabs.onRemoved.addListener((tabId) => {
+chrome.tabs.onRemoved.addListener(async (tabId) => {
+    await ensureState();
     if (tabId === currentTabId) {
         const wasInRoom = !!currentRoom;
         currentTabId = null;
@@ -1548,7 +1580,8 @@ chrome.tabs.onRemoved.addListener((tabId) => {
 });
 
 // Re-inject on full page refresh
-chrome.tabs.onUpdated.addListener((tabId, changeInfo, _tab) => {
+chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, _tab) => {
+    await ensureState();
     if (currentTabId && tabId === parseInt(currentTabId) && changeInfo.status === 'complete') {
         chrome.scripting.executeScript({
             target: { tabId },

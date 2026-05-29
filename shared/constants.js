@@ -36,7 +36,8 @@ export const EVENTS = {
 
     // Episode Auto-Sync
     EPISODE_LOBBY: "episode_lobby",     // Broadcast: waiting for everyone on this episode
-    EPISODE_READY: "episode_ready"      // Response: loaded the episode and paused at 0:00
+    EPISODE_READY: "episode_ready",      // Response: loaded the episode and paused at 0:00
+    EPISODE_LOBBY_CANCEL: "episode_lobby_cancel" // Broadcast: cancel active lobby and resume
 };
 
 export const HEARTBEAT_INTERVAL = 15000; // 15s
