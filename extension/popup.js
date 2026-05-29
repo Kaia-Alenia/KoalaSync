@@ -563,7 +563,9 @@ async function populateTabs(providedPeers = null, providedTargetTabId = null) {
                     const hostname = new URL(tab.url).hostname.toLowerCase();
                     if (domain.endsWith('.')) return hostname.startsWith(domain) || hostname.includes('.' + domain);
                     if (domain.includes('.')) return hostname === domain || hostname.endsWith('.' + domain);
-                } catch {}
+                } catch {
+                    /* ignore invalid URLs */
+                }
                 return urlStr.includes(domain);
             })) return false;
         }
@@ -571,23 +573,32 @@ async function populateTabs(providedPeers = null, providedTargetTabId = null) {
     });
 
     // Smart Matching Logic — exclude own tabTitle to prevent self-match (computed once)
+    const cleanTitle = (rawTitle) => {
+        if (!rawTitle) return '';
+        return rawTitle
+            .replace(/(?:\s*[-\|•]\s*(?:YouTube|Twitch|Jellyfin|Emby|Netflix|Vimeo|Dailymotion).*)$/i, '')
+            .replace(/^(?:Netflix|Twitch|YouTube|Emby|Jellyfin)\s*[-\|•]\s*/i, '')
+            .trim();
+    };
+
     const peerTitles = peerIds
         .filter(p => (typeof p === 'object' ? p.peerId : p) !== localPeerId)
         .map(p => (typeof p === 'object' ? p.tabTitle : null))
-        .filter(t => t && t.length > 3);
+        .filter(t => t && t.length > 3)
+        .map(t => cleanTitle(t).toLowerCase())
+        .filter(t => t.length > 3);
 
     filteredTabs.forEach(tab => {
         const option = document.createElement('option');
         option.value = tab.id;
-        const title = (tab.title || 'Loading...');
+        const rawTitle = (tab.title || 'Loading...');
+        const title = cleanTitle(rawTitle).toLowerCase();
         
-        const isMatch = peerTitles.some(pt => {
-            const t1 = title.toLowerCase();
-            const t2 = pt.toLowerCase();
-            return t1.includes(t2) || t2.includes(t1);
+        const isMatch = title.length > 3 && peerTitles.some(pt => {
+            return title.includes(pt) || pt.includes(title);
         });
 
-        let label = title.substring(0, 45) + (title.length > 45 ? '...' : '');
+        let label = rawTitle.substring(0, 45) + (rawTitle.length > 45 ? '...' : '');
         if (isMatch) {
             label = `⭐ MATCH: ${label}`;
             option.style.fontWeight = 'bold';
@@ -992,7 +1003,7 @@ function handleCreateRoom() {
     
     // Auto-connect
     elements.joinBtn.click();
-};
+}
 
 elements.createRoomBtn.addEventListener('click', handleCreateRoom);
 const syncTabCreateRoomBtn = document.getElementById('syncTabCreateRoomBtn');

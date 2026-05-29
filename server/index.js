@@ -196,7 +196,18 @@ function removePeerFromRoom(socketId, roomId, reason) {
 
     // 3. Notify remaining peers (use io.to so the removed socket itself
     //    doesn't receive it — it has already left or is disconnecting)
-    io.to(roomId).emit(EVENTS.PEER_STATUS, { peerId, status: 'left' });
+    const isPeerStillConnected = Array.from(room.peerData.values()).some(data => data.peerId === peerId);
+    if (!isPeerStillConnected) {
+        io.to(roomId).emit(EVENTS.PEER_STATUS, { peerId, status: 'left' });
+    }
+
+    // 3.5. Clean up active lobby if a peer leaves
+    if (room.activeLobby) {
+        room.activeLobby.readyPeers = room.activeLobby.readyPeers.filter(id => id !== peerId);
+        if (room.activeLobby.readyPeers.length <= 1 || room.activeLobby.initiatorPeerId === peerId) {
+            room.activeLobby = null; // Dissolve lobby
+        }
+    }
 
     // 4. Delete empty room
     if (room.peers.size === 0) {
@@ -401,7 +412,8 @@ io.on('connection', (socket) => {
             socket.to(roomId).emit(EVENTS.PEER_STATUS, { peerId, username: username || null, tabTitle: tabTitle || null, mediaTitle: mediaTitle || null, status: 'joined' });
             socket.emit(EVENTS.ROOM_DATA, { 
                 roomId, 
-                peers: Array.from(room.peers).map(sid => room.peerData.get(sid)) 
+                peers: Array.from(room.peers).map(sid => room.peerData.get(sid)),
+                activeLobby: room.activeLobby || null
             });
             log('ROOM', `Peer ${peerId} joined: ${roomId.substring(0, 3)}***`);
         } catch (err) {
@@ -477,6 +489,21 @@ io.on('connection', (socket) => {
                     // Strip undefined keys for clean wire format
                     Object.keys(relayPayload).forEach(k => relayPayload[k] === undefined && delete relayPayload[k]);
                     socket.to(mapping.roomId).emit(eventName, relayPayload);
+
+                    // --- Side-effects: Server-side Episode Lobby Tracking ---
+                    if (eventName === EVENTS.EPISODE_LOBBY && relayPayload.expectedTitle) {
+                        room.activeLobby = {
+                            expectedTitle: relayPayload.expectedTitle,
+                            initiatorPeerId: mapping.peerId,
+                            readyPeers: [mapping.peerId]
+                        };
+                    } else if (eventName === EVENTS.EPISODE_READY && room.activeLobby) {
+                        if (!room.activeLobby.readyPeers.includes(mapping.peerId)) {
+                            room.activeLobby.readyPeers.push(mapping.peerId);
+                        }
+                    } else if ((eventName === EVENTS.FORCE_SYNC_PREPARE || eventName === EVENTS.FORCE_SYNC_EXECUTE) && room.activeLobby) {
+                        room.activeLobby = null;
+                    }
                     }
                 }
             } catch (err) {

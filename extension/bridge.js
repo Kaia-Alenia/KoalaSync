@@ -1,3 +1,4 @@
+/* global cloneInto */
 /**
  * KoalaSync Bridge Script
  * Injected into sync.koalastuff.net to facilitate communication between 

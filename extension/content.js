@@ -383,6 +383,18 @@
                 }
             } else if (action === EVENTS.FORCE_SYNC_EXECUTE) {
                 stopLobbyPoll();
+
+                // Network Latency Compensation: pre-seek video by network transit latency
+                const video = findVideo();
+                if (video && message.actionTimestamp) {
+                    const latency = (Date.now() - message.actionTimestamp) / 1000;
+                    if (latency > 0.05 && latency < 5.0) {
+                        _setSuppress('seek');
+                        video.currentTime += latency;
+                        reportLog(`Force Sync: Compensated ${Math.round(latency * 1000)}ms network latency`, 'info');
+                    }
+                }
+
                 tryMediaAction(EVENTS.PLAY);
                 chrome.runtime.sendMessage({ type: 'CMD_ACK', actionTimestamp: message.actionTimestamp, commandSenderId: message.commandSenderId });
                 actionCompleted = true;
@@ -469,6 +481,17 @@
 
     // Detect native events
     function reportEvent(action) {
+        if (seekDebounceTimer && (action === EVENTS.PLAY || action === EVENTS.PAUSE)) {
+            clearTimeout(seekDebounceTimer);
+            seekDebounceTimer = null;
+            const v = findVideo();
+            if (v && Number.isFinite(v.currentTime)) {
+                lastReportedSeekTime = v.currentTime;
+                reportLog(`[Seek] Debounce flushed immediately due to ${action.toUpperCase()}`, 'info');
+                reportEvent(EVENTS.SEEK);
+            }
+        }
+
         const video = findVideo();
         if (!video) return;
 
@@ -512,7 +535,7 @@
     // pause immediately after switching back.
     let pageVisible = !document.hidden;
     let visibilityGraceUntil = 0;
-    const VISIBILITY_GRACE_MS = 1000;
+    const VISIBILITY_GRACE_MS = 300;
 
     document.addEventListener('visibilitychange', () => {
         if (document.hidden) {
@@ -705,6 +728,24 @@
 
     // Initial Setup
     setupListeners();
+
+    // Maintain a persistent keep-alive port connection to prevent background SW suspension
+    let keepAlivePort = null;
+    function connectKeepAlivePort() {
+        try {
+            if (chrome.runtime.id) {
+                keepAlivePort = chrome.runtime.connect({ name: 'keepAlive' });
+                keepAlivePort.onDisconnect.addListener(() => {
+                    keepAlivePort = null;
+                    setTimeout(connectKeepAlivePort, 1000);
+                });
+            }
+        } catch (_e) {
+            // Extension context invalidated or disabled
+        }
+    }
+    connectKeepAlivePort();
+
     schedulePeriodicHeartbeat();
 
     // Immediate heartbeat on injection — populate peer data without waiting 15s

@@ -18,6 +18,17 @@ let isNamespaceJoined = false;
 let lastActionState = { action: null, senderId: null, timestamp: 0, acks: [] };
 let localSeq = 0;                         // Monotonically increasing command sequence for this peer
 const lastSeqBySender = {};               // senderId → last received seq (stale command guard)
+const activePorts = new Set();            // New: track active content ports for keep-alive
+
+// --- Keep-Alive Port Listener ---
+chrome.runtime.onConnect.addListener((port) => {
+    if (port.name === 'keepAlive') {
+        activePorts.add(port);
+        port.onDisconnect.addListener(() => {
+            activePorts.delete(port);
+        });
+    }
+});
 
 function _persistLastSeq() {
     if (storageInitialized) chrome.storage.session.set({ lastSeqBySender });
@@ -562,8 +573,46 @@ function handleServerEvent(event, data) {
             currentRoom = data;
             if (currentRoom && Array.isArray(currentRoom.peers)) {
                 currentRoom.peers = currentRoom.peers.map(p => typeof p === 'object' ? createPeerData(p) : { peerId: p, username: null, tabTitle: null, mediaTitle: null, playbackState: null, currentTime: null, volume: null, muted: null, lastHeartbeat: Date.now() });
+                
+                // Clear sequence tracking for peers that are no longer in the room
+                const activePeerIds = new Set(currentRoom.peers.map(p => typeof p === 'object' ? p.peerId : p));
+                Object.keys(lastSeqBySender).forEach(pId => {
+                    if (!activePeerIds.has(pId)) {
+                        delete lastSeqBySender[pId];
+                    }
+                });
+                _persistLastSeq();
             } else if (currentRoom) {
                 currentRoom.peers = [];
+            }
+
+            // Recover server-tracked active Episode Lobby if present
+            if (data && data.activeLobby && !episodeLobby) {
+                episodeLobby = {
+                    expectedTitle: data.activeLobby.expectedTitle,
+                    initiatorPeerId: data.activeLobby.initiatorPeerId,
+                    readyPeers: data.activeLobby.readyPeers,
+                    createdAt: Date.now()
+                };
+                persistEpisodeLobby();
+                broadcastLobbyUpdate();
+                addLog(`Recovered active episode lobby from server: "${episodeLobby.expectedTitle}"`, 'info');
+
+                // Notify content script to start polling
+                if (currentTabId) {
+                    const tabId = parseInt(currentTabId);
+                    if (!isNaN(tabId)) {
+                        chrome.tabs.sendMessage(tabId, {
+                            type: 'EPISODE_LOBBY',
+                            expectedTitle: episodeLobby.expectedTitle
+                        }).catch(() => {});
+                    }
+                }
+
+                // Schedule timeout if we don't already have one
+                if (!episodeLobbyTimeout) {
+                    episodeLobbyTimeout = setTimeout(() => cancelEpisodeLobby('Timeout'), EPISODE_LOBBY_TIMEOUT);
+                }
             }
             if (storageInitialized) chrome.storage.session.set({ currentRoom });
             addLog(`Joined Room: ${data?.roomId || 'unknown'}`, 'success');
@@ -716,6 +765,9 @@ function handleServerEvent(event, data) {
                 if (!Array.isArray(currentRoom.peers)) currentRoom.peers = [];
                 if (data.status === 'joined') {
                     if (!currentRoom.peers.find(p => (p.peerId || p) === data.peerId)) {
+                        delete lastSeqBySender[data.peerId];
+                        _persistLastSeq();
+                        
                         currentRoom.peers.push(createPeerData(data));
                         if (storageInitialized) chrome.storage.session.set({ currentRoom });
                         chrome.runtime.sendMessage({ type: 'PEER_UPDATE', peers: currentRoom.peers }).catch(() => {});
