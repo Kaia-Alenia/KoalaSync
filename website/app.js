@@ -103,7 +103,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                         </p>
                                     `;
                                 }
-                            } } else {
+                            } else {
                                 actions.innerHTML = `
                                     <div class="joining-spinner" style="text-align:center; padding: 1rem;">
                                         <div class="join-spinner"></div>
