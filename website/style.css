@@ -1515,6 +1515,14 @@ html.lang-de [lang="en"] {
     margin: 0 auto 0 auto;
 }
 
+.cta-github-mascot {
+    display: block;
+    width: 100%;
+    max-width: 250px;
+    height: auto;
+    margin: 1.5rem auto;
+}
+
 .use-case-icon {
     font-size: 1.6rem;
     margin-right: 0.6rem;
