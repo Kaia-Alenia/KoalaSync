@@ -1,26 +1,22 @@
 // KoalaSync Landing Page Logic
 
 document.addEventListener('DOMContentLoaded', () => {
-    // Scroll Reveal Logic
+    // Scroll Reveal Logic (IntersectionObserver for performance)
     const revealElements = document.querySelectorAll('[data-reveal]');
     
-    const revealOnScroll = () => {
-        const windowHeight = window.innerHeight;
-        revealElements.forEach(el => {
-            const elementTop = el.getBoundingClientRect().top;
-            const revealPoint = 150;
-
-            if (elementTop < windowHeight - revealPoint) {
-                el.classList.add('revealed');
+    const revealObserver = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                entry.target.classList.add('revealed');
+                revealObserver.unobserve(entry.target);
             }
         });
-    };
+    }, {
+        rootMargin: '0px 0px -150px 0px',
+        threshold: 0.1
+    });
 
-    // Initial check
-    revealOnScroll();
-
-    // Scroll listener
-    window.addEventListener('scroll', revealOnScroll);
+    revealElements.forEach(el => revealObserver.observe(el));
 
     // Navbar scroll effect
     const nav = document.querySelector('nav');
@@ -75,11 +71,11 @@ document.addEventListener('DOMContentLoaded', () => {
                                 if (isFirefox) {
                                     actions.innerHTML = `
                                         <a href="https://addons.mozilla.org/de/firefox/addon/koalasync/" class="primary btn-firefox" style="text-align:center; text-decoration:none; display:flex; align-items:center; justify-content:center; gap: 8px; padding: 1.2rem; border-radius: 12px; font-weight: 700;">
-                                            <span>🦊</span>
+                                            <img src="assets/firefox.svg" alt="Firefox" width="20" style="display: block;">
                                             <span lang="en">GET IT ON MOZILLA ADD-ONS</span><span lang="de">IM FIREFOX ADD-ON STORE HERUNTERLADEN</span>
                                         </a>
                                         <a href="https://github.com/shik3i/KoalaSync" style="text-align:center; text-decoration:none; display:flex; align-items:center; justify-content:center; gap: 8px; padding: 0.8rem; background: rgba(255, 255, 255, 0.04); border: 1px solid var(--glass-border); color: #e66000; border-radius: 12px; font-weight: 700; font-size: 0.85rem; margin-top: 0.5rem; transition: background 0.2s;">
-                                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="16" height="16" style="display: block;"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
+                                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="16" height="16" aria-hidden="true" style="display: block;"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
                                             <span lang="en">Download via GitHub</span><span lang="de">Über GitHub herunterladen</span>
                                         </a>
                                         <p style="text-align:center; font-size:0.8rem; opacity:0.7; margin-top: 1.2rem; color: var(--text-muted);">
@@ -90,11 +86,11 @@ document.addEventListener('DOMContentLoaded', () => {
                                 } else {
                                     actions.innerHTML = `
                                         <a href="https://chromewebstore.google.com/detail/koalasync/obbnmkmlaaddodakcbdljknjpagklifc" class="primary" style="text-align:center; text-decoration:none; display:flex; align-items:center; justify-content:center; gap: 8px; padding: 1.2rem; background: var(--accent); color: white; border-radius: 12px; font-weight: 700;">
-                                            <img src="assets/chrome.svg" width="20" style="display: block;">
+                                            <img src="assets/chrome.svg" alt="Chrome" width="20" style="display: block;">
                                             <span lang="en">GET IT ON CHROME WEBSTORE</span><span lang="de">IM CHROME WEB STORE HERUNTERLADEN</span>
                                         </a>
                                         <a href="https://github.com/shik3i/KoalaSync" style="text-align:center; text-decoration:none; display:flex; align-items:center; justify-content:center; gap: 8px; padding: 0.8rem; background: rgba(255, 255, 255, 0.04); border: 1px solid var(--glass-border); color: var(--accent); border-radius: 12px; font-weight: 700; font-size: 0.85rem; margin-top: 0.5rem; transition: background 0.2s;">
-                                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="16" height="16" style="display: block;"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
+                                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="16" height="16" aria-hidden="true" style="display: block;"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
                                             <span lang="en">Download via GitHub</span><span lang="de">Über GitHub herunterladen</span>
                                         </a>
                                         <p style="text-align:center; font-size:0.8rem; opacity:0.7; margin-top: 1.2rem; color: var(--text-muted);">
@@ -106,7 +102,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             } else {
                                 actions.innerHTML = `
                                     <div class="joining-spinner" style="text-align:center; padding: 1rem;">
-                                        <div style="font-size: 1.2rem; margin-bottom: 0.5rem;">🚀</div>
+                                        <div class="join-spinner"></div>
                                         <div style="font-weight: 600; color: var(--accent);">
                                             <span lang="en">Joining room automatically...</span><span lang="de">Raum wird automatisch betreten...</span>
                                         </div>
@@ -194,22 +190,21 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (icon) icon.textContent = '✅';
                 const isDE = document.documentElement.classList.contains('lang-de');
                 title.textContent = isDE ? 'Erfolgreich!' : 'Success!';
+                desc.innerHTML = isDE
+                    ? 'Verbunden! <br><span style="color:var(--accent); font-weight:bold;">W\u00e4hle jetzt einen Video-Tab in der Erweiterung aus.</span>'
+                    : 'Connected! <br><span style="color:var(--accent); font-weight:bold;">Now select a video tab in the extension.</span>';
                 
-                let count = 2;
+                let count = 3;
                 const updateCountdown = () => {
-                    const closingMsg = isDE 
-                        ? `Du bist dem Raum beigetreten. <br><span style="color:var(--accent); font-weight:bold;">Dieser Tab schließt sich in ${count} Sekunden...</span>`
-                        : `You joined the room. <br><span style="color:var(--accent); font-weight:bold;">This tab will close in ${count} seconds...</span>`;
-                    desc.innerHTML = closingMsg;
                     if (count <= 0) {
                         window.close();
-                        desc.textContent = isDE ? 'Beitritt erfolgreich! Du kannst diesen Tab jetzt manuell schließen.' : 'Joined successfully! You can close this tab manually.';
+                        desc.textContent = isDE ? 'Beitritt erfolgreich! Du kannst diesen Tab jetzt manuell schlie\u00dfen.' : 'Joined successfully! You can close this tab manually.';
                     } else {
                         count--;
                         setTimeout(updateCountdown, 1000);
                     }
                 };
-                updateCountdown();
+                setTimeout(updateCountdown, 1000);
                 
                 const closeLabel = isDE ? 'TAB JETZT SCHLIESSEN' : 'CLOSE TAB NOW';
                 actions.innerHTML = `<button class="primary" onclick="window.close()" style="background:var(--success); width: 100%;">${closeLabel}</button>`;
@@ -405,6 +400,47 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
+    // Automated Store/Local Badge Linking based on User-Agent
+    const detectBrowserAndElevateBadge = () => {
+        const isFirefox = navigator.userAgent.includes('Firefox');
+        const isChrome = navigator.userAgent.includes('Chrome') || navigator.userAgent.includes('Chromium');
+        const chromeBtns = document.querySelectorAll('.btn-primary');
+        const firefoxBtns = document.querySelectorAll('.btn-firefox');
+
+        if (isFirefox && chromeBtns.length > 0 && firefoxBtns.length > 0) {
+            // User is on Firefox: Elevate Firefox button to primary, make Chrome secondary
+            chromeBtns.forEach(btn => {
+                btn.classList.remove('btn-primary');
+                btn.classList.add('btn-secondary');
+            });
+            
+            firefoxBtns.forEach(btn => {
+                // Put Firefox first in visual order
+                btn.style.order = '-1';
+                
+                // Add subtle focus scale effect
+                btn.style.transform = 'scale(1.05)';
+                btn.addEventListener('mouseleave', () => {
+                    btn.style.transform = 'scale(1)';
+                });
+                btn.addEventListener('mouseenter', () => {
+                    btn.style.transform = 'scale(1.05) translateY(-2px)';
+                });
+            });
+        } else if (isChrome && chromeBtns.length > 0 && firefoxBtns.length > 0) {
+            // User is on Chrome: Make Firefox secondary
+            firefoxBtns.forEach(btn => {
+                btn.classList.remove('btn-firefox');
+                btn.classList.add('btn-secondary');
+                btn.style.color = 'var(--text)';
+                btn.style.background = 'var(--card)';
+                btn.style.border = '1px solid var(--glass-border)';
+                btn.style.boxShadow = 'none';
+            });
+        }
+    };
+
+    detectBrowserAndElevateBadge();
     checkInvite();
     updateDynamicVersion();
 });
