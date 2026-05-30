@@ -6,6 +6,7 @@
     <title>KoalaSync | Sync Netflix, Emby, Jellyfin & Any Video with Friends – Browser Extension</title>
     <meta name="description" content="Watch Netflix, Emby, Jellyfin, YouTube, Twitch and any HTML5 video in perfect sync with friends. KoalaSync is a privacy-first, open-source browser extension for Chrome and Firefox. Works on almost any site with a video element.">
     
+    <link rel="preload" href="style.css" as="style">
     <link rel="stylesheet" href="style.css">
     <link rel="icon" type="image/png" href="assets/logo.png">
     <link rel="canonical" href="https://sync.koalastuff.net/">
@@ -17,6 +18,26 @@
     <meta property="og:url" content="https://sync.koalastuff.net/">
 
     <script src="lang-init.js"></script>
+    
+    <!-- Structured Data (Schema.org) for Rich Snippets -->
+    <script type="application/ld+json" id="schema-software">
+    {
+      "@context": "https://schema.org",
+      "@type": "SoftwareApplication",
+      "name": "KoalaSync",
+      "operatingSystem": "Windows, macOS, Linux, ChromeOS",
+      "applicationCategory": "BrowserApplication",
+      "browserRequirements": "Google Chrome, Mozilla Firefox, Microsoft Edge, Opera, Brave",
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "EUR"
+      },
+      "description": "Watch Netflix, YouTube, Twitch, Jellyfin, Emby and any HTML5 video in perfect sync with friends. Open source, privacy-first, free.",
+      "softwareVersion": "1.9.3",
+      "license": "https://opensource.org/licenses/MIT"
+    }
+    </script>
 </head>
 <body>
 
@@ -29,10 +50,10 @@
     <nav>
         <div class="container nav-content">
             <div class="logo-area">
-                <img src="assets/logo.png" alt="KoalaSync Logo">
+                <img src="assets/logo.png" alt="KoalaSync Logo" width="40" height="40">
                 <span>KoalaSync</span>
             </div>
-            <button class="hamburger" aria-label="Menu">☰</button>
+            <button class="hamburger" aria-label="Menu" aria-expanded="false">☰</button>
             <div class="nav-links">
                 <a href="#features"><span lang="en">Features</span><span lang="de">Funktionen</span></a>
                 <a href="#how-it-works"><span lang="en">How it works</span><span lang="de">So funktioniert's</span></a>
@@ -41,7 +62,7 @@
                     GitHub
                 </a>
                 <a class="lang-toggle" style="display: inline-flex; align-items: center; gap: 6px; cursor: pointer;">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="width: 16px; height: 16px; display: block;"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="width: 16px; height: 16px; display: block;"><path d="m5 8 6 6"></path><path d="m4 14 6-6 2-3"></path><path d="M2 5h12"></path><path d="M7 2h1"></path><path d="m22 22-5-10-5 10"></path><path d="M14 18h6"></path></svg>
                     EN/DE
                 </a>
             </div>
@@ -62,11 +83,11 @@
                 </h2>
                 <div class="cta-group" data-reveal>
                     <a href="https://chromewebstore.google.com/detail/koalasync/obbnmkmlaaddodakcbdljknjpagklifc" class="btn btn-primary">
-                        <img src="assets/chrome.svg" alt="Chrome" width="20">
+                        <img src="assets/chrome.svg" alt="Chrome" width="20" height="20">
                         <span lang="en">Add to Chrome</span><span lang="de">Zu Chrome hinzufügen</span>
                     </a>
                     <a href="https://addons.mozilla.org/de/firefox/addon/koalasync/" class="btn btn-firefox">
-                        <img src="assets/firefox.svg" alt="Firefox" width="20">
+                        <img src="assets/firefox.svg" alt="Firefox" width="20" height="20">
                         <span lang="en">Add to Firefox</span><span lang="de">Zu Firefox hinzufügen</span>
                     </a>
                     <a href="https://github.com/Shik3i/KoalaSync/releases" target="_blank" class="btn btn-secondary" style="display: inline-flex; align-items: center; gap: 8px;">
@@ -80,7 +101,7 @@
             <div class="hero-mockup-wrapper" data-reveal>
                 <div class="extension-mockup">
                     <div class="mock-header">
-                        <img src="assets/logo.png" alt="KoalaSync">
+                        <img src="assets/logo.png" alt="KoalaSync" width="20" height="20">
                         <span>KOALASYNC</span>
                     </div>
                     <div class="mock-tabs">
@@ -524,7 +545,7 @@
                                     <span class="illus-dot"></span>
                                 </div>
                                 <div class="illus-address-bar"></div>
-                                <div class="illus-extension-icon"><img src="assets/logo.png" alt="KoalaSync" style="width: 12px; height: 12px; display: block; object-fit: contain;"></div>
+                                <div class="illus-extension-icon"><img src="assets/logo.png" alt="KoalaSync" width="12" height="12" style="width: 12px; height: 12px; display: block; object-fit: contain;"></div>
                             </div>
                             <div class="illus-browser-body">
                                 <div class="illus-line-placeholder" style="width: 80%;"></div>
@@ -678,11 +699,11 @@
             </p>
             <div class="cta-group" data-reveal style="justify-content: center; gap: 1rem;">
                 <a href="https://chromewebstore.google.com/detail/koalasync/obbnmkmlaaddodakcbdljknjpagklifc" class="btn btn-primary">
-                    <img src="assets/chrome.svg" alt="Chrome" width="20">
+                    <img src="assets/chrome.svg" alt="Chrome" width="20" height="20">
                     <span lang="en">Add to Chrome</span><span lang="de">Zu Chrome hinzufügen</span>
                 </a>
                 <a href="https://addons.mozilla.org/de/firefox/addon/koalasync/" class="btn btn-firefox">
-                    <img src="assets/firefox.svg" alt="Firefox" width="20">
+                    <img src="assets/firefox.svg" alt="Firefox" width="20" height="20">
                     <span lang="en">Add to Firefox</span><span lang="de">Zu Firefox hinzufügen</span>
                 </a>
                 <a href="https://github.com/Shik3i/KoalaSync" target="_blank" class="btn btn-secondary" style="display: inline-flex; align-items: center; gap: 8px;">

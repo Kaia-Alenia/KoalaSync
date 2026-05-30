@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Datenschutz / Privacy Policy | KoalaSync</title>
+    <link rel="preload" href="style.css" as="style">
     <link rel="stylesheet" href="style.css">
     <link rel="icon" type="image/png" href="assets/logo.png">
     <meta name="robots" content="noindex">
@@ -19,14 +20,23 @@
     <nav>
         <div class="container nav-content">
             <a href="index.html" class="logo-area" style="text-decoration: none;">
-                <img src="assets/logo.png" alt="KoalaSync Logo">
+                <img src="assets/logo.png" alt="KoalaSync Logo" width="40" height="40">
                 <span>KoalaSync</span>
             </a>
-            <button class="hamburger" aria-label="Menu">☰</button>
+            <button class="hamburger" aria-label="Menu" aria-expanded="false">☰</button>
             <div class="nav-links">
-                <a href="index.html"><span lang="de">Startseite</span><span lang="en">Home</span></a>
-                <a href="https://github.com/Shik3i/KoalaSync" target="_blank">GitHub</a>
-                <a class="lang-toggle" style="cursor: pointer;">🌐 EN/DE</a>
+                <a href="index.html" style="display: inline-flex; align-items: center; gap: 6px;">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="width: 16px; height: 16px; display: block;"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+                    <span lang="de">Startseite</span><span lang="en">Home</span>
+                </a>
+                <a href="https://github.com/Shik3i/KoalaSync" target="_blank" style="display: inline-flex; align-items: center; gap: 6px;">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="16" height="16" aria-hidden="true" style="display: block;"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
+                    GitHub
+                </a>
+                <a class="lang-toggle" style="display: inline-flex; align-items: center; gap: 6px; cursor: pointer;">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="width: 16px; height: 16px; display: block;"><path d="m5 8 6 6"></path><path d="m4 14 6-6 2-3"></path><path d="M2 5h12"></path><path d="M7 2h1"></path><path d="m22 22-5-10-5 10"></path><path d="M14 18h6"></path></svg>
+                    EN/DE
+                </a>
             </div>
         </div>
     </nav>
@@ -102,8 +112,39 @@
 
             <section>
                 <h2>
-                    <span lang="de">5. Brute-Force Schutz</span>
-                    <span lang="en">5. Brute-Force Protection</span>
+                    <span lang="de">5. Berechtigungen der Erweiterung</span>
+                    <span lang="en">5. Extension Permissions</span>
+                </h2>
+                <p lang="de">
+                    Um ihren technischen Zweck zu erfüllen, benötigt die Browser-Erweiterung bestimmte Berechtigungen. Jede Berechtigung wird ausschließlich für die Kernfunktionalität genutzt:
+                </p>
+                <ul lang="de" style="margin-left: 1.5rem; margin-top: 0.5rem; color: var(--text-muted); font-size: 0.9rem; list-style-type: disc; display: flex; flex-direction: column; gap: 0.35rem;">
+                    <li><strong>storage</strong>: Erlaubt das lokale Speichern von Benutzernamen, Server-URLs und Raum-Zugangsdaten im Browser, damit Sie sich nicht jedes Mal neu anmelden müssen.</li>
+                    <li><strong>tabs</strong>: Wird benötigt, um geöffnete Tabs im Dropdown der Erweiterung aufzulisten und deren Titel auszulesen, damit Sie bequem den richtigen Video-Tab auswählen können.</li>
+                    <li><strong>scripting</strong>: Erforderlich, um das Synchronisationsskript (content.js) sicher in den von Ihnen ausgewählten Videotab zu injizieren.</li>
+                    <li><strong>alarms</strong>: Verhindert, dass der Hintergrunddienst der Erweiterung (Service Worker) während einer aktiven Synchronisationssitzung vom Browser in den Ruhezustand versetzt wird.</li>
+                    <li><strong>activeTab</strong>: Ermöglicht eine sichere, temporäre Interaktion mit dem momentan aktiven Tab für direkte Steuerungsbefehle.</li>
+                    <li><strong>notifications</strong>: Ermöglicht optionale Desktop-Benachrichtigungen, wenn beispielsweise ein neuer Freund dem Raum beitritt.</li>
+                    <li><strong>&lt;all_urls&gt; (Host-Berechtigung)</strong>: Ermöglicht der Erweiterung, auf beliebigen Webseiten nach HTML5-Videoelementen zu suchen, damit die Synchronisation plattformübergreifend (z. B. auf YouTube, Netflix, Jellyfin etc.) funktioniert.</li>
+                </ul>
+                <p lang="en" style="margin-top: 1.5rem;">
+                    To fulfill its technical purpose, the browser extension requires certain permissions. Each permission is used exclusively for core functionality:
+                </p>
+                <ul lang="en" style="margin-left: 1.5rem; margin-top: 0.5rem; color: var(--text-muted); font-size: 0.9rem; list-style-type: disc; display: flex; flex-direction: column; gap: 0.35rem;">
+                    <li><strong>storage</strong>: Allows local storage of your username, server URL, and room credentials in your browser so you don't have to log in every time.</li>
+                    <li><strong>tabs</strong>: Required to list open tabs in the extension's dropdown and read their titles, making it easy for you to select the correct video tab.</li>
+                    <li><strong>scripting</strong>: Required to securely inject the synchronization script (content.js) into your selected video tab.</li>
+                    <li><strong>alarms</strong>: Prevents the extension's background service worker from being suspended by the browser during an active synchronization session.</li>
+                    <li><strong>activeTab</strong>: Enables secure, temporary interaction with the currently active tab for direct playback commands.</li>
+                    <li><strong>notifications</strong>: Enables optional desktop notifications, such as when a new friend joins the room.</li>
+                    <li><strong>&lt;all_urls&gt; (Host permission)</strong>: Allows the extension to scan for HTML5 video elements on any website, enabling cross-platform synchronization (e.g., on YouTube, Netflix, Jellyfin etc.).</li>
+                </ul>
+            </section>
+
+            <section>
+                <h2>
+                    <span lang="de">6. Brute-Force Schutz</span>
+                    <span lang="en">6. Brute-Force Protection</span>
                 </h2>
                 <p lang="de">
                     Zur Sicherheit unserer Nutzer speichern wir fehlgeschlagene Login-Versuche (IP-Adresse und Raum-ID) für maximal 15 Minuten im RAM, um automatisierte Angriffe zu verhindern. Diese Daten werden danach rückstandslos gelöscht.
@@ -115,8 +156,8 @@
 
             <section>
                 <h2>
-                    <span lang="de">6. Ihre Rechte</span>
-                    <span lang="en">6. Your Rights</span>
+                    <span lang="de">7. Ihre Rechte</span>
+                    <span lang="en">7. Your Rights</span>
                 </h2>
                 <p lang="de">
                     Sie haben das Recht auf Auskunft, Berichtigung oder Löschung Ihrer Daten. Da wir jedoch keine personenbezogenen Daten dauerhaft speichern, ist eine Zuordnung zu Ihrer Person in der Regel technisch nicht möglich.

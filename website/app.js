@@ -297,6 +297,18 @@ document.addEventListener('DOMContentLoaded', () => {
             if (badgeDe) {
                 badgeDe.textContent = `v${version} JETZT VERFÜGBAR • ${relativeTimeDe}`;
             }
+
+            // Update Schema.org structured data dynamically
+            const schemaScript = document.getElementById('schema-software');
+            if (schemaScript) {
+                try {
+                    const schema = JSON.parse(schemaScript.textContent);
+                    schema.softwareVersion = version;
+                    schemaScript.textContent = JSON.stringify(schema, null, 2);
+                } catch (err) {
+                    console.warn('Failed to dynamically update schema version:', err);
+                }
+            }
         } catch (e) {
             console.warn('Failed to fetch dynamic version info:', e);
         }
@@ -370,8 +382,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const hamburger = document.querySelector('.hamburger');
     const navLinks = document.querySelector('.nav-links');
     if (hamburger && navLinks) {
+        // Initialize accessibility attribute
+        hamburger.setAttribute('aria-expanded', 'false');
+        
         hamburger.addEventListener('click', () => {
-            navLinks.classList.toggle('open');
+            const isOpen = navLinks.classList.toggle('open');
+            hamburger.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
         });
     }
 

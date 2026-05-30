@@ -20,6 +20,7 @@ export default [
         fetch: "readonly",
         CustomEvent: "readonly",
         MutationObserver: "readonly",
+        IntersectionObserver: "readonly",
         Uint32Array: "readonly",
         Set: "readonly",
         Map: "readonly",
