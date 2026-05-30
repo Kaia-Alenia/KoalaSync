@@ -186,6 +186,25 @@ nav {
     font-weight: 400;
     line-height: 1.6;
 }
+.hero-mascot-container {
+    display: block;
+    margin-bottom: -0.5rem;
+    margin-left: 2.2rem;
+}
+
+.hero-lookdown-mascot {
+    display: block;
+    width: 90px;
+    height: auto;
+}
+
+@media (max-width: 768px) {
+    .hero-mascot-container {
+        margin-left: 0;
+        display: flex;
+        justify-content: center;
+    }
+}
 
 .cta-group {
     display: flex;
@@ -1490,7 +1509,7 @@ html.lang-de [lang="en"] {
     transition: opacity 0.3s ease;
 }
 
-.use-case-card:nth-child(1) { --card-accent-border: #6366f1; }
+.use-case-card:nth-child(1) { --card-accent-border: #f59e0b; }
 .use-case-card:nth-child(2) { --card-accent-border: #38bdf8; }
 .use-case-card:nth-child(3) { --card-accent-border: #ec4899; }
 
@@ -1521,6 +1540,22 @@ html.lang-de [lang="en"] {
     max-width: 250px;
     height: auto;
     margin: 1.5rem auto;
+}
+
+.features-questions-mascot {
+    display: block;
+    width: 100%;
+    max-width: 250px;
+    height: auto;
+    margin: -1.5rem auto 0.2rem auto;
+}
+
+.comparison-mascot {
+    display: block;
+    width: 100%;
+    max-width: 260px;
+    height: auto;
+    margin: -2.2rem auto 0.2rem auto;
 }
 
 .use-case-icon {
