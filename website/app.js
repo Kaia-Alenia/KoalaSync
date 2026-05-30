@@ -569,16 +569,23 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
             }
 
-            // Also pulse the main hero CTA buttons
+            // Pulse main hero CTA buttons via Web Animations API
+            // (avoids CSS transition/inline-style conflicts from mouse handlers)
             if (!isInstalled) {
-                if (isFirefox) {
-                    firefoxBtns.forEach(btn => {
-                        btn.style.transform = '';
-                        btn.classList.add('install-breathe');
-                    });
-                } else if (isChrome) {
-                    chromeBtns.forEach(btn => {
-                        btn.classList.add('install-breathe');
+                const heroBtns = document.querySelectorAll(isFirefox ? '.btn-firefox' : (isChrome ? '.btn-primary' : null));
+                if (heroBtns && heroBtns.length > 0) {
+                    heroBtns.forEach(btn => {
+                        const isFF = btn.classList.contains('btn-firefox');
+                        const glowColor = isFF ? 'rgba(249, 115, 22, ' : 'rgba(99, 102, 241, ';
+                        btn.animate([
+                            { transform: 'scale(1)', boxShadow: `0 0 15px ${glowColor}0.2)` },
+                            { transform: 'scale(1.05)', boxShadow: `0 0 25px ${glowColor}0.5)` },
+                            { transform: 'scale(1)', boxShadow: `0 0 15px ${glowColor}0.2)` }
+                        ], {
+                            duration: 2500,
+                            iterations: Infinity,
+                            easing: 'ease-in-out'
+                        });
                     });
                 }
             }
