@@ -1327,9 +1327,14 @@ html.lang-de [lang="en"] {
 .compat-mascot {
     display: block;
     margin: 0 auto 0.5rem auto;
-    max-width: 320px;
+    max-width: 368px;
     width: 100%;
     height: auto;
+    transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.compat-mascot:hover {
+    transform: scale(1.05) translateY(-5px) rotate(1deg);
 }
 
 .compat-heading {
@@ -1548,6 +1553,11 @@ html.lang-de [lang="en"] {
     max-width: 250px;
     height: auto;
     margin: -1.5rem auto 0.2rem auto;
+    transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.features-questions-mascot:hover {
+    transform: scale(1.05) translateY(-4px) rotate(-1.5deg);
 }
 
 .comparison-mascot {
@@ -1556,6 +1566,11 @@ html.lang-de [lang="en"] {
     max-width: 260px;
     height: auto;
     margin: -2.2rem auto 0.2rem auto;
+    transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.comparison-mascot:hover {
+    transform: scale(1.05) translateY(-4px) rotate(1deg);
 }
 
 .use-case-icon {
@@ -1792,7 +1807,20 @@ html.lang-de [lang="en"] {
 }
 
 .legal-mascot:hover {
-    transform: scale(1.06) rotate(1.5deg);
+    transform: scale(1.06) translateY(-4px) rotate(1.5deg);
+}
+
+.selfhost-mascot {
+    display: block;
+    width: 300px;
+    height: auto;
+    margin: 0 auto;
+    filter: drop-shadow(0 4px 12px rgba(0,0,0,0.15));
+    transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.selfhost-mascot:hover {
+    transform: scale(1.05) translateY(-4px) rotate(-1deg);
 }
 
 .status-ring {
