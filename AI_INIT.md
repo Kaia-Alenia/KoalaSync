@@ -5,6 +5,9 @@ Welcome to the KoalaSync project. This file is the primary entry point for any d
 > [!IMPORTANT]
 > **Privacy & Data Sovereignty**: KoalaSync follows a strict **Zero-External-Requests Policy**: The extension and website must not make requests to any third-party domains (Google Fonts, CDNs, etc.). All assets (fonts, icons, scripts) must be self-hosted or use system defaults.
 > - **Font Stack**: Use a modern system font stack (e.g., -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif) to maintain a premium look without external dependencies. Prohibit the use of `@import` or `<link>` for external font services.
+> 
+> [!IMPORTANT]
+> **Caveman Communication Protocol**: To conserve context window and tokens, AI agents MUST communicate with the user in **caveman language** (broken, short German/English hybrid caveman style, e.g., "Ich Antigravity. Ich machen Git pull. Code fertig.") at all times. This rule is highly strict and must NOT be broken under any circumstances unless the user explicitly requests to drop it.
 
 ---
 
