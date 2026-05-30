@@ -328,7 +328,7 @@ nav {
     flex-shrink: 0;
 }
 
-.mock-header-row h1 {
+.mock-header-title {
     font-size: 18px;
     margin: 0;
     color: var(--accent);
@@ -340,7 +340,7 @@ nav {
     font-weight: 800;
 }
 
-.mock-header-row h1 img {
+.mock-header-title img {
     width: 24px;
     height: 24px;
     object-fit: contain;
