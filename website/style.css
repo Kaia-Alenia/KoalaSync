@@ -1537,3 +1537,67 @@ html.lang-de [lang="en"] {
     }
 }
 
+/* --- Footnotes & Source Links --- */
+.source-link {
+    color: var(--accent);
+    text-decoration: none;
+    font-size: 0.72rem;
+    font-weight: 700;
+    margin-left: 0.25rem;
+    display: inline-flex;
+    align-items: center;
+    vertical-align: super;
+    opacity: 0.6;
+    transition: opacity 0.2s ease, color 0.2s ease, transform 0.2s ease;
+}
+
+.source-link:hover {
+    opacity: 1;
+    color: #38bdf8;
+    transform: translateY(-1px);
+}
+
+.table-footnotes {
+    padding: 1.25rem 1.5rem;
+    background: rgba(15, 23, 42, 0.4);
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    line-height: 1.6;
+}
+
+.table-footnotes p {
+    margin: 0;
+    display: flex;
+    align-items: baseline;
+    gap: 0.4rem;
+}
+
+.table-footnotes p:not(:last-child) {
+    margin-bottom: 0.5rem;
+}
+
+.table-footnotes a {
+    color: var(--accent);
+    text-decoration: none;
+    font-weight: 500;
+    transition: color 0.2s ease, text-decoration 0.2s ease;
+}
+
+.table-footnotes a:hover {
+    color: #38bdf8;
+    text-decoration: underline;
+}
+
+.table-footnotes sup {
+    font-weight: 700;
+    color: var(--accent);
+}
+
+@media (max-width: 768px) {
+    .table-footnotes {
+        padding: 1rem;
+        font-size: 0.72rem;
+    }
+}
+
