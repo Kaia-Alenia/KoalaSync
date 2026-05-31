@@ -194,7 +194,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             inviteSpan.appendChild(document.createTextNode(' detected!'));
 
                             const joinLink = document.createElement('a');
-                            joinLink.href = 'join.html' + window.location.hash;
+                            joinLink.href = 'join' + window.location.hash;
                             joinLink.className = 'btn-banner';
                             joinLink.textContent = 'OPEN JOIN PAGE';
 
@@ -454,9 +454,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Only need to do this dynamic rewrite if we are NOT already inside a localized subdirectory
         if (!isSubdir) {
-            const homeLinks = document.querySelectorAll('a[href="index.html"], a[href="de/index.html"], a[href="fr/index.html"], a[href="es/index.html"], a[href="pt-BR/index.html"], a[href="ru/index.html"]');
+            const homeLinks = document.querySelectorAll('a[href="./"], a[href="de/"], a[href="fr/"], a[href="es/"], a[href="pt-BR/"], a[href="ru/"]');
             homeLinks.forEach(link => {
-                link.href = (activeLang === 'en') ? 'index.html' : `${activeLang}/index.html`;
+                link.href = (activeLang === 'en') ? './' : `${activeLang}/`;
             });
         }
     };
@@ -482,17 +482,17 @@ document.addEventListener('DOMContentLoaded', () => {
             let targetPath;
             if (newLang === 'en') {
                 if (isSubdir) {
-                    targetPath = '../index.html';
+                    targetPath = '../';
                 } else {
-                    targetPath = 'index.html';
+                    targetPath = './';
                 }
             } else {
                 if (isSubdir) {
                     // Switching from one language subdirectory to another (e.g., /de/ to /fr/)
-                    targetPath = '../' + newLang + '/index.html';
+                    targetPath = '../' + newLang + '/';
                 } else {
                     // Switching from root (English) to a language subdirectory (e.g., / to /fr/)
-                    targetPath = newLang + '/index.html';
+                    targetPath = newLang + '/';
                 }
             }
             

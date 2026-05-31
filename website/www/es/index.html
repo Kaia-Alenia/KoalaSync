@@ -194,7 +194,7 @@
                             <div class="mock-card">
                                     <div class="mock-label" title="Share this link with friends so they can join"><span lang="en">Invite Link</span><span lang="de">Einladungs-Link</span></div>
                                 <div class="mock-invite-box">
-                                    <input type="text" class="mock-input" value="https://sync.koalastuff.net/join.html#join:brave-eagle-80:pass" readonly style="flex: 1;">
+                                    <input type="text" class="mock-input" value="https://sync.koalastuff.net/join#join:brave-eagle-80:pass" readonly style="flex: 1;">
                                     <button class="mock-btn" style="width: 40px; padding: 0.45rem 0; flex-shrink: 0; background: #334155;" title="Copy Invite Link">📋</button>
                                 </div>
                             </div>
@@ -915,7 +915,8 @@
                     </div>
                     <div class="terminal-tabs">
                         <button class="terminal-tab-btn active" data-tab="pane-docker">docker-compose.yml</button>
-                        <button class="terminal-tab-btn" data-tab="pane-caddy">Caddyfile</button>
+                        <button class="terminal-tab-btn" data-tab="pane-caddy-simple">Caddyfile (Simple)</button>
+                        <button class="terminal-tab-btn" data-tab="pane-caddy-advanced">Caddyfile (Advanced)</button>
                     </div>
                 </div>
                 <div class="terminal-body">
@@ -944,17 +945,51 @@
                         </div>
                     </div>
 
-                    <div id="pane-caddy" class="terminal-pane">
+                    <div id="pane-caddy-simple" class="terminal-pane">
                         <pre><code><span class="t-key">sync.koalastuff.net</span> {
-    <span class="t-comment"># Specify the web root inside the container</span>
-    <span class="t-key">root</span> <span class="t-val">*</span> <span class="t-str">/var/www/html</span>
-
-    <span class="t-comment"># Enable static file server to deliver HTML, CSS, JS</span>
+    <span class="t-key">root</span> <span class="t-val">*</span> <span class="t-str">/var/www/koalasync/website/www</span>
+    <span class="t-key">encode</span> <span class="t-val">zstd gzip</span>
+    
+    <span class="t-comment"># Clean URLs support (no .html required)</span>
+    <span class="t-key">try_files</span> <span class="t-val">{path} {path}.html {path}/</span>
     <span class="t-key">file_server</span>
 }
 
 <span class="t-key">syncserver.koalastuff.net</span> {
-    <span class="t-key">reverse_proxy</span> <span class="t-val">KoalaSync:3000</span>
+    <span class="t-key">reverse_proxy</span> <span class="t-val">localhost:3000</span>
+}</code></pre>
+                    </div>
+
+                    <div id="pane-caddy-advanced" class="terminal-pane">
+                        <pre><code><span class="t-key">sync.koalastuff.net</span> {
+    <span class="t-key">encode</span> <span class="t-val">zstd gzip</span>
+    <span class="t-key">root</span> <span class="t-val">*</span> <span class="t-str">/var/www/koalasync/website/www</span>
+
+    <span class="t-comment"># Clean URLs: Resolves paths without .html in the URL</span>
+    <span class="t-key">try_files</span> <span class="t-val">{path} {path}.html {path}/</span>
+    <span class="t-key">file_server</span>
+
+    <span class="t-comment"># Static Caching for high performance</span>
+    <span class="t-key">@static</span> {
+        <span class="t-key">file</span>
+        <span class="t-key">path</span> <span class="t-str">*.ico *.css *.js *.png *.svg *.webp</span>
+    }
+    <span class="t-key">header</span> <span class="t-val">@static</span> Cache-Control <span class="t-str">"public, max-age=31536000, must-revalidate"</span>
+
+    <span class="t-comment"># Hardened Security & Permission Policies</span>
+    <span class="t-key">header</span> {
+        Content-Security-Policy <span class="t-str">"default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; connect-src 'self'; img-src 'self' data:; object-src 'none'; frame-ancestors 'none'; base-uri 'none'; form-action 'none';"</span>
+        Strict-Transport-Security <span class="t-str">"max-age=31536000; includeSubDomains; preload"</span>
+        X-Frame-Options <span class="t-str">"DENY"</span>
+        X-Content-Type-Options <span class="t-str">"nosniff"</span>
+        Referrer-Policy <span class="t-str">"strict-origin-when-cross-origin"</span>
+        Permissions-Policy <span class="t-str">"camera=(), microphone=(), geolocation=(), payment=(), usb=()"</span>
+        <span class="t-key">-Server</span>
+    }
+}
+
+<span class="t-key">syncserver.koalastuff.net</span> {
+    <span class="t-key">reverse_proxy</span> <span class="t-val">localhost:3000</span>
 }</code></pre>
                     </div>
                 </div>
@@ -999,8 +1034,8 @@
             <p>&copy; 2026 KoalaSync. Código abierto bajo la Licencia MIT.</p>
             <p style="font-size: 0.8rem; margin-top: 0.5rem;">No se almacenan datos en nuestros servidores. Retransmisión solo en RAM.</p>
             <div style="margin-top: 1.5rem; font-size: 0.8rem; display: flex; justify-content: center; align-items: center; gap: 1.5rem; flex-wrap: wrap;">
-                <a href="../impressum.html" style="color: var(--text-muted); text-decoration: none;"><span>Legal Notice</span></a>
-                <a href="../datenschutz.html" style="color: var(--text-muted); text-decoration: none;"><span>Privacy Policy</span></a>
+                <a href="../impressum" style="color: var(--text-muted); text-decoration: none;"><span>Legal Notice</span></a>
+                <a href="../datenschutz" style="color: var(--text-muted); text-decoration: none;"><span>Privacy Policy</span></a>
                 <a href="https://mastodon.social/@koalastuff" rel="me" target="_blank" style="color: var(--text-muted); text-decoration: none; display: inline-flex; align-items: center; gap: 4px;">
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="14" height="14" aria-hidden="true" style="display: block;"><path d="M23.268 5.313c-.35-2.578-2.617-4.61-5.304-5.004C17.51.242 15.792 0 11.813 0h-.03c-3.98 0-4.835.242-5.288.309C3.882.692 1.496 2.518.917 5.127.64 6.412.61 7.837.661 9.143c.074 1.874.088 3.745.26 5.611.118 1.24.325 2.47.62 3.68.55 2.237 2.777 4.098 4.96 4.857 2.336.792 4.849.923 7.256.38.265-.061.527-.132.786-.213.585-.184 1.27-.39 1.774-.753a.057.057 0 0 0 .023-.043v-1.809a.052.052 0 0 0-.02-.041.053.053 0 0 0-.046-.01 20.282 20.282 0 0 1-4.709.545c-2.73 0-3.463-1.284-3.674-1.818a5.593 5.593 0 0 1-.319-1.433.053.053 0 0 1 .066-.054c1.517.363 3.072.546 4.632.546.376 0 .75 0 1.125-.01 1.57-.044 3.224-.124 4.768-.422.038-.008.077-.015.11-.024 2.435-.464 4.753-1.92 4.989-5.604.008-.145.03-1.52.03-1.67.002-.512.167-3.63-.024-5.545zm-3.748 9.195h-2.561V8.29c0-1.309-.55-1.976-1.67-1.976-1.23 0-1.846.79-1.846 2.35v3.403h-2.546V8.663c0-1.56-.617-2.35-1.848-2.35-1.112 0-1.668.668-1.67 1.977v6.218H4.822V8.102c0-1.31.337-2.35 1.011-3.12.696-.77 1.608-1.164 2.74-1.164 1.311 0 2.302.5 2.962 1.498l.638 1.06.638-1.06c.66-.999 1.65-1.498 2.96-1.498 1.13 0 2.043.395 2.74 1.164.675.77 1.012 1.81 1.012 3.12z"/></svg>
                     Mastodon
