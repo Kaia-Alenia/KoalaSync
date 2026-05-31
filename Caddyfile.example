@@ -32,6 +32,23 @@
 # aggressive static assets caching, server signature concealment, and strict 
 # hardware permission access policies.
 
+(security_headers) {
+	header {
+		# Enable HTTP Strict Transport Security (HSTS)
+		Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+		# Prevent clickjacking attacks (Sameorigin)
+		X-Frame-Options "SAMEORIGIN"
+		# Prevent MIME-sniffing
+		X-Content-Type-Options "nosniff"
+		# Enable browser XSS protection
+		X-XSS-Protection "1; mode=block"
+		# Control referrer information
+		Referrer-Policy "strict-origin-when-cross-origin"
+		# Hide Caddy server stamp signature
+		-Server
+	}
+}
+
 sync.koalastuff.net {
     encode zstd gzip
     root * /var/www/koalasync/website/www
@@ -48,36 +65,19 @@ sync.koalastuff.net {
     header @static Cache-Control "public, max-age=31536000, must-revalidate"
 
     # Security Headers & Content Security Policy (CSP)
+    import security_headers
     header {
         # CSP hardened with base-uri and form-action limits
         Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; connect-src 'self'; img-src 'self' data:; object-src 'none'; frame-ancestors 'none'; base-uri 'none'; form-action 'none';"
         
-        # Strict Transport Security (HSTS)
-        Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
-        
-        # Security best practices
-        X-Frame-Options "DENY"
-        X-Content-Type-Options "nosniff"
-        Referrer-Policy "strict-origin-when-cross-origin"
-        
         # Modern Permissions Policy (blocks browser hardware access for enhanced privacy)
         Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=(), usb=()"
-        
-        # Remove Caddy's server stamp signature
-        -Server
     }
 }
 
 syncserver.koalastuff.net {
-    reverse_proxy localhost:3000 {
-        header_up Host {host}
-        header_up X-Real-IP {remote_host}
-    }
-
-    header {
-        X-Content-Type-Options "nosniff"
-        X-Frame-Options "DENY"
-        Referrer-Policy "strict-origin-when-cross-origin"
-        -Server
-    }
+	import security_headers
+	encode zstd gzip
+	reverse_proxy KoalaSync:3000
 }
+
