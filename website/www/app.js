@@ -446,7 +446,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Dynamically localize home links on root dynamic pages (impressum, datenschutz, join)
     const localizeHomeLinks = () => {
-        const html = document.documentElement;
         const activeLang = localStorage.getItem('koala_lang') || (navigator.language.startsWith('de') ? 'de' : 'en');
         const path = window.location.pathname;
         const pathSegments = path.split('/');
