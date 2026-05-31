@@ -3,7 +3,7 @@
 
 # 1. Marketing Website & Invitation Bridge
 sync.koalastuff.net {
-    root * /var/www/koalasync/website
+    root * /var/www/koalasync/website/www
     file_server
     encode zstd gzip
 

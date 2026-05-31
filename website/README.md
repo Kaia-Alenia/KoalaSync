@@ -5,7 +5,7 @@ This directory contains the KoalaSync website. It serves a dual purpose: it is b
 ## Core Roles
 
 ### 1. Marketing & Onboarding
-Provides a premium, bilingual (EN/DE) overview of features, setup instructions, and direct links to the extension stores.
+Provides a premium, multi-language (EN/DE/FR/ES/PT-BR/RU) overview of features, setup instructions, and direct links to the extension stores.
 
 ### 2. The Invitation Bridge (`join.html`)
 The website handles incoming invitation links. When a user clicks a link like `sync.koalastuff.net/join.html#join:roomID:pass`, the website:
@@ -16,7 +16,8 @@ The website handles incoming invitation links. When a user clicks a link like `s
 ## Architecture
 
 The website is 100% **Static HTML, CSS, and JS**. 
-- **Zero Backend**: No Node.js, PHP, or databases are required to host the website.
+- **Static i18n Compiler**: The site uses a lightweight, zero-dependency Node.js compiler (`build.js`) to parse dictionary files inside `/locales/` against a single source-of-truth template (`template.html`), outputting the fully deployable static folder to `/www/`.
+- **Zero Backend**: No Node.js, PHP, or databases are required to host the compiled website.
 - **Zero Tracking**: All assets (fonts, icons) are self-hosted to prevent third-party tracking.
 - **Responsive**: Fully optimized for mobile with a native-feel hamburger menu.
 
@@ -30,7 +31,7 @@ For a more comprehensive configuration that includes the Relay Server reverse pr
 
 ```caddy
 sync.koalastuff.net {
-    root * /var/www/koalasync/website
+    root * /var/www/koalasync/website/www
     file_server
     encode zstd gzip
 
@@ -56,7 +57,14 @@ sync.koalastuff.net {
 }
 ```
 
-## Local Development
+## Local Development & Compilation
 
-1. Open `index.html` directly in any browser.
-2. To test the invitation flow locally, use a local server (e.g., `npx serve .`) and navigate to `http://localhost:5000/join.html#join:test-room:test-pass`.
+1. Run the compilation script from the repository root to generate the `/website/www` folder:
+   ```bash
+   node website/build.js
+   ```
+2. Serve the compiled `/www` directory using any local development server:
+   ```bash
+   npx serve website/www
+   ```
+3. To test the invitation flow locally, navigate to `http://localhost:5000/join.html#join:test-room:test-pass`.
