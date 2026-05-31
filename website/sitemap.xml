@@ -36,16 +36,4 @@
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
-  <url>
-    <loc>https://sync.koalastuff.net/impressum</loc>
-    <lastmod>2026-05-31</lastmod>
-    <changefreq>yearly</changefreq>
-    <priority>0.3</priority>
-  </url>
-  <url>
-    <loc>https://sync.koalastuff.net/datenschutz</loc>
-    <lastmod>2026-05-31</lastmod>
-    <changefreq>yearly</changefreq>
-    <priority>0.3</priority>
-  </url>
 </urlset>

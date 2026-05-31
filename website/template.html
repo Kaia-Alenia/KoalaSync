@@ -7,6 +7,7 @@
     <meta name="description" content="{{META_DESCRIPTION}}">
     
     <link rel="preload" href="{{ASSET_PATH}}style.css" as="style">
+    <link rel="preload" as="image" href="{{ASSET_PATH}}assets/LookDownKoala.webp" imagesrcset="{{ASSET_PATH}}assets/LookDownKoala-1x.webp 90w, {{ASSET_PATH}}assets/LookDownKoala.webp 205w" imagesizes="90px" fetchpriority="high">
     <link rel="stylesheet" href="{{ASSET_PATH}}style.css">
     <link rel="icon" type="image/webp" href="{{ASSET_PATH}}assets/NewLogoIcon_64.webp">
     <link rel="canonical" href="https://sync.koalastuff.net/{{CANONICAL_PATH}}">
@@ -58,7 +59,40 @@
       "description": "Watch Netflix, YouTube, Twitch, Jellyfin, Emby and almost any HTML5 video in perfect sync with friends. Open source, privacy-first, free.",
       "softwareVersion": "1.9.3",
       "license": "https://opensource.org/licenses/MIT",
-      "sameAs": "https://github.com/Shik3i/KoalaSync"
+      "sameAs": "https://github.com/Shik3i/KoalaSync",
+      "image": "https://sync.koalastuff.net/assets/NewLogoIcon.webp",
+      "screenshot": "https://sync.koalastuff.net/assets/PlatformJuggler_New.webp"
+    }
+    </script>
+    <script type="application/ld+json" id="schema-howto">
+    {
+      "@context": "https://schema.org",
+      "@type": "HowTo",
+      "name": "How to synchronize videos with friends using KoalaSync",
+      "description": "Watch any video in perfect sync with friends across YouTube, Netflix, Twitch and more. No sign-up, no tracking.",
+      "step": [
+        {
+          "@type": "HowToStep",
+          "position": 1,
+          "name": "Install the browser extension",
+          "text": "Add KoalaSync to your browser from Chrome Web Store or Firefox Add-ons. It works on any website with a video element.",
+          "url": "https://sync.koalastuff.net/#how-it-works"
+        },
+        {
+          "@type": "HowToStep",
+          "position": 2,
+          "name": "Create a room",
+          "text": "Open the extension popup and click Create New Room. The invite link is automatically copied to your clipboard.",
+          "url": "https://sync.koalastuff.net/#how-it-works"
+        },
+        {
+          "@type": "HowToStep",
+          "position": 3,
+          "name": "Share and sync",
+          "text": "Send the invite link to your friends. Pick a video tab and enjoy synchronized playback in real time.",
+          "url": "https://sync.koalastuff.net/#how-it-works"
+        }
+      ]
     }
     </script>
     <script type="application/ld+json" id="schema-comparison">

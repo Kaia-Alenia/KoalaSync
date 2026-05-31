@@ -48,6 +48,12 @@
     box-sizing: border-box;
 }
 
+:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+    border-radius: 6px;
+}
+
 body {
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
     background-color: var(--bg);
@@ -100,6 +106,15 @@ body {
 
 section {
     padding: 6rem 0;
+}
+
+/* Content-visibility for offscreen sections to improve INP */
+.use-cases-section,
+#features,
+#self-hosting,
+.comparison-section {
+    content-visibility: auto;
+    contain-intrinsic-size: 700px;
 }
 
 /* --- Navigation --- */
