@@ -1,144 +1,134 @@
 # KoalaSync Translation & Localization Guide
 
-This guide describes how the localization system works for the KoalaSync website and provides step-by-step instructions on how a developer or an AI agent should add support for a new language.
+Welcome to the **KoalaSync** translation and internationalization framework! This document provides clear, professional instructions for developers and contributors looking to maintain, audit, or add new languages to the official KoalaSync website.
 
 ---
 
-## Architecture Overview
+## 🏛️ Architecture Overview
 
-The KoalaSync website uses a custom, zero-dependency static site generator to compile localized pages from a single template:
-- **Template Source**: `/website/template.html` (single source of truth).
-- **Locales Source**: `/website/locales/[lang].json` (language dictionaries).
-- **Build Pipeline**: `/website/build.js` (compiles pages into `/website/www/`).
+The KoalaSync website utilizes a custom, high-performance, zero-dependency static site generator built in Node.js. Instead of using complex client-side translation runtimes or bulky frameworks, localized pages are compiled ahead-of-time (AOT) to maintain lightning-fast page speeds and strict data sovereignty.
+
+*   **Template Source:** [`website/template.html`](file:///Users/koala/Documents/KoalaPlay/website/template.html) (Single Source of Truth)
+*   **Locales Source:** `/website/locales/[lang].json` (Structured JSON translation dictionaries)
+*   **Build Pipeline:** [`website/build.js`](file:///Users/koala/Documents/KoalaPlay/website/build.js) (Pure Node.js script that compiles pages into `/website/www/`)
 
 ---
 
-## Supported Languages
+## 📊 Supported Languages Dashboard
 
-> [!NOTE]
-> **Contributor Guideline: Translation Quality Distinction**
-> To maintain the highest standard of UX and accessibility, KoalaSync categorizes languages into two tiers. Core languages (`en` and `de`) are manually translated and verified by native speakers. Extended languages (`fr` and `es`) are currently machine-translated to broaden accessibility, and need native review. Future contributors are encouraged to audit "Auto-Generated" translations and submit PRs to elevate them to "Verified" status.
+We divide supported languages into two tiers: **Core Languages** (fully hand-crafted and audited by native speakers) and **Extended Languages** (auto-generated using translation models to expand initial coverage).
 
-The following table provides an overview of all currently active languages on the KoalaSync platform:
+> [!TIP]
+> **Help Us Improve!**
+> We welcome community contributions to audit "Auto-Generated" translations and elevate them to "Verified" status.
 
-| Language Code | Language Name | Status |
-| :--- | :--- | :--- |
-| `en` | English | 100% Manually Verified |
-| `de` | German | 100% Manually Verified |
-| `fr` | French | Auto-Generated (May contain errors / Needs Native Speaker Review) |
-| `es` | Spanish | Auto-Generated (May contain errors / Needs Native Speaker Review) |
-| `pt-BR` | Portuguese (Brasil) | Auto-Generated (May contain errors / Needs Native Speaker Review) |
-| `ru` | Russian | Auto-Generated (May contain errors / Needs Native Speaker Review) |
+| Language Code | Language Name | Verification Status | Rationale / Context |
+| :--- | :--- | :--- | :--- |
+| `en` | **English** | `100% Manually Verified` | Primary developer language and system default |
+| `de` | **German** | `100% Manually Verified` | Core market and compliance baseline |
+| `fr` | **French** | `Auto-Generated` | Needs manual native review and polishing |
+| `es` | **Spanish** | `Auto-Generated` | Needs manual native review and polishing |
+| `pt-BR` | **Portuguese (Brasil)** | `Auto-Generated` | Needs manual native review and polishing |
+| `ru` | **Russian** | `Auto-Generated` | Needs manual native review and polishing |
 
 > [!WARNING]
-> **Autogeneration Rule**
-> Any future languages added to the static site generator (e.g., Italian, Dutch) MUST be marked as `"Auto-Generated (May contain errors / Needs Native Speaker Review)"` in this table until a native speaker manually reviews and signs off on the translations.
+> **Autogeneration Quality Rule**
+> Any newly contributed languages must be committed as `"Auto-Generated"` until fully reviewed and signed off by a native speaker in a pull request.
 
 ---
 
-## Strict Legal Exclusion Rule
+## ⚖️ Strict Legal Exclusion Rule
+
+Our legal pages have strict constraints to protect user privacy and avoid regulatory liabilities.
 
 > [!IMPORTANT]
-> **DO NOT TRANSLATE LEGAL PAGES**
-> The imprint and privacy pages ([impressum.html](file:///Users/koala/Documents/KoalaPlay/website/impressum.html) and [datenschutz.html](file:///Users/koala/Documents/KoalaPlay/website/datenschutz.html)) **MUST NOT** be translated into any other languages.
-> They are strictly restricted to **English** and **German** only.
->
-> **Rationale:** Legal compliance and liability under European Union (GDPR) and German (DDG) laws. Offering legal notices in auto-generated languages introduces risks of mistranslations that could be legally binding or misrepresent liabilities.
->
-> **Technical Fallback:** `lang-init.js` is configured to automatically fall back to **English** for these pages if the user's active preference is French, Spanish, or any other unsupported language, ensuring they see legally verified text while preserving their language state when returning home.
+> **DO NOT TRANSLATE LEGAL DOCUMENTS**
+> The legal notice ([impressum.html](file:///Users/koala/Documents/KoalaPlay/website/impressum.html)) and privacy policy ([datenschutz.html](file:///Users/koala/Documents/KoalaPlay/website/datenschutz.html)) **MUST remain exclusively in English and German**.
+> 
+> *   **Rationale:** Legal compliance under the European Union General Data Protection Regulation (GDPR) and the German Digital Services Act (DDG). Offering automated translations of legally binding notices introduces compliance risks due to potential mistranslations of liability limits.
+> *   **Technical Fallback:** The dynamic initializer script (`lang-init.js`) is configured to automatically fallback to **English** for legal pages if a user visits them with a French, Spanish, or other unsupported language preference, keeping their dynamic dropdown choice intact for homepage links.
 
 ---
 
-## Step-by-Step: Adding a New Language
+## 🛠️ Step-by-Step: Adding a New Language
 
-Follow this exact workflow to add a new language (for example, Italian - `it`):
+Adding a new language (e.g., Italian - `it`) is straightforward. Follow these four structured steps:
 
 ### Step 1: Create the Translation Dictionary
-Create a new JSON file inside `/website/locales/` named `[lang].json` (e.g., `/website/locales/it.json`).
-- Copy `/website/locales/en.json` to act as your baseline template.
-- Translate all key values while preserving key names.
-- Update the system configuration keys at the top of the file:
-  ```json
-  {
-    "LANG_CODE": "it",
-    "HTML_CLASS": "lang-it",
-    "CANONICAL_PATH": "it/",
-    "LANG_TOGGLE_URL": "../",
-    "LANG_TOGGLE_TEXT": "EN",
-    ...
-  }
-  ```
+Create a new JSON file inside the locales directory named `[lang].json` (e.g., `website/locales/it.json`).
+1. Copy the structure of [`website/locales/en.json`](file:///Users/koala/Documents/KoalaPlay/website/locales/en.json) to use as your baseline.
+2. Translate all string values while keeping the JSON keys identical.
+3. Configure the language metadata keys at the top of the file:
+   ```json
+   {
+     "LANG_CODE": "it",
+     "HTML_CLASS": "lang-it",
+     "CANONICAL_PATH": "it/",
+     "LANG_TOGGLE_URL": "../",
+     "LANG_TOGGLE_TEXT": "EN"
+   }
+   ```
 
-### Step 2: Register the Language in the Build Script
-Open `/website/build.js` and simply append the new language code to the `languages` array:
+### Step 2: Register in the Compiler
+Open the static site generator script [`website/build.js`](file:///Users/koala/Documents/KoalaPlay/website/build.js) and append your new language code to the active `languages` array:
 ```javascript
+// Add 'it' to the array
 const languages = ['en', 'de', 'fr', 'es', 'pt-BR', 'ru', 'it'];
 ```
-The dynamic compiler loop will automatically load your JSON dictionary, create `/website/www/it/`, and compile `/website/www/it/index.html` with correct sitemaps, canoncials, and relative assets.
 
-### Step 3: Run Compilation
-Run the build script from the repository root:
+### Step 3: Run the Build Script
+Execute the compiler from the root of the repository:
 ```bash
 node website/build.js
 ```
-Verify the output is generated inside `/website/www/[lang]/index.html`.
+The compiler will automatically:
+1. Load the new JSON translation file.
+2. Create the target subdirectory `/website/www/it/`.
+3. Generate the compiled `/website/www/it/index.html` landing page, injecting correct relative assets and canonical metadata.
 
-### Step 4: Update this Guide
-Add the new language entry to the **Supported Languages** table above with the appropriate status marking.
+### Step 4: Update the Dashboard
+Open this `TRANSLATION.md` file and add your language to the **Supported Languages Dashboard** table, marking it as `Auto-Generated` (unless manually verified).
 
 ---
 
-## Future Architecture: Dynamic Utility Pages
+## 🔮 Future Roadmap: Dynamic Utility Pages
 
-For dynamic utility pages like `join.html`, we need to support unlimited languages in the future under a strict architectural constraint: **the share link URL must never contain language path details or query parameters.**
+For pages that require fully dynamic, client-side interactions (like the room invitation bridge [`join.html`](file:///Users/koala/Documents/KoalaPlay/website/join.html)), we need to scale to unlimited languages without bloating the HTML size or polluting the URL.
 
-### Proposed Client-Side i18n Architecture
+### Clean Client-Side i18n Architecture
 
-To achieve this without bloating the HTML DOM with duplicate text nodes for every language (which leads to `display: none` sprawl), we propose an **asynchronous JSON dictionary injection architecture**:
+To maintain zero URL pollution (e.g. keeping invitation links clean as `/join.html#join:roomID:password`), we propose an **asynchronous JSON dictionary injection architecture**:
 
-```mermaid
-sequenceDiagram
-    participant Guest as Guest Browser
-    participant JS as lang-init.js (Sync)
-    participant DOM as i18n-client.js (Async)
-    participant Server as Static Web Server
+#### 1. Page Lifecycle Flow
+1. **User Landing:** The guest enters `/join.html` with a shared hash.
+2. **Language Resolution:** `lang-init.js` immediately reads their saved preference (`localStorage` or `navigator.language`) and applies the active class (e.g. `html.lang = "es"`).
+3. **Async Fetching:** A client-side loader script (`i18n-client.js`) runs asynchronously, downloading the correct dictionary (`fetch("/locales/es.json")`).
+4. **DOM Translation:** The script scans the page for elements carrying a `data-i18n` attribute and safely updates their text content at runtime, avoiding dual-text nodes and stylesheet recalculations.
 
-    Guest->>JS: Enters join.html#join:roomID
-    JS->>JS: Read localStorage & navigator.language
-    JS->>JS: Resolve activeLang (e.g., "es")
-    JS->>Guest: Apply html.lang="es" & lang-es class
-    Guest->>DOM: Page elements render with data-i18n attributes
-    DOM->>Server: fetch("/locales/es.json") asynchronously
-    Server-->>DOM: Return JSON dictionary
-    DOM->>DOM: Scan DOM for data-i18n & replace textContent
-    DOM->>Guest: Fully localized UI shown seamlessly
-```
-
-#### 1. Markup Definition (Semantic Tags)
-The HTML file `join.html` will contain only generic, language-independent tags with data attributes for translation keys. English text is placed as a native placeholder fallback:
+#### 2. Declarative HTML Markup
+Elements are defined with custom data attributes specifying translation keys. English text is placed as the static HTML fallback:
 ```html
 <h1 data-i18n="JOIN_TITLE">Ready to sync?</h1>
 <p id="join-desc" data-i18n="JOIN_SUBTITLE">You've been invited to join a session.</p>
 ```
 
-#### 2. Client-Side i18n Engine (`i18n-client.js`)
-We will create a lightweight client-side translation engine that executes asynchronously on page load:
+#### 3. Zero-Dependency Engine (`i18n-client.js`)
 ```javascript
 document.addEventListener('DOMContentLoaded', async () => {
-    // 1. Recover localized preference determined by lang-init.js
+    // 1. Recover the language determined during early initialization
     const activeLang = document.documentElement.lang || 'en';
+    if (activeLang === 'en') return; // Default markup is already in English
     
-    // 2. Fetch the corresponding locale JSON file asynchronously
+    // 2. Fetch the corresponding locale JSON asynchronously
     try {
         const response = await fetch(`locales/${activeLang}.json`);
-        if (!response.ok) throw new Error('Locale not found');
+        if (!response.ok) throw new Error('Locale file unavailable');
         const dictionary = await response.json();
         
-        // 3. Update DOM elements carrying data-i18n attribute
+        // 3. Scan and translate data-i18n attributes
         document.querySelectorAll('[data-i18n]').forEach(el => {
             const key = el.getAttribute('data-i18n');
             if (dictionary[key]) {
-                // If it is an image, update alt text instead
                 if (el.tagName === 'IMG') {
                     el.alt = dictionary[key];
                 } else {
@@ -147,13 +137,12 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
         });
     } catch (err) {
-        console.warn('i18n dynamic load failed, falling back to English defaults:', err);
+        console.warn('Dynamic i18n loading failed. Defaulting to English:', err);
     }
 });
 ```
 
-#### Advantages of this Approach
-1. **Zero URL Contamination**: The share link remains clean (e.g., `/join.html#join:room:pass`), ensuring absolute anonymity and avoiding hardcoding the sender's language onto the receiver.
-2. **Minimal DOM Footprint**: Eliminates duplicate `<span lang="de">`, `<span lang="en">` blocks entirely, reducing page size by 50% and eliminating slow style recalculations.
-3. **Infinite Scale**: Support for new languages (e.g., Italian, Japanese) requires zero modifications to `join.html`. The client simply downloads the appropriate locale JSON file asynchronously on demand.
-
+#### Core Benefits
+*   **Zero URL Pollution:** Keeps invitation hashes private and avoids messy query parameters (`?lang=de`), protecting user privacy.
+*   **Optimal Performance:** Eliminates duplicate hidden text blocks, cutting page weight in half and ensuring smooth rendering.
+*   **Infinite Scale:** Adding new languages to dynamic pages requires zero edits to HTML markup; the engine simply fetches new JSON dictionaries on-demand.
