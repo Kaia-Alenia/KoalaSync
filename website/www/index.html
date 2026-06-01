@@ -6,9 +6,9 @@
     <title>KoalaSync | Sync Netflix, YouTube & Any Video with Friends</title>
     <meta name="description" content="Watch Netflix, YouTube, Twitch & any HTML5 video in perfect sync with friends. Free, open-source browser extension for Chrome and Firefox. No sign-up needed.">
     
-    <link rel="preload" href="style.62d39607.min.css" as="style">
+    <link rel="preload" href="style.e78fc9fc.min.css" as="style">
     <link rel="preload" as="image" href="assets/LookDownKoala.webp" imagesrcset="assets/LookDownKoala-1x.webp 90w, assets/LookDownKoala.webp 205w" imagesizes="90px" fetchpriority="high">
-    <link rel="stylesheet" href="style.62d39607.min.css">
+    <link rel="stylesheet" href="style.e78fc9fc.min.css">
     <link rel="icon" type="image/webp" href="assets/NewLogoIcon_64.webp">
     <link rel="canonical" href="https://sync.koalastuff.net/">
     <link rel="alternate" hreflang="en" href="https://sync.koalastuff.net/">
@@ -130,23 +130,33 @@
       "mainEntity": [
         {
           "@type": "Question",
-          "name": "Is KoalaSync really free?",
-          "acceptedAnswer": { "@type": "Answer", "text": "Yes. KoalaSync is 100% free, open source under the MIT License, and contains no premium tiers or locked features." }
+          "name": "Can I watch Netflix together in sync with friends?",
+          "acceptedAnswer": { "@type": "Answer", "text": "Yes. KoalaSync works on Netflix, YouTube, Twitch, Disney+, Amazon Prime Video, and any website with an HTML5 video player. Install the extension, create a room, share the invite link, and start watching in perfect sync." }
         },
         {
           "@type": "Question",
-          "name": "Does KoalaSync work on Netflix and Disney+?",
-          "acceptedAnswer": { "@type": "Answer", "text": "Yes. KoalaSync works on any website with a standard HTML5 <video> element, including Netflix, Disney+, YouTube, Twitch, Emby, Jellyfin and Prime Video." }
+          "name": "Is KoalaSync a free alternative to Teleparty?",
+          "acceptedAnswer": { "@type": "Answer", "text": "100% free. KoalaSync is open source under the MIT License, has no premium tiers, no locked features, and no ads. Its relay server is RAM-only with zero data collection." }
         },
         {
           "@type": "Question",
-          "name": "Can I self-host KoalaSync?",
-          "acceptedAnswer": { "@type": "Answer", "text": "Yes. A Docker image is published on GitHub Container Registry. Caddy and Nginx reverse-proxy examples are included in the documentation." }
+          "name": "Does KoalaSync work with Emby, Jellyfin and self-hosted media servers?",
+          "acceptedAnswer": { "@type": "Answer", "text": "Yes. KoalaSync detects any HTML5 video element, so it works with Emby, Jellyfin, Plex and custom setups. You can also self-host the relay server via Docker." }
         },
         {
           "@type": "Question",
-          "name": "Does KoalaSync collect personal data?",
-          "acceptedAnswer": { "@type": "Answer", "text": "No. The relay server is RAM-only (volatile), the source code is fully open, and there are no analytics, cookies, or third-party trackers." }
+          "name": "Which browsers support KoalaSync?",
+          "acceptedAnswer": { "@type": "Answer", "text": "Google Chrome, Mozilla Firefox, Microsoft Edge, Opera, Brave and all Chromium-based browsers. Install it from the Chrome Web Store or Firefox Add-ons." }
+        },
+        {
+          "@type": "Question",
+          "name": "Do my friends need the extension installed to sync?",
+          "acceptedAnswer": { "@type": "Answer", "text": "Yes, every participant needs the extension, but there is no sign-up. Just click the invitation link, install the extension if needed, and you are in the room automatically." }
+        },
+        {
+          "@type": "Question",
+          "name": "Is my data safe? Does KoalaSync track or store anything?",
+          "acceptedAnswer": { "@type": "Answer", "text": "No. The relay server is RAM-only — session data is deleted when you leave. There is no database, no logging, no analytics, and no user accounts. The codebase is open source and auditable on GitHub." }
         }
       ]
     }
@@ -1069,6 +1079,43 @@
 }</code></pre>
                     </div>
                 </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="faq" style="border-top: 1px solid var(--glass-border);">
+        <div class="container">
+            <h2 data-reveal style="font-size: 2.2rem; text-align: center; margin-bottom: 1rem;">
+                <span>Frequently Asked Questions</span>
+            </h2>
+            <p data-reveal style="text-align: center; color: var(--text-muted); margin-bottom: 3rem; max-width: 600px; margin-left: auto; margin-right: auto;">
+                <span>Everything you need to know about watching videos together in perfect sync.</span>
+            </p>
+            <div class="faq-grid">
+                <details class="faq-item" data-reveal>
+                    <summary><span>Can I watch Netflix together in sync with friends?</span></summary>
+                    <p><span>Yes! KoalaSync works on Netflix, YouTube, Twitch, Disney+, Amazon Prime Video, and practically any website with an HTML5 video player. Install the extension, create a room, share the invite link, and everyone watches in perfect sync — no lag, no desync.</span></p>
+                </details>
+                <details class="faq-item" data-reveal>
+                    <summary><span>Is KoalaSync a free alternative to Teleparty?</span></summary>
+                    <p><span>100% free and open source under the MIT License. No premium tiers, no locked features, no ads — everything is included. Unlike Teleparty, KoalaSync's relay server is RAM-only with zero data collection or user accounts required.</span></p>
+                </details>
+                <details class="faq-item" data-reveal>
+                    <summary><span>Does KoalaSync work with Emby, Jellyfin and self-hosted media servers?</span></summary>
+                    <p><span>Yes. KoalaSync detects any standard HTML5 video element, which means it works perfectly with Emby, Jellyfin, Plex, and any custom self-hosted streaming setup. You can also self-host the KoalaSync relay server via Docker for complete data sovereignty.</span></p>
+                </details>
+                <details class="faq-item" data-reveal>
+                    <summary><span>Which browsers and platforms support KoalaSync?</span></summary>
+                    <p><span>Google Chrome, Mozilla Firefox, Microsoft Edge, Opera, Brave, and all Chromium-based browsers. Install it directly from the Chrome Web Store or Firefox Add-ons — no manual configuration needed.</span></p>
+                </details>
+                <details class="faq-item" data-reveal>
+                    <summary><span>Do all my friends need the extension installed?</span></summary>
+                    <p><span>Yes, each participant needs KoalaSync installed — but there's no sign-up or account creation. Simply click the invitation link, install the extension if you haven't already, and you'll join the room automatically in seconds.</span></p>
+                </details>
+                <details class="faq-item" data-reveal>
+                    <summary><span>Is my data safe? Do you track or store what I watch?</span></summary>
+                    <p><span>Not at all. KoalaSync's relay server is RAM-only — all session data is permanently deleted the moment you leave the room. There's no database, no logging, no analytics, and no user accounts. The entire codebase is open source and auditable on GitHub.</span></p>
+                </details>
             </div>
         </div>
     </section>
