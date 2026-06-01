@@ -60,7 +60,7 @@ sync.koalastuff.net {
     # Static Caching for high-performance PageSpeed (1 year with validation)
     @static {
         file
-        path *.ico *.css *.js *.png *.svg *.webp
+        path *.ico *.css *.js *.png *.svg *.webp *.avif
     }
     header @static Cache-Control "public, max-age=31536000, must-revalidate"
 
