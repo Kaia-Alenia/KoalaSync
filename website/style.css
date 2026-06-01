@@ -2660,6 +2660,19 @@ html:not(.lang-de) [lang="de"] {
     scroll-margin-top: 100px;
 }
 
+/* --- Screen-reader-only (also crawlable by search engines) --- */
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
 /* --- Skip-to-content accessibility link --- */
 .skip-link {
     position: absolute;
