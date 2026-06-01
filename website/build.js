@@ -119,11 +119,16 @@ async function compile() {
     const localesDir = path.join(websiteDir, 'locales');
     const languages = ['en', 'de', 'fr', 'es', 'pt-BR', 'ru'];
 
+    // Read version for build-time injection (SEO: crawlers see real version)
+    const versionJson = JSON.parse(fs.readFileSync(path.join(websiteDir, 'version.json'), 'utf8'));
+    const buildVersion = versionJson.version || '?';
+
     const englishHtml = {}; // track for join-page cross-ref
 
     function compilePage(locale, assetPath, lang) {
         let compiled = templateContent;
         compiled = compiled.replace(/\{\{ASSET_PATH\}\}/g, assetPath);
+        compiled = compiled.replace(/\{\{VERSION\}\}/g, buildVersion);
         languages.forEach(l => {
             compiled = compiled.replace(new RegExp(`\\{\\{SELECTED_${l.toUpperCase()}\\}\\}`, 'g'), l === lang ? 'selected' : '');
         });
