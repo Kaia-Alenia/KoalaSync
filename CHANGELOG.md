@@ -21,7 +21,6 @@ All notable changes to the KoalaSync browser extension and relay server.
 ### 🌍 Multi-Language Extension (Biggest Feature!)
 - **6-Language UI**: The browser extension is now fully translated into **English, German, French, Spanish, Portuguese (Brazilian), and Russian**. Switch languages instantly in Settings without reload.
 - **Real-Time i18n**: Every label, button, tooltip, toast notification, empty state, and onboarding guide updates dynamically when the language changes.
-- **6-Language Website**: Landing page, join page, legal pages, and the interactive extension mockup now available in all 6 languages with proper hreflang tags.
 
 ### New Features
 - **Copy Debug Report**: The *Copy Logs* button in the Status tab now copies a fully formatted Markdown report containing system info, connection status, video debug data, action history, and logs — ready to paste into GitHub issues.
@@ -30,11 +29,10 @@ All notable changes to the KoalaSync browser extension and relay server.
 - **No-Video Diagnostic Mode**: When no video is found, the Status tab shows platform, page title, video count, shadow DOM presence, and MediaSession data to help troubleshoot.
 
 ### Changed
-- **New TwoPointZero Branding**: Updated extension icons (16/32/48/96/128px), website favicon (PNG 16×16 + 32×32), Apple touch icon (192×192), and web manifest icons.
-- **Larger Logo Display**: Popup logo increased to 48px; website nav logo to 64px with improved vertical centering.
-- **Higher Quality AVIF**: Build script AVIF quality raised from 70 to 80, speed improved from 6 to 4, and minimum file size threshold removed so all assets get AVIF variants.
+- **New TwoPointZero Branding**: Updated extension icons (16/32/48/96/128px).
+- **Larger Popup Logo**: Extension popup icon increased to 48px.
 - **Prime Video Unblocked**: Removed `amazon.` from the tab blacklist so Amazon/Prime Video tabs appear in the video selector.
-- **Improved Browser Detection**: Debug report now includes the full User-Agent string for accurate browser identification.
+- **Improved Debug Report**: Full User-Agent string for accurate browser identification, UTC timestamp, connection details including server URL and room info.
 
 ---
 
@@ -47,27 +45,19 @@ All notable changes to the KoalaSync browser extension and relay server.
 - Custom server reconnection strategy improvements
 - YouTube and Twitch sync status refinements
 - Hardcoded strings, missing translation keys, and SW notification race conditions
-- ESLint warnings and syntax consistency
 
 ### Added
-- Relay reachability check hint in README
-- Crawlable language navigation links for SEO
-- Per-locale HowTo and FAQPage schema markup
 - TESTED_SERVICES.md compatibility matrix
-- Visible FAQ section on landing page with FAQPage schema
+- Relay reachability check hint in README
 
 ---
 
 ## [v1.9.0] — 2026-05-18
 
-### New Features
-- **6-Language Website**: Landing page, join page, and legal pages available in EN/DE/FR/ES/PT-BR/RU with proper hreflang tags and canonical URLs. Extension i18n followed in v2.0.0.
-
 ### Changed
 - **Episode-Aware Sync**: Command sequencing with smarter episode transition detection and echo suppression for smoother series binges.
-- Build script improvements for safer minified output (`.min.*` naming).
-- Website SEO overhaul: Clean URLs, sitemap improvements, meta description optimization.
-- Privacy improvements: Email obfuscation, Caddy CSP headers, no external dependencies.
+- **Server Security**: Caddy CSP headers, no external dependencies in extension.
+- Build script improvements for safer minified output.
 
 ---
 
