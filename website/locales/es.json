@@ -127,6 +127,15 @@
   "FAQ_Q6": "¿Están seguros mis datos? ¿Y si no confío en el servidor oficial?",
   "FAQ_A6": "Totalmente seguro. El servidor relay de KoalaSync usa solo RAM — todos los datos de sesión se eliminan al salir de la sala. Sin base de datos, sin registros, sin análisis, sin cuentas. Si prefieres control total: aloja tu propio servidor relay privado con Docker en minutos. El código fuente es completamente abierto y auditable en GitHub.",
   
+  "HOWTO_TITLE": "Cómo sincronizar videos con amigos usando KoalaSync",
+  "HOWTO_DESC": "Mira videos en perfecta sincronía con amigos en YouTube, Netflix, Twitch y más. Sin registro, sin seguimiento.",
+  "HOWTO_STEP_1_NAME": "Instalar la extensión",
+  "HOWTO_STEP_1_TEXT": "Añade KoalaSync a tu navegador desde Chrome Web Store o Firefox Add-ons. Funciona en cualquier sitio con un elemento de video.",
+  "HOWTO_STEP_2_NAME": "Crear una sala",
+  "HOWTO_STEP_2_TEXT": "Abre la extensión y haz clic en Crear nueva sala. El enlace de invitación se copia automáticamente al portapapeles.",
+  "HOWTO_STEP_3_NAME": "Compartir y sincronizar",
+  "HOWTO_STEP_3_TEXT": "Envía el enlace de invitación a tus amigos. Selecciona una pestaña de video y disfruta de reproducción sincronizada en tiempo real.",
+  
   "FOOTER_MIT": "Código abierto bajo la Licencia MIT.",
   "FOOTER_RAM": "No se almacenan datos en nuestros servidores. Retransmisión solo en RAM.",
   "FOOTER_LEGAL": "Legal Notice",
