@@ -11,7 +11,7 @@ This document tracks which streaming platforms and media servers have been teste
 | **Jellyfin** | ✅ Full | ✅ Full | ✅ Full | Self-hosted. Full HTML5 player access. |
 | **Plex** | Not tested | Not tested | Not tested | Community reports indicate compatibility via HTML5 player mode. |
 | **Disney+** | Not tested | Not tested | Not tested | Widevine DRM may restrict title detection similar to Netflix. |
-| **Prime Video** | ❌ None | ❌ None | ❌ | Extension cannot detect video elements. Play/Pause do not work. Media title detection fails. DRM and custom player prevent script access. |
+| **Prime Video** | ⚠️ Partial | ⚠️ Partial | ❌ | Video elements detected (2 on page, picks larger one). Playback state + time readable. However, the preview/trailer video may be selected instead of the main content. Play/Pause commands may not reach the correct player. Title detection from MediaSession API may work for some content. |
 | **HBO Max / Max** | Not tested | Not tested | Not tested | — |
 | **Crunchyroll** | Not tested | Not tested | Not tested | — |
 | **Vimeo** | Not tested | Not tested | Not tested | — |

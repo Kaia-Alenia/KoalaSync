@@ -78,21 +78,41 @@
     }
 
     // --- Helper: find the best video element on the page ---
+    // Prefers larger, visible videos over tiny preview/trailer elements.
     function findVideo(root = document) {
-        const video = root.querySelector('video');
-        if (video) return video;
-        
-        // Optimize: scan only potential player, video, media, and stream hosts by matching typical keywords (case-insensitive)
-        // or common custom element tags. This prevents recursive scanning of thousands of standard DOM nodes (div, span, a, etc.)
-        // while guaranteeing 100% airtight compatibility with all video web components in the wild.
-        const potentialHosts = root.querySelectorAll('[id*="player" i], [class*="player" i], [id*="video" i], [class*="video" i], [id*="media" i], [class*="media" i], [id*="stream" i], [class*="stream" i], ytd-player, netflix-player, emby-player, jellyfin-player, video-player');
-        for (const el of potentialHosts) {
-            if (el.shadowRoot) {
-                const found = findVideo(el.shadowRoot);
-                if (found) return found;
+        const allVideos = root.querySelectorAll('video');
+        if (allVideos.length === 0) {
+            // Optimize: scan only potential player, video, media, and stream hosts by matching typical keywords (case-insensitive)
+            // or common custom element tags. This prevents recursive scanning of thousands of standard DOM nodes (div, span, a, etc.)
+            // while guaranteeing 100% airtight compatibility with all video web components in the wild.
+            const potentialHosts = root.querySelectorAll('[id*="player" i], [class*="player" i], [id*="video" i], [class*="video" i], [id*="media" i], [class*="media" i], [id*="stream" i], [class*="stream" i], ytd-player, netflix-player, emby-player, jellyfin-player, video-player');
+            for (const el of potentialHosts) {
+                if (el.shadowRoot) {
+                    const found = findVideo(el.shadowRoot);
+                    if (found) return found;
+                }
+            }
+            return null;
+        }
+
+        // Multiple videos found → pick the best one
+        if (allVideos.length === 1) return allVideos[0];
+
+        let best = null;
+        let bestScore = -1;
+        for (const v of allVideos) {
+            if (v.tagName !== 'VIDEO') continue;
+            // Score: visible area + bonus for unmuted + bonus for longer duration
+            const area = (v.videoWidth || v.offsetWidth || 0) * (v.videoHeight || v.offsetHeight || 0);
+            const unmutedBonus = v.muted ? 0 : 100000;
+            const durationBonus = (v.duration && isFinite(v.duration) ? v.duration : 0) * 100;
+            const score = area + unmutedBonus + durationBonus;
+            if (score > bestScore) {
+                bestScore = score;
+                best = v;
             }
         }
-        return null;
+        return best;
     }
 
     // --- Episode Auto-Sync: Detection ---

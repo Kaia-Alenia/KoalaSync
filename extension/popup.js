@@ -1541,7 +1541,7 @@ elements.copyLogs.addEventListener('click', () => {
             for (const h of recent) {
                 if (!h) continue;
                 const ts = safe(h.timestamp, '');
-                const evt = safe(h.event, safe(h.type, '?'));
+                const evt = safe(h.action, '?');
                 const from = h.senderId ? ` (${h.senderId})` : (h.peerId ? ` (${h.peerId})` : '');
                 const extra = h.detail ? ` \u2192 ${h.detail}` : '';
                 lines.push(`[${ts}] ${evt}${from}${extra}`);
