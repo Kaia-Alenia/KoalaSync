@@ -1,0 +1,17 @@
+services:                                                                                # Top-level key defining all containers in this Compose file
+  koala-sync:                                                                              # Name of the KoalaSync service
+    image: ghcr.io/shik3i/koalasync:latest                                                 # Pulls the latest KoalaSync image from GitHub Container Registry
+    container_name: KoalaSync                                                              # Sets a fixed container name instead of an auto-generated one
+    restart: always                                                                        # Always restart the container if it stops or if Docker starts
+    environment:                                                                           # Environment variables passed into the container
+      - TZ=Europe/Berlin                                                                   # Sets the timezone inside the container
+      - PORT=3000                                                                          # Port KoalaSync listens on inside the container
+      - MIN_VERSION=1.0.0                                                                  # Minimum client version allowed to connect
+      - MAX_ROOMS=100                                                                      # Maximum number of rooms that can exist
+      - MAX_PEERS_PER_ROOM=50                                                              # Maximum number of peers allowed per room
+    pids_limit: 2048                                                                       # Limits the container to 2048 process IDs for safety
+    networks:                                                                              # Attaches the service to the networks listed below
+      - caddy_net                                                                          # Joins the pre-existing Caddy network for reverse proxying
+networks:                                                                                  # Top-level networks definition
+  caddy_net:                                                                                # Network name as referenced by the service
+    external: true                                                                          # Marks the network as managed outside of Compose (created by Caddy)

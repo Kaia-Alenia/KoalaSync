@@ -1,0 +1,21 @@
+services:                                                                                # Top-level key defining all containers in this Compose file
+  koala-sync:                                                                              # Name of the KoalaSync service
+    image: ghcr.io/shik3i/koalasync:latest                                                 # Pulls the latest KoalaSync image from GitHub Container Registry
+    container_name: KoalaSync                                                              # Sets a fixed container name instead of an auto-generated one
+    restart: always                                                                        # Always restart the container if it stops or if Docker starts
+    ports:                                                                                 # Exposes the container port to the host
+      - "3000:3000"                                                                        # Maps host port 3000 to container port 3000
+    environment:                                                                           # Environment variables passed into the container
+      - TZ=Europe/Berlin                                                                   # Sets the timezone inside the container
+      - PORT=3000                                                                          # Port KoalaSync listens on inside the container
+      - MIN_VERSION=1.0.0                                                                  # Minimum client version allowed to connect
+      - MAX_ROOMS=100                                                                      # Maximum number of rooms that can exist
+      - MAX_PEERS_PER_ROOM=50                                                              # Maximum number of peers allowed per room
+    pids_limit: 2048                                                                       # Limits the container to 2048 process IDs for safety
+    networks:                                                                              # Attaches the service to the networks listed below
+      bond0_network:                                                                       # Network name as referenced by the service
+        ipv4_address: 192.168.1.XXX                                                        # Static IPv4 address for the KoalaSync container
+networks:                                                                                  # Top-level networks definition
+  bond0_network:                                                                          # Network name inside Compose
+    external: true                                                                        # Marks the network as managed outside of Compose
+    name: bond0                                                                           # Name of the pre-existing network on the Docker host
