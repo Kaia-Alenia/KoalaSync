@@ -44,6 +44,7 @@ KoalaSync uses a "Single Source of Truth" for protocol constants in `shared/cons
 ## Pull Request Process
 1. Create a new branch for your feature or bugfix.
 2. Ensure your code is tested locally (Chrome and Firefox).
+   - For website changes: run `node website/build.js` and verify the output.
 3. Update relevant documentation (e.g., `docs/ARCHITECTURE.md` if you change the protocol).
 4. Submit your PR with a clear description of the changes.
 

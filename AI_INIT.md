@@ -21,6 +21,8 @@ KoalaSync is a specialized tool for **synchronized video playback** across multi
 - `extension/`: Browser Extension (Chrome & Firefox, Manifest V3). Contains background service worker, content scripts, and popup UI.
 - `server/`: Node.js Relay Server using Socket.IO (WebSocket-only).
 - `website/`: **Landing Page** & Invitation Bridge (Marketing, Tutorials, and Downloads).
+  - **`build.js`**: Zero-dependency static site compiler. Translates `template.html` + `locales/*.json` → `www/`. Also minifies CSS/JS automatically.
+  - **`www/` is auto-generated**: Never edit files in `www/` directly. Always edit source files (`template.html`, `style.css`, `app.js`, `lang-init.js`, `locales/*.json`) and run `node website/build.js` to regenerate.
 - `shared/`: **Single Source of Truth** for protocol constants and event names.
 - `scripts/`: Development utilities (e.g., `build-extension.js`).
 - `docker-compose.yml`: Root-level orchestration for the relay server.
@@ -127,6 +129,13 @@ Before starting any task, committing, or pushing, you **MUST** run `git pull --r
 1. Add the event name to `shared/constants.js`.
 2. Run the build script (`node scripts/build-extension.js`).
 3. Implement the handler in `server/index.js` and `background.js`.
+
+### Making Website Changes
+1. Edit source files in `website/` (`template.html`, `style.css`, `app.js`, `lang-init.js`, or `locales/*.json`).
+2. Run the compiler: `node website/build.js`. This generates the multilingual pages in `www/` and minifies CSS/JS.
+3. Verify the output: `node --check website/www/app.js && node --check website/www/lang-init.js`.
+4. Test locally: `npx serve website/www` or `python3 -m http.server 8080 -d website/www`.
+5. Commit both source changes and the updated `www/` output.
 
 ### Testing Locally
 1. Run the build script: `node scripts/build-extension.js`.
