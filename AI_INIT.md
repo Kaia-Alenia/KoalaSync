@@ -22,7 +22,7 @@ KoalaSync is a specialized tool for **synchronized video playback** across multi
 - `server/`: Node.js Relay Server using Socket.IO (WebSocket-only).
 - `website/`: **Landing Page** & Invitation Bridge (Marketing, Tutorials, and Downloads).
   - **`build.js`**: Zero-dependency static site compiler. Translates `template.html` + `locales/*.json` → `www/`. Also minifies CSS/JS automatically.
-  - **`www/` is auto-generated**: Never edit files in `www/` directly. Always edit source files (`template.html`, `style.css`, `app.js`, `lang-init.js`, `locales/*.json`) and run `node website/build.js` to regenerate.
+  - **`www/` is auto-generated**: Never edit files in `www/` directly. Always edit source files (`template.html`, `style.css`, `app.js`, `lang-init.js`, `locales/*.json`) and run `node website/build.js` to regenerate. CSS/JS are output as `.min.*` files — a built-in cleanup step removes stale artifacts on each build.
 - `shared/`: **Single Source of Truth** for protocol constants and event names.
 - `scripts/`: Development utilities (e.g., `build-extension.js`).
 - `docker-compose.yml`: Root-level orchestration for the relay server.

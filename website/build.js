@@ -164,7 +164,14 @@ function compile() {
         }
     }
 
-    // 5. Copy static assets
+    // 5. Clean stale minified output from previous builds
+    const staleGlobs = ['style.css', 'style.min.css', 'app.js', 'app.min.js', 'lang-init.js', 'lang-init.min.js'];
+    for (let f of staleGlobs) {
+        const p = path.join(wwwDir, f);
+        if (fs.existsSync(p)) fs.unlinkSync(p);
+    }
+
+    // 6. Copy static assets
     console.log('Copying assets and static website files...');
     const staticFiles = [
         'style.css',
@@ -180,20 +187,24 @@ function compile() {
 
     for (let file of staticFiles) {
         const srcPath = path.join(websiteDir, file);
-        const destPath = path.join(wwwDir, file);
+        // Rename .css → .min.css and .js → .min.js in output
+        const destName = file.endsWith('.css') ? file.replace(/\.css$/, '.min.css')
+                     : file.endsWith('.js')  ? file.replace(/\.js$/, '.min.js')
+                     : file;
+        const destPath = path.join(wwwDir, destName);
         if (fs.existsSync(srcPath)) {
             if (file.endsWith('.css')) {
                 const raw = fs.readFileSync(srcPath, 'utf8');
                 const minified = minifyCSS(raw);
                 fs.writeFileSync(destPath, minified, 'utf8');
                 const saved = ((raw.length - minified.length) / raw.length * 100).toFixed(0);
-                console.log(`Minified: ${file} (-${saved}%)`);
+                console.log(`Minified: ${file} → ${destName} (-${saved}%)`);
             } else if (file.endsWith('.js')) {
                 const raw = fs.readFileSync(srcPath, 'utf8');
                 const minified = minifyJS(raw);
                 fs.writeFileSync(destPath, minified, 'utf8');
                 const saved = ((raw.length - minified.length) / raw.length * 100).toFixed(0);
-                console.log(`Minified: ${file} (-${saved}%)`);
+                console.log(`Minified: ${file} → ${destName} (-${saved}%)`);
             } else {
                 fs.copyFileSync(srcPath, destPath);
                 console.log(`Copied: ${file}`);
