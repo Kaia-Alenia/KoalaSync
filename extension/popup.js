@@ -1419,16 +1419,162 @@ chrome.runtime.onMessage.addListener((msg) => {
 });
 
 elements.copyLogs.addEventListener('click', () => {
-    chrome.runtime.sendMessage({ type: 'GET_LOGS' }, (logs) => {
-        if (!logs || logs.length === 0) return;
-        const text = logs.map(l => `[${l.timestamp}] [${l.type}] ${l.message}`).join('\n');
+    const utcNow = new Date().toISOString().replace('T', ' ').slice(0, 19) + ' UTC';
+    const userAgent = String(navigator.userAgent || '');
+
+    const safe = (val, fb) => (val != null ? val : fb);
+
+    Promise.all([
+        new Promise(resolve => chrome.runtime.sendMessage({ type: 'GET_STATUS' }, resolve)),
+        new Promise(resolve => chrome.runtime.sendMessage({ type: 'GET_LOGS' }, resolve)),
+        new Promise(resolve => chrome.runtime.sendMessage({ type: 'GET_HISTORY' }, resolve))
+    ]).then(([status, logs, history]) => {
+        status = status || {};
+        logs = logs || [];
+        history = history || [];
+
+        const videoPromise = (status && status.targetTabId)
+            ? new Promise(resolve => chrome.runtime.sendMessage({ type: 'GET_VIDEO_STATE', tabId: status.targetTabId }, resolve))
+            : Promise.resolve(null);
+
+        videoPromise.then(rawVideo => {
+        const vs = rawVideo || {};
+        const lines = [];
+
+        // ── Header ──
+        const verStr = safe(status.version, '?');
+        lines.push('# KoalaSync Debug Report');
+        lines.push(`> **v${verStr}** | ${utcNow}`);
+        lines.push('');
+
+        // ── System ──
+        lines.push('## System');
+        lines.push(`- **Protocol:** ${safe(status.protocolVersion, '?')}`);
+        lines.push(`- **Peer ID:** \`${safe(status.peerId, '?')}\``);
+        lines.push(`- **User Agent:** ${userAgent}`);
+        lines.push('');
+
+        // ── Tab ──
+        if (rawVideo) {
+            lines.push('## Tab');
+            if (vs.pageTitle) lines.push(`- **Title:** ${vs.pageTitle}`);
+            if (vs.url) lines.push(`- **URL:** ${vs.url}`);
+            if (vs.platform) lines.push(`- **Platform:** ${safe(vs.platform, '?')}`);
+            lines.push(`- **Video Count:** ${safe(vs.videoCount, 0)} | **Shadow DOM:** ${vs.inShadowDom ? 'YES' : 'NO'}`);
+            lines.push('');
+        }
+
+        // ── Connection ──
+        lines.push('## Connection');
+        const st = safe(status.status, 'disconnected');
+        const emoji = st === 'connected' ? '\uD83D\uDFE2'
+            : st === 'connecting' ? '\uD83D\uDFE1'
+            : st === 'reconnecting' ? '\uD83D\uDFE0'
+            : '\uD83D\uDD34';
+        lines.push(`- **Status:** ${emoji} ${st}`);
+        lines.push(`- **Server:** \`${safe(status.serverUrl, '?')}\``);
+        if (status.roomId) {
+            lines.push(`- **Room:** \`${status.roomId}\``);
+            const peers = Array.isArray(status.peers) ? status.peers : [];
+            const peerNames = peers.map(p => (p && (p.username || p.peerId)) || '?').join(', ');
+            lines.push(`- **Peers (${peers.length}):** ${peers.length > 0 ? peerNames : 'none'}`);
+        } else {
+            lines.push('- **Room:** none');
+        }
+        if (safe(status.reconnectAttempts, 0) > 0) lines.push(`- **Reconnect Attempts:** ${status.reconnectAttempts}`);
+        lines.push('');
+
+        // ── Video ──
+        lines.push('## Video');
+        if (!rawVideo) {
+            lines.push('- *No tab selected / communication failed*');
+        } else if (!vs.found) {
+            lines.push('- **Found:** \u274C NO VIDEO ELEMENT');
+            if (vs.videoCount != null) lines.push(`- **Video Tags:** ${vs.videoCount}`);
+            if (vs.inShadowDom != null) lines.push(`- **Shadow DOM:** ${vs.inShadowDom ? 'YES (checked)' : 'NO'}`);
+            if (vs.metadata) {
+                if (vs.metadata.title) lines.push(`- **MediaSession Title:** "${vs.metadata.title}"`);
+                if (vs.metadata.artist) lines.push(`- **MediaSession Artist:** "${vs.metadata.artist}"`);
+                if (vs.metadata.album) lines.push(`- **MediaSession Album:** "${vs.metadata.album}"`);
+            }
+        } else {
+            const timeStr = (typeof vs.currentTime === 'number' ? vs.currentTime.toFixed(2) : '?') + 's / ' +
+                (typeof vs.duration === 'number' ? vs.duration.toFixed(2) : '?') + 's';
+            const readyLabel = safe(vs.readyStateLabel, '?');
+            const readyOk = safe(vs.readyState, -1) >= 3;
+            const netLabel = safe(vs.networkStateLabel, '?');
+            const dimOk = safe(vs.videoWidth, 0) > 0 && safe(vs.videoHeight, 0) > 0;
+
+            lines.push(`- **State:** ${vs.paused ? 'PAUSED' : 'PLAYING'}`);
+            lines.push(`- **Time:** ${timeStr}`);
+            lines.push(`- **ReadyState:** ${readyOk ? '\u2705' : '\u26A0\uFE0F'} ${safe(vs.readyState, '?')} (${readyLabel})`);
+            lines.push(`- **Network:** ${safe(vs.networkState, '?')} (${netLabel})`);
+            lines.push(`- **Buffered:** ${safe(vs.buffered, '?')}`);
+            lines.push(`- **Dimensions:** ${safe(vs.videoWidth, '?')}x${safe(vs.videoHeight, '?')}${dimOk ? '' : ' \u26A0\uFE0F 0x0'}`);
+            lines.push(`- **Muted:** ${safe(vs.muted, '?')} | **Volume:** ${safe(vs.volume, '?')} | **Speed:** ${safe(vs.playbackRate, '?')}x`);
+            lines.push(`- **Seeking:** ${safe(vs.seeking, '?')} | **Ended:** ${safe(vs.ended, '?')} | **Loop:** ${safe(vs.loop, '?')}`);
+            if (vs.error && vs.error.code != null) {
+                lines.push(`- **Error:** code=${vs.error.code}, msg="${safe(vs.error.message, 'none')}"`);
+            }
+            lines.push(`- **ID:** \`${safe(vs.id, '')}\` | **Class:** \`${safe(vs.className, '')}\``);
+            lines.push(`- **Source:** \`${safe(vs.currentSrc, safe(vs.src, 'none'))}\``);
+            if (vs.metadata) {
+                if (vs.metadata.title) lines.push(`- **MediaSession Title:** "${vs.metadata.title}"`);
+                if (vs.metadata.artist) lines.push(`- **MediaSession Artist:** "${vs.metadata.artist}"`);
+                if (vs.metadata.album) lines.push(`- **MediaSession Album:** "${vs.metadata.album}"`);
+            }
+            if (vs.dataAttributes) {
+                const keys = Object.keys(vs.dataAttributes);
+                if (keys.length > 0) {
+                    lines.push('- **Data Attributes:**');
+                    for (const k of keys) lines.push(`  - \`${k}\` = "${safe(vs.dataAttributes[k], '')}"`);
+                }
+            }
+        }
+        lines.push('');
+
+        // ── Action History (last 20) ──
+        lines.push('## Action History (last 20)');
+        if (history && history.length > 0) {
+            const recent = history.slice(-20);
+            lines.push('```');
+            for (const h of recent) {
+                if (!h) continue;
+                const ts = safe(h.timestamp, '');
+                const evt = safe(h.event, safe(h.type, '?'));
+                const from = h.senderId ? ` (${h.senderId})` : (h.peerId ? ` (${h.peerId})` : '');
+                const extra = h.detail ? ` \u2192 ${h.detail}` : '';
+                lines.push(`[${ts}] ${evt}${from}${extra}`);
+            }
+            lines.push('```');
+        } else {
+            lines.push('*No history entries*');
+        }
+        lines.push('');
+
+        // ── Logs (last 50) ──
+        lines.push('## Logs (last 50)');
+        if (logs && logs.length > 0) {
+            const recent = logs.slice(-50);
+            lines.push('```');
+            for (const l of recent) {
+                if (!l) continue;
+                lines.push(`[${safe(l.timestamp, '')}] [${safe(l.type, '?')}] ${safe(l.message, '')}`);
+            }
+            lines.push('```');
+        } else {
+            lines.push('*No log entries*');
+        }
+
+        const text = lines.join('\n');
         navigator.clipboard.writeText(text).then(() => {
             const original = elements.copyLogs.textContent;
             elements.copyLogs.textContent = getMessage('TOAST_LOGS_COPIED');
-            setTimeout(() => elements.copyLogs.textContent = original, 2000);
+            setTimeout(() => { elements.copyLogs.textContent = original; }, 2000);
         }).catch(() => {
             showToast(getMessage('TOAST_COPY_FAILED'), 'error');
         });
+    });
     });
 });
 
@@ -1445,27 +1591,27 @@ function refreshDebugInfo() {
 
         // Request direct state from the content script via background
         chrome.runtime.sendMessage({ type: 'GET_VIDEO_STATE', tabId: res.targetTabId }, (state) => {
-            if (!state || state.error) {
+            if (!state || (!state.found && state.error)) {
                 if (elements.videoDebug) elements.videoDebug.textContent = getMessage('DEBUG_COMM_FAIL');
                 return;
             }
 
             if (elements.videoDebug) {
                 elements.videoDebug.innerHTML = '';
-                
+
                 const addField = (label, value, color = null) => {
                     const row = document.createElement('div');
                     row.style.marginBottom = '4px';
                     if (color) row.style.color = color;
-                    
+
                     const b = document.createElement('b');
                     b.textContent = `${label}: `;
                     b.style.color = 'var(--text-muted)';
-                    
+
                     const span = document.createElement('span');
                     span.textContent = value;
                     span.style.wordBreak = 'break-all';
-                    
+
                     row.appendChild(b);
                     row.appendChild(span);
                     elements.videoDebug.appendChild(row);
@@ -1473,29 +1619,92 @@ function refreshDebugInfo() {
 
                 const addSection = (title) => {
                     const div = document.createElement('div');
-                    div.style.cssText = 'margin: 8px 0 4px 0; border-bottom: 1px solid #334155; padding-bottom: 2px; color: var(--accent); font-weight: bold; font-size: 9px;';
-                    div.textContent = title.toUpperCase();
+                    div.style.cssText = 'margin: 8px 0 4px 0; border-bottom: 1px solid #334155; padding-bottom: 2px; color: var(--accent); font-weight: bold; font-size: 10px; text-transform: uppercase;';
+                    div.textContent = title;
                     elements.videoDebug.appendChild(div);
                 };
 
-                addField('STATE', state.paused ? 'PAUSED' : 'PLAYING', 'var(--accent)');
-                addField('TIME', `${state.currentTime.toFixed(2)}s / ${(state.duration || 0).toFixed(2)}s`);
-                addField('READY', state.readyState);
-                
+                if (!state.found) {
+                    // No video found — show diagnostic info
+                    addSection('Video Detection');
+                    const notFound = document.createElement('div');
+                    notFound.style.cssText = 'color: #ef4444; font-weight: 700; margin-bottom: 8px;';
+                    notFound.textContent = 'NO VIDEO ELEMENT FOUND';
+                    elements.videoDebug.appendChild(notFound);
+
+                    addField('Platform', state.platform || '?', 'var(--accent)');
+                    addField('Page Title', state.pageTitle || '?');
+                    addField('URL', state.url || '?');
+                    addField('Video Tags', String(state.videoCount || 0));
+                    addField('Shadow DOM', state.inShadowDom ? 'YES (checked)' : 'NO');
+
+                    if (state.metadata) {
+                        addSection('Media Session API');
+                        addField('Title', state.metadata.title || 'n/a');
+                        addField('Artist', state.metadata.artist || 'n/a');
+                        addField('Album', state.metadata.album || 'n/a');
+                    }
+
+                    const hint = document.createElement('div');
+                    hint.style.cssText = 'margin-top: 12px; padding: 8px; background: rgba(251,191,36,0.1); border-left: 3px solid #fbbf24; border-radius: 4px; font-size: 10px; color: var(--text-muted);';
+                    hint.textContent = 'Is a video currently playing? The extension only detects <video> elements. Ensure media is actively loaded on the page.';
+                    elements.videoDebug.appendChild(hint);
+                    return;
+                }
+
+                // Video found — full debug
+                addSection('Playback');
+                addField('State', state.paused ? 'PAUSED' : 'PLAYING', state.paused ? 'var(--text-muted)' : '#22c55e');
+                addField('Time', `${state.currentTime.toFixed(2)}s / ${(state.duration || 0).toFixed(2)}s`);
+                addField('ReadyState', `${state.readyState} (${state.readyStateLabel || '?'})`,
+                    state.readyState >= 3 ? '#22c55e' : '#fbbf24');
+                addField('Network', `${state.networkState} (${state.networkStateLabel || '?'})`,
+                    state.networkState === 1 ? '#22c55e' : state.networkState === 3 ? '#ef4444' : 'var(--text-muted)');
+                addField('Buffered', state.buffered || '?');
+
+                addSection('Properties');
+                addField('Seeking', String(state.seeking));
+                addField('Ended', String(state.ended));
+                addField('Loop', String(state.loop));
+                addField('Muted', String(state.muted));
+                addField('Volume', String(state.volume));
+                addField('Speed', `${state.playbackRate}x`);
+
+                addSection('Dimensions');
+                const dimsOk = state.videoWidth > 0 && state.videoHeight > 0;
+                addField('Resolution', `${state.videoWidth}x${state.videoHeight}`, dimsOk ? '#22c55e' : '#ef4444');
+                if (!dimsOk) {
+                    const dimHint = document.createElement('div');
+                    dimHint.style.cssText = 'color: #fbbf24; font-size: 9px; margin: 2px 0 6px 12px;';
+                    dimHint.textContent = '0x0 = video element hidden or not yet loaded';
+                    elements.videoDebug.appendChild(dimHint);
+                }
+
+                if (state.error) {
+                    addSection('Media Error');
+                    addField('Code', String(state.error.code), '#ef4444');
+                    addField('Message', state.error.message || '?', '#ef4444');
+                }
+
+                addSection('Detection');
+                addField('Platform', state.platform || '?', 'var(--accent)');
+                addField('Video Count', String(state.videoCount || 0));
+                addField('Shadow DOM', state.inShadowDom ? 'YES' : 'NO');
+
                 addSection('Identification');
                 addField('URL', state.url);
                 addField('ID', state.id);
                 addField('CLASS', state.className);
-                
+
                 addSection('Media Source');
-                addField('CURRENT_SRC', state.currentSrc);
-                addField('SRC', state.src);
+                addField('CurrentSrc', state.currentSrc);
+                addField('Src', state.src);
 
                 if (state.metadata) {
                     addSection('Media Session API');
-                    addField('TITLE', state.metadata.title || 'n/a');
-                    addField('ARTIST', state.metadata.artist || 'n/a');
-                    addField('ALBUM', state.metadata.album || 'n/a');
+                    addField('Title', state.metadata.title || 'n/a');
+                    addField('Artist', state.metadata.artist || 'n/a');
+                    addField('Album', state.metadata.album || 'n/a');
                 }
 
                 if (state.dataAttributes && Object.keys(state.dataAttributes).length > 0) {

@@ -1273,7 +1273,12 @@ async function handleAsyncMessage(message, sender, sendResponse) {
             targetTabId: currentTabId,
             episodeLobby: episodeLobby,
             reconnectAttempts,
-            reconnectSlowMode: reconnectFailed
+            reconnectSlowMode: reconnectFailed,
+            roomId: currentRoom ? currentRoom.roomId : null,
+            serverUrl: currentServerUrl,
+            version: APP_VERSION,
+            protocolVersion: PROTOCOL_VERSION,
+            roomPassword: currentRoom ? currentRoom.password : null
         });
     } else if (message.type === 'LEAVE_ROOM') {
         emit(EVENTS.LEAVE_ROOM, { peerId });

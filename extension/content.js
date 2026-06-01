@@ -433,6 +433,41 @@
 
         if (message.type === 'GET_VIDEO_STATE') {
             const video = findVideo();
+
+            const platform = (() => {
+                const h = window.location.hostname.toLowerCase();
+                if (h.includes('youtube.com')) return 'YouTube';
+                if (h.includes('twitch.tv')) return 'Twitch';
+                if (h.includes('netflix.com')) return 'Netflix';
+                if (h.includes('primevideo.com') || h.includes('amazon.')) return 'Prime Video';
+                if (h.includes('disneyplus.com')) return 'Disney+';
+                if (h.includes('hulu.com')) return 'Hulu';
+                if (h.includes('max.com') || h.includes('hbomax.com')) return 'Max/HBO';
+                if (h.includes('vimeo.com')) return 'Vimeo';
+                if (h.includes('dailymotion.com')) return 'Dailymotion';
+                return 'Generic';
+            })();
+
+            const networkStates = ['NETWORK_EMPTY', 'NETWORK_IDLE', 'NETWORK_LOADING', 'NETWORK_NO_SOURCE'];
+            const readyStates = ['HAVE_NOTHING', 'HAVE_METADATA', 'HAVE_CURRENT_DATA', 'HAVE_FUTURE_DATA', 'HAVE_ENOUGH_DATA'];
+
+            const videoCount = document.querySelectorAll('video').length;
+            const inShadowDom = (() => {
+                let el = video;
+                while (el) {
+                    if (el.toString() === '[object ShadowRoot]') return true;
+                    el = el.parentNode;
+                }
+                // Also check if any potential host has shadow root (even if no video found)
+                if (!video) {
+                    const hosts = document.querySelectorAll('[id*="player" i], [class*="player" i], [id*="video" i], [class*="video" i]');
+                    for (const host of hosts) {
+                        if (host.shadowRoot) return true;
+                    }
+                }
+                return false;
+            })();
+
             if (video) {
                 const dataAttributes = {};
                 if (video.attributes) {
@@ -450,24 +485,59 @@
                     artwork: Array.from(navigator.mediaSession.metadata.artwork || []).map(a => a.src)
                 } : null;
 
+                const errorInfo = video.error ? {
+                    code: video.error.code,
+                    message: video.error.message
+                } : null;
+
                 sendResponse({
+                    found: true,
                     paused: video.paused,
                     currentTime: video.currentTime,
                     duration: video.duration || 0,
                     readyState: video.readyState,
+                    readyStateLabel: readyStates[video.readyState] || 'UNKNOWN',
+                    networkState: video.networkState,
+                    networkStateLabel: networkStates[video.networkState] || 'UNKNOWN',
                     muted: video.muted,
                     volume: video.volume,
                     playbackRate: video.playbackRate,
+                    videoWidth: video.videoWidth,
+                    videoHeight: video.videoHeight,
+                    seeking: video.seeking,
+                    ended: video.ended,
+                    error: errorInfo,
+                    buffered: video.buffered && video.buffered.length > 0
+                        ? Array.from({ length: video.buffered.length }, (_, i) =>
+                            `${video.buffered.start(i).toFixed(1)}-${video.buffered.end(i).toFixed(1)}s`).join(', ')
+                        : 'none',
+                    loop: video.loop,
                     url: window.location.href,
+                    pageTitle: document.title,
                     id: video.id || 'none',
                     className: video.className || 'none',
                     src: video.src || 'none',
                     currentSrc: video.currentSrc || 'none',
                     dataAttributes,
-                    metadata
+                    metadata,
+                    videoCount,
+                    inShadowDom,
+                    platform
                 });
             } else {
-                sendResponse({ error: 'No video found' });
+                sendResponse({
+                    found: false,
+                    videoCount,
+                    inShadowDom,
+                    platform,
+                    url: window.location.href,
+                    pageTitle: document.title,
+                    metadata: (navigator.mediaSession && navigator.mediaSession.metadata) ? {
+                        title: navigator.mediaSession.metadata.title,
+                        artist: navigator.mediaSession.metadata.artist,
+                        album: navigator.mediaSession.metadata.album
+                    } : null
+                });
             }
         }
     });

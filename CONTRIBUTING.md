@@ -112,16 +112,29 @@ KoalaSync uses a **single source of truth** for all protocol constants in `share
 
 ## Bug Report Template
 
-When filing a bug, include as much of the following as possible:
+When filing a bug, the easiest way is to use the **Copy Logs** button in the extension's **Status** tab. It copies a fully formatted Markdown report to your clipboard containing:
+
+- System info (version, protocol, peer ID, browser)
+- Connection status (server, room, peers, reconnect state)
+- Video debug info (playback state, readyState, network state, dimensions, error codes, shadow DOM detection, platform)
+- Action history (last 20 events)
+- Log entries (last 50)
+
+Simply paste the clipboard contents into your GitHub issue and add:
+
+| Field | Example |
+|-------|---------|
+| **Steps to Reproduce** | 1. Create room → 2. Join from second browser → 3. Play video |
+| **Expected Behavior** | Both peers play simultaneously |
+| **Actual Behavior** | Peer B remains paused |
+
+If you cannot access the Status tab, include as much of the following manually:
 
 | Field | Example |
 |-------|---------|
 | **Browser** | Chrome 125, Firefox 128 |
-| **Extension Version** | v1.9.3 (visible in Dev tab) |
-| **Dev Tab Output** | Connection status, video debug info, log entries |
-| **Steps to Reproduce** | 1. Create room → 2. Join from second browser → 3. Play video |
-| **Expected Behavior** | Both peers play simultaneously |
-| **Actual Behavior** | Peer B remains paused |
+| **Extension Version** | v1.9.3 (visible at bottom of Settings tab) |
+| **Website/Platform** | Netflix, YouTube, Twitch, Jellyfin, etc.
 
 ---
 

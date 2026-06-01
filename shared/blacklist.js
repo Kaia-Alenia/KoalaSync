@@ -94,7 +94,6 @@ export const BLACKLIST_DOMAINS = [
     'imgur.com',
 
     // E-Commerce
-    'amazon.',
     'ebay.com',
     'aliexpress.com',
     'etsy.com',
