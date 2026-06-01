@@ -33,6 +33,16 @@ All notable changes to the KoalaSync browser extension and relay server.
 - **Larger Popup Logo**: Extension popup icon increased to 48px.
 - **Prime Video Unblocked**: Removed `amazon.` from the tab blacklist so Amazon/Prime Video tabs appear in the video selector.
 - **Improved Debug Report**: Full User-Agent string for accurate browser identification, UTC timestamp, connection details including server URL and room info.
+- **Smart Disconnect**: Improved disconnect handling when leaving rooms.
+- **Human-Readable Room IDs**: Expanded word lists for friendlier room names.
+- **Custom Server Support**: WEB_JOIN_REQUEST and join button for custom server invite flows.
+- **Reconnection Strategy**: Custom server reconnection improvements.
+- **Episode-Aware Sync**: Command sequencing with smarter episode transition detection and echo suppression for smoother series binges.
+- **Sync Status Refinements**: YouTube and Twitch sync behavior improved.
+- **No External Dependencies**: Extension remains dependency-free with no library overhead.
+
+### Fixed
+- Hardcoded strings, missing translation keys, and Service Worker notification race conditions.
 
 ---
 
