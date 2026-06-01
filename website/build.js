@@ -18,7 +18,7 @@ function minifyCSS(code) {
         .replace(/;\}/g, '}')
         .trim();
 }
-const MIN_AVIF_KB = 3;
+const MIN_AVIF_KB = 0;
 
 function copyDirSync(src, dest) {
     fs.mkdirSync(dest, { recursive: true });
@@ -189,7 +189,7 @@ async function compile() {
         if (stat.size < MIN_AVIF_KB * 1024) continue;
         const dest = path.join(destAssets, f.replace(/\.webp$/, '.avif'));
         if (fs.existsSync(dest) && fs.statSync(dest).mtimeMs >= stat.mtimeMs) continue;
-        await sharp(src).avif({ quality: 70, speed: 6 }).toFile(dest);
+        await sharp(src).avif({ quality: 80, speed: 4 }).toFile(dest);
         avifCount++;
     }
     console.log(`  ${avifCount} AVIF files generated.`);

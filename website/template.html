@@ -9,7 +9,9 @@
     <link rel="preload" href="{{ASSET_PATH}}style.min.css" as="style">
     <link rel="preload" as="image" href="{{ASSET_PATH}}assets/LookDownKoala.webp" imagesrcset="{{ASSET_PATH}}assets/LookDownKoala-1x.webp 90w, {{ASSET_PATH}}assets/LookDownKoala.webp 205w" imagesizes="90px" fetchpriority="high">
     <link rel="stylesheet" href="{{ASSET_PATH}}style.min.css">
-    <link rel="icon" type="image/webp" href="{{ASSET_PATH}}assets/NewLogoIcon_64.webp">
+    <link rel="icon" type="image/png" sizes="16x16" href="{{ASSET_PATH}}assets/favicon-16x16.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="{{ASSET_PATH}}assets/favicon-32x32.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="{{ASSET_PATH}}assets/icon-192x192.png">
     <link rel="canonical" href="https://sync.koalastuff.net/{{CANONICAL_PATH}}">
     <link rel="alternate" hreflang="en" href="https://sync.koalastuff.net/">
     <link rel="alternate" hreflang="de" href="https://sync.koalastuff.net/de/">
@@ -33,6 +35,7 @@
     <meta property="og:locale:alternate" content="es_ES">
     <meta property="og:locale:alternate" content="pt_BR">
     <meta property="og:locale:alternate" content="ru_RU">
+    <meta property="og:site_name" content="KoalaSync">
 
     <!-- Twitter / X -->
     <meta name="twitter:card" content="summary_large_image">
@@ -175,7 +178,7 @@
     <nav>
         <div class="container nav-content">
             <div class="logo-area">
-                <img src="{{ASSET_PATH}}assets/NewLogoIcon_80.webp" srcset="{{ASSET_PATH}}assets/NewLogoIcon_40.webp 40w, {{ASSET_PATH}}assets/NewLogoIcon_80.webp 80w, {{ASSET_PATH}}assets/NewLogoIcon.webp 200w" sizes="40px" alt="KoalaSync Logo" width="40" height="40">
+                <img src="{{ASSET_PATH}}assets/NewLogoIcon_128.webp" srcset="{{ASSET_PATH}}assets/NewLogoIcon_64.webp 64w, {{ASSET_PATH}}assets/NewLogoIcon_128.webp 128w, {{ASSET_PATH}}assets/NewLogoIcon.webp 200w" sizes="64px" alt="KoalaSync Logo" width="64" height="64">
                 <span>KoalaSync</span>
                 <div id="nav-extension-status" class="nav-ext-status" style="display: none;">
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" width="12" height="12"><polyline points="20 6 9 17 4 12"></polyline></svg>
@@ -265,47 +268,47 @@
                         <div id="mock-room" class="mock-screen active">
                             <div class="mock-joined-room" style="display: flex; justify-content: space-between; align-items: center; border-left: 4px solid var(--accent); padding: 8px 10px; background: var(--card); border-radius: 8px; margin-bottom: 12px;" title="The room you are currently connected to">
                                 <div style="display: flex; flex-direction: column;">
-                                    <span style="font-size: 0.6rem; text-transform: uppercase; color: var(--text-muted); font-weight: 700; line-height: 1;"><span lang="en">Active Room</span><span lang="de">Aktiver Raum</span></span>
+                                    <span style="font-size: 0.6rem; text-transform: uppercase; color: var(--text-muted); font-weight: 700; line-height: 1;">{{MOCK_01}}</span>
                                     <span class="mock-room-name" style="font-weight: 700; color: var(--accent); font-size: 0.9rem; letter-spacing: 0.5px; margin-top: 2px;">brave-eagle-80</span>
                                 </div>
-                                    <span class="mock-server-badge" style="font-size: 0.6rem; color: var(--text-muted);"><span lang="en">Official Server</span><span lang="de">Offizieller Server</span></span>
+                                    <span class="mock-server-badge" style="font-size: 0.6rem; color: var(--text-muted);">{{MOCK_02}}</span>
                             </div>
                             <div class="mock-card">
-                                    <div class="mock-label" title="Share this link with friends so they can join"><span lang="en">Invite Link</span><span lang="de">Einladungs-Link</span></div>
+                                    <div class="mock-label" title="Share this link with friends so they can join">{{MOCK_03}}</div>
                                 <div class="mock-invite-box">
-                                    <input type="text" class="mock-input" value="https://sync.koalastuff.net/join#join:brave-eagle-80:pass" readonly style="flex: 1;">
+                                    <input type="text" class="mock-input" value="https://sync.koalastuff.net/join#join:brave-eagle-80:pass" readonly style="flex: 1;" aria-label="Invite link">
                                     <button class="mock-btn" style="width: 40px; padding: 0.45rem 0; flex-shrink: 0; background: #334155;" title="Copy Invite Link"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button>
                                 </div>
                             </div>
                             <div class="mock-card" style="margin-bottom: 12px;">
-                                    <div class="mock-label" title="Other users currently connected to this room"><span lang="en">Peers in Room</span><span lang="de">Teilnehmer im Raum</span></div>
+                                    <div class="mock-label" title="Other users currently connected to this room">{{MOCK_04}}</div>
                                 <div class="mock-peer-list">
                                     <div class="mock-peer-item">
                                         <div class="mock-peer-header">
                                             <span class="mock-peer-name">CoolUsername</span>
-                                                <span class="mock-peer-meta"><span lang="en">YOU</span><span lang="de">ICH</span></span>
+                                                <span class="mock-peer-meta">{{MOCK_05}}</span>
                                         </div>
                                         <div class="mock-peer-tab"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="12" height="12" aria-hidden="true"><rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18"/><line x1="7" y1="2" x2="7" y2="22"/><line x1="17" y1="2" x2="17" y2="22"/><line x1="2" y1="12" x2="22" y2="12"/><line x1="2" y1="7" x2="7" y2="7"/><line x1="2" y1="17" x2="7" y2="17"/><line x1="17" y1="17" x2="22" y2="17"/><line x1="17" y1="7" x2="22" y2="7"/></svg> Stranger Things - S4E1</div>
-                                            <div class="mock-peer-status"><span style="color:#22c55e;">●</span> 0:55 • <span lang="en">Playing</span><span lang="de">Wiedergabe</span></div>
+                                            <div class="mock-peer-status"><span style="color:#22c55e;">●</span> 0:55 • {{MOCK_06}}</div>
                                     </div>
                                     <div class="mock-peer-item">
                                         <div class="mock-peer-header">
                                             <span class="mock-peer-name">KoalaPC</span>
-                                                <span class="mock-peer-meta"><span lang="en">Peer</span><span lang="de">Partner</span></span>
+                                                <span class="mock-peer-meta">{{MOCK_07}}</span>
                                         </div>
                                         <div class="mock-peer-tab"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="12" height="12" aria-hidden="true"><rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18"/><line x1="7" y1="2" x2="7" y2="22"/><line x1="17" y1="2" x2="17" y2="22"/><line x1="2" y1="12" x2="22" y2="12"/><line x1="2" y1="7" x2="7" y2="7"/><line x1="2" y1="17" x2="7" y2="17"/><line x1="17" y1="17" x2="22" y2="17"/><line x1="17" y1="7" x2="22" y2="7"/></svg> Stranger Things - S4E1</div>
-                                            <div class="mock-peer-status"><span style="color:#22c55e;">●</span> 0:55 • <span lang="en">Playing</span><span lang="de">Wiedergabe</span></div>
+                                            <div class="mock-peer-status"><span style="color:#22c55e;">●</span> 0:55 • {{MOCK_06}}</div>
                                     </div>
                                 </div>
                             </div>
-                                <button class="mock-btn" style="background:#ef4444; width:100%; border: none; padding: 10px; border-radius: 8px; color: white; font-weight: 700; cursor: pointer; border: 1px solid #ef4444;"><span lang="en">Leave Room</span><span lang="de">Raum verlassen</span></button>
+                                <button class="mock-btn" style="background:#ef4444; width:100%; border: none; padding: 10px; border-radius: 8px; color: white; font-weight: 700; cursor: pointer; border: 1px solid #ef4444;">{{MOCK_08}}</button>
                         </div>
 
                         <!-- SYNC TAB -->
                         <div id="mock-sync" class="mock-screen">
                             <div class="mock-form-group" style="margin-bottom: 12px;">
                                 <label class="mock-section-label" title="Choose the browser tab containing the video to sync">
-                                    <span lang="en">Select Video</span><span lang="de">Video auswählen</span>
+                                    {{MOCK_09}}
                                 </label>
                                 <select class="mock-input" style="width: 100%; box-sizing: border-box; background: var(--card); border: 1px solid #334155; color: white; padding: 8px; border-radius: 8px; font-family: inherit; font-size: 0.75rem; outline: none; cursor: default;">
                                     <option><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="12" height="12" aria-hidden="true"><rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18"/><line x1="7" y1="2" x2="7" y2="22"/><line x1="17" y1="2" x2="17" y2="22"/><line x1="2" y1="12" x2="22" y2="12"/><line x1="2" y1="7" x2="7" y2="7"/><line x1="2" y1="17" x2="7" y2="17"/><line x1="17" y1="17" x2="22" y2="17"/><line x1="17" y1="7" x2="22" y2="7"/></svg> Stranger Things - S4E1</option>
@@ -314,32 +317,32 @@
                             
                             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
                                 <label style="margin: 0; font-size: 11px; text-transform: uppercase; color: var(--text-muted); font-weight: 700;">
-                                    <span lang="en">Remote Control</span><span lang="de">Fernsteuerung</span>
+                                    {{MOCK_10}}
                                 </label>
                                 <button class="mock-btn" style="background:transparent; border: 1px solid #334155; border-radius: 6px; padding: 2px 6px; font-size: 0.65rem; cursor:default; opacity:0.8; color: var(--text-muted); display: flex; align-items: center; gap: 4px; white-space: nowrap;" title="Copy Invite Link">
                                     <span><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="12" height="12" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></span>
-                                    <span lang="en">Invite Link</span><span lang="de">Einladungs-Link</span>
+                                    {{MOCK_03}}
                                 </button>
                             </div>
                             <div style="display: flex; gap: 8px; margin-bottom: 12px;">
-                                    <button class="mock-btn mock-btn-play" style="flex: 1; background: #22c55e; color: white; padding: 8px; border-radius: 8px; font-weight: 700; border: none; cursor: pointer;" title="Send a Play command to everyone"><span lang="en"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="14" height="14" aria-hidden="true"><polygon points="5 3 19 12 5 21 5 3"/></svg> Play</span><span lang="de"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="14" height="14" aria-hidden="true"><polygon points="5 3 19 12 5 21 5 3"/></svg> Start</span></button>
-                                    <button class="mock-btn mock-btn-pause" style="flex: 1; background: #ef4444; color: white; padding: 8px; border-radius: 8px; font-weight: 700; border: none; cursor: pointer;" title="Send a Pause command to everyone"><span lang="en"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="14" height="14" aria-hidden="true"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg> Pause</span><span lang="de"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="14" height="14" aria-hidden="true"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg> Pause</span></button>
+                                    <button class="mock-btn mock-btn-play" style="flex: 1; background: #22c55e; color: white; padding: 8px; border-radius: 8px; font-weight: 700; border: none; cursor: pointer;" title="Send a Play command to everyone">{{MOCK_11}}</button>
+                                    <button class="mock-btn mock-btn-pause" style="flex: 1; background: #ef4444; color: white; padding: 8px; border-radius: 8px; font-weight: 700; border: none; cursor: pointer;" title="Send a Pause command to everyone">{{MOCK_12}}</button>
                             </div>
                             
                             <div style="display: flex; gap: 8px; margin-bottom: 15px; align-items: stretch;">
                                 <button class="mock-btn" style="background: linear-gradient(135deg, #6366f1, #a855f7); flex: 1; color: white; border: none; font-weight: 700; border-radius: 8px; padding: 8px; cursor: pointer;" title="Force all users to sync up">
-                                    <span lang="en"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14" aria-hidden="true"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg> SYNC</span><span lang="de"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14" aria-hidden="true"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg> SYNC</span>
+                                    {{MOCK_13}}
                                 </button>
                                 <div class="mock-input" style="flex: 1; background: var(--card); border: 1px solid #334155; color: white; padding: 6px; border-radius: 8px; font-size: 0.75rem; display: flex; align-items: center; justify-content: space-between;" title="Choose sync target">
                                     <span>
-                                        <span lang="en">Jump to Others</span><span lang="de">Zu anderen springen</span>
+                                        {{MOCK_14}}
                                     </span>
                                     <span style="font-size: 0.5rem; opacity: 0.6;">▼</span>
                                 </div>
                             </div>
 
                             <label class="mock-section-label" title="Shows the most recent play, pause, or seek command">
-                                <span lang="en">Last Activity Status</span><span lang="de">Letzte Aktivität</span>
+                                {{MOCK_15}}
                             </label>
                             <div class="mock-card" style="margin-bottom: 15px; display: flex; flex-direction: column; gap: 6px;">
                                 <div style="display: flex; justify-content: space-between; align-items: baseline;">
@@ -364,33 +367,33 @@
                                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="12" height="12" aria-hidden="true"><rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18"/><line x1="7" y1="2" x2="7" y2="22"/><line x1="17" y1="2" x2="17" y2="22"/><line x1="2" y1="12" x2="22" y2="12"/><line x1="2" y1="7" x2="7" y2="7"/><line x1="2" y1="17" x2="7" y2="17"/><line x1="17" y1="17" x2="22" y2="17"/><line x1="17" y1="7" x2="22" y2="7"/></svg> Stranger Things - S4E2
                                 </div>
                                 <div style="font-size: 0.65rem; color: var(--text-muted); margin-bottom: 6px;">
-                                    <span lang="en">Waiting for 1 peer (KoalaPC)...</span><span lang="de">Warten auf 1 Partner (KoalaPC)...</span>
+                                    {{MOCK_16}}
                                 </div>
                                 <button class="mock-btn" style="background: #334155; border: none; padding: 4px 8px; border-radius: 6px; color: white; font-weight: 600; font-size: 0.65rem; cursor: pointer; width: auto; display: block;" title="Cancel lobby and play anyway">
-                                    <span lang="en">Skip & Play anyway</span><span lang="de">Überspringen & abspielen</span>
+                                    {{MOCK_17}}
                                 </button>
                             </div>
 
                             <label class="mock-section-label" title="Other users currently connected to this room">
-                                <span lang="en">Peers in Room</span><span lang="de">Teilnehmer im Raum</span>
+                                {{MOCK_04}}
                             </label>
                             <div class="mock-card" style="margin-bottom: 12px;">
                                 <div class="mock-peer-list">
                                     <div class="mock-peer-item">
                                         <div class="mock-peer-header">
                                             <span class="mock-peer-name">CoolUsername</span>
-                                                <span class="mock-peer-meta"><span lang="en">YOU</span><span lang="de">ICH</span></span>
+                                                <span class="mock-peer-meta">{{MOCK_05}}</span>
                                         </div>
                                         <div class="mock-peer-tab"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="12" height="12" aria-hidden="true"><rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18"/><line x1="7" y1="2" x2="7" y2="22"/><line x1="17" y1="2" x2="17" y2="22"/><line x1="2" y1="12" x2="22" y2="12"/><line x1="2" y1="7" x2="7" y2="7"/><line x1="2" y1="17" x2="7" y2="17"/><line x1="17" y1="17" x2="22" y2="17"/><line x1="17" y1="7" x2="22" y2="7"/></svg> Stranger Things - S4E1</div>
-                                            <div class="mock-peer-status"><span style="color:#22c55e;">●</span> 0:55 • <span lang="en">Playing</span><span lang="de">Wiedergabe</span></div>
+                                            <div class="mock-peer-status"><span style="color:#22c55e;">●</span> 0:55 • {{MOCK_06}}</div>
                                     </div>
                                     <div class="mock-peer-item">
                                         <div class="mock-peer-header">
                                             <span class="mock-peer-name">KoalaPC</span>
-                                                <span class="mock-peer-meta"><span lang="en">Peer</span><span lang="de">Partner</span></span>
+                                                <span class="mock-peer-meta">{{MOCK_07}}</span>
                                         </div>
                                         <div class="mock-peer-tab"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="12" height="12" aria-hidden="true"><rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18"/><line x1="7" y1="2" x2="7" y2="22"/><line x1="17" y1="2" x2="17" y2="22"/><line x1="2" y1="12" x2="22" y2="12"/><line x1="2" y1="7" x2="7" y2="7"/><line x1="2" y1="17" x2="7" y2="17"/><line x1="17" y1="17" x2="22" y2="17"/><line x1="17" y1="7" x2="22" y2="7"/></svg> Stranger Things - S4E1</div>
-                                            <div class="mock-peer-status"><span style="color:#22c55e;">●</span> 0:55 • <span lang="en">Playing</span><span lang="de">Wiedergabe</span></div>
+                                            <div class="mock-peer-status"><span style="color:#22c55e;">●</span> 0:55 • {{MOCK_06}}</div>
                                     </div>
                                 </div>
                             </div>
@@ -400,14 +403,14 @@
                         <div id="mock-settings" class="mock-screen">
                             <div style="display: flex; align-items: center; justify-content: space-between; background: var(--card); padding: 8px 10px; border-radius: 8px; margin-bottom: 10px; border: 1px solid #334155;">
                                 <label style="margin: 0; font-size: 11px; text-transform: uppercase; color: var(--text-muted); font-weight: 700;" title="Username helps others identify you.">
-                                    <span lang="en">Your Username</span><span lang="de">Dein Benutzername</span>
+                                    {{MOCK_18}}
                                 </label>
                                 <input type="text" class="mock-input" value="CoolUsername" readonly style="width: 110px; padding: 4px; text-align: right; background: transparent; border: none; color: var(--accent); font-weight: 700;">
                             </div>
 
                             <div style="display: flex; align-items: center; justify-content: space-between; background: var(--card); padding: 8px 10px; border-radius: 8px; margin-bottom: 8px; border: 1px solid #334155;">
                                 <label style="margin: 0; font-size: 11px; text-transform: uppercase; color: var(--text-muted); font-weight: 700; cursor: help;" title="Filters out non-video tabs and unrelated domains to keep the list clean">
-                                    <span lang="en">Hide Clutter Tabs</span><span lang="de">Noise-Filterung</span>
+                                    {{MOCK_19}}
                                 </label>
                                 <label class="mock-toggle-switch">
                                     <input type="checkbox" checked>
@@ -417,7 +420,7 @@
 
                             <div style="display: flex; align-items: center; justify-content: space-between; background: var(--card); padding: 8px 10px; border-radius: 8px; margin-bottom: 8px; border: 1px solid #334155;">
                                 <label style="margin: 0; font-size: 11px; text-transform: uppercase; color: var(--text-muted); font-weight: 700; cursor: help;" title="Pauses automatically and waits for all peers when an episode changes, then sync-starts together.">
-                                    <span lang="en">Auto-Sync Next Episode</span><span lang="de">Nächste Folge auto-syncen</span>
+                                    {{MOCK_20}}
                                 </label>
                                 <label class="mock-toggle-switch">
                                     <input type="checkbox" checked>
@@ -427,7 +430,7 @@
 
                             <div style="display: flex; align-items: center; justify-content: space-between; background: var(--card); padding: 8px 10px; border-radius: 8px; margin-bottom: 8px; border: 1px solid #334155;">
                                 <label style="margin: 0; font-size: 11px; text-transform: uppercase; color: var(--text-muted); font-weight: 700; cursor: help;" title="Automatically copies the invite link to your clipboard when creating a new room.">
-                                    <span lang="en">Auto-Copy Invite Link</span><span lang="de">Link auto-kopieren</span>
+                                    {{MOCK_21}}
                                 </label>
                                 <label class="mock-toggle-switch">
                                     <input type="checkbox" checked>
@@ -437,7 +440,7 @@
 
                             <div style="display: flex; align-items: center; justify-content: space-between; background: var(--card); padding: 8px 10px; border-radius: 8px; margin-bottom: 12px; border: 1px solid #334155;">
                                 <label style="margin: 0; font-size: 11px; text-transform: uppercase; color: var(--text-muted); font-weight: 700; cursor: help;" title="Shows native system notifications when someone joins/leaves or plays/pauses.">
-                                    <span lang="en">Browser Notifications</span><span lang="de">Browser-Meldungen</span>
+                                    {{MOCK_22}}
                                 </label>
                                 <label class="mock-toggle-switch">
                                     <input type="checkbox">
@@ -447,14 +450,13 @@
 
                             <div style="margin-top: 15px; padding-top: 8px; border-top: 1px solid #334155;">
                                 <label class="mock-section-label" title="Tools for fixing connection issues">
-                                    <span lang="en">Troubleshooting</span><span lang="de">Fehlerbehebung</span>
+                                    {{MOCK_23}}
                                 </label>
                                 <button class="mock-btn" style="background:#334155; width:100%; border: none; padding: 10px; border-radius: 8px; color: white; font-weight: 600; cursor: pointer; font-size: 11px;" title="Regenerate your internal ID and reconnect">
-                                    <span lang="en">Regenerate Peer ID</span><span lang="de">Peer ID regenerieren</span>
+                                    {{MOCK_24}}
                                 </button>
                                 <p style="font-size: 9px; color: var(--text-muted); margin-top: 5px; text-align: center; margin-bottom: 0;">
-                                    <span lang="en">Use this if you see "Duplicate Identity" errors.</span>
-                                    <span lang="de">Nutze dies bei "Duplicate Identity" Fehlern.</span>
+                                    {{MOCK_25}}
                                 </p>
                             </div>
                         </div>
@@ -462,20 +464,20 @@
                         <!-- DEV TAB -->
                         <div id="mock-dev" class="mock-screen">
                             <label class="mock-section-label" title="Current WebSocket connection state">
-                                <span lang="en">Connection Status</span><span lang="de">Verbindungsstatus</span>
+                                {{MOCK_26}}
                             </label>
                             <div class="mock-card" style="display:flex; align-items:center; gap: 10px; margin-bottom: 12px;">
                                 <span class="status-dot status-online" style="width: 8px; height: 8px; border-radius: 50%; display: inline-block; background: #22c55e; box-shadow: 0 0 8px #22c55e;"></span>
                                 <span style="flex:1; font-size: 0.75rem; font-weight: 600; color: white;">
-                                    <span lang="en">Connected</span><span lang="de">Verbunden</span>
+                                    {{MOCK_27}}
                                 </span>
                                 <button class="mock-btn" style="width: auto; padding: 4px 8px; font-size: 0.65rem; border: none; background: #334155; color: white; border-radius: 6px; cursor: pointer;" title="Copy logs to clipboard for sharing">
-                                    <span lang="en">Copy Logs</span><span lang="de">Logs kopieren</span>
+                                    {{MOCK_28}}
                                 </button>
                             </div>
 
                             <label class="mock-section-label" title="Technical details about the currently selected video element">
-                                <span lang="en">Video Debug Info</span><span lang="de">Video-Debug-Info</span>
+                                {{MOCK_29}}
                             </label>
                             <div class="mock-card" style="font-size: 0.65rem; font-family: monospace; color: var(--text-muted); line-height: 1.4; margin-bottom: 12px;">
                                 <div>readyState: HAVE_ENOUGH_DATA</div>
@@ -485,7 +487,7 @@
                             </div>
 
                             <label class="mock-section-label" title="Chronological log of all sync commands in the room">
-                                <span lang="en">Full Action History</span><span lang="de">Aktivitätsverlauf</span>
+                                {{MOCK_30}}
                             </label>
                             <div class="mock-card" style="font-size: 0.65rem; color: var(--text-muted); line-height: 1.4; margin-bottom: 12px; max-height: 100px; overflow-y: auto; display: flex; flex-direction: column; gap: 4px;">
                                 <div style="display: flex; justify-content: space-between; border-bottom: 1px solid #334155; padding-bottom: 4px;">
@@ -500,10 +502,10 @@
 
                             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
                                 <label style="margin: 0; font-size: 11px; text-transform: uppercase; color: var(--text-muted); font-weight: 700;" title="Technical connection logs for debugging">
-                                    <span lang="en">Logs (Last 50)</span><span lang="de">Protokoll (Letzte 50)</span>
+                                    {{MOCK_31}}
                                 </label>
                                 <button class="mock-btn" style="background:transparent; border:none; color:var(--accent); font-size:10px; cursor:default; padding: 0; font-weight: 700;" title="Clear log output">
-                                    <span lang="en">CLEAR</span><span lang="de">LÖSCHEN</span>
+                                    {{MOCK_32}}
                                 </button>
                             </div>
                             <div style="max-height: 120px; overflow-y: auto; font-size: 0.65rem; font-family: monospace; background: #000; padding: 8px 10px; border-radius: 8px; color: #ccc; line-height: 1.4;">

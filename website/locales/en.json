@@ -5,27 +5,22 @@
   "LANG_TOGGLE_URL": "de/",
   "LANG_TOGGLE_TEXT": "DE",
   "OG_LOCALE": "en_US",
-  
   "META_TITLE": "KoalaSync | Sync Netflix, YouTube & Any Video with Friends",
   "META_DESCRIPTION": "Watch Netflix, YouTube, Twitch & any HTML5 video in perfect sync with friends. Free, open-source browser extension for Chrome and Firefox. No sign-up needed.",
   "OG_TITLE": "KoalaSync | Sync Netflix, Emby, Jellyfin & Almost Any Video with Friends",
   "OG_DESCRIPTION": "Watch Netflix, Emby, Jellyfin, YouTube, Twitch and almost any HTML5 video in perfect sync. Privacy-first, open-source browser extension for Chrome & Firefox.",
   "TWITTER_TITLE": "KoalaSync | Sync Netflix, Emby, Jellyfin & Almost Any Video with Friends – Browser Extension",
   "TWITTER_DESCRIPTION": "Watch Netflix, Emby, Jellyfin, YouTube, Twitch and almost any HTML5 video in perfect sync with friends. Privacy-first, open-source browser extension for Chrome and Firefox.",
-  
   "NAV_FEATURES": "Features",
   "NAV_HOW_IT_WORKS": "How it works",
-  
   "HERO_TITLE": "Watch Together.<br>Sync Perfectly.",
   "HERO_SUBTITLE": "Your remote movie night without lags. No registration, no data collection. Just share a link and watch together.",
   "HERO_MASCOT_ALT": "A cute koala standing and looking down at the download buttons",
   "ADD_TO_CHROME": "Add to Chrome",
   "ADD_TO_FIREFOX": "Add to Firefox",
-  
   "COMPAT_HEADING": "Works on your favorite platforms",
   "COMPAT_MORE": "and many more",
   "COMPAT_TOOLTIP": "Works on almost any site with a video element",
-  
   "USE_CASES_TITLE": "Perfect for Any Occasion",
   "USE_CASES_SUBTITLE": "Whether near or far, KoalaSync brings people together around their favorite videos.",
   "USE_CASE_1_ALT": "Two cute koalas sitting together and sharing a bucket of popcorn",
@@ -37,10 +32,8 @@
   "USE_CASE_3_ALT": "A cute koala couple watching together remotely; one is sitting at a PC and the other is in bed with a laptop, with flying hearts between them",
   "USE_CASE_3_TITLE": "Long-Distance Relationships",
   "USE_CASE_3_DESC": "Bridge the distance and enjoy date nights. Experience every plot twist, laugh at the same jokes, and share emotional moments at the exact same millisecond.",
-  
   "WHY_TITLE": "Why KoalaSync?",
   "WHY_SUBTITLE": "Built for reliable sync, privacy-first design, and easy setup.",
-  
   "FEATURE_1_TITLE": "Full Control / Instant Sync",
   "FEATURE_1_DESC": "One pauses, everyone pauses. One seeks, everyone follows. Our two-phase sync protocol coordinates playback in real time across all participants.",
   "FEATURE_2_TITLE": "Endless Binge-Watching",
@@ -53,7 +46,6 @@
   "FEATURE_5_DESC": "Our official servers are free and fast, but you can take full ownership if you want to. Launch your own private relay server in seconds via Docker.",
   "FEATURE_6_TITLE": "Instant Invites / 1-Click Join",
   "FEATURE_6_DESC": "No IP addresses or passwords to exchange. Share a generated invite link with your friends to let them join your room automatically with a single click.",
-  
   "COMP_TITLE": "KoalaSync vs. Teleparty",
   "COMP_SUBTITLE": "See why open source, ad-free and privacy-first is the superior way to watch together.",
   "COMP_COL_FEATURE": "Feature",
@@ -81,7 +73,6 @@
   "COMP_FOOTNOTE_2": "Official Teleparty Premium pricing and supported networks details:",
   "COMP_FOOTNOTE_3": "Teleparty privacy policies and tracking data collection:",
   "COMP_FOOTNOTE_4": "Works on websites that allow script injections into standard HTML5 video tags. Websites with highly strict Content Security Policies (CSP), DRM copy protection, or heavily obfuscated player wrappers (like complex shadow DOMs) might restrict automated control or injection.",
-  
   "STEPS_TITLE": "Getting Started",
   "STEP_1_TITLE": "Install Extension",
   "STEP_1_DESC": "Add KoalaSync to your browser from the Chrome Web Store, Firefox Add-ons, or download the latest developer ZIP from GitHub.",
@@ -101,17 +92,14 @@
   "STEP_3_TITLE": "Share & Sync",
   "STEP_3_DESC": "Send the invite link to your friends. Once they join, select your video tab and enjoy synchronized playback.",
   "STEP_3_ILLUS_IN_SYNC": "IN SYNC",
-  
   "SELF_TITLE": "For Self-Hosters",
   "SELF_SUBTITLE": "Don't trust our server? Maintain full data sovereignty. Deploy your own private relay server in minutes.",
   "SELF_MASCOT_ALT": "A cute koala sitting at a laptop deploying a Docker container for self-hosting",
   "SELF_COPY_CODE": "Copy Code",
   "SELF_GITHUB_PACKAGES": "View all image tags on GitHub Packages",
-  
   "BOTTOM_TITLE": "Not convinced? See for yourself.",
   "BOTTOM_SUBTITLE": "KoalaSync is 100% open source, ad-free and tracking-free. Audit our codebase on GitHub or install the browser extension directly.",
   "BOTTOM_MASCOT_ALT": "A cute koala holding a GitHub repository page next to the GitHub mascot Octocat",
-  
   "FAQ_TITLE": "Frequently Asked Questions",
   "FAQ_SUBTITLE": "Everything you need to know about watching videos together in perfect sync.",
   "FAQ_Q1": "Can I watch Netflix, Emby or Jellyfin together in sync with friends?",
@@ -126,7 +114,6 @@
   "FAQ_A5": "Yes, each participant needs KoalaSync installed — but there's no sign-up or account creation. Simply click the invitation link, install the extension if you haven't already, and you'll join the room automatically in seconds.",
   "FAQ_Q6": "Is my data safe? What if I don't trust the official server?",
   "FAQ_A6": "Completely safe. KoalaSync's relay server is RAM-only — all session data is permanently deleted the moment you leave the room. No database, no logging, no analytics, no accounts. And if you prefer full control: you can self-host your own private relay server via Docker in minutes. The entire codebase is open source and auditable on GitHub.",
-  
   "HOWTO_TITLE": "How to synchronize videos with friends using KoalaSync",
   "HOWTO_DESC": "Watch any video in perfect sync with friends across YouTube, Netflix, Twitch and more. No sign-up, no tracking.",
   "HOWTO_STEP_1_NAME": "Install the browser extension",
@@ -135,9 +122,40 @@
   "HOWTO_STEP_2_TEXT": "Open the extension popup and click Create New Room. The invite link is automatically copied to your clipboard.",
   "HOWTO_STEP_3_NAME": "Share and sync",
   "HOWTO_STEP_3_TEXT": "Send the invite link to your friends. Pick a video tab and enjoy synchronized playback in real time.",
-  
   "FOOTER_MIT": "Open source under the MIT License.",
   "FOOTER_RAM": "No data is stored on our servers. Pure RAM-based relay.",
   "FOOTER_LEGAL": "Legal Notice",
-  "FOOTER_PRIVACY": "Privacy Policy"
+  "FOOTER_PRIVACY": "Privacy Policy",
+  "MOCK_01": "Active Room",
+  "MOCK_02": "Official Server",
+  "MOCK_03": "Invite Link",
+  "MOCK_04": "Peers in Room",
+  "MOCK_05": "YOU",
+  "MOCK_06": "Playing",
+  "MOCK_07": "Peer",
+  "MOCK_08": "Leave Room",
+  "MOCK_09": "Select Video",
+  "MOCK_10": "Remote Control",
+  "MOCK_11": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"currentColor\" width=\"14\" height=\"14\" aria-hidden=\"true\"><polygon points=\"5 3 19 12 5 21 5 3\"/></svg> Play",
+  "MOCK_12": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"currentColor\" width=\"14\" height=\"14\" aria-hidden=\"true\"><rect x=\"6\" y=\"4\" width=\"4\" height=\"16\"/><rect x=\"14\" y=\"4\" width=\"4\" height=\"16\"/></svg> Pause",
+  "MOCK_13": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" width=\"14\" height=\"14\" aria-hidden=\"true\"><polygon points=\"13 2 3 14 12 14 11 22 21 10 12 10 13 2\"/></svg> SYNC",
+  "MOCK_14": "Jump to Others",
+  "MOCK_15": "Last Activity Status",
+  "MOCK_16": "Waiting for 1 peer (KoalaPC)...",
+  "MOCK_17": "Skip & Play anyway",
+  "MOCK_18": "Your Username",
+  "MOCK_19": "Hide Clutter Tabs",
+  "MOCK_20": "Auto-Sync Next Episode",
+  "MOCK_21": "Auto-Copy Invite Link",
+  "MOCK_22": "Browser Notifications",
+  "MOCK_23": "Troubleshooting",
+  "MOCK_24": "Regenerate Peer ID",
+  "MOCK_25": "Use this if you see \"Duplicate Identity\" errors.",
+  "MOCK_26": "Connection Status",
+  "MOCK_27": "Connected",
+  "MOCK_28": "Copy Logs",
+  "MOCK_29": "Video Debug Info",
+  "MOCK_30": "Full Action History",
+  "MOCK_31": "Logs (Last 50)",
+  "MOCK_32": "CLEAR"
 }

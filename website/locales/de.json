@@ -5,27 +5,22 @@
   "LANG_TOGGLE_URL": "../",
   "LANG_TOGGLE_TEXT": "EN",
   "OG_LOCALE": "de_DE",
-  
   "META_TITLE": "KoalaSync | Netflix, YouTube & jedes Video mit Freunden synchronisieren",
   "META_DESCRIPTION": "Schaue Netflix, YouTube, Twitch und jedes HTML5-Video synchron mit Freunden. Kostenlose, quelloffene Browser-Erweiterung. Keine Anmeldung erforderlich.",
   "OG_TITLE": "KoalaSync | Netflix, Emby, Jellyfin & fast jedes Video mit Freunden synchronisieren",
   "OG_DESCRIPTION": "Schaue Netflix, Emby, Jellyfin, YouTube, Twitch und fast jedes HTML5-Video perfekt synchronisiert. Quelloffene, datenschutzfreundliche Browser-Erweiterung für Chrome und Firefox.",
   "TWITTER_TITLE": "KoalaSync | Netflix, Emby, Jellyfin & fast jedes Video mit Freunden synchronisieren – Browser-Erweiterung",
   "TWITTER_DESCRIPTION": "Schaue Netflix, Emby, Jellyfin, YouTube, Twitch und fast jedes HTML5-Video perfekt synchronisiert mit Freunden. Datenschutzfreundliche Browser-Erweiterung für Chrome und Firefox.",
-  
   "NAV_FEATURES": "Funktionen",
   "NAV_HOW_IT_WORKS": "So funktioniert's",
-  
   "HERO_TITLE": "Gemeinsam schauen.<br>Perfekt synchron.",
   "HERO_SUBTITLE": "Dein Kino-Abend auf Distanz. Keine Lags, keine Anmeldung. Einfach Link teilen und zusammen schauen.",
   "HERO_MASCOT_ALT": "Ein niedlicher Koala steht da und schaut nach unten auf die Download-Buttons",
   "ADD_TO_CHROME": "Zu Chrome hinzufügen",
   "ADD_TO_FIREFOX": "Zu Firefox hinzufügen",
-  
   "COMPAT_HEADING": "Funktioniert auf deinen Lieblingsplattformen",
   "COMPAT_MORE": "und viele mehr",
   "COMPAT_TOOLTIP": "Funktioniert auf fast jeder Seite mit einem Video-Element",
-  
   "USE_CASES_TITLE": "Perfekt für jeden Anlass",
   "USE_CASES_SUBTITLE": "Ob nah oder fern, KoalaSync bringt Menschen bei ihren Lieblingsvideos zusammen.",
   "USE_CASE_1_ALT": "Zwei niedliche Koalas sitzen zusammen und teilen sich einen Eimer Popcorn",
@@ -37,10 +32,8 @@
   "USE_CASE_3_ALT": "Ein niedliches Koala-Pärchen schaut remote zusammen; einer sitzt am PC und sie liegt mit dem Laptop im Bett, während Herzen zwischen ihnen fliegen",
   "USE_CASE_3_TITLE": "Fernbeziehungen",
   "USE_CASE_3_DESC": "Überbrückt die Distanz und genießt gemeinsame Date-Nächte. Erlebt jeden Plot-Twist, lacht über dieselben Witze und teilt emotionale Momente zur selben Millisekunde.",
-  
   "WHY_TITLE": "Warum KoalaSync?",
   "WHY_SUBTITLE": "Entwickelt für zuverlässigen Sync, Datenschutz und einfache Einrichtung.",
-  
   "FEATURE_1_TITLE": "Volle Kontrolle, in Echtzeit",
   "FEATURE_1_DESC": "Einer pausiert, alle pausieren. Einer spult, alle folgen. Unser Zwei-Phasen-Synchronisationsprotokoll koordiniert die Wiedergabe aller Teilnehmer in Echtzeit.",
   "FEATURE_2_TITLE": "Grenzenloses Bingen",
@@ -53,7 +46,6 @@
   "FEATURE_5_DESC": "Unsere Server sind kostenlos und schnell, aber du kannst auch die volle Kontrolle übernehmen, wenn du willst. Starte dein eigenes privates Relay in Sekunden via Docker.",
   "FEATURE_6_TITLE": "Direkte Einladungen & 1-Klick Beitritt",
   "FEATURE_6_DESC": "Keine lästigen IPs oder Passwörter austauschen. Teile einfach einen Einladungslink mit deinen Freunden, um sie mit einem Klick in den Raum zu holen.",
-  
   "COMP_TITLE": "KoalaSync vs. Teleparty",
   "COMP_SUBTITLE": "Erfahre, warum Open Source, Werbefreiheit und echter Datenschutz die bessere Wahl für gemeinsames Schauen sind.",
   "COMP_COL_FEATURE": "Funktion",
@@ -81,7 +73,6 @@
   "COMP_FOOTNOTE_2": "Details zu Preisen und unterstützten Netzwerken von Teleparty Premium:",
   "COMP_FOOTNOTE_3": "Datenschutzerklärung und Tracker-Erfassung von Teleparty:",
   "COMP_FOOTNOTE_4": "Funktioniert auf allen Seiten, die Skript-Injektionen in Standard-HTML5-Videoplayer erlauben. Seiten mit extrem strengen Content Security Policies (CSP), DRM-Kopierschutz oder stark verschachtelten Player-Wrappern (z. B. komplexe Shadow-DOMs) können die automatische Steuerung blockieren.",
-  
   "STEPS_TITLE": "Erste Schritte",
   "STEP_1_TITLE": "Erweiterung installieren",
   "STEP_1_DESC": "Füge KoalaSync aus dem Chrome Web Store, den Firefox Add-ons oder über die Entwickler-ZIP von GitHub zu deinem Browser hinzu.",
@@ -101,17 +92,14 @@
   "STEP_3_TITLE": "Teilen & Synchronisieren",
   "STEP_3_DESC": "Sende den Einladungslink an deine Freunde. Sobald sie beitreten, wähle deinen Video-Tab aus und genieße die synchronisierte Wiedergabe.",
   "STEP_3_ILLUS_IN_SYNC": "SYNCHRON",
-  
   "SELF_TITLE": "Für Self-Hoster",
   "SELF_SUBTITLE": "Du traust dem Server nicht? Behalte die volle Datenhoheit. Richte deinen eigenen privaten Relay-Server in wenigen Minuten ein.",
   "SELF_MASCOT_ALT": "Ein niedlicher Koala sitzt am Laptop und deployt einen Docker-Container für das Self-Hosting",
   "SELF_COPY_CODE": "Code kopieren",
   "SELF_GITHUB_PACKAGES": "Alle Image-Tags auf GitHub Packages ansehen",
-  
   "BOTTOM_TITLE": "Noch nicht überzeugt? Überzeug dich selbst.",
   "BOTTOM_SUBTITLE": "KoalaSync ist zu 100 % Open Source, werbefrei und trackingsicher. Überprüfe unseren Code auf GitHub oder installiere direkt die Browser-Erweiterung.",
   "BOTTOM_MASCOT_ALT": "Ein niedlicher Koala hält eine GitHub-Projektseite zusammen mit dem GitHub Maskottchen Octocat",
-  
   "FAQ_TITLE": "Häufig gestellte Fragen",
   "FAQ_SUBTITLE": "Alles, was du über synchrones Videoschauen mit Freunden wissen musst.",
   "FAQ_Q1": "Kann ich Netflix, Emby oder Jellyfin synchron mit Freunden schauen?",
@@ -126,7 +114,6 @@
   "FAQ_A5": "Ja, jeder Teilnehmer braucht KoalaSync — aber ohne Anmeldung oder Kontoerstellung. Einfach auf den Einladungslink klicken, die Erweiterung installieren (falls nicht vorhanden) und du bist automatisch im Raum.",
   "FAQ_Q6": "Sind meine Daten sicher? Was, wenn ich dem offiziellen Server nicht traue?",
   "FAQ_A6": "Absolut sicher. Der KoalaSync Relay-Server läuft ausschließlich im RAM — alle Sitzungsdaten werden sofort gelöscht, sobald du den Raum verlässt. Keine Datenbank, keine Protokolle, keine Analysen, keine Benutzerkonten. Wenn du volle Kontrolle möchtest: hoste deinen eigenen privaten Relay-Server via Docker in wenigen Minuten. Der gesamte Quellcode ist Open Source und auf GitHub einsehbar.",
-  
   "HOWTO_TITLE": "So synchronisierst du Videos mit Freunden mit KoalaSync",
   "HOWTO_DESC": "Schaue Videos perfekt synchron mit Freunden auf YouTube, Netflix, Twitch und mehr. Keine Anmeldung, kein Tracking.",
   "HOWTO_STEP_1_NAME": "Browser-Erweiterung installieren",
@@ -135,9 +122,40 @@
   "HOWTO_STEP_2_TEXT": "Öffne das Erweiterungs-Popup und klicke auf Neuen Raum erstellen. Der Einladungslink wird automatisch in deine Zwischenablage kopiert.",
   "HOWTO_STEP_3_NAME": "Teilen und synchronisieren",
   "HOWTO_STEP_3_TEXT": "Sende den Einladungslink an deine Freunde. Wähle einen Video-Tab aus und genieße synchronisierte Wiedergabe in Echtzeit.",
-  
   "FOOTER_MIT": "Open Source unter der MIT-Lizenz.",
   "FOOTER_RAM": "Keine Daten werden auf unseren Servern gespeichert. Reines RAM-basiertes Relay.",
   "FOOTER_LEGAL": "Impressum",
-  "FOOTER_PRIVACY": "Datenschutz"
+  "FOOTER_PRIVACY": "Datenschutz",
+  "MOCK_01": "Aktiver Raum",
+  "MOCK_02": "Offizieller Server",
+  "MOCK_03": "Einladungs-Link",
+  "MOCK_04": "Teilnehmer im Raum",
+  "MOCK_05": "ICH",
+  "MOCK_06": "Wiedergabe",
+  "MOCK_07": "Partner",
+  "MOCK_08": "Raum verlassen",
+  "MOCK_09": "Video auswählen",
+  "MOCK_10": "Fernsteuerung",
+  "MOCK_11": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"currentColor\" width=\"14\" height=\"14\" aria-hidden=\"true\"><polygon points=\"5 3 19 12 5 21 5 3\"/></svg> Start",
+  "MOCK_12": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"currentColor\" width=\"14\" height=\"14\" aria-hidden=\"true\"><rect x=\"6\" y=\"4\" width=\"4\" height=\"16\"/><rect x=\"14\" y=\"4\" width=\"4\" height=\"16\"/></svg> Pause",
+  "MOCK_13": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" width=\"14\" height=\"14\" aria-hidden=\"true\"><polygon points=\"13 2 3 14 12 14 11 22 21 10 12 10 13 2\"/></svg> SYNC",
+  "MOCK_14": "Zu anderen springen",
+  "MOCK_15": "Letzte Aktivität",
+  "MOCK_16": "Warten auf 1 Partner (KoalaPC)...",
+  "MOCK_17": "Überspringen & abspielen",
+  "MOCK_18": "Dein Benutzername",
+  "MOCK_19": "Noise-Filterung",
+  "MOCK_20": "Nächste Folge auto-syncen",
+  "MOCK_21": "Link auto-kopieren",
+  "MOCK_22": "Browser-Meldungen",
+  "MOCK_23": "Fehlerbehebung",
+  "MOCK_24": "Peer ID regenerieren",
+  "MOCK_25": "Nutze dies bei \"Duplicate Identity\" Fehlern.",
+  "MOCK_26": "Verbindungsstatus",
+  "MOCK_27": "Verbunden",
+  "MOCK_28": "Logs kopieren",
+  "MOCK_29": "Video-Debug-Info",
+  "MOCK_30": "Aktivitätsverlauf",
+  "MOCK_31": "Protokoll (Letzte 50)",
+  "MOCK_32": "LÖSCHEN"
 }
