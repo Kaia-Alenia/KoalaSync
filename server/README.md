@@ -27,7 +27,7 @@ docker pull ghcr.io/shik3i/koalasync:latest
 # Or build from the repository root
 docker build -t koala-sync-server -f server/Dockerfile .
 ```
-See [docker-compose.caddy.example.yml — Docker network](../docker-compose.caddy.example.yml) or [docker-compose.ip.example.yml — Static IP](../docker-compose.ip.example.yml) in the root directory for ready-to-use Docker Compose files.
+See [Docker network compose](../docker-compose.caddy.example.yml) or [Static IP compose](../docker-compose.ip.example.yml) in the root directory for ready-to-use Docker Compose files.
 
 ### Manual Setup
 ```bash

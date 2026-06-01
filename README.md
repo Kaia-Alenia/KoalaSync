@@ -82,7 +82,7 @@ docker pull ghcr.io/shik3i/koalasync:latest
 cp docker-compose.caddy.example.yml docker-compose.yml
 docker-compose up -d
 ```
-The server will be available at `ws://localhost:3000`. See [docker-compose.caddy.example.yml — Docker network](docker-compose.caddy.example.yml) or [docker-compose.ip.example.yml — Static IP](docker-compose.ip.example.yml) for ready-to-use Docker Compose files.
+The server will be available at `ws://localhost:3000`. See [Docker network compose](docker-compose.caddy.example.yml) or [Static IP compose](docker-compose.ip.example.yml) for ready-to-use Docker Compose files.
 
 To connect your extension to a self-hosted server, open the popup → **Room** tab → select **Custom Server** → enter your server's WebSocket URL (e.g., `ws://localhost:3000`).
 
