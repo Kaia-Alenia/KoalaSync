@@ -433,15 +433,25 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Mobile Hamburger Menu Toggle
     const hamburger = document.querySelector('.hamburger');
-    const navLinks = document.querySelector('.nav-links');
+    const navLinks = document.querySelector('#primary-nav');
     if (hamburger && navLinks) {
-        // Initialize accessibility attribute
         hamburger.setAttribute('aria-expanded', 'false');
-        
-        hamburger.addEventListener('click', () => {
-            const isOpen = navLinks.classList.toggle('open');
-            hamburger.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
-        });
+
+        const open = () => {
+            navLinks.classList.add('open');
+            hamburger.setAttribute('aria-expanded', 'true');
+            document.addEventListener('keydown', onEsc);
+        };
+        const close = () => {
+            navLinks.classList.remove('open');
+            hamburger.setAttribute('aria-expanded', 'false');
+            document.removeEventListener('keydown', onEsc);
+        };
+        const toggle = () => navLinks.classList.contains('open') ? close() : open();
+        const onEsc = (e) => { if (e.key === 'Escape') close(); };
+
+        hamburger.addEventListener('click', toggle);
+        navLinks.querySelectorAll('a').forEach(a => a.addEventListener('click', close));
     }
 
     // Dynamically localize home links on root dynamic pages (impressum, datenschutz, join)

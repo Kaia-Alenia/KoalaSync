@@ -1,12 +1,15 @@
 /**
  * KoalaSync Static Site Generator (i18n compiler)
- * Pure, dependency-free Node.js build pipeline.
+ * Build pipeline: esbuild + AVIF + hashing + SVG min.
  */
-
 const fs = require('fs');
 const path = require('path');
+const crypto = require('crypto');
+const sharp = require('sharp');
+const esbuild = require('esbuild');
+const { optimize: svgoOptimize } = require('svgo');
 
-// Minify CSS: strips comments, collapses whitespace, removes trailing semicolons
+// CSS minifier: simple regex-based (proven, 27% reduction, no deps)
 function minifyCSS(code) {
     return code
         .replace(/\/\*[\s\S]*?\*\//g, '')
@@ -15,216 +18,224 @@ function minifyCSS(code) {
         .replace(/;\}/g, '}')
         .trim();
 }
+const MIN_AVIF_KB = 3;
 
-// Minify JS: state-machine that tracks string context so
-// // inside URLs (https://) inside strings is never mistaken for a comment.
-function minifyJS(code) {
-    var out = '';
-    var inSingle = false, inDouble = false, inTemplate = false;
-    var templateBrace = 0;
-    var i = 0;
-
-    while (i < code.length) {
-        var ch = code[i];
-        var next = code[i + 1] || '';
-
-        // --- Escape handling (must come before string toggle) ---
-        if (ch === '\\' && (inSingle || inDouble || inTemplate)) {
-            out += ch + next;
-            i += 2;
-            continue;
-        }
-
-        // --- String toggle ---
-        if (!inDouble && !inTemplate && ch === "'") { inSingle = !inSingle; out += ch; i++; continue; }
-        if (!inSingle && !inTemplate && ch === '"') { inDouble = !inDouble; out += ch; i++; continue; }
-        if (!inSingle && !inDouble) {
-            if (ch === '`' && !inTemplate) { inTemplate = true; templateBrace = 0; out += ch; i++; continue; }
-            if (inTemplate && ch === '`' && templateBrace === 0) { inTemplate = false; out += ch; i++; continue; }
-        }
-
-        // --- Template interpolation depth tracking ---
-        if (inTemplate && !inSingle && !inDouble) {
-            if (ch === '$' && next === '{') { templateBrace++; out += ch + next; i += 2; continue; }
-            if (ch === '}' && templateBrace > 0) { templateBrace--; out += ch; i++; continue; }
-        }
-
-        // --- Inside a string / template literal → output as-is ---
-        if (inSingle || inDouble || inTemplate) { out += ch; i++; continue; }
-
-        // --- Outside strings: handle comments ---
-        if (ch === '/' && next === '/') {
-            while (i < code.length && code[i] !== '\n') i++;
-            out += '\n';
-            i++;
-            continue;
-        }
-        if (ch === '/' && next === '*') {
-            i += 2;
-            while (i < code.length - 1) {
-                if (code[i] === '*' && code[i + 1] === '/') { i += 2; break; }
-                if (code[i] === '\n') out += '\n';
-                i++;
-            }
-            continue;
-        }
-
-        out += ch;
-        i++;
-    }
-
-    // Collapse horizontal whitespace (preserve newlines)
-    return out
-        .replace(/[^\S\n]+/g, ' ')
-        .replace(/^ +/gm, '')
-        .replace(/ +$/gm, '')
-        .replace(/\n{3,}/g, '\n\n')
-        .trim();
-}
-
-// Helper to recursively copy directories
 function copyDirSync(src, dest) {
     fs.mkdirSync(dest, { recursive: true });
-    const entries = fs.readdirSync(src, { withFileTypes: true });
-
-    for (let entry of entries) {
-        const srcPath = path.join(src, entry.name);
-        const destPath = path.join(dest, entry.name);
-
-        if (entry.isDirectory()) {
-            copyDirSync(srcPath, destPath);
-        } else {
-            // Binary assets (images, etc.) are copied as-is
-            fs.copyFileSync(srcPath, destPath);
-        }
+    for (const entry of fs.readdirSync(src, { withFileTypes: true })) {
+        const s = path.join(src, entry.name);
+        const d = path.join(dest, entry.name);
+        entry.isDirectory() ? copyDirSync(s, d) : fs.copyFileSync(s, d);
     }
 }
 
-function compile() {
-    console.log('Starting KoalaSync i18n compilation...');
+function sha8(buf) { return crypto.createHash('sha256').update(buf).digest('hex').slice(0, 8); }
 
+async function minifyJS(raw) {
+    const result = await esbuild.transform(raw, {
+        loader: 'js',
+        minify: true,
+        target: 'es2020'
+    });
+    return result.code;
+}
+
+function injectAvifPictures(html) {
+    return html.replace(/<img\b([^>]*)>/gi, (match, attrs) => {
+        const srcMatch = attrs.match(/\bsrc="([^"]*)"/i);
+        if (!srcMatch) return match;
+        if (!/\.webp"$/i.test(srcMatch[0])) return match;
+        const src = srcMatch[1];
+        const avifSrc = src.replace(/\.webp$/i, '.avif');
+        const srcsetMatch = attrs.match(/\bsrcset="([^"]*)"/i);
+        if (srcsetMatch) {
+            const avifSrcset = srcsetMatch[1].replace(/\.webp/gi, '.avif');
+            return `<picture><source srcset="${avifSrcset}" type="image/avif"><img${attrs}></picture>`;
+        }
+        return `<picture><source srcset="${avifSrc}" type="image/avif"><img${attrs}></picture>`;
+    });
+}
+
+function minifyInlineSvgs(html) {
+    const svgRegex = /<svg\b[\s\S]*?<\/svg>/gi;
+    return html.replace(svgRegex, (svg) => {
+        try {
+            const result = svgoOptimize(svg, { multipass: true, plugins: ['preset-default'] });
+            return result.data;
+        } catch { return svg; }
+    });
+}
+
+async function compile() {
+    console.log('Starting KoalaSync i18n compilation...');
     const websiteDir = __dirname;
     const wwwDir = path.join(websiteDir, 'www');
-
-    // 1. Create build directories
     fs.mkdirSync(wwwDir, { recursive: true });
 
-    // 2. Read template
+    // ── 1. Minify CSS/JS (must happen first so hashes go into HTML) ──
+    console.log('Minifying CSS/JS...');
+    const styleRaw = fs.readFileSync(path.join(websiteDir, 'style.css'), 'utf8');
+    const styleMin = minifyCSS(styleRaw);
+    const styleHash = sha8(styleMin);
+    const styleName = `style.${styleHash}.min.css`;
+
+    const appRaw = fs.readFileSync(path.join(websiteDir, 'app.js'), 'utf8');
+    const appMin = await minifyJS(appRaw);
+    const appHash = sha8(appMin);
+    const appName = `app.${appHash}.min.js`;
+
+    const langRaw = fs.readFileSync(path.join(websiteDir, 'lang-init.js'), 'utf8');
+    const langMin = await minifyJS(langRaw);
+    const langHash = sha8(langMin);
+    const langName = `lang-init.${langHash}.min.js`;
+
+    const stylePct = ((1 - styleMin.length / styleRaw.length) * 100).toFixed(0);
+    const appPct   = ((1 - appMin.length / appRaw.length) * 100).toFixed(0);
+    const langPct  = ((1 - langMin.length / langRaw.length) * 100).toFixed(0);
+    console.log(`  CSS: ${styleName} (${(styleMin.length/1024).toFixed(1)} KB, -${stylePct}%)`);
+    console.log(`  App: ${appName} (${(appMin.length/1024).toFixed(1)} KB, -${appPct}%)`);
+    console.log(`  Lang: ${langName} (${(langMin.length/1024).toFixed(1)} KB, -${langPct}%)`);
+
+    // ── 2. Clean stale minified output ──
+    for (const f of fs.readdirSync(wwwDir)) {
+        if (/\.min\.(css|js)$/.test(f) || /\.(css|js)$/.test(f)) {
+            const p = path.join(wwwDir, f);
+            if (fs.statSync(p).isFile()) fs.unlinkSync(p);
+        }
+    }
+
+    // Write minified files
+    fs.writeFileSync(path.join(wwwDir, styleName), styleMin);
+    fs.writeFileSync(path.join(wwwDir, appName), appMin);
+    fs.writeFileSync(path.join(wwwDir, langName), langMin);
+
+    // ── 3. Compile HTML templates ──
     const templatePath = path.join(websiteDir, 'template.html');
     if (!fs.existsSync(templatePath)) {
-        console.error('Error: template.html not found! Run from website/ directory or repo root.');
+        console.error('Error: template.html not found!');
         process.exit(1);
     }
     const templateContent = fs.readFileSync(templatePath, 'utf8');
-
     const localesDir = path.join(websiteDir, 'locales');
     const languages = ['en', 'de', 'fr', 'es', 'pt-BR', 'ru'];
 
-    // 3. Compile helper function
+    const englishHtml = {}; // track for join-page cross-ref
+
     function compilePage(locale, assetPath, lang) {
         let compiled = templateContent;
-
-        // Inject asset path prefix first
         compiled = compiled.replace(/\{\{ASSET_PATH\}\}/g, assetPath);
-
-        // Inject selected state for the dropdown
         languages.forEach(l => {
-            const placeholder = `{{SELECTED_${l.toUpperCase()}}}`;
-            compiled = compiled.replace(new RegExp(placeholder, 'g'), l === lang ? 'selected' : '');
+            compiled = compiled.replace(new RegExp(`\\{\\{SELECTED_${l.toUpperCase()}\\}\\}`, 'g'), l === lang ? 'selected' : '');
         });
-
-        // Inject all translations
-        for (let [key, value] of Object.entries(locale)) {
-            const regex = new RegExp(`\\{\\{${key}\\}\\}`, 'g');
-            compiled = compiled.replace(regex, value);
+        for (const [key, value] of Object.entries(locale)) {
+            compiled = compiled.replace(new RegExp(`\\{\\{${key}\\}\\}`, 'g'), value);
         }
-
         return compiled;
     }
 
-    // 4. Generate HTML files
-    for (let lang of languages) {
+    for (const lang of languages) {
         const localePath = path.join(localesDir, `${lang}.json`);
-        if (!fs.existsSync(localePath)) {
-            console.warn(`Warning: Locale file for ${lang} not found.`);
-            continue;
-        }
+        if (!fs.existsSync(localePath)) { console.warn(`Warning: Locale ${lang} not found.`); continue; }
         const locale = JSON.parse(fs.readFileSync(localePath, 'utf8'));
 
         if (lang === 'en') {
-            console.log('Compiling English version (index.html)...');
-            const enHtml = compilePage(locale, '', lang);
-            fs.writeFileSync(path.join(wwwDir, 'index.html'), enHtml, 'utf8');
+            console.log('Compiling English (index.html)...');
+            const html = compilePage(locale, '', lang);
+            fs.writeFileSync(path.join(wwwDir, 'index.html'), html);
+            englishHtml[''] = html;
         } else {
-            console.log(`Compiling ${lang.toUpperCase()} version (${lang}/index.html)...`);
+            console.log(`Compiling ${lang.toUpperCase()} (${lang}/index.html)...`);
             const langDir = path.join(wwwDir, lang);
             fs.mkdirSync(langDir, { recursive: true });
-            const langHtml = compilePage(locale, '../', lang);
-            fs.writeFileSync(path.join(langDir, 'index.html'), langHtml, 'utf8');
+            const html = compilePage(locale, '../', lang);
+            fs.writeFileSync(path.join(langDir, 'index.html'), html);
+            englishHtml[lang] = html;
         }
     }
 
-    // 5. Clean stale minified output from previous builds
-    const staleGlobs = ['style.css', 'style.min.css', 'app.js', 'app.min.js', 'lang-init.js', 'lang-init.min.js'];
-    for (let f of staleGlobs) {
-        const p = path.join(wwwDir, f);
-        if (fs.existsSync(p)) fs.unlinkSync(p);
+    // ── 4. Copy static HTML files (join, impressum, datenschutz) ──
+    console.log('Copying static pages...');
+    const staticHtml = ['join.html', 'impressum.html', 'datenschutz.html'];
+    for (const file of staticHtml) {
+        const src = path.join(websiteDir, file);
+        const dest = path.join(wwwDir, file);
+        if (fs.existsSync(src)) { fs.copyFileSync(src, dest); console.log(`  Copied: ${file}`); }
     }
 
-    // 6. Copy static assets
-    console.log('Copying assets and static website files...');
-    const staticFiles = [
-        'style.css',
-        'app.js',
-        'lang-init.js',
-        'robots.txt',
-        'sitemap.xml',
-        'version.json',
-        'join.html',
-        'impressum.html',
-        'datenschutz.html'
-    ];
-
-    for (let file of staticFiles) {
-        const srcPath = path.join(websiteDir, file);
-        // Rename .css → .min.css and .js → .min.js in output
-        const destName = file.endsWith('.css') ? file.replace(/\.css$/, '.min.css')
-                     : file.endsWith('.js')  ? file.replace(/\.js$/, '.min.js')
-                     : file;
-        const destPath = path.join(wwwDir, destName);
-        if (fs.existsSync(srcPath)) {
-            if (file.endsWith('.css')) {
-                const raw = fs.readFileSync(srcPath, 'utf8');
-                const minified = minifyCSS(raw);
-                fs.writeFileSync(destPath, minified, 'utf8');
-                const saved = ((raw.length - minified.length) / raw.length * 100).toFixed(0);
-                console.log(`Minified: ${file} → ${destName} (-${saved}%)`);
-            } else if (file.endsWith('.js')) {
-                const raw = fs.readFileSync(srcPath, 'utf8');
-                const minified = minifyJS(raw);
-                fs.writeFileSync(destPath, minified, 'utf8');
-                const saved = ((raw.length - minified.length) / raw.length * 100).toFixed(0);
-                console.log(`Minified: ${file} → ${destName} (-${saved}%)`);
-            } else {
-                fs.copyFileSync(srcPath, destPath);
-                console.log(`Copied: ${file}`);
-            }
-        } else {
-            console.warn(`Warning: Static file ${file} not found.`);
-        }
+    // ── 5. Copy generic static files ──
+    const genericFiles = ['robots.txt', 'sitemap.xml', 'site.webmanifest', 'version.json'];
+    for (const file of genericFiles) {
+        const src = path.join(websiteDir, file);
+        const dest = path.join(wwwDir, file);
+        if (fs.existsSync(src)) { fs.copyFileSync(src, dest); }
     }
 
-    // Copy assets folder recursively
+    // ── 6. Copy assets ──
+    console.log('Copying assets...');
     const srcAssets = path.join(websiteDir, 'assets');
     const destAssets = path.join(wwwDir, 'assets');
     if (fs.existsSync(srcAssets)) {
         copyDirSync(srcAssets, destAssets);
-        console.log('Copied assets directory recursively.');
-    } else {
-        console.error('Error: assets/ directory not found in website/.');
+        console.log('  Assets copied.');
     }
 
-    console.log('KoalaSync compilation finished successfully! Output is in website/www/');
+    // ── 7. Convert all WebP to AVIF (quality 70) ──
+    console.log('Converting WebP → AVIF...');
+    let avifCount = 0;
+    const webpFiles = fs.readdirSync(destAssets).filter(f => f.endsWith('.webp'));
+    for (const f of webpFiles) {
+        const src = path.join(destAssets, f);
+        const stat = fs.statSync(src);
+        if (stat.size < MIN_AVIF_KB * 1024) continue;
+        const dest = path.join(destAssets, f.replace(/\.webp$/, '.avif'));
+        if (fs.existsSync(dest) && fs.statSync(dest).mtimeMs >= stat.mtimeMs) continue;
+        await sharp(src).avif({ quality: 70, speed: 6 }).toFile(dest);
+        avifCount++;
+    }
+    console.log(`  ${avifCount} AVIF files generated.`);
+
+    // ── 8. Post-process ALL HTML files ──
+    console.log('Post-processing HTML...');
+    function walkHtml(dir, fn) {
+        for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+            const p = path.join(dir, entry.name);
+            if (entry.isDirectory()) { walkHtml(p, fn); }
+            else if (entry.name.endsWith('.html')) { fn(p); }
+        }
+    }
+
+    walkHtml(wwwDir, (filePath) => {
+        let html = fs.readFileSync(filePath, 'utf8');
+
+        // 8a. Replace hashed asset refs
+        html = html.replace(/href="(?:\.\.\/)?style\.min\.css"/g, (m) => {
+            const prefix = m.includes('../') ? '../' : '';
+            return `href="${prefix}${styleName}"`;
+        });
+        html = html.replace(/src="(?:\.\.\/)?app\.min\.js"/g, (m) => {
+            const prefix = m.includes('../') ? '../' : '';
+            return `src="${prefix}${appName}"`;
+        });
+        html = html.replace(/src="(?:\.\.\/)?lang-init\.min\.js"/g, (m) => {
+            const prefix = m.includes('../') ? '../' : '';
+            return `src="${prefix}${langName}"`;
+        });
+        // Also update preload directives
+        html = html.replace(/href="(?:\.\.\/)?style\.min\.css"/g, (m) => {
+            const prefix = m.includes('../') ? '../' : '';
+            return `href="${prefix}${styleName}"`;
+        });
+
+        // 8b. Inject AVIF <picture> wrappers
+        html = injectAvifPictures(html);
+
+        // 8c. Minify inline SVGs
+        html = minifyInlineSvgs(html);
+
+        fs.writeFileSync(filePath, html);
+    });
+
+    console.log('KoalaSync build finished successfully! Output: website/www/');
 }
 
-compile();
+compile().catch(err => { console.error('Build failed:', err); process.exit(1); });

@@ -4,6 +4,7 @@
   "CANONICAL_PATH": "es/",
   "LANG_TOGGLE_URL": "../",
   "LANG_TOGGLE_TEXT": "EN",
+  "OG_LOCALE": "es_ES",
   
   "META_TITLE": "KoalaSync | Sincroniza Netflix, YouTube y cualquier video con amigos",
   "META_DESCRIPTION": "Mira Netflix, YouTube, Twitch y cualquier video HTML5 en perfecta sincronización con amigos. Extensión de navegador gratuita y de código abierto. Sin registro.",
