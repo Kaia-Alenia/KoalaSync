@@ -102,6 +102,7 @@ Both the official KoalaSync website and the **v2.0 Browser Extension** feature f
 
 ### 📖 Documentation & Links
 
+- **[TESTED_SERVICES.md](TESTED_SERVICES.md)**: Detailed compatibility matrix of tested streaming platforms and known limitations.
 - **[TRANSLATION.md](website/TRANSLATION.md)**: Translation and localization guide for contributors.
 - **[PRIVACY.md](PRIVACY.md)**: Data Handling and Privacy Policy.
 - **[CONTRIBUTING.md](CONTRIBUTING.md)**: How to help make KoalaSync better.

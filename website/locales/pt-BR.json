@@ -116,8 +116,8 @@
   
   "FAQ_TITLE": "Perguntas frequentes",
   "FAQ_SUBTITLE": "Tudo o que você precisa saber para assistir vídeos juntos em perfeita sincronia.",
-  "FAQ_Q1": "Posso assistir Netflix sincronizado com amigos?",
-  "FAQ_A1": "Sim! O KoalaSync funciona com Netflix, YouTube, Twitch, Disney+, Amazon Prime Video e praticamente qualquer site com um player de vídeo HTML5. Instale a extensão, crie uma sala, compartilhe o link de convite e todos assistem em sincronia perfeita.",
+  "FAQ_Q1": "Posso assistir Netflix, Emby ou Jellyfin sincronizado com amigos?",
+  "FAQ_A1": "Sim! O KoalaSync funciona com Netflix, YouTube, Twitch e qualquer site com player de vídeo HTML5 — incluindo Emby, Jellyfin e servidores de mídia próprios. Instale a extensão, crie uma sala, compartilhe o link e todos assistem em sincronia perfeita.",
   "FAQ_Q2": "O KoalaSync é uma alternativa gratuita ao Teleparty?",
   "FAQ_A2": "100% gratuito e open source sob a licença MIT. Sem níveis premium, sem recursos bloqueados, sem anúncios. Diferente do Teleparty, o servidor relay do KoalaSync opera apenas em RAM — sem coleta de dados ou contas de usuário.",
   "FAQ_Q3": "O KoalaSync funciona com Emby, Jellyfin e servidores de mídia próprios?",
