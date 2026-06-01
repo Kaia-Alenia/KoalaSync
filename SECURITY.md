@@ -1,23 +1,95 @@
 # Security Policy
 
+KoalaSync is built on a **zero-persistence, privacy-first** architecture. We take security seriously and appreciate responsible disclosure of vulnerabilities.
+
+---
+
 ## Supported Versions
 
-We take the security of our users and their data very seriously. We actively support and patch the latest stable releases of KoalaSync. 
+Only the latest stable release receives security patches.
 
-| Version        | Supported          |
-| -------------- | ------------------ |
-| Latest Release | :white_check_mark: |
-| Older Versions | :x:                |
+| Version | Supported |
+|---------|-----------|
+| Latest release | :white_check_mark: Active |
+| Older versions | :x: Unsupported |
+
+Users on older versions are encouraged to update. The server enforces a minimum client version via `MIN_VERSION`.
+
+---
+
+## Scope
+
+The following components are within scope for security reports:
+
+| Component | Examples |
+|-----------|----------|
+| **Relay Server** (`server/`) | Authentication bypass, rate-limit evasion, room hijacking, DoS vectors |
+| **Browser Extension** (`extension/`) | XSS via content scripts, privilege escalation, data exfiltration, tab snooping |
+| **WebSocket Protocol** | Message injection, replay attacks, man-in-the-middle (WSS bypass) |
+| **Website** (`website/`) | XSS, CSP bypass, invitation-hash leaks |
+
+### Out of Scope
+
+- Theoretical attacks requiring physical device access
+- Social engineering or phishing
+- Denial of service via resource exhaustion on self-hosted instances
+- Vulnerabilities in third-party browser extensions or websites
+
+---
 
 ## Reporting a Vulnerability
 
-If you discover a security vulnerability within KoalaSync (e.g., related to the Node.js relay server, WebSocket wire protocol, or the Chrome/Firefox browser extension), please **DO NOT** report it by creating a public GitHub issue. 
+> [!CAUTION]
+> **Do NOT open a public GitHub issue for security vulnerabilities.** Public disclosure before a patch is available puts users at risk.
 
-Publicly disclosing a vulnerability before a patch is available puts our users at risk. Instead, please send an email privately to the project administrator at:
-**koalasync_admin@koalamail.rocks**
+Instead, email the project maintainer privately:
 
-### What to expect
-1. **Acknowledgment**: You should receive an acknowledgment of your report within 48 hours.
-2. **Investigation**: We will investigate the issue, confirm its severity, and work on a patch.
-3. **Resolution**: We will notify you when the patch is deployed to the Chrome Web Store, Mozilla Add-on Store, and our GitHub Docker releases.
-4. **Disclosure**: Once the fix is confirmed and users have had time to update, we will publicly acknowledge your contribution in our release notes (unless you prefer to remain anonymous).
+**`koalasync_admin@koalamail.rocks`**
+
+Encrypt sensitive findings with our PGP key (available on request).
+
+### What to Include
+
+- **Affected component**: Server / Extension / Website / Protocol
+- **Steps to reproduce**: Clear, minimal steps to trigger the vulnerability
+- **Impact**: What an attacker could achieve (data access, privilege escalation, etc.)
+- **Environment**: Browser version, extension version, server configuration
+- **Suggested fix** (optional): If you have ideas for a patch
+
+### What to Expect
+
+| Timeline | Action |
+|----------|--------|
+| **Within 48 hours** | Acknowledgment of your report |
+| **Within 7 days** | Initial assessment and severity confirmation |
+| **As needed** | Collaborative discussion for clarification |
+| **After patch** | Notification that the fix is deployed |
+| **After rollout** | Public acknowledgment in release notes (or anonymity if preferred) |
+
+---
+
+## Architecture & Threat Model
+
+KoalaSync's security is grounded in its architecture:
+
+- **RAM-only relay**: No database, no persistent logs. All session data evaporates on disconnect.
+- **bcrypt room passwords**: Plaintext passwords never stored. Brute-force protection: 5 attempts → 15-minute IP lockout.
+- **Rate limiting**: Connection rate (IP-based, 60s window) and event rate (per-socket, 10s window).
+- **URL-hash credential isolation**: Invitation credentials live in the URL fragment (`#join:...`) — never sent to the web server.
+- **Strict CSP**: `default-src 'self'; script-src 'self'; object-src 'none'; base-uri 'none'`.
+- **No third-party requests**: Zero CDNs, fonts, analytics, or external scripts.
+
+If you find a way to bypass any of these protections, we want to know about it.
+
+---
+
+## Responsible Disclosure
+
+We follow the principle of **coordinated vulnerability disclosure**:
+
+1. You report privately.
+2. We investigate and develop a patch.
+3. We deploy to the Chrome Web Store, Firefox Add-ons, and Docker registry.
+4. We credit you publicly (unless you prefer to remain anonymous).
+
+We do not pursue legal action against researchers who act in good faith and follow this disclosure process.
