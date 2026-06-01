@@ -488,6 +488,24 @@
                 return false;
             })();
 
+            // Build multi-video summary for debug reports
+            const allVideos = [];
+            const allVideoEls = document.querySelectorAll('video');
+            for (let i = 0; i < allVideoEls.length; i++) {
+                const v = allVideoEls[i];
+                allVideos.push({
+                    index: i,
+                    width: v.videoWidth || v.offsetWidth || 0,
+                    height: v.videoHeight || v.offsetHeight || 0,
+                    muted: v.muted,
+                    paused: v.paused,
+                    duration: (v.duration && isFinite(v.duration)) ? Math.round(v.duration) : 0,
+                    readyState: v.readyState,
+                    src: (v.currentSrc || v.src || '').substring(0, 80),
+                    selected: v === video
+                });
+            }
+
             if (video) {
                 const dataAttributes = {};
                 if (video.attributes) {
@@ -542,7 +560,8 @@
                     metadata,
                     videoCount,
                     inShadowDom,
-                    platform
+                    platform,
+                    allVideos
                 });
             } else {
                 sendResponse({
@@ -550,6 +569,7 @@
                     videoCount,
                     inShadowDom,
                     platform,
+                    allVideos,
                     url: window.location.href,
                     pageTitle: document.title,
                     metadata: (navigator.mediaSession && navigator.mediaSession.metadata) ? {

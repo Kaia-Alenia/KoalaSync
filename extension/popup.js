@@ -1462,6 +1462,24 @@ elements.copyLogs.addEventListener('click', () => {
             if (vs.platform) lines.push(`- **Platform:** ${safe(vs.platform, '?')}`);
             lines.push(`- **Video Count:** ${safe(vs.videoCount, 0)} | **Shadow DOM:** ${vs.inShadowDom ? 'YES' : 'NO'}`);
             lines.push('');
+
+            // Multi-video overview
+            const videos = Array.isArray(vs.allVideos) ? vs.allVideos : [];
+            if (videos.length > 1) {
+                lines.push('### All Videos on Page');
+                lines.push('');
+                lines.push('| # | Resolution | Muted | Paused | Ready | Duration | Selected |');
+                lines.push('|---|------------|-------|--------|-------|----------|----------|');
+                const rl = ['HAVE_NOTHING', 'HAVE_METADATA', 'HAVE_CURRENT_DATA', 'HAVE_FUTURE_DATA', 'HAVE_ENOUGH_DATA'];
+                for (const v of videos) {
+                    if (!v) continue;
+                    const sel = v.selected ? ' **\u2190 TARGET**' : '';
+                    const dim = `${safe(v.width, '?')}x${safe(v.height, '?')}`;
+                    const rs = (v.readyState != null && v.readyState >= 0 && v.readyState <= 4) ? rl[v.readyState] : '?';
+                    lines.push(`| ${safe(v.index, '?')} | ${dim} | ${safe(v.muted, '?')} | ${safe(v.paused, '?')} | ${rs} | ${safe(v.duration, 0)}s |${sel} |`);
+                }
+                lines.push('');
+            }
         }
 
         // ── Connection ──
