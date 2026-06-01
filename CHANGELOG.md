@@ -36,31 +36,6 @@ All notable changes to the KoalaSync browser extension and relay server.
 
 ---
 
-## [v1.9.3] — 2026-05-30
-
-### Fixed
-- Smart disconnect handling when leaving rooms
-- Human-readable room ID generation with expanded word lists
-- WEB_JOIN_REQUEST and join button for custom server invite flows
-- Custom server reconnection strategy improvements
-- YouTube and Twitch sync status refinements
-- Hardcoded strings, missing translation keys, and SW notification race conditions
-
-### Added
-- TESTED_SERVICES.md compatibility matrix
-- Relay reachability check hint in README
-
----
-
-## [v1.9.0] — 2026-05-28
-
-### Changed
-- **Episode-Aware Sync**: Command sequencing with smarter episode transition detection and echo suppression for smoother series binges.
-- **Server Security**: Caddy CSP headers, no external dependencies in extension.
-- Build script improvements for safer minified output.
-
----
-
 ## Versioning Policy
 
 - **MAJOR** (x.0.0): Breaking protocol changes, architecture rewrites, or major feature milestones.
