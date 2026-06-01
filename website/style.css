@@ -314,6 +314,14 @@ nav {
     border: 1px solid rgba(99, 102, 241, 0.3);
     letter-spacing: 0.05em;
     text-transform: uppercase;
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s, background 0.2s;
+}
+
+.version-badge:hover {
+    background: rgba(99, 102, 241, 0.2);
+    box-shadow: 0 0 16px rgba(99, 102, 241, 0.3);
+    transform: translateY(-1px);
 }
 
 /* --- Interactive CSS Extension Mockup --- */

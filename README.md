@@ -104,6 +104,7 @@ Both the official KoalaSync website and the **v2.0 Browser Extension** feature f
 
 ### 📖 Documentation & Links
 
+- **[CHANGELOG.md](CHANGELOG.md)**: [New v2.0.1 Release!](CHANGELOG.md) — See what's changed.
 - **[TESTED_SERVICES.md](TESTED_SERVICES.md)**: Detailed compatibility matrix of tested streaming platforms and known limitations.
 - **[TRANSLATION.md](website/TRANSLATION.md)**: Translation and localization guide for contributors.
 - **[PRIVACY.md](PRIVACY.md)**: Data Handling and Privacy Policy.
