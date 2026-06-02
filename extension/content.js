@@ -262,8 +262,8 @@
 
         try {
             const host = window.location.hostname.toLowerCase();
-            const isYouTube = host.includes('youtube.com');
-            const isTwitch  = host.includes('twitch.tv');
+            const isYouTube = host === 'youtube.com' || host.endsWith('.youtube.com');
+            const isTwitch  = host === 'twitch.tv' || host.endsWith('.twitch.tv');
 
             if (isYouTube) {
                 const ytButton = document.querySelector('.ytp-play-button');
