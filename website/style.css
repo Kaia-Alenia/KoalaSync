@@ -1916,13 +1916,17 @@ footer {
     .hamburger {
         display: none !important;
     }
+    nav .container {
+        padding: 0 0.75rem;
+    }
     .logo-area {
-        gap: 0.5rem;
-        font-size: 1.2rem;
+        gap: 0.25rem;
+        font-size: 1.1rem;
     }
     .logo-area img {
-        height: 48px;
-        width: 48px;
+        height: 40px;
+        width: 40px;
+        margin: 0;
     }
     .lang-select-container {
         padding: 4px 10px 4px 8px;
