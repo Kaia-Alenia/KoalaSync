@@ -4,6 +4,14 @@ All notable changes to the KoalaSync browser extension and relay server.
 
 ---
 
+## [v2.0.2] — 2026-06-02
+
+### Fixed
+- Peer identity spoofing in relay server: client-supplied `peerId` could be used to impersonate other peers in PEER_STATUS events. Server now always stamps `peerId` with the authenticated sender's identity.
+- Amazon domain detection: replaced broad `includes('amazon.')` substring check with boundary-safe regex that correctly matches all Amazon storefronts (`amazon.com`, `amazon.de`, `amazon.co.uk`, etc.) while rejecting lookalike domains.
+
+---
+
 ## [v2.0.1] — 2026-06-01
 
 ### Fixed
