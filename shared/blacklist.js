@@ -167,7 +167,7 @@ export const BLACKLIST_DOMAINS = [
     // Games & Idle Sites
     'milkywayidle.com',
     'melvoridle.com',
-    'cookieclicker.com',
+    'orteil.dashnet.org',
     'clickerheroes.com',
     'kongregate.com',
     'armorgames.com',
