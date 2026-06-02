@@ -555,7 +555,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const user = this.getAttribute('data-user');
             const domain = this.getAttribute('data-domain');
             if (user && domain) {
-                this.innerHTML = `${user}@${domain}`;
+                this.textContent = `${user}@${domain}`;
             }
         });
     });
