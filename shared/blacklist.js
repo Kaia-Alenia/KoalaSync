@@ -67,7 +67,6 @@ export const BLACKLIST_DOMAINS = [
 
     // Productivity & Project Management
     'atlassian.net',
-    'jira',
     'trello.com',
     'notion.so',
     'monday.com',
@@ -168,7 +167,7 @@ export const BLACKLIST_DOMAINS = [
     // Games & Idle Sites
     'milkywayidle.com',
     'melvoridle.com',
-    'cookieclicker.',
+    'cookieclicker.com',
     'clickerheroes.com',
     'kongregate.com',
     'armorgames.com',

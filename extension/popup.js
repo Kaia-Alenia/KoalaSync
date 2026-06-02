@@ -813,7 +813,7 @@ function updateRoomList(rooms) {
 function checkInviteLink() {
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
         const tab = tabs[0];
-        if (tab && tab.url && tab.url.includes(OFFICIAL_LANDING_PAGE_URL) && tab.url.includes('#join:')) {
+        if (tab && tab.url && tab.url.startsWith(OFFICIAL_LANDING_PAGE_URL + '/') && tab.url.includes('#join:')) {
             try {
                 const rawHash = tab.url.split('#join:')[1];
                 if (!rawHash) return;

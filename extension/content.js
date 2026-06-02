@@ -456,15 +456,15 @@
 
             const platform = (() => {
                 const h = window.location.hostname.toLowerCase();
-                if (h.includes('youtube.com')) return 'YouTube';
-                if (h.includes('twitch.tv')) return 'Twitch';
-                if (h.includes('netflix.com')) return 'Netflix';
-                if (h.includes('primevideo.com') || h.includes('amazon.')) return 'Prime Video';
-                if (h.includes('disneyplus.com')) return 'Disney+';
-                if (h.includes('hulu.com')) return 'Hulu';
-                if (h.includes('max.com') || h.includes('hbomax.com')) return 'Max/HBO';
-                if (h.includes('vimeo.com')) return 'Vimeo';
-                if (h.includes('dailymotion.com')) return 'Dailymotion';
+                if (h === 'youtube.com' || h.endsWith('.youtube.com')) return 'YouTube';
+                if (h === 'twitch.tv' || h.endsWith('.twitch.tv')) return 'Twitch';
+                if (h === 'netflix.com' || h.endsWith('.netflix.com')) return 'Netflix';
+                if (h === 'primevideo.com' || h.endsWith('.primevideo.com') || /(^|\.)amazon\.(com|co\.uk|de|fr|it|es|ca|co\.jp|in|com\.au|com\.br|com\.mx|nl|se|pl|sg|ae|sa|tr|cn)$/.test(h)) return 'Prime Video';
+                if (h === 'disneyplus.com' || h.endsWith('.disneyplus.com')) return 'Disney+';
+                if (h === 'hulu.com' || h.endsWith('.hulu.com')) return 'Hulu';
+                if (h === 'hbomax.com' || h.endsWith('.hbomax.com') || h === 'max.com' || h.endsWith('.max.com')) return 'Max/HBO';
+                if (h === 'vimeo.com' || h.endsWith('.vimeo.com')) return 'Vimeo';
+                if (h === 'dailymotion.com' || h.endsWith('.dailymotion.com')) return 'Dailymotion';
                 return 'Generic';
             })();
 
