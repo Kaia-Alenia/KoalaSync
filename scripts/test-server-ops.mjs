@@ -2,7 +2,8 @@ import assert from 'node:assert/strict';
 import {
   buildHealthPayload,
   checkCooldown,
-  isAdminMetricsAuthorized
+  isAdminMetricsAuthorized,
+  isAdminMetricsTokenStrong
 } from '../server/ops.js';
 
 const missingAuth = isAdminMetricsAuthorized(undefined, 'secret-token');
@@ -16,6 +17,14 @@ assert.equal(correctAuth, true, 'correct bearer token should authorize metrics')
 
 const disabledAuth = isAdminMetricsAuthorized('Bearer secret-token', '');
 assert.equal(disabledAuth, false, 'empty admin token disables admin metrics');
+
+assert.equal(isAdminMetricsTokenStrong(''), true, 'empty admin token is allowed because metrics stay disabled');
+assert.equal(isAdminMetricsTokenStrong('short-token'), false, 'short admin token should be reported as weak');
+assert.equal(
+  isAdminMetricsTokenStrong('a'.repeat(32)),
+  true,
+  'admin token with at least 32 characters should be considered strong'
+);
 
 const cooldowns = new Map();
 assert.equal(checkCooldown(cooldowns, 'socket-1', 10_000, 100_000), true, 'first cooldown check passes');
@@ -33,7 +42,7 @@ const basicHealth = buildHealthPayload({
   now: 1234,
   uptime: 99,
   memoryUsage: () => ({ rss: 10, heapUsed: 5, heapTotal: 8 }),
-  rateLimitSizes: { connections: 1, events: 2, health: 3, authFailures: 4, roomList: 5 }
+  rateLimitSizes: { connections: 1, events: 2, health: 3, adminMetricsAuth: 4, authFailures: 5, roomList: 6 }
 });
 
 assert.deepEqual(
@@ -49,7 +58,7 @@ const adminHealth = buildHealthPayload({
   now: 1234,
   uptime: 99,
   memoryUsage: () => ({ rss: 10, heapUsed: 5, heapTotal: 8 }),
-  rateLimitSizes: { connections: 1, events: 2, health: 3, authFailures: 4, roomList: 5 }
+  rateLimitSizes: { connections: 1, events: 2, health: 3, adminMetricsAuth: 4, authFailures: 5, roomList: 6 }
 });
 
 assert.equal(adminHealth.peers, 5, 'admin metrics should include aggregate peer count');
@@ -59,7 +68,7 @@ assert.equal(adminHealth.maxPeersInRoom, 3, 'admin metrics should include max ro
 assert.deepEqual(adminHealth.memory, { rss: 10, heapUsed: 5, heapTotal: 8 }, 'admin metrics should expose process memory');
 assert.deepEqual(
   adminHealth.rateLimitEntries,
-  { connections: 1, events: 2, health: 3, authFailures: 4, roomList: 5 },
+  { connections: 1, events: 2, health: 3, adminMetricsAuth: 4, authFailures: 5, roomList: 6 },
   'admin metrics should expose aggregate rate-limit map sizes'
 );
 

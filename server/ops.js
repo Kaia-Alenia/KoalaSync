@@ -26,6 +26,10 @@ export function isAdminMetricsAuthorized(authHeader, adminToken) {
     return crypto.timingSafeEqual(expectedBuffer, providedBuffer);
 }
 
+export function isAdminMetricsTokenStrong(adminToken, minLength = 32) {
+    return !adminToken || (typeof adminToken === 'string' && adminToken.length >= minLength);
+}
+
 export function buildHealthPayload({
     rooms,
     connections,
@@ -64,6 +68,7 @@ export function buildHealthPayload({
             connections: rateLimitSizes.connections || 0,
             events: rateLimitSizes.events || 0,
             health: rateLimitSizes.health || 0,
+            adminMetricsAuth: rateLimitSizes.adminMetricsAuth || 0,
             authFailures: rateLimitSizes.authFailures || 0,
             roomList: rateLimitSizes.roomList || 0
         },

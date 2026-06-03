@@ -4,7 +4,12 @@ import { Server } from 'socket.io';
 import crypto from 'crypto';
 import dotenv from 'dotenv';
 import { EVENTS, OFFICIAL_SERVER_TOKEN, PROTOCOL_VERSION } from '../shared/constants.js';
-import { buildHealthPayload, checkCooldown, isAdminMetricsAuthorized } from './ops.js';
+import {
+    buildHealthPayload,
+    checkCooldown,
+    isAdminMetricsAuthorized,
+    isAdminMetricsTokenStrong
+} from './ops.js';
 
 dotenv.config();
 
@@ -20,6 +25,12 @@ const MAX_PEERS_PER_ROOM = parseInt(process.env.MAX_PEERS_PER_ROOM) || 25;
 const MIN_VERSION = process.env.MIN_VERSION || '1.0.0';
 const ADMIN_METRICS_TOKEN = process.env.ADMIN_METRICS_TOKEN || '';
 const ROOM_LIST_COOLDOWN_MS = 10000;
+const HEALTH_RATE_LIMIT_PER_MINUTE = 20;
+const ADMIN_METRICS_AUTH_RATE_LIMIT_PER_MINUTE = 5;
+
+if (!isAdminMetricsTokenStrong(ADMIN_METRICS_TOKEN)) {
+    console.warn('[SECURITY] ADMIN_METRICS_TOKEN is set but shorter than 32 characters. Use a long random token.');
+}
 
 const app = express();
 app.set('trust proxy', 1); // For real client IP through reverse proxy
@@ -38,7 +49,11 @@ app.get('/health', (req, res) => {
     if (!checkHealthRate(clientIp)) {
         return res.status(429).json({ error: 'Rate limited' });
     }
-    const includeMetrics = isAdminMetricsAuthorized(req.get('authorization'), ADMIN_METRICS_TOKEN);
+    const authHeader = req.get('authorization');
+    const includeMetrics = isAdminMetricsAuthorized(authHeader, ADMIN_METRICS_TOKEN);
+    if (ADMIN_METRICS_TOKEN && authHeader && !includeMetrics && !checkAdminMetricsAuthRate(clientIp)) {
+        return res.status(429).json({ error: 'Rate limited' });
+    }
     res.json(buildHealthPayload({
         rooms,
         connections: io.engine?.clientsCount ?? 0,
@@ -48,6 +63,7 @@ app.get('/health', (req, res) => {
             connections: connectionCounts.size,
             events: eventCounts.size,
             health: healthCounts.size,
+            adminMetricsAuth: adminMetricsAuthCounts.size,
             authFailures: failedAuthAttempts.size,
             roomList: roomListCooldowns.size
         }
@@ -149,6 +165,7 @@ setInterval(() => {
 
 const eventCounts = new Map(); // socketId -> { count, resetTime }
 const healthCounts = new Map(); // ip -> { count, resetTime }
+const adminMetricsAuthCounts = new Map(); // ip -> { count, resetTime }
 const roomListCooldowns = new Map(); // socketId -> last allowed timestamp
 
 // Clean up connection counts and event counts to prevent memory leak
@@ -167,6 +184,11 @@ setInterval(() => {
     for (const [ip, entry] of healthCounts.entries()) {
         if (now > entry.resetTime) {
             healthCounts.delete(ip);
+        }
+    }
+    for (const [ip, entry] of adminMetricsAuthCounts.entries()) {
+        if (now > entry.resetTime) {
+            adminMetricsAuthCounts.delete(ip);
         }
     }
     for (const [socketId] of roomListCooldowns.entries()) {
@@ -200,7 +222,16 @@ function checkHealthRate(ip) {
     if (now > entry.resetTime) { entry.count = 0; entry.resetTime = now + 60000; }
     entry.count++;
     healthCounts.set(ip, entry);
-    return entry.count <= 60;
+    return entry.count <= HEALTH_RATE_LIMIT_PER_MINUTE;
+}
+
+function checkAdminMetricsAuthRate(ip) {
+    const now = Date.now();
+    const entry = adminMetricsAuthCounts.get(ip) || { count: 0, resetTime: now + 60000 };
+    if (now > entry.resetTime) { entry.count = 0; entry.resetTime = now + 60000; }
+    entry.count++;
+    adminMetricsAuthCounts.set(ip, entry);
+    return entry.count <= ADMIN_METRICS_AUTH_RATE_LIMIT_PER_MINUTE;
 }
 
 /**

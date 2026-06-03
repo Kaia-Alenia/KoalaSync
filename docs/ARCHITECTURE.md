@@ -58,7 +58,7 @@ KoalaSync uses a megaphone routing approach to minimize server logic:
 ## 7. Security & Stability
 - **Service Worker Lifecycle**: Uses `chrome.alarms` (30s interval) to prevent the Manifest V3 service worker from suspending while in an active room. On wake, runtime state is restored from `chrome.storage.session` via `ensureState()`.
 - **Reconnect Visualization**: Badge shows "..." (orange) during reconnect. Popup displays "Reconnecting..." with attempt counter.
-- **Rate Limiting**: Server-side per-socket and per-IP rate limits to prevent sync-spamming or DoS. Real client IP extracted via `x-forwarded-for` header behind proxies/CDNs.
+- **Rate Limiting**: Server-side per-socket and per-IP rate limits to prevent sync-spamming or simple DoS. Public health endpoints are limited to 20 requests/minute/IP, wrong admin-metrics bearer attempts to 5 requests/minute/IP, and room discovery to one request every 10 seconds per socket. Real client IP is taken from the trusted reverse proxy hop, so the Node port must stay private behind Caddy or another trusted proxy.
 - **Room Creation Lock**: Per-room mutex prevents race conditions when multiple peers join a new room simultaneously.
 - **CORS**: Allows `chrome-extension://` origins for WebSocket fallback compatibility.
 - **Message Buffer**: `maxHttpBufferSize` set to 4KB to accommodate large `JOIN_ROOM` payloads.

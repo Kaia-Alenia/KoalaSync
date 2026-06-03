@@ -74,7 +74,8 @@ KoalaSync's security is grounded in its architecture:
 
 - **RAM-only relay**: No database, no persistent logs. All session data evaporates on disconnect.
 - **Keyed SHA-256 room password hashes**: Plaintext passwords are never stored. Room passwords are held only as in-memory HMAC-SHA256 hashes for the short room lifetime, with brute-force protection: 5 attempts → 15-minute IP lockout.
-- **Rate limiting**: Connection rate (IP-based, 60s window) and event rate (per-socket, 10s window).
+- **Rate limiting**: Connection rate (IP-based, 60s window), health endpoint rate (20 requests/minute/IP), wrong admin-metrics bearer attempts (5 requests/minute/IP), and event rate (per-socket, 10s window).
+- **Reverse proxy boundary**: The relay trusts one proxy hop for client IP detection. In production, keep the Node server reachable only through Caddy or another trusted reverse proxy.
 - **URL-hash credential isolation**: Invitation credentials live in the URL fragment (`#join:...`) — never sent to the web server.
 - **Strict CSP**: `default-src 'self'; script-src 'self'; object-src 'none'; base-uri 'none'`.
 - **No third-party requests**: Zero CDNs, fonts, analytics, or external scripts.
