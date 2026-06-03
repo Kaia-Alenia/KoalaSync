@@ -4,6 +4,13 @@ All notable changes to the KoalaSync browser extension and relay server.
 
 ---
 
+## [v2.0.6] — 2026-06-03
+
+### Performance & Security Hardening
+- Optimized failed authentication attempts cache eviction algorithm to $O(1)$ by exploiting Javascript `Map` insertion-order properties. This completely removes the previous array copying and sorting bottleneck, neutralizing a potential main-thread blocking DoS vector under heavy brute-force password traffic.
+
+---
+
 ## [v2.0.5] — 2026-06-03
 
 ### Security & Hardening

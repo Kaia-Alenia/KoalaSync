@@ -149,17 +149,19 @@ function recordAuthFailure(ip, roomId) {
         for (const [key, record] of failedAuthAttempts.entries()) {
             if (now - record.lastAttempt > 15 * 60 * 1000) {
                 failedAuthAttempts.delete(key);
+            } else {
+                break; // Since entries are insertion-ordered by time, all subsequent entries are newer
             }
         }
         
-        // 2. If still over 50k, perform LRU-style eviction on the oldest 10,000 entries
+        // 2. If still over 50k, perform LRU-style eviction on the oldest 10,000 entries (first items in Map order)
         if (failedAuthAttempts.size > 50000) {
-            log('SECURITY', 'failedAuthAttempts size exceeded 50000. Performing LRU-style eviction.');
-            const sortedEntries = Array.from(failedAuthAttempts.entries())
-                .sort((a, b) => a[1].lastAttempt - b[1].lastAttempt);
-            
-            for (let i = 0; i < 10000 && i < sortedEntries.length; i++) {
-                failedAuthAttempts.delete(sortedEntries[i][0]);
+            log('SECURITY', 'failedAuthAttempts size exceeded 50000. Performing insertion-order eviction.');
+            for (const [key] of failedAuthAttempts.entries()) {
+                if (failedAuthAttempts.size <= 40000) {
+                    break;
+                }
+                failedAuthAttempts.delete(key);
             }
         }
     }
@@ -167,6 +169,7 @@ function recordAuthFailure(ip, roomId) {
     const record = failedAuthAttempts.get(key) || { count: 0, lastAttempt: 0 };
     record.count++;
     record.lastAttempt = Date.now();
+    failedAuthAttempts.delete(key); // Remove first to update insertion order (moves key to the end of iteration)
     failedAuthAttempts.set(key, record);
 }
 
