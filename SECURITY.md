@@ -73,7 +73,7 @@ Encrypt sensitive findings with our PGP key (available on request).
 KoalaSync's security is grounded in its architecture:
 
 - **RAM-only relay**: No database, no persistent logs. All session data evaporates on disconnect.
-- **bcrypt room passwords**: Plaintext passwords never stored. Brute-force protection: 5 attempts → 15-minute IP lockout.
+- **Keyed SHA-256 room password hashes**: Plaintext passwords are never stored. Room passwords are held only as in-memory HMAC-SHA256 hashes for the short room lifetime, with brute-force protection: 5 attempts → 15-minute IP lockout.
 - **Rate limiting**: Connection rate (IP-based, 60s window) and event rate (per-socket, 10s window).
 - **URL-hash credential isolation**: Invitation credentials live in the URL fragment (`#join:...`) — never sent to the web server.
 - **Strict CSP**: `default-src 'self'; script-src 'self'; object-src 'none'; base-uri 'none'`.

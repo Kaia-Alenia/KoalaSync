@@ -51,7 +51,7 @@ Click **"Create Room"** in the popup's Room tab:
 
 4. **Server-side processing**:
    - All fields are **sanitized**: `roomId` is stripped of invalid characters and clamped to 64 chars; `peerId` clamped to 16 chars; `password` clamped to 128 chars; `username` clamped to 30 chars.
-   - The server **hashes the password** with bcrypt and stores the hash in RAM (the plaintext is never stored).
+   - The server **hashes the password** with a keyed SHA-256 HMAC and stores only that hash in RAM (the plaintext is never stored).
    - A new room object is created in memory with the peer's data.
    - The server responds with `ROOM_DATA` containing the list of peers in the room.
 
@@ -89,7 +89,7 @@ When your friend opens the link in their browser:
    - After 500ms, the page dispatches a `KOALASYNC_JOIN_REQUEST` custom DOM event with `{ roomId, password, useCustomServer, serverUrl }`.
    - `bridge.js` catches this event and forwards it to `background.js` via `chrome.runtime.sendMessage`.
    - `background.js` stores the credentials in `chrome.storage.sync` and emits `JOIN_ROOM` to the server.
-   - The server validates the password against the stored bcrypt hash.
+   - The server validates the password against the stored keyed SHA-256 HMAC hash.
    - On success, the server responds with `ROOM_DATA` and broadcasts `PEER_STATUS { status: 'joined' }` to all existing peers.
    - The join page updates to show "✅ Successfully joined!".
 

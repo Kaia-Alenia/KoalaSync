@@ -66,21 +66,32 @@ let popupIntervals = [];
 let populateTabsToken = null;
 let errorToken = 0;
 let forceSyncDone = false;
+let connectionErrorTimer = null;
+let pendingConnectionErrorMsg = null;
+let roomListRefreshTimer = null;
+const ROOM_LIST_REFRESH_COOLDOWN_MS = 11000;
 
 // --- Helpers ---
+function clearConnectionErrorTimer() {
+    if (connectionErrorTimer) {
+        clearTimeout(connectionErrorTimer);
+        connectionErrorTimer = null;
+    }
+    pendingConnectionErrorMsg = null;
+}
 
 // --- Initialization ---
 async function init() {
     // Load Settings
     const data = await chrome.storage.sync.get(['serverUrl', 'useCustomServer', 'roomId', 'password', 'filterNoise', 'username', 'autoSyncNextEpisode', 'forceSyncMode', 'browserNotifications', 'autoCopyInvite', 'locale']);
-    
+
     let activeLang = data.locale;
     if (!activeLang) {
         const systemLang = (navigator.language || chrome.i18n.getUILanguage()).split('-')[0];
         activeLang = ['en', 'de', 'fr', 'es', 'pt', 'ru'].includes(systemLang) ? (systemLang === 'pt' ? 'pt-BR' : systemLang) : 'en';
         chrome.storage.sync.set({ locale: activeLang });
     }
-    
+
     await loadLocale(activeLang);
     translateDOM();
     
@@ -148,8 +159,8 @@ async function init() {
     // Check for invite link on landing page
     checkInviteLink();
 
-    // Initial room list fetch
-    chrome.runtime.sendMessage({ type: 'GET_ROOM_LIST' });
+    // Initialize public rooms placeholder
+    renderEmpty(elements.publicRooms, 'rooms');
 
     // Debug Info Refresh
     popupIntervals.push(setInterval(refreshDebugInfo, 2000));
@@ -952,7 +963,12 @@ function showToast(message, type = 'info', duration = 3000) {
     if (!container) return;
     const toast = document.createElement('div');
     toast.className = `toast toast-${type}`;
-    toast.textContent = message;
+    toast.textContent = message || '';
+    toast.style.whiteSpace = 'pre-wrap';
+
+    const delay = Math.max(0, duration - 600);
+    toast.style.animation = `toastSlideIn 0.3s ease-out, toastFadeOut 0.3s ease-in ${delay}ms forwards`;
+
     container.appendChild(toast);
     setTimeout(() => toast.remove(), duration);
 }
@@ -981,6 +997,7 @@ elements.roomId.addEventListener('input', () => {
 });
 
 elements.joinBtn.addEventListener('click', async () => {
+    clearConnectionErrorTimer();
     if (elements.joinBtn.disabled) return;
     const roomIdInput = elements.roomId.value.trim();
     const isCreating = !roomIdInput;
@@ -1040,6 +1057,7 @@ elements.joinBtn.addEventListener('click', async () => {
 });
 
 elements.leaveBtn.addEventListener('click', async () => {
+    clearConnectionErrorTimer();
     chrome.runtime.sendMessage({ type: 'LEAVE_ROOM' });
     await chrome.storage.sync.set({ roomId: '', password: '' });
     elements.roomId.value = '';
@@ -1080,6 +1098,13 @@ if (syncTabCreateRoomBtn) syncTabCreateRoomBtn.addEventListener('click', () => {
 });
 
 elements.refreshRooms.addEventListener('click', () => {
+    if (elements.refreshRooms.disabled) return;
+    elements.refreshRooms.disabled = true;
+    roomListRefreshTimer = setTimeout(() => {
+        elements.refreshRooms.disabled = false;
+        roomListRefreshTimer = null;
+    }, ROOM_LIST_REFRESH_COOLDOWN_MS);
+
     elements.publicRooms.replaceChildren();
     const el = document.createElement('div');
     el.style.cssText = 'text-align:center; color: var(--text-muted); font-size: 11px; padding: 10px;';
@@ -1310,7 +1335,25 @@ chrome.runtime.onMessage.addListener((msg) => {
     if (msg.type === 'LOG_UPDATE') {
         refreshLogs();
         if (msg.log && msg.log.type === 'error') {
-            showError(msg.log.message);
+            const errMsg = msg.log.message || '';
+            const isConnErr = typeof errMsg === 'string' && (
+                errMsg.toLowerCase().includes('connection') ||
+                errMsg.toLowerCase().includes('websocket')
+            );
+            if (isConnErr) {
+                pendingConnectionErrorMsg = msg.log.message;
+                if (!connectionErrorTimer) {
+                    connectionErrorTimer = setTimeout(() => {
+                        if (pendingConnectionErrorMsg) {
+                            showError(pendingConnectionErrorMsg);
+                        }
+                        connectionErrorTimer = null;
+                        pendingConnectionErrorMsg = null;
+                    }, 5000);
+                }
+            } else {
+                showError(msg.log.message);
+            }
         }
     } else if (msg.type === 'ACTION_UPDATE') {
         const state = msg.state;
@@ -1366,6 +1409,9 @@ chrome.runtime.onMessage.addListener((msg) => {
         updatePeerList(msg.peers);
         if (msg.peers) detectPeerChanges(msg.peers);
     } else if (msg.type === 'CONNECTION_STATUS') {
+        if (msg.status === 'connected') {
+            clearConnectionErrorTimer();
+        }
         if (msg.status !== 'reconnecting') {
             applyConnectionStatus(msg.status);
             reconnectSlowMode = false;
@@ -1397,6 +1443,13 @@ chrome.runtime.onMessage.addListener((msg) => {
     } else if (msg.type === 'ROOM_LIST') {
         updateRoomList(msg.rooms);
     } else if (msg.type === 'JOIN_STATUS') {
+        if (joinBtnTimeout) {
+            clearTimeout(joinBtnTimeout);
+            joinBtnTimeout = null;
+        }
+        elements.joinBtn.disabled = false;
+        elements.joinBtn.textContent = getMessage('BTN_JOIN_ROOM');
+
         if (msg.success) {
             // Final confirmation of join from background
             chrome.storage.sync.get(['roomId', 'password', 'useCustomServer', 'serverUrl'], (data) => {
@@ -1589,6 +1642,28 @@ elements.copyLogs.addEventListener('click', () => {
             const original = elements.copyLogs.textContent;
             elements.copyLogs.textContent = getMessage('TOAST_LOGS_COPIED');
             setTimeout(() => { elements.copyLogs.textContent = original; }, 2000);
+
+            // Construct rich multiline toast summary
+            const verStr = safe(status.version, '?');
+            const logsCount = logs.length;
+            const historyCount = history.length;
+            const peersCount = Array.isArray(status.peers) ? status.peers.length : 0;
+
+            let summary = `📋 Debug Report Copied!\n`;
+            summary += `• Version: v${verStr}\n`;
+            summary += `• System Logs: ${logsCount} entries\n`;
+            summary += `• Sync Actions: ${historyCount} captured\n`;
+            if (status.roomId) {
+                summary += `• Peers in Room: ${peersCount}\n`;
+            }
+            if (rawVideo && vs.found) {
+                const stateStr = vs.paused === true ? 'Paused' : (vs.paused === false ? 'Playing' : 'Unknown');
+                const timeStr = typeof vs.currentTime === 'number' ? `${Math.round(vs.currentTime)}s` : '?';
+                summary += `• Video: ${stateStr} at ${timeStr}\n`;
+            }
+            summary += `Paste it in markdown to view!`;
+
+            showToast(summary, 'success', 5000);
         }).catch(() => {
             showToast(getMessage('TOAST_COPY_FAILED'), 'error');
         });
@@ -1752,6 +1827,10 @@ window.addEventListener('unload', () => {
     if (forceSyncResetTimer) {
         clearTimeout(forceSyncResetTimer);
         forceSyncResetTimer = null;
+    }
+    if (roomListRefreshTimer) {
+        clearTimeout(roomListRefreshTimer);
+        roomListRefreshTimer = null;
     }
 });
 

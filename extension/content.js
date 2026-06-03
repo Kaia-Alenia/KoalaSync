@@ -80,27 +80,26 @@
     // --- Helper: find the best video element on the page ---
     // Prefers larger, visible videos over tiny preview/trailer elements.
     function findVideo(root = document) {
-        const allVideos = root.querySelectorAll('video');
-        if (allVideos.length === 0) {
-            // Optimize: scan only potential player, video, media, and stream hosts by matching typical keywords (case-insensitive)
-            // or common custom element tags. This prevents recursive scanning of thousands of standard DOM nodes (div, span, a, etc.)
-            // while guaranteeing 100% airtight compatibility with all video web components in the wild.
-            const potentialHosts = root.querySelectorAll('[id*="player" i], [class*="player" i], [id*="video" i], [class*="video" i], [id*="media" i], [class*="media" i], [id*="stream" i], [class*="stream" i], ytd-player, netflix-player, emby-player, jellyfin-player, video-player');
-            for (const el of potentialHosts) {
-                if (el.shadowRoot) {
-                    const found = findVideo(el.shadowRoot);
-                    if (found) return found;
-                }
+        const candidates = Array.from(root.querySelectorAll('video'));
+
+        // Scan likely media hosts even when light-DOM videos exist; many players
+        // expose a tiny preview/ad video outside Shadow DOM and the real player inside.
+        const potentialHosts = root.querySelectorAll('[id*="player" i], [class*="player" i], [id*="video" i], [class*="video" i], [id*="media" i], [class*="media" i], [id*="stream" i], [class*="stream" i], ytd-player, netflix-player, emby-player, jellyfin-player, video-player');
+        for (const el of potentialHosts) {
+            if (el.shadowRoot) {
+                const found = findVideo(el.shadowRoot);
+                if (found) candidates.push(found);
             }
-            return null;
         }
 
+        if (candidates.length === 0) return null;
+
         // Multiple videos found → pick the best one
-        if (allVideos.length === 1) return allVideos[0];
+        if (candidates.length === 1) return candidates[0];
 
         let best = null;
         let bestScore = -1;
-        for (const v of allVideos) {
+        for (const v of candidates) {
             if (v.tagName !== 'VIDEO') continue;
             // Score: visible area + bonus for unmuted + bonus for longer duration
             const area = (v.videoWidth || v.offsetWidth || 0) * (v.videoHeight || v.offsetHeight || 0);

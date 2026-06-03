@@ -7,7 +7,7 @@ KoalaSync is designed with a **Security-First & Volatile** architecture. This me
 ## 1. Data Processing (In-Memory Only)
 KoalaSync does not use a database. All active session data exists only in the server's RAM and is purged immediately when no longer needed.
 - **Session Data**: To synchronize playback, the server must temporarily hold your `peerId`, `username`, and the `title` of the video you are watching. Additionally, playback metadata (`mediaTitle`, `playbackState`, `currentTime`, `volume`, `muted`) is held per peer for the duration of the session. All of this is deleted as soon as you leave the room.
-- **Room Passwords**: If you set a room password, it is stored only as a secure **bcrypt hash** in RAM. The server never sees or stores your plaintext password.
+- **Room Passwords**: If you set a room password, it is stored only as an in-memory **keyed SHA-256 HMAC hash**. The server receives the plaintext password only during join validation, never stores it, and keeps only the hash for the short room lifetime.
 - **Routing Maps**: The server maintains ephemeral lookup tables (`socketToRoom`, `peerToSocket`) to route messages between peers. These contain only transport identifiers and are purged on disconnect.
 
 ### Data Retention

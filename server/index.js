@@ -4,6 +4,7 @@ import { Server } from 'socket.io';
 import crypto from 'crypto';
 import dotenv from 'dotenv';
 import { EVENTS, OFFICIAL_SERVER_TOKEN, PROTOCOL_VERSION } from '../shared/constants.js';
+import { buildHealthPayload, checkCooldown, isAdminMetricsAuthorized } from './ops.js';
 
 dotenv.config();
 
@@ -15,8 +16,10 @@ function hashPassword(password) {
 
 const PORT = process.env.PORT || 3000;
 const MAX_ROOMS = parseInt(process.env.MAX_ROOMS) || 1000;
-const MAX_PEERS_PER_ROOM = parseInt(process.env.MAX_PEERS_PER_ROOM) || 50;
+const MAX_PEERS_PER_ROOM = parseInt(process.env.MAX_PEERS_PER_ROOM) || 25;
 const MIN_VERSION = process.env.MIN_VERSION || '1.0.0';
+const ADMIN_METRICS_TOKEN = process.env.ADMIN_METRICS_TOKEN || '';
+const ROOM_LIST_COOLDOWN_MS = 10000;
 
 const app = express();
 app.set('trust proxy', 1); // For real client IP through reverse proxy
@@ -35,13 +38,20 @@ app.get('/health', (req, res) => {
     if (!checkHealthRate(clientIp)) {
         return res.status(429).json({ error: 'Rate limited' });
     }
-    res.json({
-        status: 'ok',
-        uptime: process.uptime(),
-        rooms: rooms.size,
+    const includeMetrics = isAdminMetricsAuthorized(req.get('authorization'), ADMIN_METRICS_TOKEN);
+    res.json(buildHealthPayload({
+        rooms,
         connections: io.engine?.clientsCount ?? 0,
-        timestamp: Date.now()
-    });
+        includeMetrics,
+        uptime: process.uptime(),
+        rateLimitSizes: {
+            connections: connectionCounts.size,
+            events: eventCounts.size,
+            health: healthCounts.size,
+            authFailures: failedAuthAttempts.size,
+            roomList: roomListCooldowns.size
+        }
+    }));
 });
 
 const httpServer = createServer(app);
@@ -139,6 +149,7 @@ setInterval(() => {
 
 const eventCounts = new Map(); // socketId -> { count, resetTime }
 const healthCounts = new Map(); // ip -> { count, resetTime }
+const roomListCooldowns = new Map(); // socketId -> last allowed timestamp
 
 // Clean up connection counts and event counts to prevent memory leak
 setInterval(() => {
@@ -156,6 +167,11 @@ setInterval(() => {
     for (const [ip, entry] of healthCounts.entries()) {
         if (now > entry.resetTime) {
             healthCounts.delete(ip);
+        }
+    }
+    for (const [socketId] of roomListCooldowns.entries()) {
+        if (!io.sockets.sockets.has(socketId)) {
+            roomListCooldowns.delete(socketId);
         }
     }
 }, 60000);
@@ -541,6 +557,10 @@ io.on('connection', (socket) => {
             socket.disconnect(true);
             return;
         }
+        if (!checkCooldown(roomListCooldowns, socket.id, ROOM_LIST_COOLDOWN_MS)) {
+            socket.emit(EVENTS.ERROR, { message: 'Room list refresh is rate limited. Try again in a few seconds.' });
+            return;
+        }
         const list = Array.from(rooms.entries()).map(([id, r]) => ({
             id,
             peerCount: r.peers.size,
@@ -584,6 +604,7 @@ io.on('connection', (socket) => {
 
     socket.on('disconnect', () => {
         eventCounts.delete(socket.id);
+        roomListCooldowns.delete(socket.id);
         const mapping = socketToRoom.get(socket.id);
         if (mapping) {
             // Socket is already disconnected — no need to call socket.leave().
