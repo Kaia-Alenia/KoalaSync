@@ -18,7 +18,7 @@
 
 ### 🌟 Why KoalaSync?
 
-*   **🛡️ Security-First**: Volatile RAM-based relay with built-in brute-force protection and zero-persistence architecture.
+*   **🛡️ Security-First**: Volatile RAM-based relay with built-in brute-force protection and zero-persistence architecture. We keep no logs of your sessions or synchronizations. *We don't track you. We only track our server* (relying on the [aggregated, anonymous, non-personal metrics](https://syncserver.koalastuff.net/health) provided under `/health`).
 *   **📡 Direct Logic**: Manual Socket.IO wire implementation for reliable synchronization.
 *   **🛠️ Clean Build**: Dependency-free extension runtime with no library overhead.
 *   **🌐 Universal**: Works on any website with a `<video>` tag.
