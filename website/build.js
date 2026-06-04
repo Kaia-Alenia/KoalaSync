@@ -72,6 +72,51 @@ async function compile() {
     const wwwDir = path.join(websiteDir, 'www');
     fs.mkdirSync(wwwDir, { recursive: true });
 
+    // ── 0. Auto-generate website logo sizes and sync favicons ──
+    console.log('Generating responsive website logos...');
+    const rawLogoSrc = path.join(websiteDir, '..', 'assets', 'icon', 'TwoPointZero_Logo_Icon_600.webp');
+    const targetAssetsDir = path.join(websiteDir, 'assets');
+    
+    if (fs.existsSync(rawLogoSrc)) {
+        fs.mkdirSync(targetAssetsDir, { recursive: true });
+        
+        // Generate NewLogoIcon_64.webp (64x64)
+        await sharp(rawLogoSrc)
+            .resize(64, 64)
+            .toFile(path.join(targetAssetsDir, 'NewLogoIcon_64.webp'));
+            
+        // Generate NewLogoIcon_128.webp (128x128)
+        await sharp(rawLogoSrc)
+            .resize(128, 128)
+            .toFile(path.join(targetAssetsDir, 'NewLogoIcon_128.webp'));
+            
+        // Generate NewLogoIcon.webp (256x256)
+        await sharp(rawLogoSrc)
+            .resize(256, 256)
+            .toFile(path.join(targetAssetsDir, 'NewLogoIcon.webp'));
+            
+        console.log('  ✓ WebP logo variants successfully generated in website/assets/');
+    } else {
+        console.warn(`  ⚠️ Warning: Source logo ${rawLogoSrc} not found. Skipping auto-generation.`);
+    }
+
+    const pngMappings = [
+        { src: 'TwoPointZero_Logo_Icon_16.png', dest: 'favicon-16x16.png' },
+        { src: 'TwoPointZero_Logo_Icon_32.png', dest: 'favicon-32x32.png' },
+        { src: 'TwoPointZero_Logo_Icon_256.png', dest: 'apple-touch-icon.png' },
+        { src: 'TwoPointZero_Logo_Icon_256.png', dest: 'icon-192x192.png' }
+    ];
+    for (const mapping of pngMappings) {
+        const srcPath = path.join(websiteDir, '..', 'assets', 'icon', mapping.src);
+        const destPath = path.join(targetAssetsDir, mapping.dest);
+        if (fs.existsSync(srcPath)) {
+            fs.copyFileSync(srcPath, destPath);
+        } else {
+            console.warn(`  ⚠️ Warning: Source PNG ${srcPath} not found.`);
+        }
+    }
+    console.log('  ✓ Favicons/touch icons successfully synced to website/assets/');
+
     // ── 1. Minify CSS/JS (must happen first so hashes go into HTML) ──
     console.log('Minifying CSS/JS...');
     const styleRaw = fs.readFileSync(path.join(websiteDir, 'style.css'), 'utf8');

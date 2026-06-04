@@ -32,7 +32,8 @@ function runCheck([label, command, args, options = {}]) {
     const child = spawn(command, args, {
       cwd: options.cwd || repoRoot,
       env: { ...process.env, ...(options.env || {}) },
-      stdio: 'inherit'
+      stdio: 'inherit',
+      shell: process.platform === 'win32'
     });
     child.on('error', reject);
     child.on('exit', (code) => {
