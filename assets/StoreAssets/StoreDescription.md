@@ -6,6 +6,7 @@ Whether you're binge-watching Netflix, streaming from your own self-hosted Emby,
 Lightweight, open-source, and built for absolute data sovereignty with a clean, minimalist UI.
 
 ✨ CORE FEATURES 
+
  • No Account Needed: Just create a room and share the link. No emails, no passwords, no hassle. A random nickname is assigned automatically, or pick your own.
  • Universal HTML5 Sync: Flawlessly synchronizes play, pause, and seeking on Netflix, Jellyfin, Emby, YouTube, and almost any website hosting a standard HTML5 <video> tag.
  • Smart Binge-Watching (Auto-Sync): When a new episode loads, KoalaSync automatically pauses playback in a smart lobby until everyone's video is ready. No spoilers, no one left behind.
@@ -14,6 +15,7 @@ Lightweight, open-source, and built for absolute data sovereignty with a clean, 
  • Zero-Latency Protocol: Powered by a custom WebSocket architecture designed for real-time coordination without buffering loops.
 
 🛡️ UNCOMPROMISING PRIVACY & SECURITY 
+
  No data collection. No compromises.
  • 100% Anonymous: Zero tracking, zero analytics, zero telemetry.
  • Ready Out-Of-The-Box: No technical knowledge needed. Install and start watching immediately using the official public server.
@@ -21,12 +23,14 @@ Lightweight, open-source, and built for absolute data sovereignty with a clean, 
  • Self-Hostable: Take total control by deploying a private relay server in seconds via Docker. Optional, never required.
 
 🚀 HOW IT WORKS 
+
  1. Install KoalaSync and click "Create Room" to spin up a secure lobby.
  2. Copy the invite link and send it to your friends.
  3. Open your favorite streaming site and set the video tab as the active target.
  4. Press play — everyone stays perfectly in sync.
 
 💻 OPEN SOURCE 
+
  KoalaSync was built by a solo developer who needed a fast, secure way to watch movies with friends — and builds tools worth using. The code is fully transparent under the MIT license: audit it, fork it, improve it. Found a bug or have a feature idea? Open an issue on GitHub. Contributions and code reviews are always welcome.
 
  • Website: https://sync.koalastuff.net
