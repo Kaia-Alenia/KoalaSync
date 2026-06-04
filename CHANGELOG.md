@@ -4,6 +4,13 @@ All notable changes to the KoalaSync browser extension and relay server.
 
 ---
 
+## [v2.1.1] — 2026-06-04
+
+### Changed
+- Added progressive enhancement using `appearance: base-select` to support styling of country flag emojis in expanded language selectors on newer Chromium browsers.
+
+---
+
 ## [v2.1.0] — 2026-06-04
 
 ### Added
