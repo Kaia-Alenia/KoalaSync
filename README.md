@@ -121,4 +121,5 @@ Both the official KoalaSync website and the **v2.0 Browser Extension** feature f
 
 <div align="center">
   <sub>Built with ❤️ by <a href="https://github.com/Shik3i">Shik3i</a>. KoalaSync is Open Source under the <a href="LICENSE">MIT License</a>.</sub>
+  <sub>[![GitGem](https://gitgem.org/api/badge/github/Shik3i/KoalaSync.svg)](https://gitgem.org/github/Shik3i/KoalaSync)</sub>
 </div>
