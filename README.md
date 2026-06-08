@@ -33,6 +33,7 @@
 - **Dual Heartbeat Architecture**: Robust session tracking that prevents ghost rooms and stale connections.
 - **Efficient Relay**: Minimal overhead WebSocket message forwarding.
 - **Seamless Invitations**: Smart links that automatically configure server and room credentials for your friends.
+- **Audio Compressor**: Built-in Web Audio API dynamic range compression with presets (Recommended, Dynamic Range, Vocal Enhancement, Smooth) and fully customizable controls.
 
 ---
 
