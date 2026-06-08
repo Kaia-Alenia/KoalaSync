@@ -331,6 +331,39 @@
             transform: translateX(16px);
             background-color: white;
         }
+        .popup-footer {
+            margin-top: 20px;
+            text-align: center;
+            border-top: 1px solid rgba(255,255,255,0.05);
+            padding-top: 10px;
+            color: var(--text-muted);
+            font-size: 10px;
+            opacity: 0.6;
+        }
+        .popup-footer a {
+            color: var(--text-muted);
+            text-decoration: none;
+            transition: color 0.2s, opacity 0.2s;
+        }
+        .popup-footer a:hover {
+            color: var(--accent);
+            opacity: 1;
+        }
+        .feature-hint {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--accent);
+            margin-left: 4px;
+            animation: featurePulse 2s ease-in-out infinite;
+            cursor: help;
+            vertical-align: middle;
+        }
+        @keyframes featurePulse {
+            0%, 100% { opacity: 0.4; transform: scale(1); }
+            50% { opacity: 1; transform: scale(1.3); }
+        }
     </style>
 </head>
 <body>
@@ -535,10 +568,29 @@
             </select>
         </div>
 
+        <div class="form-group" style="display: flex; align-items: center; justify-content: space-between; background: var(--card); padding: 10px; border-radius: 8px; margin-bottom: 12px; border: 1px solid #334155;">
+            <div style="display: flex; flex-direction: column; gap: 2px;">
+                <label style="margin-bottom: 0; cursor: help;" data-i18n="LABEL_AUDIO_PROCESSING" data-i18n-title="LABEL_AUDIO_PROCESSING_TOOLTIP">Audio Processing</label>
+                <a id="audioSettingsLink" href="#" style="font-size: 10px; color: var(--accent); text-decoration: none;" data-i18n="AUDIO_OPEN_SETTINGS">Open Audio Settings</a>
+            </div>
+            <label class="toggle-switch">
+                <input type="checkbox" id="audioProcessingToggle">
+                <span class="slider"></span>
+            </label>
+        </div>
+
         <div style="margin-top: 15px; padding: 8px; border-top: 1px solid var(--card);">
             <label title="Tools for fixing connection issues" data-i18n="LABEL_TROUBLESHOOTING" data-i18n-title="LABEL_TROUBLESHOOTING_TOOLTIP">Troubleshooting</label>
             <button id="regenId" class="secondary" style="width: 100%; font-size: 11px;" title="Regenerate your internal ID and reconnect" data-i18n="BTN_REGEN_ID" data-i18n-title="BTN_REGEN_ID_TOOLTIP">Regenerate Peer ID</button>
             <p style="font-size: 9px; color: var(--text-muted); margin-top: 5px; text-align: center;" data-i18n="REGEN_ID_DESC">Use this if you see "Duplicate Identity" errors.</p>
+        </div>
+
+        <div class="popup-footer">
+            <a id="settingsSupportLink" href="#" target="_blank" data-i18n="FOOTER_SUPPORT">♥ Support</a>
+            <span> · </span>
+            <a id="settingsReviewLink" href="#" target="_blank" data-i18n="FOOTER_REVIEW">★ Rate us</a>
+            <span> · </span>
+            <span id="settingsVersion">v0.0.0</span>
         </div>
     </div>
 
@@ -570,9 +622,15 @@
         </div>
         <div id="logList"></div>
         
-        <div style="margin-top: 20px; text-align: center; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 10px;">
+        <div class="popup-footer">
             <a href="https://github.com/Shik3i/KoalaSync" target="_blank" style="color: var(--text-muted); text-decoration: none; font-size: 10px; opacity: 0.6; display: block;" data-i18n="LABEL_GITHUB">GitHub Repository</a>
-            <div id="appVersion" style="color: var(--text-muted); font-size: 9px; opacity: 0.4; margin-top: 4px;">v0.0.0</div>
+            <div style="margin-top: 4px;">
+                <a id="devSupportLink" href="#" target="_blank" data-i18n="FOOTER_SUPPORT">♥ Support</a>
+                <span> · </span>
+                <a id="devReviewLink" href="#" target="_blank" data-i18n="FOOTER_REVIEW">★ Rate us</a>
+                <span> · </span>
+                <span id="appVersion">v0.0.0</span>
+            </div>
         </div>
     </div>
 

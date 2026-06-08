@@ -1292,6 +1292,20 @@ function leaveOldRoomIfSwitching(newRoomId) {
     }
 }
 
+function resetAudioProcessingInTab(tabId) {
+    if (!tabId) return;
+    chrome.tabs.sendMessage(tabId, { action: 'RESET_AUDIO_PROCESSING' }).catch(() => {});
+}
+
+async function applyAudioSettingsToTab(tabId) {
+    if (!tabId) return;
+    const data = await chrome.storage.sync.get(['audioSettings']);
+    chrome.tabs.sendMessage(tabId, {
+        action: 'APPLY_AUDIO_SETTINGS',
+        settings: data.audioSettings
+    }).catch(() => {});
+}
+
 // --- Extension Message Listeners ---
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     handleAsyncMessage(message, sender, sendResponse);
@@ -1354,6 +1368,7 @@ async function handleAsyncMessage(message, sender, sendResponse) {
             roomPassword: currentRoom ? currentRoom.password : null
         });
     } else if (message.type === 'LEAVE_ROOM') {
+        resetAudioProcessingInTab(currentTabId);
         emit(EVENTS.LEAVE_ROOM, { peerId });
         currentRoom = null;
         currentTabId = null;
@@ -1599,6 +1614,7 @@ async function handleAsyncMessage(message, sender, sendResponse) {
             sendResponse({ status: 'ok' });
         });
     } else if (message.type === 'SET_TARGET_TAB') {
+        const previousTabId = currentTabId;
         currentTabId = message.tabId;
         currentTabTitle = message.tabTitle;
         lastContentHeartbeatAt = null;
@@ -1607,14 +1623,21 @@ async function handleAsyncMessage(message, sender, sendResponse) {
         }
         chrome.storage.session.set({ currentTabId, currentTabTitle, roomIdleSince, lastContentHeartbeatAt });
         updateBadgeStatus();
+
+        if (previousTabId && previousTabId !== currentTabId) {
+            resetAudioProcessingInTab(previousTabId);
+        }
         
         if (currentTabId) {
+            const selectedTabId = currentTabId;
             chrome.scripting.executeScript({
-                target: { tabId: currentTabId },
+                target: { tabId: selectedTabId },
                 files: ['content.js']
-            }).catch(err => {
-                addLog(`Failed to inject into tab: ${err.message}`, 'warn');
-            });
+            })
+                .then(() => applyAudioSettingsToTab(selectedTabId))
+                .catch(err => {
+                    addLog(`Failed to inject into tab: ${err.message}`, 'warn');
+                });
         }
         
         sendResponse({ status: 'ok' });
@@ -1724,6 +1747,17 @@ async function handleAsyncMessage(message, sender, sendResponse) {
     }
 }
 
+chrome.storage.onChanged.addListener(async (changes, area) => {
+    if (area !== 'sync' || !changes.audioSettings) return;
+    await ensureState();
+    if (!currentTabId) return;
+
+    chrome.tabs.sendMessage(currentTabId, {
+        action: 'APPLY_AUDIO_SETTINGS',
+        settings: changes.audioSettings.newValue
+    }).catch(() => {});
+});
+
 // Tab removal listener
 chrome.tabs.onRemoved.addListener(async (tabId) => {
     await ensureState();
@@ -1775,7 +1809,9 @@ chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, _tab) => {
         chrome.scripting.executeScript({
             target: { tabId },
             files: ['content.js']
-        }).catch(() => {});
+        })
+            .then(() => applyAudioSettingsToTab(tabId))
+            .catch(() => {});
     }
 });
 

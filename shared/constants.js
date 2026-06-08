@@ -12,6 +12,20 @@ export const APP_VERSION = "1.9.0";
 export const OFFICIAL_SERVER_URL = 'wss://syncserver.koalastuff.net';
 export const OFFICIAL_LANDING_PAGE_URL = 'https://sync.koalastuff.net';
 export const OFFICIAL_SERVER_TOKEN = '62170b705234c4f4807a9b22420bb93cf1a2aacfa4c5d3b47804482babb8eb50';
+export const SUPPORT_URL = 'https://support.koalastuff.net';
+export const KOFI_URL = 'https://ko-fi.com/koaladev';
+export const GITHUB_URL = 'https://github.com/Shik3i/KoalaSync';
+
+export function isFirefox() {
+    const manifest = chrome.runtime.getManifest();
+    return !!manifest.browser_specific_settings?.gecko?.id;
+}
+
+export function getReviewUrl() {
+    return isFirefox()
+        ? 'https://addons.mozilla.org/firefox/addon/koalasync/reviews/'
+        : 'https://chromewebstore.google.com/detail/koalasync/obbnmkmlaaddodakcbdljknjpagklifc/reviews';
+}
 
 export const EVENTS = {
     // Connection & Room

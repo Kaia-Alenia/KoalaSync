@@ -62,10 +62,15 @@
     let _pendingLobbyTitle = null; // Title we're waiting to match (from remote lobby)
     let lobbyPollTimer = null;
     let _autoSyncEnabled = true; // Cached setting, updated via storage.onChanged
+    let _audioSettings = null;
+    let _audioProcessingAllowed = true;
 
     // Cache the autoSyncNextEpisode setting
-    chrome.storage.sync.get(['autoSyncNextEpisode'], (data) => {
+    chrome.storage.sync.get(['autoSyncNextEpisode', 'audioSettings'], (data) => {
         _autoSyncEnabled = data.autoSyncNextEpisode !== false; // default: enabled
+        _audioSettings = mergeAudioSettings(data.audioSettings);
+        const video = findVideo();
+        if (video && _audioProcessingAllowed) applyAudioSettings(video, _audioSettings);
     });
     chrome.storage.onChanged.addListener((changes, area) => {
         if (area === 'sync' && changes.autoSyncNextEpisode) {
@@ -112,6 +117,147 @@
             }
         }
         return best;
+    }
+
+    // --- Audio Processing Module ---
+    const AUDIO_PRESETS = {
+        recommended: { threshold: -24, ratio: 8, attack: 0.010, release: 0.300, knee: 15 },
+        dynamicRange: { threshold: -18, ratio: 4, attack: 0.020, release: 0.200, knee: 10 },
+        vocalEnhancement: { threshold: -12, ratio: 3, attack: 0.015, release: 0.150, knee: 5 },
+        smooth: { threshold: -30, ratio: 1.5, attack: 0.030, release: 0.250, knee: 20 },
+        custom: { threshold: -24, ratio: 12, attack: 0.003, release: 0.250, knee: 30 }
+    };
+    const DEFAULT_AUDIO_SETTINGS = {
+        enabled: false,
+        compressor: {
+            enabled: false,
+            preset: 'recommended',
+            customParams: { ...AUDIO_PRESETS.custom }
+        }
+    };
+    let audioCtx = null;
+    let audioChains = new WeakMap();
+    let currentAudioVideo = null;
+
+    function mergeAudioSettings(settings = {}) {
+        const safeSettings = settings && typeof settings === 'object' ? settings : {};
+        return {
+            ...DEFAULT_AUDIO_SETTINGS,
+            ...safeSettings,
+            compressor: {
+                ...DEFAULT_AUDIO_SETTINGS.compressor,
+                ...(safeSettings.compressor || {}),
+                customParams: {
+                    ...DEFAULT_AUDIO_SETTINGS.compressor.customParams,
+                    ...(safeSettings.compressor?.customParams || {})
+                }
+            }
+        };
+    }
+
+    function initAudioContext() {
+        if (!audioCtx) {
+            try {
+                const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+                if (!AudioContextClass) return null;
+                audioCtx = new AudioContextClass({ latencyHint: 'interactive' });
+            } catch (e) {
+                reportLog(`Audio Processing unavailable: ${e.message}`, 'warn');
+                return null;
+            }
+        }
+        if (audioCtx.state === 'suspended') {
+            audioCtx.resume().catch(() => {});
+        }
+        return audioCtx;
+    }
+
+    function closeAudioContext() {
+        if (audioCtx) {
+            audioCtx.close().catch(() => {});
+            audioCtx = null;
+        }
+        audioChains = new WeakMap();
+        currentAudioVideo = null;
+    }
+
+    function setupAudioChain(videoEl) {
+        if (audioChains.has(videoEl)) return audioChains.get(videoEl);
+        const ctx = initAudioContext();
+        if (!ctx) return null;
+
+        try {
+            const src = ctx.createMediaElementSource(videoEl);
+            const compressor = ctx.createDynamicsCompressor();
+            const dryGain = ctx.createGain();
+            const compGain = ctx.createGain();
+
+            src.connect(dryGain);
+            dryGain.connect(ctx.destination);
+            src.connect(compressor);
+            compressor.connect(compGain);
+            compGain.connect(ctx.destination);
+
+            dryGain.gain.value = 1;
+            compGain.gain.value = 0;
+
+            const chain = { compressor, dryGain, compGain, active: false };
+            audioChains.set(videoEl, chain);
+            currentAudioVideo = videoEl;
+            return chain;
+        } catch (e) {
+            reportLog(`Audio Processing setup failed: ${e.message}`, 'warn');
+            return null;
+        }
+    }
+
+    function rampGain(node, value, t) {
+        const current = node.gain.value;
+        node.gain.cancelScheduledValues(t);
+        node.gain.setValueAtTime(current, t);
+        node.gain.linearRampToValueAtTime(value, t + 0.04);
+    }
+
+    function applyAudioBypass(videoEl) {
+        const chain = audioChains.get(videoEl);
+        if (!chain || !chain.active) return;
+        const t = chain.dryGain.context.currentTime;
+        rampGain(chain.dryGain, 1, t);
+        rampGain(chain.compGain, 0, t);
+        chain.active = false;
+    }
+
+    function bypassCurrentAudioProcessing() {
+        if (currentAudioVideo) applyAudioBypass(currentAudioVideo);
+    }
+
+    function applyAudioSettings(videoEl, settings) {
+        const mergedSettings = mergeAudioSettings(settings);
+        if (!mergedSettings.enabled || !mergedSettings.compressor?.enabled) {
+            applyAudioBypass(videoEl);
+            return;
+        }
+
+        const chain = setupAudioChain(videoEl);
+        if (!chain) return;
+
+        const cSettings = mergedSettings.compressor;
+        const params = cSettings.preset === 'custom'
+            ? cSettings.customParams
+            : AUDIO_PRESETS[cSettings.preset] || AUDIO_PRESETS.recommended;
+
+        chain.compressor.threshold.value = params.threshold ?? -24;
+        chain.compressor.knee.value = params.knee ?? 15;
+        chain.compressor.ratio.value = params.ratio ?? 8;
+        chain.compressor.attack.value = params.attack ?? 0.010;
+        chain.compressor.release.value = params.release ?? 0.300;
+
+        if (!chain.active) {
+            const t = chain.dryGain.context.currentTime;
+            rampGain(chain.dryGain, 0, t);
+            rampGain(chain.compGain, 1, t);
+            chain.active = true;
+        }
     }
 
     // --- Episode Auto-Sync: Detection ---
@@ -348,6 +494,22 @@
         if (message.action === 'get_current_time') {
             const video = findVideo();
             sendResponse({ currentTime: video ? video.currentTime : null });
+            return true;
+        }
+
+        if (message.action === 'APPLY_AUDIO_SETTINGS') {
+            _audioProcessingAllowed = true;
+            _audioSettings = mergeAudioSettings(message.settings);
+            const video = findVideo();
+            if (video) applyAudioSettings(video, _audioSettings);
+            sendResponse({ ok: true });
+            return true;
+        }
+
+        if (message.action === 'RESET_AUDIO_PROCESSING') {
+            _audioProcessingAllowed = false;
+            bypassCurrentAudioProcessing();
+            sendResponse({ ok: true });
             return true;
         }
 
@@ -655,7 +817,10 @@
     });
 
     // Reset on page hide/show (bfcache, tab discard)
-    window.addEventListener('pagehide', () => { pageVisible = false; });
+    window.addEventListener('pagehide', () => {
+        pageVisible = false;
+        closeAudioContext();
+    });
     window.addEventListener('pageshow', (event) => {
         // event.persisted is true ONLY when restored from bfcache, not on initial load
         if (event.persisted && !pageVisible) {
@@ -722,6 +887,9 @@
     function setupListeners() {
         const video = findVideo();
         if (video) {
+            if (currentAudioVideo && currentAudioVideo !== video) {
+                bypassCurrentAudioProcessing();
+            }
             const existing = video._koalaHandlers;
             if (existing) {
                 video.removeEventListener('play', existing.play);
@@ -741,6 +909,8 @@
             if (!lastKnownMediaTitle) {
                 lastKnownMediaTitle = getMediaTitle();
             }
+
+            if (_audioSettings && _audioProcessingAllowed) applyAudioSettings(video, _audioSettings);
         }
     }
 
@@ -755,6 +925,7 @@
         if (!video && lastVideoSrc !== undefined) {
             reportLog('Video element removed from page', 'warn');
             lastVideoSrc = undefined;
+            closeAudioContext();
             return;
         }
 

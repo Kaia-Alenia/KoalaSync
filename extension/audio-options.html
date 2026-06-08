@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>KoalaSync Audio Settings</title>
+    <link rel="stylesheet" href="audio-options.css">
+</head>
+<body>
+    <main class="page-shell">
+        <header class="page-header">
+            <div>
+                <p class="eyebrow">KoalaSync</p>
+                <h1 data-i18n="AUDIO_PAGE_TITLE">Audio Settings</h1>
+            </div>
+            <label class="master-toggle">
+                <span data-i18n="AUDIO_MASTER_TOGGLE">Audio Processing</span>
+                <span class="toggle-switch">
+                    <input type="checkbox" id="audioEnabled">
+                    <span class="slider"></span>
+                </span>
+            </label>
+        </header>
+
+        <section class="panel">
+            <div class="section-heading">
+                <h2 data-i18n="AUDIO_COMPRESSOR">Compressor</h2>
+                <label class="inline-toggle">
+                    <span data-i18n="AUDIO_COMPRESSOR_ENABLE">Enabled</span>
+                    <span class="toggle-switch">
+                        <input type="checkbox" id="compressorEnabled">
+                        <span class="slider"></span>
+                    </span>
+                </label>
+            </div>
+
+            <div class="preset-group" role="radiogroup" aria-label="Compressor preset">
+                <label class="preset-card">
+                    <input type="radio" name="preset" value="recommended">
+                    <span data-i18n="AUDIO_PRESET_RECOMMENDED">Recommended</span>
+                </label>
+                <label class="preset-card">
+                    <input type="radio" name="preset" value="dynamicRange">
+                    <span data-i18n="AUDIO_PRESET_DYNAMIC_RANGE">Dynamic Range</span>
+                </label>
+                <label class="preset-card">
+                    <input type="radio" name="preset" value="vocalEnhancement">
+                    <span data-i18n="AUDIO_PRESET_VOCAL_ENHANCEMENT">Vocal Enhancement</span>
+                </label>
+                <label class="preset-card">
+                    <input type="radio" name="preset" value="smooth">
+                    <span data-i18n="AUDIO_PRESET_SMOOTH">Smooth</span>
+                </label>
+                <label class="preset-card">
+                    <input type="radio" name="preset" value="custom">
+                    <span data-i18n="AUDIO_PRESET_CUSTOM">Custom</span>
+                </label>
+            </div>
+
+            <div class="custom-grid" id="customControls">
+                <div class="control-row" data-param="threshold">
+                    <label data-i18n="AUDIO_PARAM_THRESHOLD">Threshold</label>
+                    <input type="range" min="-60" max="0" step="1">
+                    <input type="number" min="-60" max="0" step="1">
+                    <span class="unit">dB</span>
+                </div>
+                <div class="control-row" data-param="knee">
+                    <label data-i18n="AUDIO_PARAM_KNEE">Knee</label>
+                    <input type="range" min="0" max="40" step="1">
+                    <input type="number" min="0" max="40" step="1">
+                    <span class="unit">dB</span>
+                </div>
+                <div class="control-row" data-param="ratio">
+                    <label data-i18n="AUDIO_PARAM_RATIO">Ratio</label>
+                    <input type="range" min="1" max="20" step="0.5">
+                    <input type="number" min="1" max="20" step="0.5">
+                    <span class="unit">:1</span>
+                </div>
+                <div class="control-row" data-param="attack">
+                    <label data-i18n="AUDIO_PARAM_ATTACK">Attack</label>
+                    <input type="range" min="0" max="1" step="0.001">
+                    <input type="number" min="0" max="1000" step="1" data-ms-input="true">
+                    <span class="unit">ms</span>
+                </div>
+                <div class="control-row" data-param="release">
+                    <label data-i18n="AUDIO_PARAM_RELEASE">Release</label>
+                    <input type="range" min="0" max="1" step="0.005">
+                    <input type="number" min="0" max="1000" step="5" data-ms-input="true">
+                    <span class="unit">ms</span>
+                </div>
+            </div>
+        </section>
+
+        <section class="panel muted-panel">
+            <div class="section-heading">
+                <h2 data-i18n="AUDIO_EQUALIZER">Equalizer</h2>
+            </div>
+            <p data-i18n="AUDIO_COMING_SOON">Coming soon</p>
+        </section>
+    </main>
+
+    <script src="audio-options.js" type="module"></script>
+</body>
+</html>

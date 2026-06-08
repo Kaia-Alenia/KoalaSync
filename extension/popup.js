@@ -1,4 +1,4 @@
-import { EVENTS, OFFICIAL_LANDING_PAGE_URL } from './shared/constants.js';
+import { EVENTS, OFFICIAL_LANDING_PAGE_URL, SUPPORT_URL, getReviewUrl } from './shared/constants.js';
 import { BLACKLIST_DOMAINS } from './shared/blacklist.js';
 import { getAvatarForName, generateUsername, USERNAME_ADJECTIVES, USERNAME_NOUNS } from './shared/names.js';
 import { loadLocale, translateDOM, getMessage, getSystemLanguage } from './i18n.js';
@@ -50,9 +50,16 @@ const elements = {
     lobbyPeerStatus: document.getElementById('lobbyPeerStatus'),
     browserNotifications: document.getElementById('browserNotifications'),
     autoCopyInvite: document.getElementById('autoCopyInvite'),
-    syncTabCopyInvite: document.getElementById('syncTabCopyInvite'),
     cancelLobbyBtn: document.getElementById('cancelLobbyBtn'),
-    langSelector: document.getElementById('langSelector')
+    langSelector: document.getElementById('langSelector'),
+    audioProcessingToggle: document.getElementById('audioProcessingToggle'),
+    audioSettingsLink: document.getElementById('audioSettingsLink'),
+    settingsSupportLink: document.getElementById('settingsSupportLink'),
+    settingsReviewLink: document.getElementById('settingsReviewLink'),
+    settingsVersion: document.getElementById('settingsVersion'),
+    devSupportLink: document.getElementById('devSupportLink'),
+    devReviewLink: document.getElementById('devReviewLink'),
+    syncTabCopyInvite: document.getElementById('syncTabCopyInvite')
 };
 
 let localPeerId = null;
@@ -71,8 +78,100 @@ let pendingConnectionErrorMsg = null;
 let roomListRefreshTimer = null;
 let roomListRefreshInterval = null;
 const ROOM_LIST_REFRESH_COOLDOWN_MS = 11000;
+const DEFAULT_AUDIO_SETTINGS = {
+    enabled: false,
+    compressor: {
+        enabled: false,
+        preset: 'recommended',
+        customParams: {
+            threshold: -24,
+            knee: 30,
+            ratio: 12,
+            attack: 0.003,
+            release: 0.250
+        }
+    }
+};
+const FEATURE_HINTS = [
+    {
+        key: 'audio_processing',
+        selector: '#audioSettingsLink',
+        i18nTooltip: 'NEW_FEATURE_AUDIO'
+    }
+];
+
+function mergeAudioSettings(settings = {}) {
+    const safeSettings = settings && typeof settings === 'object' ? settings : {};
+    return {
+        ...DEFAULT_AUDIO_SETTINGS,
+        ...safeSettings,
+        compressor: {
+            ...DEFAULT_AUDIO_SETTINGS.compressor,
+            ...(safeSettings.compressor || {}),
+            customParams: {
+                ...DEFAULT_AUDIO_SETTINGS.compressor.customParams,
+                ...(safeSettings.compressor?.customParams || {})
+            }
+        }
+    };
+}
 
 // --- Helpers ---
+function configureFooterLinks() {
+    const reviewUrl = getReviewUrl();
+    [elements.settingsSupportLink, elements.devSupportLink].forEach(link => {
+        if (link) link.href = SUPPORT_URL;
+    });
+    [elements.settingsReviewLink, elements.devReviewLink].forEach(link => {
+        if (link) link.href = reviewUrl;
+    });
+}
+
+function updateAudioSettingsLinkVisibility() {
+    if (elements.audioSettingsLink && elements.audioProcessingToggle) {
+        elements.audioSettingsLink.style.display = elements.audioProcessingToggle.checked ? 'inline-flex' : 'none';
+    }
+}
+
+function openAudioSettingsPage() {
+    chrome.tabs.create({ url: chrome.runtime.getURL('audio-options.html') });
+}
+
+async function updateFeatureHints() {
+    const data = await chrome.storage.sync.get(['dismissedHints']);
+    const dismissed = Array.isArray(data.dismissedHints) ? data.dismissedHints : [];
+
+    FEATURE_HINTS.forEach(feature => {
+        const target = document.querySelector(feature.selector);
+        if (!target) return;
+
+        const existing = target.parentElement?.querySelector(`.feature-hint[data-feature="${feature.key}"]`);
+        if (dismissed.includes(feature.key)) {
+            if (existing) existing.remove();
+            return;
+        }
+
+        if (!existing) {
+            const hint = document.createElement('span');
+            hint.className = 'feature-hint';
+            hint.dataset.feature = feature.key;
+            hint.title = getMessage(feature.i18nTooltip);
+            target.insertAdjacentElement('afterend', hint);
+        } else {
+            existing.title = getMessage(feature.i18nTooltip);
+        }
+    });
+}
+
+async function dismissFeatureHint(featureKey) {
+    const data = await chrome.storage.sync.get(['dismissedHints']);
+    const dismissed = Array.isArray(data.dismissedHints) ? data.dismissedHints : [];
+    if (!dismissed.includes(featureKey)) {
+        await chrome.storage.sync.set({ dismissedHints: [...dismissed, featureKey] });
+    }
+    await updateFeatureHints();
+}
+
 function clearConnectionErrorTimer() {
     if (connectionErrorTimer) {
         clearTimeout(connectionErrorTimer);
@@ -111,7 +210,7 @@ async function init() {
     // Load per-device settings (local) + synced preferences (sync)
     const [localData, syncData] = await Promise.all([
         chrome.storage.local.get(['serverUrl', 'useCustomServer', 'roomId', 'password', 'username']),
-        chrome.storage.sync.get(['filterNoise', 'autoSyncNextEpisode', 'forceSyncMode', 'browserNotifications', 'autoCopyInvite', 'locale'])
+        chrome.storage.sync.get(['filterNoise', 'autoSyncNextEpisode', 'forceSyncMode', 'browserNotifications', 'autoCopyInvite', 'locale', 'audioSettings', 'dismissedHints'])
     ]);
 
     // Migrate from sync → local for existing users
@@ -165,6 +264,11 @@ async function init() {
     if (elements.forceSyncMode) elements.forceSyncMode.value = syncData.forceSyncMode || 'jump-to-others';
     if (elements.browserNotifications) elements.browserNotifications.checked = syncData.browserNotifications === true;
     if (elements.autoCopyInvite) elements.autoCopyInvite.checked = syncData.autoCopyInvite !== false;
+    if (elements.audioProcessingToggle) {
+        const audioSettings = mergeAudioSettings(syncData.audioSettings);
+        elements.audioProcessingToggle.checked = audioSettings.enabled === true;
+        updateAudioSettingsLinkVisibility();
+    }
     
     // Set Version Info
     const versionTxt = `v${chrome.runtime.getManifest().version}`;
@@ -172,6 +276,9 @@ async function init() {
     if (versionEl) versionEl.textContent = versionTxt;
     const popupVerEl = document.getElementById('popupVersion');
     if (popupVerEl) popupVerEl.textContent = versionTxt;
+    if (elements.settingsVersion) elements.settingsVersion.textContent = versionTxt;
+    configureFooterLinks();
+    await updateFeatureHints();
 
     if (localData.useCustomServer) {
         setServerMode(true);
@@ -959,6 +1066,35 @@ if (elements.autoCopyInvite) {
     });
 }
 
+if (elements.audioProcessingToggle) {
+    elements.audioProcessingToggle.addEventListener('change', async () => {
+        const data = await chrome.storage.sync.get(['audioSettings']);
+        const audioSettings = mergeAudioSettings(data.audioSettings);
+        audioSettings.enabled = elements.audioProcessingToggle.checked;
+        if (audioSettings.enabled && !audioSettings.compressor.enabled) {
+            audioSettings.compressor.enabled = true;
+        }
+        await chrome.storage.sync.set({ audioSettings });
+        updateAudioSettingsLinkVisibility();
+        if (audioSettings.enabled) openAudioSettingsPage();
+    });
+}
+
+if (elements.audioSettingsLink) {
+    elements.audioSettingsLink.addEventListener('click', async (event) => {
+        event.preventDefault();
+        await dismissFeatureHint('audio_processing');
+        openAudioSettingsPage();
+    });
+}
+
+chrome.storage.onChanged.addListener((changes, area) => {
+    if (area !== 'sync' || !changes.audioSettings || !elements.audioProcessingToggle) return;
+    const audioSettings = mergeAudioSettings(changes.audioSettings.newValue);
+    elements.audioProcessingToggle.checked = audioSettings.enabled === true;
+    updateAudioSettingsLinkVisibility();
+});
+
 elements.forceSyncMode.addEventListener('change', () => {
     chrome.storage.sync.set({ forceSyncMode: elements.forceSyncMode.value });
 });
@@ -977,6 +1113,9 @@ if (elements.langSelector) {
         await chrome.storage.sync.set({ locale: selectedLang });
         await loadLocale(selectedLang);
         translateDOM();
+        configureFooterLinks();
+        updateAudioSettingsLinkVisibility();
+        await updateFeatureHints();
         
         // Re-apply connection and room UI state since translateDOM may overwrite dynamic elements
         chrome.runtime.sendMessage({ type: 'GET_STATUS' }, async (res) => {

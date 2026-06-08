@@ -12,6 +12,7 @@ const checks = [
     env: { ADMIN_METRICS_TOKEN: 'verify-admin-token-with-more-than-32-chars' }
   }],
   ['content video finder', 'node', ['scripts/test-content-video-finder.js']],
+  ['audio settings', 'node', ['scripts/test-audio-settings.mjs']],
   ['popup refresh cooldown', 'node', ['scripts/test-popup-refresh-cooldown.mjs']],
   ['server syntax index', 'node', ['-c', 'server/index.js']],
   ['server syntax ops', 'node', ['-c', 'server/ops.js']],
