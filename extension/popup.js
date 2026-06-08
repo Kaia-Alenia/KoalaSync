@@ -78,20 +78,6 @@ let pendingConnectionErrorMsg = null;
 let roomListRefreshTimer = null;
 let roomListRefreshInterval = null;
 const ROOM_LIST_REFRESH_COOLDOWN_MS = 11000;
-const DEFAULT_AUDIO_SETTINGS = {
-    enabled: false,
-    compressor: {
-        enabled: false,
-        preset: 'recommended',
-        customParams: {
-            threshold: -24,
-            knee: 30,
-            ratio: 12,
-            attack: 0.003,
-            release: 0.250
-        }
-    }
-};
 const FEATURE_HINTS = [
     {
         key: 'audio_processing',
@@ -100,22 +86,6 @@ const FEATURE_HINTS = [
         i18nTooltip: 'NEW_FEATURE_AUDIO'
     }
 ];
-
-function mergeAudioSettings(settings = {}) {
-    const safeSettings = settings && typeof settings === 'object' ? settings : {};
-    return {
-        ...DEFAULT_AUDIO_SETTINGS,
-        ...safeSettings,
-        compressor: {
-            ...DEFAULT_AUDIO_SETTINGS.compressor,
-            ...(safeSettings.compressor || {}),
-            customParams: {
-                ...DEFAULT_AUDIO_SETTINGS.compressor.customParams,
-                ...(safeSettings.compressor?.customParams || {})
-            }
-        }
-    };
-}
 
 // --- Helpers ---
 function configureFooterLinks() {
