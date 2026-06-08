@@ -8,22 +8,16 @@ All notable changes to the KoalaSync browser extension and relay server.
 
 ### Added
 - **Web Audio API Compressor**: Built-in audio dynamic range compression with four presets (Recommended, Dynamic Range, Vocal Enhancement, Smooth) and fully customizable sliders (threshold, ratio, knee, attack, release, makeup gain). Uses dry/wet crossfade (40ms linear ramp) to avoid clicks. Configured via the new Audio Options page accessible from the Settings tab.
-- **Master Audio Toggle**: Global on/off switch for audio processing in both the extension popup and Audio Options page, synced via `chrome.storage.sync`.
 - **Audio Options Page** (`audio-options.html`): Dedicated settings page with master toggle, compressor preset selector, real-time custom sliders, and equalizer placeholder. Dark theme matching the popup design.
-- **Ko-Fi Support Links**: Static footer badges on the Settings and Status tabs linking to `https://support.koalastuff.net` (redirect owned by the developer). README now includes a Ko-Fi sponsor badge. Website footer updated with a styled Ko-Fi pill button (heart icon + "Ko-Fi").
 - **Feature Hint System**: Generic `dismissedHints` array in sync storage for announcing new features. First hint highlights the Audio Options entry in Settings. Extensible for future features.
-- **11 New Locale Translations**: 23 new i18n keys (audio processing, support links, etc.) fully translated into Spanish, French, Italian, Japanese, Korean, Dutch, Polish, European Portuguese, Brazilian Portuguese, Russian, and Turkish.
-- **Website Locale Consistency Test** (`scripts/test-website-locales.mjs`): Validates all 12 non-English website locale files have exactly the same keys as `en.json`. Runs automatically as part of `npm run verify`.
+
+### Changed
+- **Ko-Fi Support Links**: Static footer badges on the Settings and Status tabs linking to the developer's support page. README and website footer updated with Ko-Fi badge.
 
 ### Fixed
 - **Portuguese (PT) locale**: Removed Italian contamination — "sincronizzazione" → "sincronização", "tempo reale" → "tempo real", "Link di Invito" → "Link de Convite", "Sair della Sala" → "Sair da Sala".
 - **Korean locale**: Fixed broken character in `HOWTO_STEP_2_TEXT` (`클rip보드` → `클립보드`).
 - **Website COMP_FEAT_6_KOALA**: Normalized from inconsistent "6 Languages" to "13 Languages" across all locale files (en, de, es, fr, pt-BR, ru).
-
-### Changed
-- **ROADMAP.md**: Removed outdated cache LRU eviction item (already solved via time-based + insertion-order Map). Translated remaining German text to English.
-
-### Fixed
 - **Debug report showing wrong logs**: Fixed `logs.slice(-50)` and `history.slice(-20)` in the "Copy Debug Report" feature. Since `addLog()` and `addToHistory()` use `unshift` (inserting entries at index 0), the arrays are ordered newest-first. `slice(-N)` took the N **oldest** entries instead of the N **newest**. Changed to `slice(0, N).reverse()` to correctly include the most recent logs and display them chronologically.
 
 ---
