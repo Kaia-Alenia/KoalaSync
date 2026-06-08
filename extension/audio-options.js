@@ -28,7 +28,8 @@ const elements = {
     audioEnabled: document.getElementById('audioEnabled'),
     compressorEnabled: document.getElementById('compressorEnabled'),
     presetInputs: Array.from(document.querySelectorAll('input[name="preset"]')),
-    controlRows: Array.from(document.querySelectorAll('.control-row'))
+    controlRows: Array.from(document.querySelectorAll('.control-row')),
+    backLink: document.getElementById('backLink')
 };
 
 let saveTimer = null;
@@ -177,6 +178,13 @@ chrome.storage.onChanged.addListener((changes, area) => {
     currentSettings = mergeAudioSettings(changes.audioSettings.newValue);
     render();
 });
+
+if (elements.backLink) {
+    elements.backLink.addEventListener('click', (e) => {
+        e.preventDefault();
+        window.close();
+    });
+}
 
 init().catch(err => {
     console.error('[AudioOptions] Failed to initialize:', err);

@@ -52,7 +52,7 @@ const elements = {
     autoCopyInvite: document.getElementById('autoCopyInvite'),
     cancelLobbyBtn: document.getElementById('cancelLobbyBtn'),
     langSelector: document.getElementById('langSelector'),
-    audioProcessingToggle: document.getElementById('audioProcessingToggle'),
+
     audioSettingsLink: document.getElementById('audioSettingsLink'),
     settingsSupportLink: document.getElementById('settingsSupportLink'),
     settingsReviewLink: document.getElementById('settingsReviewLink'),
@@ -95,7 +95,8 @@ const DEFAULT_AUDIO_SETTINGS = {
 const FEATURE_HINTS = [
     {
         key: 'audio_processing',
-        selector: '#audioSettingsLink',
+        selector: '#audioProcessingLabel',
+        position: 'beforebegin',
         i18nTooltip: 'NEW_FEATURE_AUDIO'
     }
 ];
@@ -127,12 +128,6 @@ function configureFooterLinks() {
     });
 }
 
-function updateAudioSettingsLinkVisibility() {
-    if (elements.audioSettingsLink && elements.audioProcessingToggle) {
-        elements.audioSettingsLink.style.display = elements.audioProcessingToggle.checked ? 'inline-flex' : 'none';
-    }
-}
-
 function openAudioSettingsPage() {
     chrome.tabs.create({ url: chrome.runtime.getURL('audio-options.html') });
 }
@@ -156,7 +151,7 @@ async function updateFeatureHints() {
             hint.className = 'feature-hint';
             hint.dataset.feature = feature.key;
             hint.title = getMessage(feature.i18nTooltip);
-            target.insertAdjacentElement('afterend', hint);
+            target.insertAdjacentElement(feature.position || 'afterend', hint);
         } else {
             existing.title = getMessage(feature.i18nTooltip);
         }
@@ -264,11 +259,6 @@ async function init() {
     if (elements.forceSyncMode) elements.forceSyncMode.value = syncData.forceSyncMode || 'jump-to-others';
     if (elements.browserNotifications) elements.browserNotifications.checked = syncData.browserNotifications === true;
     if (elements.autoCopyInvite) elements.autoCopyInvite.checked = syncData.autoCopyInvite !== false;
-    if (elements.audioProcessingToggle) {
-        const audioSettings = mergeAudioSettings(syncData.audioSettings);
-        elements.audioProcessingToggle.checked = audioSettings.enabled === true;
-        updateAudioSettingsLinkVisibility();
-    }
     
     // Set Version Info
     const versionTxt = `v${chrome.runtime.getManifest().version}`;
@@ -1066,20 +1056,6 @@ if (elements.autoCopyInvite) {
     });
 }
 
-if (elements.audioProcessingToggle) {
-    elements.audioProcessingToggle.addEventListener('change', async () => {
-        const data = await chrome.storage.sync.get(['audioSettings']);
-        const audioSettings = mergeAudioSettings(data.audioSettings);
-        audioSettings.enabled = elements.audioProcessingToggle.checked;
-        if (audioSettings.enabled && !audioSettings.compressor.enabled) {
-            audioSettings.compressor.enabled = true;
-        }
-        await chrome.storage.sync.set({ audioSettings });
-        updateAudioSettingsLinkVisibility();
-        if (audioSettings.enabled) openAudioSettingsPage();
-    });
-}
-
 if (elements.audioSettingsLink) {
     elements.audioSettingsLink.addEventListener('click', async (event) => {
         event.preventDefault();
@@ -1089,10 +1065,7 @@ if (elements.audioSettingsLink) {
 }
 
 chrome.storage.onChanged.addListener((changes, area) => {
-    if (area !== 'sync' || !changes.audioSettings || !elements.audioProcessingToggle) return;
-    const audioSettings = mergeAudioSettings(changes.audioSettings.newValue);
-    elements.audioProcessingToggle.checked = audioSettings.enabled === true;
-    updateAudioSettingsLinkVisibility();
+    if (area !== 'sync' || !changes.audioSettings) return;
 });
 
 elements.forceSyncMode.addEventListener('change', () => {
@@ -1114,7 +1087,6 @@ if (elements.langSelector) {
         await loadLocale(selectedLang);
         translateDOM();
         configureFooterLinks();
-        updateAudioSettingsLinkVisibility();
         await updateFeatureHints();
         
         // Re-apply connection and room UI state since translateDOM may overwrite dynamic elements

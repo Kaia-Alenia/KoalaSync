@@ -549,6 +549,13 @@
             </label>
         </div>
 
+        <div class="form-group" style="display: flex; align-items: center; justify-content: space-between; background: var(--card); padding: 10px 12px; border-radius: 8px; margin-bottom: 12px; border: 1px solid #334155;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <label id="audioProcessingLabel" style="margin-bottom: 0; cursor: help; white-space: nowrap; font-size: 13px;" data-i18n="LABEL_AUDIO_PROCESSING" data-i18n-title="LABEL_AUDIO_PROCESSING_TOOLTIP">Audio Processing</label>
+            </div>
+            <a id="audioSettingsLink" href="#" style="font-size: 11px; color: var(--accent); text-decoration: none; white-space: nowrap; background: rgba(99,102,241,0.12); padding: 5px 12px; border-radius: 6px; font-weight: 600; transition: background 0.2s;" data-i18n="AUDIO_OPEN_SETTINGS">Open</a>
+        </div>
+
         <div class="form-group" style="display: flex; align-items: center; justify-content: space-between; background: var(--card); padding: 10px; border-radius: 8px; margin-bottom: 12px; border: 1px solid #334155;">
             <label style="margin-bottom: 0;" data-i18n="LABEL_LANGUAGE" data-i18n-title="LABEL_LANGUAGE_TOOLTIP" title="Choose your preferred extension language">App Language</label>
             <select id="langSelector" style="width: 165px; background: var(--bg); border: 1px solid #334155; color: white; padding: 6px 10px; border-radius: 8px; font-size: 13px; cursor: pointer; outline: none; font-family: inherit;">
@@ -568,25 +575,16 @@
             </select>
         </div>
 
-        <div class="form-group" style="display: flex; align-items: center; justify-content: space-between; background: var(--card); padding: 10px; border-radius: 8px; margin-bottom: 12px; border: 1px solid #334155;">
-            <div style="display: flex; flex-direction: column; gap: 2px;">
-                <label style="margin-bottom: 0; cursor: help;" data-i18n="LABEL_AUDIO_PROCESSING" data-i18n-title="LABEL_AUDIO_PROCESSING_TOOLTIP">Audio Processing</label>
-                <a id="audioSettingsLink" href="#" style="font-size: 10px; color: var(--accent); text-decoration: none;" data-i18n="AUDIO_OPEN_SETTINGS">Open Audio Settings</a>
-            </div>
-            <label class="toggle-switch">
-                <input type="checkbox" id="audioProcessingToggle">
-                <span class="slider"></span>
-            </label>
-        </div>
-
         <div style="margin-top: 15px; padding: 8px; border-top: 1px solid var(--card);">
             <label title="Tools for fixing connection issues" data-i18n="LABEL_TROUBLESHOOTING" data-i18n-title="LABEL_TROUBLESHOOTING_TOOLTIP">Troubleshooting</label>
             <button id="regenId" class="secondary" style="width: 100%; font-size: 11px;" title="Regenerate your internal ID and reconnect" data-i18n="BTN_REGEN_ID" data-i18n-title="BTN_REGEN_ID_TOOLTIP">Regenerate Peer ID</button>
             <p style="font-size: 9px; color: var(--text-muted); margin-top: 5px; text-align: center;" data-i18n="REGEN_ID_DESC">Use this if you see "Duplicate Identity" errors.</p>
+            <p style="font-size: 9px; text-align: center; margin-top: 6px;"><a href="https://github.com/Shik3i/KoalaSync/issues" target="_blank" style="color: var(--accent); text-decoration: none;" data-i18n="REGEN_ID_OTHER_ISSUE">Other issue? Open a GitHub Issue</a></p>
         </div>
 
         <div class="popup-footer">
-            <a id="settingsSupportLink" href="#" target="_blank" data-i18n="FOOTER_SUPPORT">♥ Support</a>
+            <div style="font-size: 9px; color: var(--text-muted); opacity: 0.6; margin-bottom: 6px; line-height: 1.3;" data-i18n="FOOTER_SUPPORT_PROMPT">Enjoying KoalaSync? Leave a review!</div>
+            <a id="settingsSupportLink" href="#" target="_blank" data-i18n="FOOTER_SUPPORT">☕ Buy me a coffee</a>
             <span> · </span>
             <a id="settingsReviewLink" href="#" target="_blank" data-i18n="FOOTER_REVIEW">★ Rate us</a>
             <span> · </span>
@@ -625,7 +623,8 @@
         <div class="popup-footer">
             <a href="https://github.com/Shik3i/KoalaSync" target="_blank" style="color: var(--text-muted); text-decoration: none; font-size: 10px; opacity: 0.6; display: block;" data-i18n="LABEL_GITHUB">GitHub Repository</a>
             <div style="margin-top: 4px;">
-                <a id="devSupportLink" href="#" target="_blank" data-i18n="FOOTER_SUPPORT">♥ Support</a>
+                <div style="font-size: 9px; color: var(--text-muted); opacity: 0.6; margin-bottom: 6px; line-height: 1.3;" data-i18n="FOOTER_SUPPORT_PROMPT">Enjoying KoalaSync? Leave a review!</div>
+                <a id="devSupportLink" href="#" target="_blank" data-i18n="FOOTER_SUPPORT">☕ Buy me a coffee</a>
                 <span> · </span>
                 <a id="devReviewLink" href="#" target="_blank" data-i18n="FOOTER_REVIEW">★ Rate us</a>
                 <span> · </span>
