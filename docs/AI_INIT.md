@@ -100,6 +100,15 @@ The following features are critical and must not be removed or fundamentally alt
 
 ## 10. Common Workflows
 
+## CRITICAL: Git & Release Rules
+
+- **NEVER** push, commit, tag, or release without explicit user instruction.
+- **NEVER** retag or force-push without explicit instruction.
+- **NEVER** create tags for documentation-only or README changes.
+- **NEVER** run `git push`, `git tag`, `git commit` unless the user says "push", "commit", or "tag".
+- Only the user decides when to commit, push, tag, or release.
+- Ask before any git write operation.
+
 ### ⚠️ Pre-Session Git Sync (MANDATORY)
 Before starting any task, committing, or pushing, you **MUST** run `git pull --rebase` to ensure your local branch is up-to-date with `origin/main`. CI pipelines and other agents may push commits concurrently. Skipping this step will cause merge conflicts and rejected pushes.
 
