@@ -172,31 +172,24 @@ function setRoomRefreshCooldown() {
 
 // --- Initialization ---
 async function init() {
-    // Load per-device settings (local) + synced preferences (sync)
-    const [localData, syncData] = await Promise.all([
-        chrome.storage.local.get(['serverUrl', 'useCustomServer', 'roomId', 'password', 'username']),
-        chrome.storage.sync.get(['filterNoise', 'autoSyncNextEpisode', 'forceSyncMode', 'browserNotifications', 'autoCopyInvite', 'locale', 'audioSettings', 'dismissedHints'])
-    ]);
-
-    // Migrate from sync → local for existing users
-    const hadLocalData = !!(localData.username || localData.roomId);
-    let syncHadData = false;
-    if (!hadLocalData) {
-        const oldSync = await chrome.storage.sync.get(['serverUrl', 'useCustomServer', 'roomId', 'password', 'username']);
-        syncHadData = !!(oldSync.username || oldSync.roomId);
-        if (syncHadData) {
-            localData.serverUrl = oldSync.serverUrl;
-            localData.useCustomServer = oldSync.useCustomServer;
-            localData.roomId = oldSync.roomId;
-            localData.password = oldSync.password;
-            localData.username = oldSync.username;
+    const localData = await chrome.storage.local.get(['serverUrl', 'useCustomServer', 'roomId', 'password', 'username', 'filterNoise', 'autoSyncNextEpisode', 'forceSyncMode', 'browserNotifications', 'autoCopyInvite', 'locale', 'audioSettings']);
+    // Migrate preferences from sync → local for existing users
+    const oldSync = await chrome.storage.sync.get(['serverUrl', 'useCustomServer', 'roomId', 'password', 'username', 'filterNoise', 'autoSyncNextEpisode', 'forceSyncMode', 'browserNotifications', 'autoCopyInvite', 'locale', 'audioSettings']);
+    const toMigrate = {};
+    for (const key of ['serverUrl', 'useCustomServer', 'roomId', 'password', 'username', 'filterNoise', 'autoSyncNextEpisode', 'forceSyncMode', 'browserNotifications', 'autoCopyInvite', 'locale', 'audioSettings']) {
+        if (localData[key] === undefined && oldSync[key] !== undefined) {
+            toMigrate[key] = oldSync[key];
+            localData[key] = oldSync[key];
         }
     }
+    if (Object.keys(toMigrate).length) {
+        await chrome.storage.local.set(toMigrate);
+    }
 
-    let activeLang = syncData.locale;
+    let activeLang = localData.locale;
     if (!activeLang) {
         activeLang = getSystemLanguage();
-        chrome.storage.sync.set({ locale: activeLang });
+        chrome.storage.local.set({ locale: activeLang });
     }
 
     await loadLocale(activeLang);
@@ -209,26 +202,16 @@ async function init() {
         username = generateUsername();
         await chrome.storage.local.set({ username });
     }
-    if (syncHadData) {
-        // Persist migrated room data to local (one-time migration)
-        await chrome.storage.local.set({
-            serverUrl: localData.serverUrl || '',
-            useCustomServer: localData.useCustomServer || false,
-            roomId: localData.roomId || '',
-            password: localData.password || '',
-            username
-        });
-    }
     
     elements.serverUrl.value = localData.serverUrl || '';
     elements.roomId.value = localData.roomId || '';
     elements.password.value = localData.password || '';
     elements.username.value = username;
-    if (elements.filterNoise) elements.filterNoise.checked = syncData.filterNoise !== false;
-    if (elements.autoSyncNextEpisode) elements.autoSyncNextEpisode.checked = syncData.autoSyncNextEpisode !== false;
-    if (elements.forceSyncMode) elements.forceSyncMode.value = syncData.forceSyncMode || 'jump-to-others';
-    if (elements.browserNotifications) elements.browserNotifications.checked = syncData.browserNotifications === true;
-    if (elements.autoCopyInvite) elements.autoCopyInvite.checked = syncData.autoCopyInvite !== false;
+    if (elements.filterNoise) elements.filterNoise.checked = localData.filterNoise !== false;
+    if (elements.autoSyncNextEpisode) elements.autoSyncNextEpisode.checked = localData.autoSyncNextEpisode !== false;
+    if (elements.forceSyncMode) elements.forceSyncMode.value = localData.forceSyncMode || 'jump-to-others';
+    if (elements.browserNotifications) elements.browserNotifications.checked = localData.browserNotifications === true;
+    if (elements.autoCopyInvite) elements.autoCopyInvite.checked = localData.autoCopyInvite !== false;
     
     // Set Version Info
     const versionTxt = `v${chrome.runtime.getManifest().version}`;
@@ -668,7 +651,7 @@ async function populateTabs(providedPeers = null, providedTargetTabId = null) {
     const token = {};
     populateTabsToken = token;
 
-    const data = await chrome.storage.sync.get(['filterNoise']);
+    const data = await chrome.storage.local.get(['filterNoise']);
     const isFilterActive = data.filterNoise !== false;
     
     let currentTargetTabId = providedTargetTabId;
@@ -1007,22 +990,22 @@ elements.serverOfficial.addEventListener('click', () => setServerMode(false));
 elements.serverCustom.addEventListener('click', () => setServerMode(true));
 
 elements.filterNoise.addEventListener('change', () => {
-    chrome.storage.sync.set({ filterNoise: elements.filterNoise.checked }, () => {
+    chrome.storage.local.set({ filterNoise: elements.filterNoise.checked }, () => {
         populateTabs();
     });
 });
 
 elements.autoSyncNextEpisode.addEventListener('change', () => {
-    chrome.storage.sync.set({ autoSyncNextEpisode: elements.autoSyncNextEpisode.checked });
+    chrome.storage.local.set({ autoSyncNextEpisode: elements.autoSyncNextEpisode.checked });
 });
 
 elements.browserNotifications.addEventListener('change', () => {
-    chrome.storage.sync.set({ browserNotifications: elements.browserNotifications.checked });
+    chrome.storage.local.set({ browserNotifications: elements.browserNotifications.checked });
 });
 
 if (elements.autoCopyInvite) {
     elements.autoCopyInvite.addEventListener('change', () => {
-        chrome.storage.sync.set({ autoCopyInvite: elements.autoCopyInvite.checked });
+        chrome.storage.local.set({ autoCopyInvite: elements.autoCopyInvite.checked });
     });
 }
 
@@ -1039,7 +1022,7 @@ chrome.storage.onChanged.addListener((changes, area) => {
 });
 
 elements.forceSyncMode.addEventListener('change', () => {
-    chrome.storage.sync.set({ forceSyncMode: elements.forceSyncMode.value });
+    chrome.storage.local.set({ forceSyncMode: elements.forceSyncMode.value });
 });
 
 elements.serverUrl.addEventListener('input', () => {
@@ -1053,7 +1036,7 @@ elements.username.addEventListener('change', () => {
 if (elements.langSelector) {
     elements.langSelector.addEventListener('change', async () => {
         const selectedLang = elements.langSelector.value;
-        await chrome.storage.sync.set({ locale: selectedLang });
+        await chrome.storage.local.set({ locale: selectedLang });
         await loadLocale(selectedLang);
         translateDOM();
         configureFooterLinks();

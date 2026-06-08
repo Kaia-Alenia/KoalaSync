@@ -50,6 +50,10 @@ const sandbox = {
                 get: async () => ({}),
                 set: () => {},
             },
+            local: {
+                get: async () => ({}),
+                set: () => {},
+            },
             onChanged: {
                 addListener: () => {}
             }

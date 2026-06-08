@@ -61,7 +61,7 @@ function mergeAudioSettings(settings = {}) {
 function debounceSave() {
     if (saveTimer) clearTimeout(saveTimer);
     saveTimer = setTimeout(() => {
-        chrome.storage.sync.set({ audioSettings: currentSettings });
+        chrome.storage.local.set({ audioSettings: currentSettings });
     }, 40);
 }
 
@@ -126,12 +126,17 @@ function setCustomParam(param, value) {
 }
 
 async function init() {
+    let audioData = (await chrome.storage.local.get(['audioSettings'])).audioSettings;
     const syncData = await chrome.storage.sync.get(['audioSettings', 'locale']);
+    if (!audioData && syncData.audioSettings) {
+        audioData = syncData.audioSettings;
+        await chrome.storage.local.set({ audioSettings: audioData });
+    }
     const lang = syncData.locale || getSystemLanguage();
     await loadLocale(lang);
     translateDOM();
 
-    currentSettings = mergeAudioSettings(syncData.audioSettings);
+    currentSettings = mergeAudioSettings(audioData);
     render();
 }
 
@@ -174,7 +179,7 @@ elements.controlRows.forEach(row => {
 });
 
 chrome.storage.onChanged.addListener((changes, area) => {
-    if (area !== 'sync' || !changes.audioSettings) return;
+    if (area !== 'local' || !changes.audioSettings) return;
     currentSettings = mergeAudioSettings(changes.audioSettings.newValue);
     render();
 });

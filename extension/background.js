@@ -591,7 +591,7 @@ function updateBadgeStatus() {
 }
 
 function showNotification(senderName, action) {
-    chrome.storage.sync.get(['browserNotifications', 'locale'], async (settings) => {
+    chrome.storage.local.get(['browserNotifications', 'locale'], async (settings) => {
         if (!settings.browserNotifications) return;
 
         const lang = settings.locale || getSystemLanguage();
@@ -764,7 +764,7 @@ function handleServerEvent(event, data) {
             isConnecting = false;
             broadcastConnectionStatus('disconnected');
             addLog(`Server Error: ${data.message}`, 'error');
-            chrome.storage.sync.get(['locale'], async (settings) => {
+            chrome.storage.local.get(['locale'], async (settings) => {
                 const lang = settings.locale || getSystemLanguage();
                 await loadLocale(lang);
                 chrome.notifications.create(`error_${Date.now()}`, {
@@ -1096,7 +1096,7 @@ function cancelEpisodeLobby(reason) {
     };
 
     // Chrome notification on failure (per Q2: only notify on failure)
-    chrome.storage.sync.get(['browserNotifications', 'locale'], async (settings) => {
+    chrome.storage.local.get(['browserNotifications', 'locale'], async (settings) => {
         if (!settings.browserNotifications) return;
 
         const lang = settings.locale || getSystemLanguage();
@@ -1299,7 +1299,14 @@ function resetAudioProcessingInTab(tabId) {
 
 async function applyAudioSettingsToTab(tabId) {
     if (!tabId) return;
-    const data = await chrome.storage.sync.get(['audioSettings']);
+    let data = (await chrome.storage.local.get(['audioSettings']));
+    if (!data.audioSettings) {
+        const syncData = await chrome.storage.sync.get(['audioSettings']);
+        if (syncData.audioSettings) {
+            data = syncData;
+            await chrome.storage.local.set({ audioSettings: syncData.audioSettings });
+        }
+    }
     chrome.tabs.sendMessage(tabId, {
         action: 'APPLY_AUDIO_SETTINGS',
         settings: data.audioSettings
@@ -1661,7 +1668,7 @@ async function handleAsyncMessage(message, sender, sendResponse) {
         }
 
         // Check setting
-        const epSettings = await chrome.storage.sync.get(['autoSyncNextEpisode']);
+        const epSettings = await chrome.storage.local.get(['autoSyncNextEpisode']);
         if (epSettings.autoSyncNextEpisode === false) {
             addLog(`Episode change detected ("${newTitle}") but Auto-Sync is disabled.`, 'info');
             sendResponse({ status: 'disabled' });
