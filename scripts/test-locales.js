@@ -55,7 +55,26 @@ console.log(`Auditing i18n locales using ${enKeys.length} baseline keys from en.
 for (const file of localeFiles) {
   const filePath = path.join(localesDir, file);
   try {
-    const dict = JSON.parse(fs.readFileSync(filePath, 'utf8'));
+    const raw = fs.readFileSync(filePath, 'utf8');
+
+    // Check for duplicate keys in raw JSON before parsing
+    const keyRe = /"(\w+)"\s*:/g;
+    const seenKeys = {};
+    let dupes = [];
+    let m;
+    while ((m = keyRe.exec(raw)) !== null) {
+      if (seenKeys[m[1]]) {
+        dupes.push(m[1]);
+      }
+      seenKeys[m[1]] = true;
+    }
+    if (dupes.length > 0) {
+      hasError = true;
+      console.error(`❌ ${file} has duplicate keys: ${[...new Set(dupes)].join(', ')}`);
+      continue;
+    }
+
+    const dict = JSON.parse(raw);
     const keys = Object.keys(dict);
 
     const missingKeys = enKeys.filter(k => !keys.includes(k));
