@@ -20,6 +20,7 @@ const checks = [
   ['popup syntax', 'node', ['-c', 'extension/popup.js']],
   ['background syntax', 'node', ['-c', 'extension/background.js']],
   ['locale coverage', 'node', ['scripts/test-locales.js']],
+  ['website locale coverage', 'node', ['scripts/test-website-locales.mjs']],
   ['lint', 'npm', ['run', 'lint']],
   ['root production audit', 'npm', ['audit', '--omit=dev']],
   ['server production audit', 'npm', ['audit', '--omit=dev'], { cwd: path.join(repoRoot, 'server') }],
