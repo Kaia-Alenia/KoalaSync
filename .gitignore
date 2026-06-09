@@ -40,5 +40,8 @@ coverage/
 # the root 'shared/' remains the Single Source of Truth.
 extension/shared/
 
+# Auto-generated website build output
+website/www/
+
 # Temporary scratch files
 scratch/
