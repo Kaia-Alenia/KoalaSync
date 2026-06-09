@@ -689,7 +689,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (!isInstalled) {
                         btn.classList.add('install-breathe');
                         btn.style.cursor = 'pointer';
-                        btn.onclick = () => window.open('https://addons.mozilla.org/de/firefox/addon/koalasync/', '_blank');
+                        btn.onclick = () => window.open('https://addons.mozilla.org/de/firefox/addon/koalasync/', '_blank', 'noopener');
                     }
                 });
                 illusChrome.forEach(btn => {
@@ -702,7 +702,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (!isInstalled) {
                         btn.classList.add('install-breathe');
                         btn.style.cursor = 'pointer';
-                        btn.onclick = () => window.open('https://chromewebstore.google.com/detail/koalasync/obbnmkmlaaddodakcbdljknjpagklifc', '_blank');
+                        btn.onclick = () => window.open('https://chromewebstore.google.com/detail/koalasync/obbnmkmlaaddodakcbdljknjpagklifc', '_blank', 'noopener');
                     }
                 });
                 illusFirefox.forEach(btn => {
