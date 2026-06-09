@@ -1,37 +1,57 @@
-KoalaSync: The Privacy-First Watch Party Extension
+KoalaSync: Private Watch Parties for Emby, Jellyfin, Plex, Netflix & YouTube
 
-Private watch parties for Emby, Jellyfin, Plex, Netflix, YouTube & more. No account needed. Real-time sync. Supports 13 languages. 100% free.
+Tired of counting down "3, 2, 1, Play" over voice chat? KoalaSync keeps you and your friends perfectly in sync. Whether you are streaming from your own self-hosted media server like Emby, Jellyfin or Plex, or watching on a major platform like Netflix, Prime Video or YouTube — KoalaSync is designed for smooth, browser-based watch parties.
 
-Whether you're binge-watching Netflix, streaming from your own self-hosted Emby, Jellyfin, or Plex servers, or watching on virtually any other website with a video player — KoalaSync keeps everyone perfectly in sync.
-Lightweight, open-source, and built for absolute data sovereignty with a clean, minimalist UI.
 
-✨ CORE FEATURES 
+✨ CORE FEATURES
+No account required. No tracking. Just create a room, invite your friends, and start watching together.
 
- • No Account Needed: Just create a room and share the link. No emails, no passwords, no hassle. A random nickname is assigned automatically, or pick your own.
- • Universal HTML5 Sync: Flawlessly synchronizes play, pause, and seeking on Netflix, Jellyfin, Emby, YouTube, and almost any website hosting a standard HTML5 <video> tag.
- • Smart Binge-Watching (Auto-Sync): When a new episode loads, KoalaSync automatically pauses playback in a smart lobby until everyone's video is ready. No spoilers, no one left behind.
- • Fully Localized: Enjoy a native experience with a user interface fully translated into 13 different languages.
- • One-Click Invitations: Generate a smart invite link. Once clicked, the extension instantly configures room credentials and server settings for your guests.
- • Zero-Latency Protocol: Powered by a custom WebSocket architecture designed for real-time coordination without buffering loops.
+• Real-Time Video Sync: Play, pause, seek, and watch together with fast synchronized playback across everyone in your room.
+• No Account Needed: Create a room and share the invite link. No emails, no passwords, no sign-ups. Pick a nickname or let KoalaSync generate one for you.
+• Works Almost Everywhere: If the website uses a standard HTML5 video player, KoalaSync can usually sync it. Perfect for streaming sites, self-hosted media servers, and other websites.
+• Smart Binge-Watching: When a new episode loads, KoalaSync automatically pauses the lobby until everyone is ready. No spoilers, no one left behind.
+• Smart Audio Compressor: Tired of quiet dialogue and suddenly loud action scenes? Balance whispering, explosions, and music with a single click while you watch.
+• One-Click Invites: Send a smart invite link to your friends. When they open it, KoalaSync automatically configures the room so they can join instantly.
+• 13 Languages: Enjoy a native experience with a fully translated user interface.
 
-🛡️ UNCOMPROMISING PRIVACY & SECURITY 
 
- No data collection. No compromises.
- • 100% Anonymous: Zero tracking, zero analytics, zero telemetry.
- • Ready Out-Of-The-Box: No technical knowledge needed. Install and start watching immediately using the official public server.
- • RAM-Only Public Server: The official relay server operates entirely in volatile RAM. No databases, no logs, no watch history — nothing persists. It also features built-in rate-limiting and brute-force protection to prevent room-id spamming.
- • Self-Hostable: Take total control by deploying a private relay server in seconds via Docker. Optional, never required.
 
-🚀 HOW IT WORKS 
+🛡️ PRIVACY & SECURITY
+KoalaSync is built for private watch parties without unnecessary data collection.
 
- 1. Install KoalaSync and click "Create Room" to spin up a secure lobby.
- 2. Copy the invite link and send it to your friends.
- 3. Open your favorite streaming site and set the video tab as the active target.
- 4. Press play — everyone stays perfectly in sync.
+• No Tracking: Zero analytics, zero telemetry, and absolutely no behavior profiling.
+• Anonymous by Design: No accounts needed. Rooms can be joined with a simple nickname.
+• Ready Out of the Box: Install KoalaSync and start watching immediately using the official public relay server. No technical setup required.
+• RAM-Only Public Server: The official relay server operates entirely in volatile RAM. No databases, no stored watch history, no persistent room data. Room data exists only temporarily and disappears when the room closes.
+• Self-Hostable: Want full control? You can run your own private KoalaSync relay server via Docker in seconds. Self-hosting is optional and never required.
 
-💻 OPEN SOURCE 
 
- KoalaSync was built by a solo developer who needed a fast, secure way to watch movies with friends — and builds tools worth using. The code is fully transparent under the MIT license: audit it, fork it, improve it. Found a bug or have a feature idea? Open an issue on GitHub. Contributions and code reviews are always welcome.
 
- • Website: https://sync.koalastuff.net
- • GitHub: https://github.com/Shik3i/KoalaSync
+🚀 HOW IT WORKS
+1. Install KoalaSync.
+2. Click "Create Room" to start a private watch party.
+3. Share the invite link with your friends.
+4. Open your favorite streaming site or media server.
+5. Select the active video tab.
+6. Press play — everyone stays perfectly in sync.
+
+
+
+⚙️ UNDER THE HOOD
+KoalaSync is lightweight, transparent, and built with privacy in mind.
+
+• Real-Time Relay: Playback state is synchronized through a custom WebSocket-based relay server for fast room updates.
+• No Media Streaming: KoalaSync does not stream, proxy, upload, download, or redistribute any video content. Everyone watches from their own browser on the original website.
+• Temporary Room State Only: The relay server only coordinates room state such as play, pause, seek position, active target, nickname, and readiness status.
+• Docker Self-Hosting: The relay server can be self-hosted with Docker if you prefer to run your own private instance.
+• Open Architecture: The project is designed to be inspectable, forkable, and easy to review.
+
+
+
+💻 OPEN SOURCE
+KoalaSync was built by a solo developer who needed a fast, secure way to watch movies with friends. The code is fully transparent under the MIT license: audit it, fork it, improve it, or self-host your own relay server.
+
+Found a bug or have a feature idea? Open an issue on GitHub. Contributions and code reviews are always welcome.
+
+• Website: https://sync.koalastuff.net
+• GitHub: https://github.com/Shik3i/KoalaSync
