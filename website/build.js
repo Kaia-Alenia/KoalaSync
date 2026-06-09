@@ -241,6 +241,14 @@ async function compile() {
         console.log('  Assets copied.');
     }
 
+    // Copy apple-touch-icon to www root (browsers/iOS request these at /)
+    const appleTouchSrc = path.join(destAssets, 'apple-touch-icon.png');
+    if (fs.existsSync(appleTouchSrc)) {
+        fs.copyFileSync(appleTouchSrc, path.join(wwwDir, 'apple-touch-icon.png'));
+        fs.copyFileSync(appleTouchSrc, path.join(wwwDir, 'apple-touch-icon-precomposed.png'));
+        console.log('  ✓ Apple touch icons copied to www root.');
+    }
+
     // ── 7. Convert all WebP to AVIF (quality 70) ──
     console.log('Converting WebP → AVIF...');
     let avifCount = 0;
