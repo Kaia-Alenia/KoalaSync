@@ -6,11 +6,11 @@ This document tracks which streaming platforms and media servers have been teste
 |---------|:----------:|:-----------:|:-----------------:|-------|
 | **YouTube** | ✅ Full | ✅ Full | ❌ | Individual videos, not episodes — no episode auto-sync. |
 | **Twitch** | ✅ Full | ✅ Full | ❌ | Individual streams/VODs, not episodes — no episode auto-sync. |
-| **Netflix** | ✅ Full | ⚠️ Hidden | ❌ | No media title exposed, no episode auto-sync. |
+| **Netflix** | ✅ Full | ❌ | ❌ | No media title exposed. |
 | **Emby** | ✅ Full | ✅ Full | ✅ Full | Best-in-class support. |
 | **Jellyfin** | ✅ Full | ✅ Full | ✅ Full | — |
 | **Plex** | Not tested | Not tested | Not tested | — |
-| **Disney+** | ✅ Full | ✅ Full | ❌ | Series title only (e.g. "The Simpsons"), no episode info. |
+| **Disney+** | ✅ Full | ⚠️ Partial | ❌ | Series title only (e.g. "The Simpsons"), no episode info. |
 | **Prime Video** | ✅ Full  | ✅ Full  | ❌ | — |
 | **HBO Max / Max** | Not tested | Not tested | Not tested | — |
 | **Crunchyroll** | Not tested | Not tested | Not tested | — |
