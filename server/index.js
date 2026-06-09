@@ -797,7 +797,7 @@ export function startServer(port = PORT, host) {
 function gracefulShutdown(signal) {
     log('SERVER', `${signal} received — starting graceful shutdown...`);
     // 1. Notify all connected clients so they can display a meaningful message
-    io.emit(EVENTS.ERROR, { message: 'Server is restarting. Please reconnect in a moment.' });
+    io.emit(EVENTS.ERROR, { message: 'Server is restarting. Reconnecting automatically...' });
     // 2. Stop accepting new HTTP connections
     httpServer.close(() => {
         log('SERVER', 'HTTP server closed. Exiting.');

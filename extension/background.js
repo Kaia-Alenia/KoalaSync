@@ -809,7 +809,8 @@ function handleServerEvent(event, data) {
             isConnecting = false;
             broadcastConnectionStatus('disconnected');
             addLog(`Server Error: ${data.message}`, 'error');
-            chrome.storage.local.get(['locale'], async (settings) => {
+            chrome.storage.local.get(['browserNotifications', 'locale'], async (settings) => {
+                if (!settings.browserNotifications) return;
                 const lang = settings.locale || getSystemLanguage();
                 await loadLocale(lang);
                 chrome.notifications.create(`error_${Date.now()}`, {

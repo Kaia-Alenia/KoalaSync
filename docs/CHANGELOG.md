@@ -4,6 +4,14 @@ All notable changes to the KoalaSync browser extension and relay server.
 
 ---
 
+## [v2.2.4] — 2026-06-10
+
+### Fixed
+- **Extension: Error notifications now respect `browserNotifications` setting**: Server error events (e.g. "Server is restarting") no longer trigger a browser notification when the user has disabled notifications in the extension settings.
+- **Server: Misleading reconnect message corrected**: The graceful shutdown message no longer tells users to manually reconnect — the extension handles this automatically.
+
+---
+
 ## [v2.2.3] — 2026-06-10
 
 ### Added
