@@ -1,0 +1,8 @@
+{
+  "appName": {
+    "message": "KoalaSync"
+  },
+  "appDesc": {
+    "message": "Sincroniza la reproducción de video en YouTube, Netflix, Emby, Jellyfin y cualquier sitio HTML5 en tiempo real con amigos."
+  }
+}

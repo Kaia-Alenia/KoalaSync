@@ -4,6 +4,17 @@ All notable changes to the KoalaSync browser extension and relay server.
 
 ---
 
+## [v2.2.2] — 2026-06-09
+
+### Added
+- **Chrome Web Store i18n Support**: Added `default_locale: "en"` to manifest and created `_locales/*/messages.json` for all 13 supported languages. This unlocks the language selection dropdown in the Chrome Web Store dashboard, allowing translated store listings (title, description) per locale. The extension's own UI translations (`locales/*.json` + `i18n.js`) remain unchanged.
+- **Locale test coverage**: Extended `scripts/test-locales.js` to validate all `_locales/*/messages.json` files (correct format, required keys, no duplicates) and verify `default_locale` is set in the manifest.
+
+### Fixed
+- **Copy Logs button alignment**: Removed stray `margin-top: 8px` inherited from `.secondary` class that pushed the button 8px down in the connection status row.
+
+---
+
 ## [v2.2.1] — 2026-06-09
 
 ### Added

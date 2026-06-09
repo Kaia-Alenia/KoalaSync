@@ -98,11 +98,128 @@ for (const file of localeFiles) {
   }
 }
 
+// ──────────────────────────────────────
+// Verify Chrome _locales/*/messages.json
+// ──────────────────────────────────────
+console.log('\nVerifying Chrome _locales/messages.json structure...\n');
+
+const chromeLocalesDir = path.join(__dirname, '..', 'extension', '_locales');
+
+// Map custom locale codes to Chrome's underscore format
+const chromeLocaleMap = {
+  'en': 'en', 'de': 'de', 'fr': 'fr', 'es': 'es', 'it': 'it',
+  'ja': 'ja', 'ko': 'ko', 'nl': 'nl', 'pl': 'pl',
+  'pt-BR': 'pt_BR', 'pt': 'pt_PT', 'ru': 'ru', 'tr': 'tr'
+};
+
+// Read SUPPORTED_LANGUAGES from i18n.js
+const i18nContent = fs.readFileSync(i18nPath, 'utf8');
+const langMatch = i18nContent.match(/export const SUPPORTED_LANGUAGES = \[(.*?)\];/);
+const supportedLangs = langMatch
+  ? langMatch[1].split(',').map(s => s.trim().replace(/['"]/g, ''))
+  : [];
+
+// Verify default_locale in manifest.base.json
+const manifestPath = path.join(__dirname, '..', 'extension', 'manifest.base.json');
+try {
+  const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
+  if (!manifest.default_locale) {
+    hasError = true;
+    console.error('❌ manifest.base.json is missing "default_locale"');
+  } else if (manifest.default_locale !== 'en') {
+    hasError = true;
+    console.error(`❌ manifest.base.json default_locale is "${manifest.default_locale}", expected "en"`);
+  } else {
+    console.log('✓ manifest.base.json has default_locale: "en"');
+  }
+} catch (err) {
+  hasError = true;
+  console.error('❌ Failed to read manifest.base.json:', err.message);
+}
+
+// Verify _locales structure for each supported language
+const expectedKeys = ['appName', 'appDesc'];
+for (const lang of supportedLangs) {
+  const chromeLocale = chromeLocaleMap[lang];
+  if (!chromeLocale) {
+    hasError = true;
+    console.error(`❌ No Chrome locale mapping for "${lang}" in chromeLocaleMap`);
+    continue;
+  }
+
+  const msgPath = path.join(chromeLocalesDir, chromeLocale, 'messages.json');
+
+  if (!fs.existsSync(msgPath)) {
+    hasError = true;
+    console.error(`❌ Missing _locales/${chromeLocale}/messages.json for language "${lang}"`);
+    continue;
+  }
+
+  try {
+    const raw = fs.readFileSync(msgPath, 'utf8');
+    const messages = JSON.parse(raw);
+    const keys = Object.keys(messages);
+
+    // Detect duplicate top-level keys via regex (JSON.parse silently keeps last value)
+    const topKeyRe = /^\s{2}"(\w+)"\s*:/gm;
+    const topSeen = {};
+    let topDupes = [];
+    let tm;
+    while ((tm = topKeyRe.exec(raw)) !== null) {
+      if (topSeen[tm[1]]) topDupes.push(tm[1]);
+      topSeen[tm[1]] = true;
+    }
+    if (topDupes.length > 0) {
+      hasError = true;
+      console.error(`❌ _locales/${chromeLocale}/messages.json has duplicate keys: ${[...new Set(topDupes)].join(', ')}`);
+      continue;
+    }
+
+    // Validate each entry has a "message" field
+    for (const key of keys) {
+      if (!messages[key].message || typeof messages[key].message !== 'string') {
+        hasError = true;
+        console.error(`❌ _locales/${chromeLocale}/messages.json: "${key}" is missing a valid "message" field`);
+      }
+    }
+
+    // Check for missing or extra keys vs expected baseline
+    const missing = expectedKeys.filter(k => !keys.includes(k));
+    const extra = keys.filter(k => !expectedKeys.includes(k));
+    if (missing.length > 0) {
+      hasError = true;
+      console.error(`❌ _locales/${chromeLocale}/messages.json missing keys: ${missing.join(', ')}`);
+    }
+    if (extra.length > 0) {
+      console.log(`ℹ️  _locales/${chromeLocale}/messages.json has extra keys (ok): ${extra.join(', ')}`);
+    }
+    if (missing.length === 0) {
+      console.log(`✓ _locales/${chromeLocale}/messages.json is valid and complete`);
+    }
+  } catch (err) {
+    hasError = true;
+    console.error(`❌ Failed to parse _locales/${chromeLocale}/messages.json:`, err.message);
+  }
+}
+
+// Detect orphan _locales directories (no matching supported language)
+if (fs.existsSync(chromeLocalesDir)) {
+  const chromeCodes = supportedLangs.map(l => chromeLocaleMap[l]).filter(Boolean);
+  const dirs = fs.readdirSync(chromeLocalesDir);
+  for (const dir of dirs) {
+    const dirPath = path.join(chromeLocalesDir, dir);
+    if (fs.statSync(dirPath).isDirectory() && dir !== '.git' && !chromeCodes.includes(dir)) {
+      hasError = true;
+      console.error(`❌ Orphan _locales/${dir}/ directory exists but no matching language in SUPPORTED_LANGUAGES`);
+    }
+  }
+}
+
 console.log('');
 if (hasError) {
   console.error('❌ Locale consistency check failed! Please fix the errors listed above.');
   process.exit(1);
 } else {
-  console.log('🎉 All locale files are perfectly synchronized and consistent!');
+  console.log('🎉 All locale files (locales/ and _locales/) are valid and consistent!');
   process.exit(0);
 }
