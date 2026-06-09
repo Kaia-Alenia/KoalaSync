@@ -15,7 +15,7 @@ All notable changes to the KoalaSync browser extension and relay server.
 ## [v2.2.0] — 2026-06-08
 
 ### Added
-- **Web Audio API Compressor**: Built-in audio dynamic range compression with four presets (Recommended, Dynamic Range, Vocal Enhancement, Smooth) and fully customizable sliders (threshold, ratio, knee, attack, release, makeup gain). Uses dry/wet crossfade (40ms linear ramp) to avoid clicks. Configured via the new Audio Options page accessible from the Settings tab.
+- **Web Audio API Compressor**: Built-in audio dynamic range compression with four presets (Recommended, Dynamic Range, Vocal Enhancement, Smooth) and fully customizable sliders (threshold, ratio, knee, attack, release). Uses dry/wet crossfade (40ms linear ramp) to avoid clicks. Configured via the new Audio Options page accessible from the Settings tab.
 - **Audio Options Page** (`audio-options.html`): Dedicated settings page with master toggle, compressor preset selector, real-time custom sliders, and equalizer placeholder. Dark theme matching the popup design.
 - **Feature Hint System**: Generic `dismissedHints` array in sync storage for announcing new features. First hint highlights the Audio Options entry in Settings. Extensible for future features.
 
