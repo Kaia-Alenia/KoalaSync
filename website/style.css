@@ -233,6 +233,7 @@ nav {
     font-weight: 800;
     line-height: 1.1;
     margin-bottom: 1.5rem;
+    padding-bottom: 0.08em;
     background: linear-gradient(to bottom, #fff 40%, #6366f1);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
