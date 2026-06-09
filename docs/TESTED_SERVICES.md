@@ -4,19 +4,19 @@ This document tracks which streaming platforms and media servers have been teste
 
 | Service | Sync Works | Media Title | Episode Auto-Sync | Notes |
 |---------|:----------:|:-----------:|:-----------------:|-------|
-| **YouTube** | ✅ Full | ✅ Full | ❌ | Best-in-class support. Native player API, reliable title detection. |
-| **Twitch** | ✅ Full | ✅ Full | ❌ | Live-only platform. Tested on regular streams. |
-| **Netflix** | ✅ Full | ⚠️ Hidden | ❌ | Sync works perfectly, but DRM prevents media title detection. Episode transitions may require manual lobby. |
-| **Emby** | ✅ Full | ✅ Full | ✅ Full | Self-hosted. Full HTML5 player access. |
-| **Jellyfin** | ✅ Full | ✅ Full | ✅ Full | Self-hosted. Full HTML5 player access. |
-| **Plex** | Not tested | Not tested | Not tested | Community reports indicate compatibility via HTML5 player mode. |
-| **Disney+** | ✅ Full | ✅ Full | ❌ | Widevine DRM may restrict title detection similar to Netflix. |
-| **Prime Video** | ✅ Full  | ✅ Full  | ❌ | Video elements detected (2 on page, picks larger one). Playback state + time readable. However, the preview/trailer video may be selected instead of the main content. Play/Pause commands may not reach the correct player. Title detection from MediaSession API may work for some content. |
+| **YouTube** | ✅ Full | ✅ Full | ❌ | Individual videos, not episodes — no episode auto-sync. |
+| **Twitch** | ✅ Full | ✅ Full | ❌ | Individual streams/VODs, not episodes — no episode auto-sync. |
+| **Netflix** | ✅ Full | ⚠️ Hidden | ❌ | No media title exposed, no episode auto-sync. |
+| **Emby** | ✅ Full | ✅ Full | ✅ Full | Best-in-class support. |
+| **Jellyfin** | ✅ Full | ✅ Full | ✅ Full | — |
+| **Plex** | Not tested | Not tested | Not tested | — |
+| **Disney+** | ✅ Full | ✅ Full | ❌ | Series title only (e.g. "The Simpsons"), no episode info. |
+| **Prime Video** | ✅ Full  | ✅ Full  | ❌ | — |
 | **HBO Max / Max** | Not tested | Not tested | Not tested | — |
 | **Crunchyroll** | Not tested | Not tested | Not tested | — |
 | **Vimeo** | Not tested | Not tested | Not tested | — |
 | **Dailymotion** | Not tested | Not tested | Not tested | — |
-| **ARD / ZDF Mediathek** | Not tested | Not tested | Not tested | German public broadcasters. HTML5 players expected to work. |
+| **ARD / ZDF Mediathek** | Not tested | Not tested | Not tested | — |
 
 ## Legend
 
@@ -39,7 +39,7 @@ Tested a service that's not listed? Found different behavior than documented?
 KoalaSync works on any website with a **standard HTML5 `<video>` element** that allows script injection. 
 
 Limited functionality on certain platforms is typically caused by:
-- **DRM/Copy Protection** (e.g., Widevine on Netflix, Disney+) which restricts access to media metadata like title and playback state
+- **DRM/Copy Protection** (e.g., Widevine on Netflix) which restricts access to media metadata like title and playback state
 - **Shadow DOM encapsulation** that hides video elements from content scripts
 - **Strict Content Security Policies** (CSP) that block script injection
 
