@@ -1,5 +1,8 @@
 import assert from 'node:assert/strict';
-import {
+
+// Must set env before dynamic import — ESM hoists static imports
+process.env.ADMIN_METRICS_TOKEN = process.env.ADMIN_METRICS_TOKEN || 'test-admin-token-with-more-than-32-chars';
+const {
   ADMIN_METRICS_AUTH_RATE_LIMIT_PER_MINUTE,
   HEALTH_RATE_LIMIT_PER_MINUTE,
   healthCounts,
@@ -9,9 +12,9 @@ import {
   rooms,
   startServer,
   stopServerForTests
-} from '../server/index.js';
+} = await import('../server/index.js');
 
-const adminToken = process.env.ADMIN_METRICS_TOKEN || 'test-admin-token-with-more-than-32-chars';
+const adminToken = process.env.ADMIN_METRICS_TOKEN;
 const baseHeaders = { 'x-forwarded-for': '203.0.113.10' };
 
 function url(path) {

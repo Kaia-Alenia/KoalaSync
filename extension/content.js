@@ -837,6 +837,11 @@
     window.addEventListener('pagehide', () => {
         pageVisible = false;
         closeAudioContext();
+        if (keepAlivePort) { try { keepAlivePort.disconnect(); } catch (_e) { /* ignore */ } keepAlivePort = null; }
+        if (lobbyPollTimer) { clearInterval(lobbyPollTimer); lobbyPollTimer = null; }
+        if (heartbeatTimeout) { clearTimeout(heartbeatTimeout); heartbeatTimeout = null; }
+        if (proactiveHeartbeatTimeout) { clearTimeout(proactiveHeartbeatTimeout); proactiveHeartbeatTimeout = null; }
+        observer.disconnect();
     });
     window.addEventListener('pageshow', (event) => {
         // event.persisted is true ONLY when restored from bfcache, not on initial load

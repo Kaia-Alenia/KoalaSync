@@ -544,12 +544,12 @@ async function connect() {
                 isForceSyncInitiator: false, 
                 forceSyncAcks: [], 
                 forceSyncDeadline: null 
-            });
+            }).catch(() => {});
 
             
             if (currentRoom) {
                 currentRoom.peers = [];
-                if (storageInitialized) chrome.storage.session.set({ currentRoom });
+                if (storageInitialized) chrome.storage.session.set({ currentRoom }).catch(() => {});
                 chrome.runtime.sendMessage({ type: 'PEER_UPDATE', peers: [] }).catch(() => {});
             }
             broadcastConnectionStatus('disconnected');

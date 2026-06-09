@@ -48,7 +48,8 @@ export function buildHealthPayload({
     now = Date.now(),
     uptime = 0,
     memoryUsage = () => process.memoryUsage(),
-    rateLimitSizes = {}
+    rateLimitSizes = {},
+    rateLimitDenied = {}
 }) {
     const payload = {
         status: 'ok',
@@ -75,13 +76,22 @@ export function buildHealthPayload({
         roomsWithLobby: roomValues.filter(room => !!room.activeLobby).length,
         avgPeersPerRoom,
         maxPeersInRoom,
-        rateLimitEntries: {
-            connections: rateLimitSizes.connections || 0,
-            events: rateLimitSizes.events || 0,
-            health: rateLimitSizes.health || 0,
-            adminMetricsAuth: rateLimitSizes.adminMetricsAuth || 0,
-            authFailures: rateLimitSizes.authFailures || 0,
-            roomList: rateLimitSizes.roomList || 0
+        rateLimits: {
+            trackedClients: {
+                connections: rateLimitSizes.connections || 0,
+                events: rateLimitSizes.events || 0,
+                health: rateLimitSizes.health || 0,
+                adminMetricsAuth: rateLimitSizes.adminMetricsAuth || 0,
+                authFailures: rateLimitSizes.authFailures || 0,
+                roomList: rateLimitSizes.roomList || 0
+            },
+            denied: {
+                connections: rateLimitDenied.connections || 0,
+                events: rateLimitDenied.events || 0,
+                health: rateLimitDenied.health || 0,
+                adminMetricsAuth: rateLimitDenied.adminMetricsAuth || 0,
+                roomList: rateLimitDenied.roomList || 0
+            }
         },
         memory: {
             rss: mem.rss,

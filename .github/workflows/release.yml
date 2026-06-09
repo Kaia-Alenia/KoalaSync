@@ -11,6 +11,8 @@ jobs:
     permissions:
       contents: write
       packages: write
+      id-token: write
+      attestations: write
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -35,6 +37,7 @@ jobs:
             type=ref,event=tag
 
       - name: Build and push Docker image
+        id: build
         uses: docker/build-push-action@v5
         with:
           context: .
@@ -44,10 +47,19 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
 
+      - name: Generate artifact attestation
+        uses: actions/attest@v4
+        with:
+          subject-name: ghcr.io/${{ github.repository }}
+          subject-digest: ${{ steps.build.outputs.digest }}
+          push-to-registry: true
+
   release-extension:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+      id-token: write
+      attestations: write
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -102,6 +114,11 @@ jobs:
         run: |
           npm install
           npm run build:extension
+
+      - name: Generate artifact attestation for extensions
+        uses: actions/attest@v4
+        with:
+          subject-path: dist/koalasync-*.zip
 
       - name: Build Website
         run: node website/build.js

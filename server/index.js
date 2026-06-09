@@ -82,7 +82,8 @@ app.get('/health', (req, res) => {
                 adminMetricsAuth: adminMetricsAuthCounts.size,
                 authFailures: failedAuthAttempts.size,
                 roomList: roomListCooldowns.size
-            }
+            },
+            rateLimitDenied
         })
     ));
 });
@@ -96,7 +97,7 @@ export const io = new Server(httpServer, {
             if (!origin || origin === 'https://sync.koalastuff.net' || origin.startsWith('chrome-extension://') || origin.startsWith('moz-extension://')) {
                 callback(null, true);
             } else {
-                log('CORS', `Rejected origin: ${origin}`);
+                log('CORS', `Rejected origin: ${(origin || '').replace(/[\r\n]/g, '')}`);
                 callback(new Error('Not allowed by CORS'));
             }
         },
@@ -192,6 +193,15 @@ export const healthCounts = new Map(); // ip -> { count, resetTime }
 export const adminMetricsAuthCounts = new Map(); // ip -> { count, resetTime }
 const roomListCooldowns = new Map(); // socketId -> last allowed timestamp
 
+// Actual rate-limit denial counters (incremented only when a request is denied)
+const rateLimitDenied = {
+    connections: 0,
+    events: 0,
+    health: 0,
+    adminMetricsAuth: 0,
+    roomList: 0
+};
+
 // Clean up connection counts and event counts to prevent memory leak
 const rateLimitCleanupInterval = setInterval(() => {
     const now = Date.now();
@@ -228,7 +238,9 @@ function checkConnectionRate(ip) {
     if (now > entry.resetTime) { entry.count = 0; entry.resetTime = now + 60000; }
     entry.count++;
     connectionCounts.set(ip, entry);
-    return entry.count <= 10;
+    if (entry.count <= 10) return true;
+    rateLimitDenied.connections++;
+    return false;
 }
 
 function checkEventRate(socketId) {
@@ -237,7 +249,9 @@ function checkEventRate(socketId) {
     if (now > entry.resetTime) { entry.count = 0; entry.resetTime = now + 10000; }
     entry.count++;
     eventCounts.set(socketId, entry);
-    return entry.count <= 30;
+    if (entry.count <= 30) return true;
+    rateLimitDenied.events++;
+    return false;
 }
 
 function checkHealthRate(ip) {
@@ -246,7 +260,9 @@ function checkHealthRate(ip) {
     if (now > entry.resetTime) { entry.count = 0; entry.resetTime = now + 60000; }
     entry.count++;
     healthCounts.set(ip, entry);
-    return entry.count <= HEALTH_RATE_LIMIT_PER_MINUTE;
+    if (entry.count <= HEALTH_RATE_LIMIT_PER_MINUTE) return true;
+    rateLimitDenied.health++;
+    return false;
 }
 
 function checkAdminMetricsAuthRate(ip) {
@@ -255,7 +271,9 @@ function checkAdminMetricsAuthRate(ip) {
     if (now > entry.resetTime) { entry.count = 0; entry.resetTime = now + 60000; }
     entry.count++;
     adminMetricsAuthCounts.set(ip, entry);
-    return entry.count <= ADMIN_METRICS_AUTH_RATE_LIMIT_PER_MINUTE;
+    if (entry.count <= ADMIN_METRICS_AUTH_RATE_LIMIT_PER_MINUTE) return true;
+    rateLimitDenied.adminMetricsAuth++;
+    return false;
 }
 
 /**
@@ -585,7 +603,7 @@ io.on('connection', (socket) => {
                     socket.to(mapping.roomId).emit(eventName, relayPayload);
 
                     // --- Side-effects: Server-side Episode Lobby Tracking ---
-                    if (eventName === EVENTS.EPISODE_LOBBY && relayPayload.expectedTitle) {
+                    if (eventName === EVENTS.EPISODE_LOBBY && relayPayload.expectedTitle && !room.activeLobby) {
                         room.activeLobby = {
                             expectedTitle: relayPayload.expectedTitle,
                             initiatorPeerId: mapping.peerId,
@@ -613,6 +631,7 @@ io.on('connection', (socket) => {
             return;
         }
         if (!checkCooldown(roomListCooldowns, socket.id, ROOM_LIST_COOLDOWN_MS)) {
+            rateLimitDenied.roomList++;
             socket.emit(EVENTS.ERROR, { message: 'Room list refresh is rate limited. Try again in a few seconds.' });
             return;
         }

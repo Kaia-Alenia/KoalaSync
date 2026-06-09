@@ -54,26 +54,51 @@ modules:
         path: '{.memory.heapTotal}'
         help: "V8 engine heap total in bytes"
 
+      # Rate limiter tracking — unique clients currently in each tracking window
+      # (not rate-limit denials; these include legitimate traffic too)
+
       - name: koalasync_rate_limit_connections
-        path: '{.rateLimitEntries.connections}'
-        help: "Number of entries tracked in the connection rate limiter"
+        path: '{.rateLimits.trackedClients.connections}'
+        help: "Unique clients tracked in the connection rate limiter window"
 
       - name: koalasync_rate_limit_events
-        path: '{.rateLimitEntries.events}'
-        help: "Number of entries in the event rate limiter"
+        path: '{.rateLimits.trackedClients.events}'
+        help: "Unique sockets tracked in the event rate limiter window"
 
       - name: koalasync_rate_limit_health
-        path: '{.rateLimitEntries.health}'
-        help: "Number of entries in the health rate limiter"
+        path: '{.rateLimits.trackedClients.health}'
+        help: "Unique IPs tracked in the health endpoint rate limiter window"
 
       - name: koalasync_rate_limit_admin_metrics_auth
-        path: '{.rateLimitEntries.adminMetricsAuth}'
-        help: "Number of entries in the admin metrics auth rate limiter"
+        path: '{.rateLimits.trackedClients.adminMetricsAuth}'
+        help: "Unique IPs tracked in the admin metrics auth rate limiter window"
 
       - name: koalasync_rate_limit_auth_failures
-        path: '{.rateLimitEntries.authFailures}'
-        help: "Number of entries in the authentication failures cache"
+        path: '{.rateLimits.trackedClients.authFailures}'
+        help: "Unique IPs tracked in the authentication failures cache"
 
       - name: koalasync_rate_limit_room_list
-        path: '{.rateLimitEntries.roomList}'
-        help: "Number of entries in the room list cooldown cache"
+        path: '{.rateLimits.trackedClients.roomList}'
+        help: "Unique sockets in the room list cooldown cache"
+
+      # Actual rate-limit denials — incremented only when a 429 is served
+
+      - name: koalasync_rate_limit_denied_connections
+        path: '{.rateLimits.denied.connections}'
+        help: "Total connection attempts denied by rate limiter"
+
+      - name: koalasync_rate_limit_denied_events
+        path: '{.rateLimits.denied.events}'
+        help: "Total socket events denied by rate limiter"
+
+      - name: koalasync_rate_limit_denied_health
+        path: '{.rateLimits.denied.health}'
+        help: "Total health endpoint requests denied by rate limiter"
+
+      - name: koalasync_rate_limit_denied_admin_metrics_auth
+        path: '{.rateLimits.denied.adminMetricsAuth}'
+        help: "Total admin metrics auth attempts denied by rate limiter"
+
+      - name: koalasync_rate_limit_denied_room_list
+        path: '{.rateLimits.denied.roomList}'
+        help: "Total room list refresh requests denied by rate limiter"

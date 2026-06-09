@@ -4,6 +4,31 @@ All notable changes to the KoalaSync browser extension and relay server.
 
 ---
 
+## [v2.2.3] — 2026-06-10
+
+### Added
+- **Artifact Attestations (Supply Chain Security)**: All release artifacts (Docker images, extension ZIPs) are now published with signed [SLSA provenance attestations](https://docs.github.com/en/actions/how-tos/secure-your-work/use-artifact-attestations) via `actions/attest@v4`. Anyone can verify that an artifact was built from this repository using `gh attestation verify`.
+- **Admin health: `rateLimits.denied` counters**: New rolling counters track actual rate-limit denials (429 responses), separate from `rateLimits.trackedClients` which reports unique IPs in the tracking window.
+- **Docker HEALTHCHECK**: Container health is now checked every 30s via `GET /health`.
+- **`npm start` script**: Server can now be started with `npm start`.
+
+### Fixed
+- **Server: `activeLobby` no longer silently overwritten**: If a second peer sends `EPISODE_LOBBY` while a lobby is already active, the request is now ignored instead of destroying the first peer's lobby.
+- **CORS log sanitization**: Rejected origin headers are sanitized (`\r\n` stripped) to prevent log injection.
+- **Extension: pagehide resource leak**: `keepAlivePort`, `lobbyPollTimer`, heartbeats, and `MutationObserver` are now properly cleaned up when a tab is hidden or enters bfcache.
+- **Extension: unhandled storage rejections**: `chrome.storage.session.set()` calls in the disconnect handler now have `.catch(() => {})`.
+- **`'Pixel'` duplicate in name generator**: Second occurrence replaced with `'Nitro'` for better name diversity.
+- **`'opposum'` typo**: Corrected to `'opossum'` in the emoji map and added `'Opossum'` to `USERNAME_NOUNS`.
+- **Test reliability**: `test-server-routes.mjs` now sets `ADMIN_METRICS_TOKEN` before importing the server module, fixing standalone test execution.
+- **`MAX_PEERS_PER_ROOM` konsistent**: `.env` auf 25 gesetzt (wie `.env.example`).
+- **pt-BR.json duplicate removed**: Duplicate `FOOTER_DISCLAIMER` key removed from website locale.
+
+### Changed
+- **Admin health: `rateLimitEntries` renamed to `rateLimits.trackedClients`**: The field now accurately describes that it tracks unique clients in the rate-limit window, not denial counts. Update your json_exporter/Grafana config accordingly.
+- **README restructured**: Sections reordered by progressive technical depth. New "Supply Chain Security" subsection under "For Developers & Self-Hosters" with verification commands.
+
+---
+
 ## [v2.2.2] — 2026-06-09
 
 ### Added

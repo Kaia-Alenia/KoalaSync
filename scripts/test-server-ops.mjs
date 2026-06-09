@@ -77,9 +77,12 @@ assert.equal(adminHealth.avgPeersPerRoom, 2.5, 'admin metrics should include ave
 assert.equal(adminHealth.maxPeersInRoom, 3, 'admin metrics should include max room size');
 assert.deepEqual(adminHealth.memory, { rss: 10, heapUsed: 5, heapTotal: 8 }, 'admin metrics should expose process memory');
 assert.deepEqual(
-  adminHealth.rateLimitEntries,
-  { connections: 1, events: 2, health: 3, adminMetricsAuth: 4, authFailures: 5, roomList: 6 },
-  'admin metrics should expose aggregate rate-limit map sizes'
+  adminHealth.rateLimits,
+  {
+    trackedClients: { connections: 1, events: 2, health: 3, adminMetricsAuth: 4, authFailures: 5, roomList: 6 },
+    denied: { connections: 0, events: 0, health: 0, adminMetricsAuth: 0, roomList: 0 }
+  },
+  'admin metrics should expose rate-limit tracking and denial counts'
 );
 
 console.log('server ops tests passed');

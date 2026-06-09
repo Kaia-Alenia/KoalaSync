@@ -21,7 +21,7 @@ export const USERNAME_ADJECTIVES = [
     'Cosmic', 'Neon', 'Shadow', 'Crystal', 'Thunder', 'Silent', 'Golden',
     'Fierce', 'Noble', 'Mystic', 'Frozen', 'Blazing', 'Sapphire', 'Iron', 'Crimson',
     'Turbo', 'Zen', 'Pixel', 'Cyber', 'Solar', 'Lunar', 'Astro', 'Hyper',
-    'Steel', 'Rogue', 'Alpha', 'Omega', 'Royal', 'Pixel', 'Warp', 'Frost',
+    'Steel', 'Rogue', 'Alpha', 'Omega', 'Royal', 'Nitro', 'Warp', 'Frost',
 ];
 
 export const USERNAME_NOUNS = [
@@ -39,7 +39,7 @@ export const USERNAME_NOUNS = [
     'Mouse', 'Pig', 'Boar', 'Polar', 'Orangutan', 'Mammoth',
     'Crow', 'Duck', 'Swan', 'Penguin', 'Parrot', 'Peacock',
     'Dove', 'Dodo', 'Turkey', 'Flamingo', 'Chicken', 'Rooster', 'Goose',
-    'Dolphin', 'Whale', 'Crab', 'Lobster', 'Octopus', 'Squid',
+    'Dolphin', 'Whale', 'Crab', 'Lobster', 'Octopus', 'Opossum', 'Squid',
     'Jellyfish', 'Turtle',
     'Crocodile', 'Lizard', 'Snake', 'Frog', 'Toad', 'Gecko',
     'Bee', 'Ant', 'Spider', 'Scorpion', 'Butterfly', 'Ladybug',
@@ -102,7 +102,7 @@ export const ANIMAL_EMOJI_MAP = {
     'mammoth': '🦣',
     'meerkat': '🦦',
     'octopus': '🐙',
-    'opposum': '🐭',
+    'opossum': '🐭',
     'ostrich': '🐦',
     'panther': '🐆',
     'pelican': '🦩',
