@@ -13,7 +13,7 @@
   "TWITTER_DESCRIPTION": "Netflix、Emby、Jellyfin、YouTube、Twitch、ほぼすべてのHTML5動画を友達と完全に同期して視聴。ChromeおよびFirefox用のプライバシー優先のオープンソースブラウザ拡張機能。",
   "NAV_FEATURES": "機能",
   "NAV_HOW_IT_WORKS": "仕組み",
-  "HERO_TITLE": "一緒に観よう。<br>完璧に同期。",
+  "HERO_TITLE": "一緒に観よう。<span class='hero-line2'>完璧に同期。</span>",
   "HERO_SUBTITLE": "遅延のないリモート映画鑑賞。登録不要、データ収集なし。リンクを共有するだけで、一緒に視聴できます。",
   "HERO_MASCOT_ALT": "ダウンロードボタンを見下ろしているかわいいコアラ",
   "ADD_TO_CHROME": "Chromeに追加",

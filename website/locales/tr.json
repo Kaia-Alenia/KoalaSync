@@ -13,7 +13,7 @@
   "TWITTER_DESCRIPTION": "Netflix, Emby, Jellyfin, YouTube, Twitch ve neredeyse tüm HTML5 videolarını arkadaşlarınızla mükemmel bir senkronizasyonla izleyin. Chrome ve Firefox için gizlilik öncelikli, açık kaynaklı tarayıcı eklentisi.",
   "NAV_FEATURES": "Özellikler",
   "NAV_HOW_IT_WORKS": "Nasıl Çalışır",
-  "HERO_TITLE": "Birlikte İzleyin.<br>Mükemmel Eşitleyin.",
+  "HERO_TITLE": "Birlikte İzleyin.<span class='hero-line2'>Mükemmel Eşitleyin.</span>",
   "HERO_SUBTITLE": "Gecikmesiz uzaktan film geceniz. Kayıt yok, veri toplama yok. Sadece bir bağlantı paylaşın ve birlikte izleyin.",
   "HERO_MASCOT_ALT": "İndirme düğmelerine bakan sevimli bir koala",
   "ADD_TO_CHROME": "Chrome'a Ekle",

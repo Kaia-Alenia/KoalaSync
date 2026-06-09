@@ -13,7 +13,7 @@
   "TWITTER_DESCRIPTION": "Netflix, Emby, Jellyfin, YouTube, Twitch 및 거의 모든 HTML5 비디오를 친구들과 완벽하게 동기화하여 시청하세요. Chrome 및 Firefox용 개인정보 보호 중심 오픈 소스 브라우저 확장 프로그램.",
   "NAV_FEATURES": "특징",
   "NAV_HOW_IT_WORKS": "작동 방식",
-  "HERO_TITLE": "함께 시청하세요.<br>완벽하게 동기화됩니다.",
+  "HERO_TITLE": "함께 시청하세요.<span class='hero-line2'>완벽하게 동기화됩니다.</span>",
   "HERO_SUBTITLE": "지연 없는 원격 영화의 밤. 회원가입도, 데이터 수집도 없습니다. 링크를 공유하고 함께 시청하세요.",
   "HERO_MASCOT_ALT": "다운로드 버튼을 내려다보고 서 있는 귀여운 코알라",
   "ADD_TO_CHROME": "Chrome에 추가",

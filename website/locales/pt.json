@@ -13,7 +13,7 @@
   "TWITTER_DESCRIPTION": "Veja Netflix, Emby, Jellyfin, YouTube, Twitch e quase qualquer vídeo HTML5 em sincronia perfeita com os amigos. Extensão de navegador de código aberto e focada na privacidade para Chrome e Firefox.",
   "NAV_FEATURES": "Funcionalidades",
   "NAV_HOW_IT_WORKS": "Como Funciona",
-  "HERO_TITLE": "Vejam Juntos.<br>Sincronizem Perfeitamente.",
+  "HERO_TITLE": "Vejam Juntos.<span class='hero-line2'>Sincronizem Perfeitamente.</span>",
   "HERO_SUBTITLE": "A sua noite de cinema à distância e sem atrasos. Sem registo, sem recolha de dados. Partilhe apenas um link e vejam juntos.",
   "HERO_MASCOT_ALT": "Um coala fofo em pé e a olhar para baixo para os botões de download",
   "ADD_TO_CHROME": "Adicionar ao Chrome",

@@ -13,7 +13,7 @@
   "TWITTER_DESCRIPTION": "Watch Netflix, Emby, Jellyfin, YouTube, Twitch and almost any HTML5 video in perfect sync with friends. Privacy-first, open-source browser extension for Chrome and Firefox.",
   "NAV_FEATURES": "Features",
   "NAV_HOW_IT_WORKS": "How it works",
-  "HERO_TITLE": "Watch Together.<br>Sync Perfectly.",
+  "HERO_TITLE": "Watch Together.<span class='hero-line2'>Sync Perfectly.</span>",
   "HERO_SUBTITLE": "Your remote movie night without lags. No registration, no data collection. Just share a link and watch together.",
   "HERO_MASCOT_ALT": "A cute koala standing and looking down at the download buttons",
   "ADD_TO_CHROME": "Add to Chrome",

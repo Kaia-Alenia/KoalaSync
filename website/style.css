@@ -233,10 +233,15 @@ nav {
     font-weight: 800;
     line-height: 1.1;
     margin-bottom: 1.5rem;
-    padding-bottom: 0.08em;
+    padding-bottom: 0.1em;
     background: linear-gradient(to bottom, #fff 40%, #6366f1);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
+}
+
+.hero-text h1 .hero-line2 {
+    display: block;
+    margin-top: 0.2em;
 }
 
 .hero-text p, .hero-subtitle {
