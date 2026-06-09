@@ -1,6 +1,0 @@
-# KoalaSync Website — Allow all crawlers, full indexing
-User-agent: *
-Allow: /
-
-# Sitemap for search engines
-Sitemap: https://sync.koalastuff.net/sitemap.xml
