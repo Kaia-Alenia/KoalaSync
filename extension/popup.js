@@ -1711,6 +1711,7 @@ elements.copyLogs.addEventListener('click', () => {
             : '\uD83D\uDD34';
         lines.push(`- **Status:** ${emoji} ${st}`);
         lines.push(`- **Server:** \`${safe(status.serverUrl, '?')}\``);
+        lines.push(`- **Ping:** ${status.ping != null ? `${status.ping}ms` : '-'}`);
         if (status.roomId) {
             lines.push(`- **Room:** \`${status.roomId}\``);
             const peers = Array.isArray(status.peers) ? status.peers : [];
