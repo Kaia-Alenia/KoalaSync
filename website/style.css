@@ -2076,6 +2076,8 @@ html:not(.lang-de) [lang="de"] {
 .feature-card:nth-child(4) { --card-accent: rgba(56, 189, 248, 0.06); }
 .feature-card:nth-child(5) { --card-accent: rgba(245, 158, 11, 0.06); }
 .feature-card:nth-child(6) { --card-accent: rgba(236, 72, 153, 0.06); }
+.feature-card:nth-child(7) { --card-accent: rgba(249, 115, 22, 0.06); }
+.feature-card:nth-child(8) { --card-accent: rgba(16, 185, 129, 0.06); }
 
 .feature-card {
     background: linear-gradient(135deg, var(--card-accent, transparent), var(--card));

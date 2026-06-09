@@ -41,13 +41,15 @@
   "FEATURE_3_TITLE": "Sıfır Hesap / Saf Gizlilik",
   "FEATURE_3_DESC": "Kayıt yok, takip yok, kalıcı iz yok. Sunucu tamamen geçici RAM üzerinde çalışır ve ayrıldığınızda odanızı temizler.",
   "FEATURE_4_TITLE": "Evrensel HTML5 Desteği",
-  "FEATURE_4_DESC": "YouTube, Twitch, Netflix, Jellyfin, Emby ve HTML5 video öğesi içeren neredeyse tüm standart web sayfalarında çalışır. Ayrıca özel barındırılan kurulumlarla da uyumludur.",
+  "FEATURE_4_DESC": "YouTube, Twitch, Netflix, Jellyfin, Emby ve HTML5 video öğesi içeren neredeyse tüm standart web sayfalarında çalışır. Ayrıca özel barındırılan kurulumlarla da uyumludur. Sunucularımıza hiçbir video verisi asla gönderilmez — yalnızca senkronizasyon meta verileri gönderilir.",
   "FEATURE_5_TITLE": "Kendi Kendine Barındırılabilir ve Docker Uyumlu",
   "FEATURE_5_DESC": "Resmi sunucularımız ücretsiz ve hızlıdır, ancak isterseniz tüm kontrolü elinize alabilirsiniz. Docker aracılığıyla saniyeler içinde kendi özel aktarım sunucunuzu başlatın.",
   "FEATURE_6_TITLE": "Anında Davetler / Tek Tıkla Katılım",
   "FEATURE_6_DESC": "Takas edilecek IP adresi veya şifre yok. Arkadaşlarınızın tek bir tıklamayla odanıza otomatik olarak katılması için oluşturulan bir davet bağlantısını paylaşın.",
   "FEATURE_7_TITLE": "Ses Seviyesi Dengeleme / Ses Sıkıştırıcı",
   "FEATURE_7_DESC": "Ses düğmesiyle sürekli oynamak yok. Dahili ses sıkıştırıcı, sessiz diyalogları güçlendirir ve yüksek patlamaları yumuşatır. Netflix, Prime Video, Disney+, YouTube ve herhangi bir HTML5 videosunda çalışır. Tamamen yerel — hiçbir ses verisi bilgisayarınızı terk etmez.",
+  "FEATURE_8_TITLE": "Açık Kaynak (MIT Lisansı)",
+  "FEATURE_8_DESC": "Tüm kod tabanı GitHub'da herkese açık olarak incelenebilir. Kapalı kutular yok, tescilli blob'lar yok — aktarma sunucusundan (relay server) tarayıcı eklentisine kadar %100 şeffaflık.",
   "COMP_TITLE": "KoalaSync vs. Teleparty",
   "COMP_SUBTITLE": "Açık kaynaklı, reklamsız ve önce gizlilik diyen yöntemin neden birlikte izlemenin en iyi yolu olduğunu görün.",
   "COMP_COL_FEATURE": "Özellik",
@@ -172,5 +174,6 @@
   "MOCK_32": "TEMİZLE",
   "FOOTER_LEGAL_LINK": "imprint",
   "FOOTER_PRIVACY_LINK": "privacy",
+  "FOOTER_DISCLAIMER": "KoalaSync; Netflix, Disney+, Amazon, YouTube, Twitch veya başka herhangi bir yayın platformuna bağlı değildir, bunlar tarafından desteklenmemektedir ve bunlarla ilişkili değildir. Tüm ticari markalar ilgili sahiplerinin mülkiyetindedir.",
   "FOOTER_SUPPORT": "Ko-Fi'de bana kahve ısmarla"
 }

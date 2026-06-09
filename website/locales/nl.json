@@ -41,13 +41,15 @@
   "FEATURE_3_TITLE": "Geen accounts / Pure privacy",
   "FEATURE_3_DESC": "Geen registratie, geen tracking, geen permanente voetafdruk. De server draait volledig in het tijdelijke RAM en wist uw kamer wanneer u vertrekt.",
   "FEATURE_4_TITLE": "Universele HTML5-ondersteuning",
-  "FEATURE_4_DESC": "Werkt op YouTube, Twitch, Netflix, Jellyfin, Emby en bijna elke standaard webpagina met een HTML5-video-element. Ook compatibel met aangepaste zelfgehoste installaties.",
+  "FEATURE_4_DESC": "Werkt op YouTube, Twitch, Netflix, Jellyfin, Emby en bijna elke standaard webpagina met een HTML5-video-element. Ook compatibel met aangepaste zelfgehoste installaties. Er worden nooit videogegevens naar onze servers verzonden — alleen synchronisatiemetagegevens.",
   "FEATURE_5_TITLE": "Zelf te hosten & Docker-ready",
   "FEATURE_5_DESC": "Onze officiële servers zijn gratis en snel, maar u kunt de volledige controle nemen als u dat wilt. Start uw eigen privé-relayserver in seconden via Docker.",
   "FEATURE_6_TITLE": "Directe uitnodigingen / 1-klik deelname",
   "FEATURE_6_DESC": "Geen IP-adressen of wachtwoorden om uit te wisselen. Deel een gegenereerde uitnodigingslink met uw vrienden om ze met een enkele klik automatisch deel te laten nemen.",
   "FEATURE_7_TITLE": "Volume egaliseren / Audiocompressor",
   "FEATURE_7_DESC": "Niet langer aan de volumeknop zitten. De ingebouwde audiocompressor versterkt stille dialogen en dempt harde explosies. Werkt op Netflix, Prime Video, Disney+, YouTube en elke HTML5-video. Volledig lokaal — geen audiogegevens verlaten uw computer.",
+  "FEATURE_8_TITLE": "Open Source (MIT License)",
+  "FEATURE_8_DESC": "The entire codebase is publicly auditable on GitHub. No black boxes, no proprietary blobs — 100% transparency from the relay server to the browser extension.",
   "COMP_TITLE": "KoalaSync vs. Teleparty",
   "COMP_SUBTITLE": "Ontdek waarom open-source, reclamevrij en privacy-first de superieure manier is om samen te kijken.",
   "COMP_COL_FEATURE": "Functie",
@@ -172,5 +174,6 @@
   "MOCK_32": "WISSEN",
   "FOOTER_LEGAL_LINK": "imprint",
   "FOOTER_PRIVACY_LINK": "privacy",
+  "FOOTER_DISCLAIMER": "KoalaSync is niet verbonden aan, goedgekeurd door of geassocieerd met Netflix, Disney+, Amazon, YouTube, Twitch of enig ander streamingplatform. Alle handelsmerken zijn eigendom van hun respectieve eigenaren.",
   "FOOTER_SUPPORT": "Trakteer op een koffie via Ko-Fi"
 }

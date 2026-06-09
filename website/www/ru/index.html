@@ -6,9 +6,9 @@
     <title>KoalaSync | Синхронизация Netflix, YouTube и любого видео с друзьями</title>
     <meta name="description" content="Смотрите Netflix, YouTube, Twitch и любые HTML5-видео в синхронизации с друзьями. Бесплатное расширение браузера с открытым кодом. Регистрация не требуется.">
     
-    <link rel="preload" href="../style.b511a1d2.min.css" as="style">
+    <link rel="preload" href="../style.f0d3a5d6.min.css" as="style">
     <link rel="preload" as="image" href="../assets/LookDownKoala.webp" imagesrcset="../assets/LookDownKoala-1x.webp 90w, ../assets/LookDownKoala.webp 205w" imagesizes="90px" fetchpriority="high">
-    <link rel="stylesheet" href="../style.b511a1d2.min.css">
+    <link rel="stylesheet" href="../style.f0d3a5d6.min.css">
     <link rel="icon" type="image/png" sizes="16x16" href="../assets/favicon-16x16.png">
     <link rel="icon" type="image/png" sizes="32x32" href="../assets/favicon-32x32.png">
     <link rel="apple-touch-icon" sizes="180x180" href="../assets/icon-192x192.png">
@@ -257,8 +257,8 @@
         <div class="container hero-grid">
             <div class="hero-text">
                 <a href="https://github.com/Shik3i/KoalaSync/blob/main/docs/CHANGELOG.md" target="_blank" rel="noopener" class="version-badge" data-reveal style="text-decoration: none; display: inline-block; transition: transform 0.2s, box-shadow 0.2s;" title="View Changelog">
-                    <span class="version-text-en" lang="en">v2.1.0 OUT NOW</span>
-                    <span class="version-text-de" lang="de">v2.1.0 JETZT VERFÜGBAR</span>
+                    <span class="version-text-en" lang="en">v2.2.1 OUT NOW</span>
+                    <span class="version-text-de" lang="de">v2.2.1 JETZT VERFÜGBAR</span>
                 </a>
                 <h1 data-reveal>Смотрите вместе.<br>Синхронно на 100%.</h1>
                 <p class="hero-subtitle" data-reveal>Ваш киновечер на расстоянии без задержек. Без регистрации и сбора данных. Просто поделитесь ссылкой и смотрите вместе.</p>
@@ -692,7 +692,7 @@
                         </span>
                         <span>Универсальная поддержка HTML5</span>
                     </h3>
-                    <p>Работает на YouTube, Twitch, Netflix, Jellyfin, Emby и почти на любой веб-странице со стандартным HTML5-видеотегом. Подходит для локальных медиатек.</p>
+                    <p>Работает на YouTube, Twitch, Netflix, Jellyfin, Emby и почти на любой веб-странице со стандартным HTML5-видеотегом. Подходит для локальных медиатек. Никакие видеоданные никогда не отправляются на наши серверы — только метаданные синхронизации.</p>
                 </div>
 
                 <!-- Card 5: Instant Invites / 1-Click Join (Bento Large) -->
@@ -717,8 +717,19 @@
                     <p>Наши официальные серверы бесплатны и быстры, но вы можете получить полный контроль. Запустите свой собственный приватный ретранслятор в Docker за секунды.</p>
                 </div>
 
-                <!-- Card 7: Volume Leveling / Audio Compressor (Bento Standard) -->
+                <!-- Card 7: Open Source / MIT License (Bento Standard) -->
                 <div class="feature-card" data-reveal>
+                    <h3>
+                        <span class="feature-icon-svg">
+                            <svg width="24" height="24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="bento-icon" viewBox="0 0 24 24"><path d="M12 0C5.374 0 0 5.373 0 12c0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23A11.5 11.5 0 0 1 12 5.803c1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576C20.566 21.797 24 17.3 24 12c0-6.627-5.373-12-12-12"/></svg>
+                        </span>
+                        <span>Открытый исходный код (Лицензия MIT)</span>
+                    </h3>
+                    <p>Весь исходный код публично доступен для проверки на GitHub. Никаких «черных ящиков», никаких проприетарных бинарных файлов (blobs) — 100% прозрачность от relay-сервера до расширения браузера.</p>
+                </div>
+
+                <!-- Card 8: Volume Leveling / Audio Compressor (Bento Large) -->
+                <div class="feature-card bento-large" data-reveal>
                     <h3>
                         <span class="feature-icon-svg">
                             <svg width="24" height="24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="bento-icon" viewBox="0 0 24 24"><path d="M11 5 6 9H2v6h4l5 4zm8.07-.07a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
@@ -1235,6 +1246,7 @@
         <div class="container">
             <p>&copy; 2026 KoalaSync. Открытый исходный код под лицензией MIT.</p>
             <p style="font-size: 0.8rem; margin-top: 0.5rem;">Никакие данные не сохраняются на наших серверах. Только RAM-трансляция.</p>
+            <p style="font-size: 0.72rem; margin-top: 1.2rem; color: var(--text-muted); opacity: 0.65; max-width: 650px; margin-left: auto; margin-right: auto; line-height: 1.5;">KoalaSync не связан, не спонсируется и не аффилирован с Netflix, Disney+, Amazon, YouTube, Twitch или любой другой стриминговой платформой. Все товарные знаки являются собственностью их соответствующих владельцев.</p>
             <div style="margin-top: 1.5rem; font-size: 0.8rem; display: flex; justify-content: center; align-items: center; gap: 1.5rem; flex-wrap: wrap;">
                 <a href="../imprint" style="color: var(--text-muted); text-decoration: none;"><span>Legal Notice</span></a>
                 <a href="../privacy" style="color: var(--text-muted); text-decoration: none;"><span>Privacy Policy</span></a>

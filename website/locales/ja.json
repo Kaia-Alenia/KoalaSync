@@ -41,13 +41,15 @@
   "FEATURE_3_TITLE": "アカウント不要 / 純粋なプライバシー",
   "FEATURE_3_DESC": "登録不要、追跡なし、履歴も残りません。サーバーは一時的なメモリ（RAM）上でのみ動作し、退出時にルームを完全に消去します。",
   "FEATURE_4_TITLE": "ユニバーサルHTML5サポート",
-  "FEATURE_4_DESC": "YouTube、Twitch、Netflix、Jellyfin、Emby、およびHTML5ビデオ要素を含むほぼすべての標準的なWebページで動作します。独自のセルフホスト設定とも互換性があります。",
+  "FEATURE_4_DESC": "YouTube、Twitch、Netflix、Jellyfin、Emby、およびHTML5ビデオ要素を含むほぼすべての標準的なWebページで動作します。独自のセルフホスト設定とも互換性があります。No video data is ever sent to our servers — only synchronization metadata.",
   "FEATURE_5_TITLE": "セルフホスト可能＆Docker対応",
   "FEATURE_5_DESC": "公式サーバーは無料で高速ですが、必要に応じて独自のサーバーを構築できます。Dockerを使用して、数秒でプライベートリレーサーバーを起動できます。",
   "FEATURE_6_TITLE": "インスタント招待 / 1クリック参加",
   "FEATURE_6_DESC": "IPアドレスやパスワードをやり取りする必要はありません。生成された招待リンクを友達に共有するだけで、1クリックで自動的にルームに参加できます。",
   "FEATURE_7_TITLE": "音量均等化 / オーディオコンプレッサー",
   "FEATURE_7_DESC": "音量つまみをいじる必要はもうありません。内蔵オーディオコンプレッサーが小さな会話を強調し、大きな爆発音を抑えます。Netflix、Prime Video、Disney+、YouTube、あらゆるHTML5ビデオで動作。完全にローカル処理 — オーディオデータがコンピュータから送信されることはありません。",
+  "FEATURE_8_TITLE": "オープンソース（MITライセンス）",
+  "FEATURE_8_DESC": "すべてのコードベースはGitHubで公開されており、誰でも監査可能です。ブラックボックスや独自のバイナリデータ（blob）は一切なく、中継サーバーからブラウザ拡張機能まで100%の透明性を確保しています。",
   "COMP_TITLE": "KoalaSync と Teleparty の比較",
   "COMP_SUBTITLE": "オープンソース、広告なし、プライバシー優先が、一緒に動画を観る上でいかに優れているかをご覧ください。",
   "COMP_COL_FEATURE": "機能",
@@ -172,5 +174,6 @@
   "MOCK_32": "消去",
   "FOOTER_LEGAL_LINK": "imprint",
   "FOOTER_PRIVACY_LINK": "privacy",
+  "FOOTER_DISCLAIMER": "KoalaSyncは、Netflix、Disney+、Amazon、YouTube、Twitch、またはその他のストリーミングプラットフォームと提携、承認、または関連付けられているものではありません。すべての商標はそれぞれの所有者に帰属します。",
   "FOOTER_SUPPORT": "Ko-Fiでコーヒーをおごる"
 }

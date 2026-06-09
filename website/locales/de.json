@@ -41,13 +41,15 @@
   "FEATURE_3_TITLE": "Keine Accounts / Datenschutz",
   "FEATURE_3_DESC": "Kein Login. Keine Daten. Einfach Link teilen und schauen. Der Server läuft flüchtig im RAM und löscht deinen Raum komplett nach dem Verlassen.",
   "FEATURE_4_TITLE": "Universeller HTML5-Support",
-  "FEATURE_4_DESC": "Unterstützt YouTube, Twitch, Netflix, Jellyfin, Emby und fast jede beliebige Webseite mit einem HTML5-Video-Tag. Ideal auch für eigene Medienbibliotheken.",
+  "FEATURE_4_DESC": "Unterstützt YouTube, Twitch, Netflix, Jellyfin, Emby und fast jede beliebige Webseite mit einem HTML5-Video-Tag. Ideal auch für eigene Medienbibliotheken. Es werden keinerlei Videodaten an unsere Server gesendet — nur Synchronisations-Metadaten.",
   "FEATURE_5_TITLE": "Self-Hostable & Docker-Ready",
   "FEATURE_5_DESC": "Unsere Server sind kostenlos und schnell, aber du kannst auch die volle Kontrolle übernehmen, wenn du willst. Starte dein eigenes privates Relay in Sekunden via Docker.",
   "FEATURE_6_TITLE": "Direkte Einladungen & 1-Klick Beitritt",
   "FEATURE_6_DESC": "Keine lästigen IPs oder Passwörter austauschen. Teile einfach einen Einladungslink mit deinen Freunden, um sie mit einem Klick in den Raum zu holen.",
   "FEATURE_7_TITLE": "Lautstärke Angleichen / Audio Compressor",
   "FEATURE_7_DESC": "Nie wieder am Lautstärkeregler spielen. Der eingebaute Audio Compressor verstärkt leise Dialoge und zähmt laute Explosionen. Funktioniert auf Netflix, Prime Video, Disney+, YouTube und jedem HTML5-Video. Komplett lokal — keine Audiodaten verlassen deinen Computer.",
+  "FEATURE_8_TITLE": "Open Source (MIT-Lizenz)",
+  "FEATURE_8_DESC": "Der gesamte Quellcode ist auf GitHub öffentlich einsehbar. Keine Black Boxes, keine proprietären Teile — 100 % Transparenz vom Relay-Server bis zur Browser-Erweiterung.",
   "COMP_TITLE": "KoalaSync vs. Teleparty",
   "COMP_SUBTITLE": "Erfahre, warum Open Source, Werbefreiheit und echter Datenschutz die bessere Wahl für gemeinsames Schauen sind.",
   "COMP_COL_FEATURE": "Funktion",
@@ -172,5 +174,6 @@
   "MOCK_32": "LÖSCHEN",
   "FOOTER_LEGAL_LINK": "de/impressum",
   "FOOTER_PRIVACY_LINK": "de/datenschutz",
+  "FOOTER_DISCLAIMER": "KoalaSync ist nicht mit Netflix, Disney+, Amazon, YouTube, Twitch oder anderen Streaming-Plattformen verbunden, wird von diesen nicht unterstützt oder steht in keiner Beziehung zu diesen. Alle Markenrechte liegen bei ihren jeweiligen Inhabern.",
   "FOOTER_SUPPORT": "Kauf mir einen Kaffee auf Ko-Fi"
 }

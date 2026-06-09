@@ -41,13 +41,15 @@
   "FEATURE_3_TITLE": "Zero Accounts / Pure Privacy",
   "FEATURE_3_DESC": "No registration, no tracking, no persistency footprints. The server runs entirely in ephemeral RAM and purges your room when you leave.",
   "FEATURE_4_TITLE": "Universal HTML5 Support",
-  "FEATURE_4_DESC": "Works on YouTube, Twitch, Netflix, Jellyfin, Emby, and almost any standard webpage containing a HTML5 video element. Also compatible with custom self-hosted setups.",
+  "FEATURE_4_DESC": "Works on YouTube, Twitch, Netflix, Jellyfin, Emby, and almost any standard webpage containing a HTML5 video element. Also compatible with custom self-hosted setups. No video data is ever sent to our servers — only synchronization metadata.",
   "FEATURE_5_TITLE": "Self-Hostable & Docker-Ready",
   "FEATURE_5_DESC": "Our official servers are free and fast, but you can take full ownership if you want to. Launch your own private relay server in seconds via Docker.",
   "FEATURE_6_TITLE": "Instant Invites / 1-Click Join",
   "FEATURE_6_DESC": "No IP addresses or passwords to exchange. Share a generated invite link with your friends to let them join your room automatically with a single click.",
   "FEATURE_7_TITLE": "Volume Leveling / Audio Compressor",
   "FEATURE_7_DESC": "No more riding the volume knob. Built-in audio compressor boosts quiet dialogue and tames loud explosions. Works on Netflix, Prime Video, Disney+, YouTube, and any HTML5 video. Completely local — no audio data leaves your computer.",
+  "FEATURE_8_TITLE": "Open Source (MIT License)",
+  "FEATURE_8_DESC": "The entire codebase is publicly auditable on GitHub. No black boxes, no proprietary blobs — 100% transparency from the relay server to the browser extension.",
   "COMP_TITLE": "KoalaSync vs. Teleparty",
   "COMP_SUBTITLE": "See why open source, ad-free and privacy-first is the superior way to watch together.",
   "COMP_COL_FEATURE": "Feature",
@@ -172,5 +174,6 @@
   "MOCK_32": "CLEAR",
   "FOOTER_LEGAL_LINK": "imprint",
   "FOOTER_PRIVACY_LINK": "privacy",
+  "FOOTER_DISCLAIMER": "KoalaSync is not affiliated with, endorsed by, or associated with Netflix, Disney+, Amazon, YouTube, Twitch, or any other streaming platform. All trademarks are property of their respective owners.",
   "FOOTER_SUPPORT": "Buy me a coffee on Ko-Fi"
 }
