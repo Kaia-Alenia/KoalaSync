@@ -78,13 +78,21 @@ jobs:
           jq -n --arg v "$VERSION" --arg d "$DATE" '{version: $v, date: $d}' > website/version.json
           echo "  ✓ website/version.json -> version $VERSION, date $DATE"
 
+          # 5. website/template.html — SoftwareApplication schema
+          sed -i "s/\"softwareVersion\": \".*\"/\"softwareVersion\": \"$VERSION\"/" website/template.html
+          echo "  ✓ website/template.html -> softwareVersion $VERSION"
+
+          # 6. README.md — version badge
+          sed -i "s/v[0-9]\+\.[0-9]\+\.[0-9]\+/v$VERSION/g" README.md
+          echo "  ✓ README.md -> v$VERSION"
+
           echo "Version injection complete."
 
       - name: Commit and push version updates back to main
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
-          git add extension/manifest.base.json shared/constants.js package.json website/version.json
+          git add extension/manifest.base.json shared/constants.js package.json website/version.json website/template.html README.md
           git commit -m "chore(release): update versions to $GITHUB_REF_NAME [skip ci]" || echo "No changes to commit"
           git push origin HEAD:main
         env:
