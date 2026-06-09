@@ -657,6 +657,48 @@ io.on('connection', (socket) => {
         }
     });
 
+    socket.on(EVENTS.PING, (data) => {
+        if (!checkEventRate(socket.id)) {
+            socket.disconnect(true);
+            return;
+        }
+        if (!data || typeof data.t !== 'number' || !Number.isFinite(data.t)) return;
+
+        if (typeof data.target === 'string' && data.target.length > 0) {
+            const targetSocketId = peerToSocket.get(data.target);
+            const senderMapping = socketToRoom.get(socket.id);
+            if (targetSocketId && senderMapping && data.target !== senderMapping.peerId) {
+                const targetMapping = socketToRoom.get(targetSocketId);
+                if (targetMapping && targetMapping.roomId === senderMapping.roomId) {
+                    io.to(targetSocketId).emit(EVENTS.PING, { t: data.t, sender: senderMapping.peerId });
+                    return;
+                }
+            }
+        }
+
+        socket.emit(EVENTS.PONG, { t: data.t });
+    });
+
+    socket.on(EVENTS.PONG, (data) => {
+        if (!checkEventRate(socket.id)) {
+            socket.disconnect(true);
+            return;
+        }
+        if (!data || typeof data.target !== 'string' || data.target.length === 0) return;
+        if (typeof data.t !== 'number' || !Number.isFinite(data.t)) return;
+
+        const senderMapping = socketToRoom.get(socket.id);
+        if (!senderMapping || data.target === senderMapping.peerId) return;
+
+        const targetSocketId = peerToSocket.get(data.target);
+        if (!targetSocketId) return;
+
+        const targetMapping = socketToRoom.get(targetSocketId);
+        if (targetMapping && targetMapping.roomId === senderMapping.roomId) {
+            io.to(targetSocketId).emit(EVENTS.PONG, { t: data.t });
+        }
+    });
+
     socket.on('disconnect', () => {
         eventCounts.delete(socket.id);
         roomListCooldowns.delete(socket.id);

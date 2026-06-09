@@ -51,7 +51,11 @@ export const EVENTS = {
     // Episode Auto-Sync
     EPISODE_LOBBY: "episode_lobby",     // Broadcast: waiting for everyone on this episode
     EPISODE_READY: "episode_ready",      // Response: loaded the episode and paused at 0:00
-    EPISODE_LOBBY_CANCEL: "episode_lobby_cancel" // Broadcast: cancel active lobby and resume
+    EPISODE_LOBBY_CANCEL: "episode_lobby_cancel", // Broadcast: cancel active lobby and resume
+
+    // Ping / Latency
+    PING: "ping",  // { t: timestamp, target?: peerId } — empty target = server echo
+    PONG: "pong"   // server responds with same { t } for client RTT calculation
 };
 
 export const HEARTBEAT_INTERVAL = 15000; // 15s

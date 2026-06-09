@@ -23,6 +23,12 @@ const lastSeqBySender = {};               // senderId → last received seq (sta
 const activePorts = new Set();            // New: track active content ports for keep-alive
 let expectedAcksCount = 0;                // Snapshot of peerCount when initiating Force Sync
 
+// --- Ping / Latency ---
+let pingInterval = null;
+let pingTimeout = null;
+let pendingPingT = null;
+let currentPingMs = null;
+
 // --- Keep-Alive Port Listener ---
 chrome.runtime.onConnect.addListener((port) => {
     if (port.name === 'keepAlive') {
@@ -299,6 +305,7 @@ function forceDisconnect() {
         clearTimeout(forceSyncTimeout);
         forceSyncTimeout = null;
     }
+    stopPing();
     if (socket) {
         socket.onopen = null;
         socket.onmessage = null;
@@ -492,6 +499,7 @@ async function connect() {
                 isConnecting = false;
                 isNamespaceJoined = true;
                 broadcastConnectionStatus('connected');
+                startPing();
                 addLog('Joined Namespace /', 'success');
                 const settings = await getSettings();
                 if (settings.roomId) {
@@ -527,6 +535,7 @@ async function connect() {
         socket.onclose = () => {
             isConnecting = false;
             isNamespaceJoined = false;
+            stopPing();
             
             isForceSyncInitiator = false;
             forceSyncAcks.clear();
@@ -689,6 +698,42 @@ function addToHistory(action, senderId) {
         chrome.storage.session.set({ history });
     }
     chrome.runtime.sendMessage({ type: 'HISTORY_UPDATE', history }).catch(() => {});
+}
+
+// --- Ping / Latency ---
+function sendPing() {
+    const t = Date.now();
+    pendingPingT = t;
+    emit(EVENTS.PING, { t });
+    if (pingTimeout) clearTimeout(pingTimeout);
+    pingTimeout = setTimeout(() => {
+        if (pendingPingT === t) {
+            pendingPingT = null;
+        }
+        pingTimeout = null;
+    }, 5000);
+}
+
+function startPing() {
+    if (pingInterval) clearInterval(pingInterval);
+    if (pingTimeout) { clearTimeout(pingTimeout); pingTimeout = null; }
+    currentPingMs = null;
+    pendingPingT = null;
+    pingInterval = setInterval(sendPing, 15000);
+    sendPing();
+}
+
+function stopPing() {
+    if (pingInterval) {
+        clearInterval(pingInterval);
+        pingInterval = null;
+    }
+    if (pingTimeout) {
+        clearTimeout(pingTimeout);
+        pingTimeout = null;
+    }
+    currentPingMs = null;
+    pendingPingT = null;
 }
 
 // --- Event Handlers ---
@@ -875,6 +920,11 @@ function handleServerEvent(event, data) {
 
             routeToContent(event, data);
             break;
+        case EVENTS.PING:
+            if (data && typeof data.t === 'number' && Number.isFinite(data.t) && data.sender) {
+                emit(EVENTS.PONG, { t: data.t, target: data.sender });
+            }
+            break;
         case EVENTS.EVENT_ACK:
             if (lastActionState && lastActionState.action && data?.senderId) {
                 // Correlation Check: Only accept ACK if it matches our current action's timestamp
@@ -1009,6 +1059,20 @@ function handleServerEvent(event, data) {
                 const title = episodeLobby.expectedTitle;
                 clearEpisodeLobbyState();
                 addLog(`Episode lobby for "${title}" cancelled by ${data.senderId || 'peer'}`, 'warn');
+            }
+            break;
+        case EVENTS.PONG:
+            if (data && typeof data.t === 'number' && Number.isFinite(data.t)) {
+                if (pendingPingT === data.t) {
+                    pendingPingT = null;
+                    if (pingTimeout) {
+                        clearTimeout(pingTimeout);
+                        pingTimeout = null;
+                    }
+                    const rtt = Date.now() - data.t;
+                    currentPingMs = (rtt >= 0 && rtt < 30000) ? rtt : null;
+                    chrome.runtime.sendMessage({ type: 'PING_UPDATE', ping: currentPingMs }).catch(() => {});
+                }
             }
             break;
         default:
@@ -1372,7 +1436,8 @@ async function handleAsyncMessage(message, sender, sendResponse) {
             serverUrl: currentServerUrl,
             version: chrome.runtime.getManifest().version,
             protocolVersion: PROTOCOL_VERSION,
-            roomPassword: currentRoom ? currentRoom.password : null
+            roomPassword: currentRoom ? currentRoom.password : null,
+            ping: currentPingMs
         });
     } else if (message.type === 'LEAVE_ROOM') {
         resetAudioProcessingInTab(currentTabId);

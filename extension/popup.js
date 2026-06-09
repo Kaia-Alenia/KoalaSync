@@ -16,6 +16,7 @@ const elements = {
     clearLogs: document.getElementById('clearLogs'),
     connDot: document.getElementById('connDot'),
     connText: document.getElementById('connText'),
+    connPing: document.getElementById('connPing'),
     serverUrl: document.getElementById('serverUrl'),
     serverOfficial: document.getElementById('serverOfficial'),
     serverCustom: document.getElementById('serverCustom'),
@@ -248,6 +249,7 @@ async function init() {
             localPeerId = res.peerId;
             reconnectSlowMode = res.reconnectSlowMode || false;
             applyConnectionStatus(res.status);
+            updatePingDisplay(res.ping);
             updatePeerList(res.peers);
             lastKnownPeers = res.peers || [];
             if (res.lastActionState) updateLastActionUI(res.lastActionState, res.peers);
@@ -812,6 +814,9 @@ function applyConnectionStatus(status) {
     if (elements.connText) {
         elements.connText.textContent = connected ? getMessage('STATUS_CONNECTED') : (reconnecting ? getMessage('STATUS_RECONNECTING') : (connecting ? getMessage('STATUS_CONNECTING') : getMessage('STATUS_DISCONNECTED')));
     }
+    if (!connected) {
+        updatePingDisplay(null);
+    }
     if (elements.retryBtn) {
         elements.retryBtn.style.display = reconnecting && reconnectSlowMode ? 'block' : 'none';
     }
@@ -829,6 +834,23 @@ function applyConnectionStatus(status) {
     if (elements.playBtn) elements.playBtn.textContent = getMessage('BTN_PLAY');
     if (elements.pauseBtn) elements.pauseBtn.textContent = getMessage('BTN_PAUSE');
     if (elements.forceSyncBtn) elements.forceSyncBtn.textContent = getMessage('BTN_SYNC');
+}
+
+function updatePingDisplay(pingMs) {
+    if (!elements.connPing) return;
+    if (pingMs === null || pingMs === undefined || typeof pingMs !== 'number' || !Number.isFinite(pingMs)) {
+        elements.connPing.textContent = '';
+        elements.connPing.style.color = '';
+        return;
+    }
+    elements.connPing.textContent = `${Math.round(pingMs)}ms`;
+    if (pingMs < 50) {
+        elements.connPing.style.color = '#22c55e';
+    } else if (pingMs < 150) {
+        elements.connPing.style.color = '#f59e0b';
+    } else {
+        elements.connPing.style.color = '#ef4444';
+    }
 }
 
 function updateHistory(history) {
@@ -1559,8 +1581,10 @@ chrome.runtime.onMessage.addListener((msg) => {
         }
         if (msg.status === 'connected') {
             chrome.runtime.sendMessage({ type: 'GET_STATUS' }, (res) => {
-                if (res && res.peers) updatePeerList(res.peers);
-                if (res && res.lastActionState) updateLastActionUI(res.lastActionState, res.peers);
+                if (!res) return;
+                if (res.peers) updatePeerList(res.peers);
+                if (res.lastActionState) updateLastActionUI(res.lastActionState, res.peers);
+                updatePingDisplay(res.ping);
             });
         }
         if (msg.status === 'disconnected') {
@@ -1579,6 +1603,8 @@ chrome.runtime.onMessage.addListener((msg) => {
                 }
             });
         }
+    } else if (msg.type === 'PING_UPDATE') {
+        updatePingDisplay(msg.ping);
     } else if (msg.type === 'HISTORY_UPDATE') {
         updateHistory(msg.history);
     } else if (msg.type === 'ROOM_LIST') {

@@ -4,6 +4,14 @@ All notable changes to the KoalaSync browser extension and relay server.
 
 ---
 
+## [v2.2.1] — 2026-06-09
+
+### Added
+- **Server Ping Display**: Measures round-trip latency to the relay server via application-level ping/pong events. The extension sends `PING { t }` every 15 seconds; the server responds with `PONG { t }`. Round-trip time is calculated client-side and displayed in the Status tab, color-coded (<50ms green, 50–150ms yellow, >150ms red). No ping value is shown when disconnected or if the server does not respond within 5 seconds.
+- **Peer Ping Response (Future-Proof)**: The extension can now respond to incoming `PING { t, sender }` events from other peers by sending back `PONG { t, target: sender }`. The relay server forwards `PING` to the target peer and routes `PONG` back to the original sender. Both client and server validate that peers are in the same room before forwarding/routing. Peer-to-peer ping initiation will be activated in a future extension update without requiring a server restart.
+
+---
+
 ## [v2.2.0] — 2026-06-08
 
 ### Added
