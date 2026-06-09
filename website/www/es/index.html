@@ -174,6 +174,11 @@
           "@type": "Question",
           "name": "¿Están seguros mis datos? ¿Y si no confío en el servidor oficial?",
           "acceptedAnswer": { "@type": "Answer", "text": "Totalmente seguro. El servidor relay de KoalaSync usa solo RAM — todos los datos de sesión se eliminan al salir de la sala. Sin base de datos, sin registros, sin análisis, sin cuentas. Si prefieres control total: aloja tu propio servidor relay privado con Docker en minutos. El código fuente es completamente abierto y auditable en GitHub." }
+        },
+        {
+          "@type": "Question",
+          "name": "¿Puedo arreglar diálogos bajos y explosiones fuertes al ver videos en el navegador?",
+          "acceptedAnswer": { "@type": "Answer", "text": "Sí. KoalaSync 2.2.0 incluye un compresor de audio integrado que reduce la diferencia entre las partes bajas y altas de tu video. Funciona localmente a través de la API Web Audio — ningún dato de audio sale de tu ordenador. Abre el popup, crea una sala, ve a Ajustes → Audio Processing, activa el compresor y elige un preset. Funciona en Netflix, Prime Video, Disney+, YouTube y cualquier sitio de video HTML5." }
         }
       ]
     }
@@ -283,7 +288,7 @@
                         <div class="mock-header-title"><picture><source srcset="../assets/NewLogoIcon.avif" type="image/avif"><img src="../assets/NewLogoIcon.webp" alt="KoalaSync Logo"></picture>KoalaSync</div>
                         <a href="https://github.com/Shik3i/KoalaSync" target="_blank" rel="noopener" class="mock-version-link" title="Visit GitHub Repository">
                             <svg fill="currentColor" style="width:12px;height:12px;display:block" viewBox="0 0 16 16"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27s1.36.09 2 .27c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8"/></svg>
-                            <span class="mockup-version">2.2.0</span>
+                            <span class="mockup-version">2.2.1</span>
                         </a>
                     </div>
                     <div class="mock-tabs">
@@ -546,7 +551,7 @@
 
                             <div style="margin-top: 16px; text-align: center; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 10px; flex-shrink: 0;">
                                 <a href="https://github.com/Shik3i/KoalaSync" target="_blank" rel="noopener" style="color: var(--text-muted); text-decoration: none; font-size: 10px; opacity: 0.6; display: block;">GitHub Repository</a>
-                                <div style="color: var(--text-muted); font-size: 9px; opacity: 0.4; margin-top: 4px;" class="mockup-version">2.2.0</div>
+                                <div style="color: var(--text-muted); font-size: 9px; opacity: 0.4; margin-top: 4px;" class="mockup-version">2.2.1</div>
                             </div>
                         </div>
                     </div>
@@ -710,6 +715,17 @@
                         <span>Auto-alojable y listo para Docker</span>
                     </h3>
                     <p>Nuestros servidores oficiales son gratuitos y rápidos, pero puedes tomar el control total si lo deseas. Inicia tu propio servidor de retransmisión privado en segundos a través de Docker.</p>
+                </div>
+
+                <!-- Card 7: Volume Leveling / Audio Compressor (Bento Standard) -->
+                <div class="feature-card" data-reveal>
+                    <h3>
+                        <span class="feature-icon-svg">
+                            <svg width="24" height="24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="bento-icon" viewBox="0 0 24 24"><path d="M11 5 6 9H2v6h4l5 4zm8.07-.07a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
+                        </span>
+                        <span>Nivelación de volumen / Compresor de audio</span>
+                    </h3>
+                    <p>No más usar el control de volumen constantemente. El compresor de audio integrado realza los diálogos bajos y controla las explosiones fuertes. Funciona en Netflix, Prime Video, Disney+, YouTube y cualquier video HTML5. Completamente local — ningún dato de audio sale de tu ordenador.</p>
                 </div>
             </div>
 
@@ -914,7 +930,7 @@
                                     <picture><source srcset="../assets/NewLogoIcon.avif" type="image/avif"><img src="../assets/NewLogoIcon.webp" alt="KoalaSync Logo" width="14" height="14"></picture>
                                     <span>KoalaSync</span>
                                 </div>
-                                <div class="illus-popup-version mockup-version">2.2.0</div>
+                                <div class="illus-popup-version mockup-version">2.2.1</div>
                             </div>
                             <div class="illus-popup-tabs">
                                 <div class="illus-popup-tab active">
@@ -1164,6 +1180,10 @@
                 <details class="faq-item" data-reveal>
                     <summary><span>¿Están seguros mis datos? ¿Y si no confío en el servidor oficial?</span></summary>
                     <p><span>Totalmente seguro. El servidor relay de KoalaSync usa solo RAM — todos los datos de sesión se eliminan al salir de la sala. Sin base de datos, sin registros, sin análisis, sin cuentas. Si prefieres control total: aloja tu propio servidor relay privado con Docker en minutos. El código fuente es completamente abierto y auditable en GitHub.</span></p>
+                </details>
+                <details class="faq-item" data-reveal>
+                    <summary><span>¿Puedo arreglar diálogos bajos y explosiones fuertes al ver videos en el navegador?</span></summary>
+                    <p><span>Sí. KoalaSync 2.2.0 incluye un compresor de audio integrado que reduce la diferencia entre las partes bajas y altas de tu video. Funciona localmente a través de la API Web Audio — ningún dato de audio sale de tu ordenador. Abre el popup, crea una sala, ve a Ajustes → Audio Processing, activa el compresor y elige un preset. Funciona en Netflix, Prime Video, Disney+, YouTube y cualquier sitio de video HTML5.</span></p>
                 </details>
             </div>
         </div>

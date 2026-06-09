@@ -174,6 +174,11 @@
           "@type": "Question",
           "name": "제 데이터는 안전한가요? 공식 서버를 믿지 못하겠다면 어떻게 하나요?",
           "acceptedAnswer": { "@type": "Answer", "text": "완전히 안전합니다. KoalaSync의 릴레이 서버는 RAM 전용으로 작동하여, 방을 나가는 즉시 모든 세션 데이터가 영구적으로 삭제됩니다. 데이터베이스도, 로그도, 분석도, 계정도 없습니다. 완전한 제어를 원하신다면 Docker를 통해 몇 분 만에 나만의 개인 릴레이 서버를 직접 호스팅할 수 있습니다. 전체 소스 코드는 오픈 소스이며 GitHub에서 확인할 수 있습니다." }
+        },
+        {
+          "@type": "Question",
+          "name": "브라우저에서 비디오를 시청할 때 조용한 대화와 큰 폭발음을 개선할 수 있나요?",
+          "acceptedAnswer": { "@type": "Answer", "text": "네. KoalaSync 2.2.0에는 비디오의 조용한 부분과 시끄러운 부분 간의 차이를 줄이는 내장 오디오 압축기가 포함되어 있습니다. Web Audio API를 통해 로컬에서 실행되므로 오디오 데이터가 컴퓨터를 떠나지 않습니다. 팝업을 열고, 방을 만들고, 설정 → Audio Processing으로 이동하여 압축기를 켜고 프리셋을 선택하세요. Netflix, Prime Video, Disney+, YouTube 및 모든 HTML5 비디오 사이트에서 작동합니다." }
         }
       ]
     }
@@ -283,7 +288,7 @@
                         <div class="mock-header-title"><picture><source srcset="../assets/NewLogoIcon.avif" type="image/avif"><img src="../assets/NewLogoIcon.webp" alt="KoalaSync Logo"></picture>KoalaSync</div>
                         <a href="https://github.com/Shik3i/KoalaSync" target="_blank" rel="noopener" class="mock-version-link" title="Visit GitHub Repository">
                             <svg fill="currentColor" style="width:12px;height:12px;display:block" viewBox="0 0 16 16"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27s1.36.09 2 .27c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8"/></svg>
-                            <span class="mockup-version">2.2.0</span>
+                            <span class="mockup-version">2.2.1</span>
                         </a>
                     </div>
                     <div class="mock-tabs">
@@ -546,7 +551,7 @@
 
                             <div style="margin-top: 16px; text-align: center; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 10px; flex-shrink: 0;">
                                 <a href="https://github.com/Shik3i/KoalaSync" target="_blank" rel="noopener" style="color: var(--text-muted); text-decoration: none; font-size: 10px; opacity: 0.6; display: block;">GitHub Repository</a>
-                                <div style="color: var(--text-muted); font-size: 9px; opacity: 0.4; margin-top: 4px;" class="mockup-version">2.2.0</div>
+                                <div style="color: var(--text-muted); font-size: 9px; opacity: 0.4; margin-top: 4px;" class="mockup-version">2.2.1</div>
                             </div>
                         </div>
                     </div>
@@ -710,6 +715,17 @@
                         <span>자체 호스팅 가능 및 Docker 지원</span>
                     </h3>
                     <p>공식 서버는 무료이며 빠르지만, 원하는 경우 직접 호스팅할 수도 있습니다. Docker를 통해 몇 초 만에 나만의 개인 릴레이 서버를 구축해 보세요.</p>
+                </div>
+
+                <!-- Card 7: Volume Leveling / Audio Compressor (Bento Standard) -->
+                <div class="feature-card" data-reveal>
+                    <h3>
+                        <span class="feature-icon-svg">
+                            <svg width="24" height="24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="bento-icon" viewBox="0 0 24 24"><path d="M11 5 6 9H2v6h4l5 4zm8.07-.07a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
+                        </span>
+                        <span>볼륨 레벨링 / 오디오 압축기</span>
+                    </h3>
+                    <p>더 이상 볼륨 노브를 계속 조정하지 마세요. 내장 오디오 압축기가 조용한 대화를 증폭하고 큰 폭발음을 완화합니다. Netflix, Prime Video, Disney+, YouTube 및 모든 HTML5 비디오에서 작동합니다. 완전히 로컬에서 처리 — 오디오 데이터가 컴퓨터를 떠나지 않습니다.</p>
                 </div>
             </div>
 
@@ -914,7 +930,7 @@
                                     <picture><source srcset="../assets/NewLogoIcon.avif" type="image/avif"><img src="../assets/NewLogoIcon.webp" alt="KoalaSync Logo" width="14" height="14"></picture>
                                     <span>KoalaSync</span>
                                 </div>
-                                <div class="illus-popup-version mockup-version">2.2.0</div>
+                                <div class="illus-popup-version mockup-version">2.2.1</div>
                             </div>
                             <div class="illus-popup-tabs">
                                 <div class="illus-popup-tab active">
@@ -1164,6 +1180,10 @@
                 <details class="faq-item" data-reveal>
                     <summary><span>제 데이터는 안전한가요? 공식 서버를 믿지 못하겠다면 어떻게 하나요?</span></summary>
                     <p><span>완전히 안전합니다. KoalaSync의 릴레이 서버는 RAM 전용으로 작동하여, 방을 나가는 즉시 모든 세션 데이터가 영구적으로 삭제됩니다. 데이터베이스도, 로그도, 분석도, 계정도 없습니다. 완전한 제어를 원하신다면 Docker를 통해 몇 분 만에 나만의 개인 릴레이 서버를 직접 호스팅할 수 있습니다. 전체 소스 코드는 오픈 소스이며 GitHub에서 확인할 수 있습니다.</span></p>
+                </details>
+                <details class="faq-item" data-reveal>
+                    <summary><span>브라우저에서 비디오를 시청할 때 조용한 대화와 큰 폭발음을 개선할 수 있나요?</span></summary>
+                    <p><span>네. KoalaSync 2.2.0에는 비디오의 조용한 부분과 시끄러운 부분 간의 차이를 줄이는 내장 오디오 압축기가 포함되어 있습니다. Web Audio API를 통해 로컬에서 실행되므로 오디오 데이터가 컴퓨터를 떠나지 않습니다. 팝업을 열고, 방을 만들고, 설정 → Audio Processing으로 이동하여 압축기를 켜고 프리셋을 선택하세요. Netflix, Prime Video, Disney+, YouTube 및 모든 HTML5 비디오 사이트에서 작동합니다.</span></p>
                 </details>
             </div>
         </div>
