@@ -103,6 +103,16 @@ jobs:
           npm install
           npm run build:extension
 
+      - name: Build Website
+        run: node website/build.js
+
+      - name: Upload Website Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: website-www
+          path: website/www/
+          if-no-files-found: error
+
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
         with:
