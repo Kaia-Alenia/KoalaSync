@@ -9,6 +9,7 @@ All notable changes to the KoalaSync browser extension and relay server.
 ### Added
 - **Extension: New Interactive Onboarding Tour**: A fully redesigned, interactive step-by-step onboarding experience.
 - **Extension: Auto-Switch to Sync Tab**: The UI now intelligently switches to the Sync tab when you join a room to guide video selection.
+- **Extension: Uninstall URL Integration**: Prepared an uninstall URL setup that works natively across Chrome and Firefox, cleanly attaching browser context for analytics.
 
 ### Fixed
 - **Extension: Infinite Seek Loop Prevention**: Replaced the fragile time-based seek suppression with an exact target-time verification mechanism, entirely eliminating infinite seek loops on slow buffers.

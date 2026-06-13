@@ -38,7 +38,7 @@ const baseManifest = JSON.parse(fs.readFileSync(baseManifestPath, 'utf8'));
 
 // Helper to copy files, ignoring manifest.json and manifest.base.json
 // Also injects shared constants into content.js
-function copyExtensionFiles(targetDir) {
+function copyExtensionFiles(targetDir, browserName) {
   fs.mkdirSync(targetDir, { recursive: true });
   
   // Read master constants for injection
@@ -99,6 +99,28 @@ function copyExtensionFiles(targetDir) {
 
         fs.writeFileSync(destPath, content);
         console.log('✓ Injected shared constants into content.js');
+      } else if (item === 'background.js') {
+        let content = fs.readFileSync(srcPath, 'utf8');
+        
+        // 3. Inject Uninstall URL Constants
+        const uStart = '// --- UNINSTALL_URL_INJECT_START ---';
+        const uEnd = '// --- UNINSTALL_URL_INJECT_END ---';
+        const uPattern = new RegExp(`${uStart}[\\s\\S]+?${uEnd}`);
+        const placeholderUrl = "https://example.com/uninstall-placeholder"; // TODO: Replace me
+        
+        let uRep = `${uStart}\n        // This block is automatically updated by /scripts/build-extension.js\n`;
+        uRep += `        const UNINSTALL_URL = "${placeholderUrl}";\n`;
+        uRep += `        const BROWSER_TYPE = "${browserName}";\n`;
+        uRep += `        ${uEnd}`;
+        
+        if (uPattern.test(content)) {
+          content = content.replace(uPattern, uRep);
+        } else {
+          console.warn('⚠️ WARNING: Uninstall URL markers not found in background.js');
+        }
+
+        fs.writeFileSync(destPath, content);
+        console.log(`✓ Injected uninstall URL constants for ${browserName} into background.js`);
       } else {
         fs.copyFileSync(srcPath, destPath);
       }
@@ -127,7 +149,7 @@ async function buildBrowser(browserName, manifestModifier) {
   const browserDistDir = path.join(distDir, browserName);
   
   // 1. Copy files
-  copyExtensionFiles(browserDistDir);
+  copyExtensionFiles(browserDistDir, browserName);
   
   // 2. Modify and write manifest
   const browserManifest = manifestModifier(JSON.parse(JSON.stringify(baseManifest)));

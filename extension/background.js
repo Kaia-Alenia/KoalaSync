@@ -2,6 +2,33 @@ import { EVENTS, PROTOCOL_VERSION, OFFICIAL_SERVER_URL, OFFICIAL_SERVER_TOKEN, E
 import { generateUsername } from './shared/names.js';
 import { loadLocale, getMessage, getSystemLanguage } from './i18n.js';
 
+// --- Uninstall URL Initialization ---
+chrome.runtime.onInstalled.addListener((details) => {
+    if (details.reason === 'install' || details.reason === 'update') {
+        // --- UNINSTALL_URL_INJECT_START ---
+        const UNINSTALL_URL = ""; // Populated during build
+        const BROWSER_TYPE = "unknown";
+        // --- UNINSTALL_URL_INJECT_END ---
+        
+        if (UNINSTALL_URL && UNINSTALL_URL.trim() !== '') {
+            try {
+                const url = new URL(UNINSTALL_URL);
+                url.searchParams.set("browser", BROWSER_TYPE);
+                
+                const runtimeAPI = typeof browser !== 'undefined' ? browser.runtime : chrome.runtime;
+                if (runtimeAPI && runtimeAPI.setUninstallURL) {
+                    const result = runtimeAPI.setUninstallURL(url.href);
+                    // browser.runtime.setUninstallURL returns a Promise, handle rejection silently
+                    if (result && typeof result.catch === 'function') {
+                        result.catch(err => console.warn('Failed to set uninstall URL:', err));
+                    }
+                }
+            } catch (err) {
+                console.error("Invalid uninstall URL provided:", err);
+            }
+        }
+    }
+});
 
 // --- State Management ---
 let socket = null;
