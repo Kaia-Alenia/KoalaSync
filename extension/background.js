@@ -1664,7 +1664,8 @@ async function handleAsyncMessage(message, sender, sendResponse) {
         markRoomUseful();
         getSettings().then(settings => {
             const statusPayload = { ...message.payload, peerId, username: settings.username, tabTitle: currentTabTitle };
-            emit(EVENTS.PEER_STATUS, statusPayload);
+            const otherCount = currentRoom && Array.isArray(currentRoom.peers) ? currentRoom.peers.filter(p => (typeof p === 'object' ? p.peerId : p) !== peerId).length : 0;
+            if (otherCount > 0) emit(EVENTS.PEER_STATUS, statusPayload);
 
             if (currentRoom && Array.isArray(currentRoom.peers)) {
                 const me = currentRoom.peers.find(p => (p.peerId || p) === peerId);
