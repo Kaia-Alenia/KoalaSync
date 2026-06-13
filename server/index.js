@@ -148,22 +148,22 @@ function checkAuthRate(ip, roomId) {
 }
 
 function recordAuthFailure(ip, roomId) {
-    if (failedAuthAttempts.size > 50000) {
+    if (failedAuthAttempts.size > 200000) {
         const now = Date.now();
         // 1. Clear expired entries (> 15 mins)
         for (const [key, record] of failedAuthAttempts.entries()) {
             if (now - record.lastAttempt > 15 * 60 * 1000) {
                 failedAuthAttempts.delete(key);
             } else {
-                break; // Since entries are insertion-ordered by time, all subsequent entries are newer
+                break;
             }
         }
         
-        // 2. If still over 50k, perform LRU-style eviction on the oldest 10,000 entries (first items in Map order)
-        if (failedAuthAttempts.size > 50000) {
-            log('SECURITY', 'failedAuthAttempts size exceeded 50000. Performing insertion-order eviction.');
+        // 2. If still over 200k, perform LRU-style eviction on the oldest 10,000 entries (first items in Map order)
+        if (failedAuthAttempts.size > 200000) {
+            log('SECURITY', 'failedAuthAttempts size exceeded 200000. Performing insertion-order eviction.');
             for (const [key] of failedAuthAttempts.entries()) {
-                if (failedAuthAttempts.size <= 40000) {
+                if (failedAuthAttempts.size <= 190000) {
                     break;
                 }
                 failedAuthAttempts.delete(key);
