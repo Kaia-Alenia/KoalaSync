@@ -4,6 +4,16 @@ All notable changes to the KoalaSync browser extension and relay server.
 
 ---
 
+## [v2.2.5] — Unreleased
+
+### Fixed
+- **Extension: Audio settings now propagate immediately to video tabs**: Changes made in the audio options page are now instantly applied to the active video tab. Previously, settings saved to `chrome.storage.local` were not picked up by the background listener, which only watched `chrome.storage.sync`.
+- **Extension: Audio compressor now logs enable/disable state and resume failures**: The compressor reports when it is activated or bypassed, and warns if the `AudioContext` cannot be resumed (e.g. browser autoplay policy requires a user gesture on the page first).
+- **Extension: Video heartbeat no longer sent when alone in a room**: The full media metadata `PEER_STATUS` is now only emitted when other peers are present. The session keepalive (background heartbeat) continues to run unaffected, preventing the server reaper from disconnecting idle peers.
+- **Server: Increased `failedAuthAttempts` eviction threshold from 50k to 200k**: Reduces frequency of expensive batch evictions under high auth-failure volumes, smoothing heap usage.
+
+---
+
 ## [v2.2.4] — 2026-06-10
 
 ### Fixed
