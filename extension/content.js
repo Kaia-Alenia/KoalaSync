@@ -184,7 +184,7 @@
             }
         }
         if (audioCtx.state === 'suspended') {
-            audioCtx.resume().catch(() => {});
+            audioCtx.resume().catch(() => { reportLog('AudioContext resume failed - browser may need page interaction first', 'warn'); });
         }
         return audioCtx;
     }
@@ -242,6 +242,7 @@
         rampGain(chain.dryGain, 1, t);
         rampGain(chain.compGain, 0, t);
         chain.active = false;
+        reportLog('Audio compressor disabled', 'info');
     }
 
     function bypassCurrentAudioProcessing() {
@@ -274,6 +275,7 @@
             rampGain(chain.dryGain, 0, t);
             rampGain(chain.compGain, 1, t);
             chain.active = true;
+            reportLog('Audio compressor enabled', 'info');
         }
     }
 

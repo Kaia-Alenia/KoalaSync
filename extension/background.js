@@ -1821,7 +1821,7 @@ async function handleAsyncMessage(message, sender, sendResponse) {
 }
 
 chrome.storage.onChanged.addListener(async (changes, area) => {
-    if (area !== 'sync' || !changes.audioSettings) return;
+    if (area !== 'local' || !changes.audioSettings) return;
     await ensureState();
     if (!currentTabId) return;
 
