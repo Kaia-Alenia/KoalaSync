@@ -205,5 +205,8 @@
   "AUDIO_PARAM_ATTACK": "Attack",
   "AUDIO_PARAM_RELEASE": "Release",
   "AUDIO_EQUALIZER": "이퀄라이저",
-  "AUDIO_COMING_SOON": "출시 예정"
+  "AUDIO_COMING_SOON": "출시 예정",
+  "BTN_RESTART_TOUR": "",
+  "BTN_RESTART_TOUR_TOOLTIP": "",
+  "HINT_SELECT_VIDEO": ""
 }

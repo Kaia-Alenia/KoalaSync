@@ -29,6 +29,7 @@ const elements = {
     inviteLink: document.getElementById('inviteLink'),
     filterNoise: document.getElementById('filterNoise'),
     regenId: document.getElementById('regenId'),
+    restartTourBtn: document.getElementById('restartTourBtn'),
     lastActionCard: document.getElementById('lastActionCard'),
     historyList: document.getElementById('historyList'),
     copyLogs: document.getElementById('copyLogs'),
@@ -68,6 +69,7 @@ let lastPeersJson = null;
 let lastKnownPeers = [];
 let isDevTabVisible = false;
 let reconnectSlowMode = false;
+let isProcessingConnection = false;
 let joinBtnTimeout = null;
 let forceSyncResetTimer = null;
 let popupIntervals = [];
@@ -173,7 +175,7 @@ function setRoomRefreshCooldown() {
 
 // --- Initialization ---
 async function init() {
-    const localData = await chrome.storage.local.get(['serverUrl', 'useCustomServer', 'roomId', 'password', 'username', 'filterNoise', 'autoSyncNextEpisode', 'forceSyncMode', 'browserNotifications', 'autoCopyInvite', 'locale', 'audioSettings']);
+    const localData = await chrome.storage.local.get(['serverUrl', 'useCustomServer', 'roomId', 'password', 'username', 'filterNoise', 'autoSyncNextEpisode', 'forceSyncMode', 'browserNotifications', 'autoCopyInvite', 'locale', 'audioSettings', 'activeTab']);
     // Migrate preferences from sync → local for existing users
     const oldSync = await chrome.storage.sync.get(['serverUrl', 'useCustomServer', 'roomId', 'password', 'username', 'filterNoise', 'autoSyncNextEpisode', 'forceSyncMode', 'browserNotifications', 'autoCopyInvite', 'locale', 'audioSettings']);
     const toMigrate = {};
@@ -259,8 +261,21 @@ async function init() {
 
             // Render lobby status if active
             if (res.episodeLobby) updateLobbyUI(res.episodeLobby, res.peers);
+
+            if (res.status === 'connected' && !res.targetTabId && localData.roomId) {
+                const syncTabBtn = document.querySelector('.tab-btn[data-tab="tab-sync"]');
+                if (syncTabBtn) syncTabBtn.click();
+                showSelectVideoHint();
+            } else if (localData.activeTab) {
+                const btn = document.querySelector(`.tab-btn[data-tab="${localData.activeTab}"]`);
+                if (btn) btn.click();
+            }
         } else {
             await populateTabs();
+            if (localData.activeTab) {
+                const btn = document.querySelector(`.tab-btn[data-tab="${localData.activeTab}"]`);
+                if (btn) btn.click();
+            }
         }
     });
 
@@ -1121,6 +1136,8 @@ elements.tabs.forEach(btn => {
         isDevTabVisible = btn.dataset.tab === 'tab-dev';
         if (isDevTabVisible) refreshLogs();
         if (btn.dataset.tab === 'tab-sync') refreshHistory();
+        
+        chrome.storage.local.set({ activeTab: btn.dataset.tab });
     });
 });
 
@@ -1163,8 +1180,13 @@ elements.roomId.addEventListener('input', () => {
 });
 
 elements.joinBtn.addEventListener('click', async () => {
+    if (isProcessingConnection) return;
+    isProcessingConnection = true;
     clearConnectionErrorTimer();
-    if (elements.joinBtn.disabled) return;
+    if (elements.joinBtn.disabled) {
+        isProcessingConnection = false;
+        return;
+    }
     const roomIdInput = elements.roomId.value.trim();
     const isCreating = !roomIdInput;
     
@@ -1176,6 +1198,7 @@ elements.joinBtn.addEventListener('click', async () => {
         elements.joinBtn.disabled = false;
         elements.joinBtn.textContent = getMessage('BTN_JOIN_ROOM');
         joinBtnTimeout = null;
+        isProcessingConnection = false;
         showError(getMessage('ERR_CONN_TIMEOUT'));
     }, 15000);
     
@@ -1197,6 +1220,7 @@ elements.joinBtn.addEventListener('click', async () => {
             showError(getMessage('ERR_INVALID_SERVER_URL'));
             elements.joinBtn.disabled = false;
             elements.joinBtn.textContent = getMessage('BTN_JOIN_ROOM');
+            isProcessingConnection = false;
             return;
         }
     }
@@ -1223,6 +1247,8 @@ elements.joinBtn.addEventListener('click', async () => {
 });
 
 elements.leaveBtn.addEventListener('click', async () => {
+    if (isProcessingConnection) return;
+    isProcessingConnection = true;
     clearConnectionErrorTimer();
     chrome.runtime.sendMessage({ type: 'LEAVE_ROOM' });
     await chrome.storage.local.set({ roomId: '', password: '' });
@@ -1230,6 +1256,7 @@ elements.leaveBtn.addEventListener('click', async () => {
     elements.password.value = '';
     lastKnownPeers = [];
     updateUI(null, null);
+    isProcessingConnection = false;
 });
 
 function generateRoomId() {
@@ -1280,6 +1307,9 @@ elements.retryBtn.addEventListener('click', () => {
 });
 
 elements.targetTab.addEventListener('change', () => {
+    const hint = document.getElementById('targetTabHint');
+    if (hint) hint.style.display = 'none';
+
     const val = elements.targetTab.value;
     const tabId = val ? parseInt(val) : null;
     const tabTitle = elements.targetTab.options[elements.targetTab.selectedIndex]?.dataset.originalTitle || null;
@@ -1289,8 +1319,14 @@ elements.targetTab.addEventListener('change', () => {
 elements.forceSyncBtn.addEventListener('click', async () => {
     if (elements.forceSyncBtn.disabled) return;
     
+    const originalText = elements.forceSyncBtn.textContent;
+    elements.forceSyncBtn.disabled = true;
+
     const status = await new Promise(r => chrome.runtime.sendMessage({ type: 'GET_STATUS' }, r));
-    if (chrome.runtime.lastError || !status || !status.targetTabId) return;
+    if (chrome.runtime.lastError || !status || !status.targetTabId) {
+        elements.forceSyncBtn.disabled = false;
+        return;
+    }
 
     const mode = elements.forceSyncMode.value;
     let targetTime = null;
@@ -1298,6 +1334,7 @@ elements.forceSyncBtn.addEventListener('click', async () => {
     if (mode === 'jump-to-others') {
         if (!localPeerId) {
             showError(getMessage('ERR_IDENTITY_NOT_LOADED'));
+            elements.forceSyncBtn.disabled = false;
             return;
         }
         const peers = status.peers || [];
@@ -1307,6 +1344,7 @@ elements.forceSyncBtn.addEventListener('click', async () => {
 
         if (otherTimes.length === 0) {
             showError(getMessage('ERR_NO_PEERS_TIME'));
+            elements.forceSyncBtn.disabled = false;
             return;
         }
 
@@ -1315,8 +1353,6 @@ elements.forceSyncBtn.addEventListener('click', async () => {
         targetTime = otherTimes.length % 2 !== 0 ? otherTimes[mid] : (otherTimes[mid - 1] + otherTimes[mid]) / 2;
     }
 
-    const originalText = elements.forceSyncBtn.textContent;
-    elements.forceSyncBtn.disabled = true;
     elements.forceSyncBtn.textContent = mode === 'jump-to-others' ? getMessage('BTN_STATE_SYNCING_GROUP', { time: formatTime(targetTime) }) : getMessage('BTN_STATE_SYNCING');
     forceSyncDone = false;
     const peerCount = (status.peers || []).filter(p => (typeof p === 'object' ? p.peerId : p) !== localPeerId).length;
@@ -1610,6 +1646,7 @@ chrome.runtime.onMessage.addListener((msg) => {
     } else if (msg.type === 'ROOM_LIST') {
         updateRoomList(msg.rooms);
     } else if (msg.type === 'JOIN_STATUS') {
+        isProcessingConnection = false;
         if (joinBtnTimeout) {
             clearTimeout(joinBtnTimeout);
             joinBtnTimeout = null;
@@ -1621,9 +1658,15 @@ chrome.runtime.onMessage.addListener((msg) => {
             // Final confirmation of join from background
             chrome.storage.local.get(['roomId', 'password', 'useCustomServer', 'serverUrl'], (data) => {
                 updateUI(data.roomId, data.password, data.useCustomServer, data.serverUrl);
+                const syncTabBtn = document.querySelector('.tab-btn[data-tab="tab-sync"]');
+                if (syncTabBtn) syncTabBtn.click();
+                showSelectVideoHint();
             });
         } else {
             // Join failed: reset UI state
+            chrome.storage.local.set({ roomId: '', password: '' });
+            elements.roomId.value = '';
+            elements.password.value = '';
             updateUI(null, null);
         }
     } else if (msg.type === 'LOBBY_UPDATE') {
@@ -2049,35 +2092,173 @@ function updateLobbyUI(lobby, peers) {
 
 // --- Onboarding Tour ---
 const onboardingSteps = [
-    { icon: '👋', get title() { return getMessage('ONBOARDING_1_TITLE'); }, get text() { return getMessage('ONBOARDING_1_TEXT'); }, targetTab: 'tab-room' },
-    { icon: '🏠', get title() { return getMessage('ONBOARDING_2_TITLE'); }, get text() { return getMessage('ONBOARDING_2_TEXT'); }, targetTab: 'tab-room' },
-    { icon: '🎬', get title() { return getMessage('ONBOARDING_3_TITLE'); }, get text() { return getMessage('ONBOARDING_3_TEXT'); }, targetTab: 'tab-sync' },
-    { icon: '⚙️', get title() { return getMessage('ONBOARDING_4_TITLE'); }, get text() { return getMessage('ONBOARDING_4_TEXT'); }, targetTab: 'tab-settings' },
-    { icon: '🎉', get title() { return getMessage('ONBOARDING_5_TITLE'); }, get text() { return getMessage('ONBOARDING_5_TEXT'); }, targetTab: 'tab-room' }
+    { 
+        icon: '👋', 
+        get title() { return getMessage('ONBOARDING_1_TITLE'); }, 
+        get text() { return getMessage('ONBOARDING_1_TEXT'); }, 
+        targetTab: 'tab-room',
+        targetSelector: '#createRoomBtn'
+    },
+    { 
+        icon: '🎬', 
+        get title() { return getMessage('ONBOARDING_3_TITLE'); }, 
+        get text() { return getMessage('ONBOARDING_3_TEXT'); }, 
+        targetTab: 'tab-sync',
+        targetSelector: '#targetTab'
+    },
+    { 
+        icon: '⚙️', 
+        get title() { return getMessage('ONBOARDING_4_TITLE'); }, 
+        get text() { return getMessage('ONBOARDING_4_TEXT'); }, 
+        targetTab: 'tab-settings',
+        targetSelector: '#username'
+    }
 ];
 
+function showSelectVideoHint() {
+    const hint = document.getElementById('targetTabHint');
+    if (hint && !elements.targetTab.value) {
+        hint.style.display = 'block';
+    }
+}
+
 let onboardingStep = 0;
+let onboardingTimeout = null;
 
 function showOnboarding() {
     const overlay = document.getElementById('onboarding-overlay');
     if (!overlay) return;
-    document.body.style.minHeight = '400px';
-    overlay.style.display = 'flex';
+    document.body.style.minHeight = '420px';
+    overlay.style.display = 'block';
+    onboardingStep = 0;
     renderOnboardingStep();
 }
 
+function positionSpotlightAndCard(targetEl) {
+    const spotlight = document.getElementById('onboarding-spotlight');
+    const card = document.getElementById('onboarding-card');
+    const arrow = document.getElementById('onboarding-arrow');
+    if (!spotlight || !card || !arrow) return;
+
+    spotlight.style.display = 'block';
+    card.style.display = 'block';
+    
+    // Force a reflow
+    card.getBoundingClientRect();
+    spotlight.getBoundingClientRect();
+
+    const targetRect = targetEl.getBoundingClientRect();
+    const pad = 6;
+    const sLeft = targetRect.left - pad;
+    const sTop = targetRect.top - pad;
+    const sWidth = targetRect.width + (pad * 2);
+    const sHeight = targetRect.height + (pad * 2);
+    
+    spotlight.style.left = `${sLeft}px`;
+    spotlight.style.top = `${sTop}px`;
+    spotlight.style.width = `${sWidth}px`;
+    spotlight.style.height = `${sHeight}px`;
+    spotlight.style.opacity = '1';
+
+    const cardWidth = 280;
+    const viewportHeight = window.innerHeight || document.documentElement.clientHeight;
+    
+    let cLeft = targetRect.left + (targetRect.width - cardWidth) / 2;
+    cLeft = Math.max(12, Math.min(320 - cardWidth - 12, cLeft));
+    
+    const cardHeight = card.offsetHeight || 150;
+    let cTop = targetRect.bottom + 14;
+    let arrowDir = 'up';
+    
+    if (cTop + cardHeight > viewportHeight - 12) {
+        cTop = targetRect.top - cardHeight - 14;
+        arrowDir = 'down';
+    }
+    
+    if (cTop < 12) {
+        cTop = targetRect.bottom + 14;
+        arrowDir = 'up';
+    }
+
+    card.style.left = `${cLeft}px`;
+    card.style.top = `${cTop}px`;
+    card.style.opacity = '1';
+    card.style.transform = 'scale(1)';
+
+    arrow.style.left = '';
+    arrow.style.right = '';
+    arrow.style.top = '';
+    arrow.style.bottom = '';
+    arrow.style.borderColor = 'transparent';
+    
+    const targetCenter = targetRect.left + (targetRect.width / 2);
+    const arrowLeft = targetCenter - cLeft - 6;
+    arrow.style.left = `${Math.max(12, Math.min(cardWidth - 24, arrowLeft))}px`;
+    
+    if (arrowDir === 'up') {
+        arrow.style.top = '-12px';
+        arrow.style.borderBottomColor = 'var(--card)';
+    } else {
+        arrow.style.bottom = '-12px';
+        arrow.style.borderTopColor = 'var(--card)';
+    }
+}
+
+function centerCardFallback() {
+    const spotlight = document.getElementById('onboarding-spotlight');
+    const card = document.getElementById('onboarding-card');
+    const arrow = document.getElementById('onboarding-arrow');
+    if (!card) return;
+
+    if (spotlight) {
+        spotlight.style.display = 'none';
+        spotlight.style.opacity = '0';
+    }
+    if (arrow) {
+        arrow.style.borderColor = 'transparent';
+    }
+
+    card.style.display = 'block';
+    
+    const cardWidth = 280;
+    const viewportHeight = window.innerHeight || document.documentElement.clientHeight;
+    
+    const cLeft = (320 - cardWidth) / 2;
+    const cTop = (viewportHeight - (card.offsetHeight || 150)) / 2;
+    
+    card.style.left = `${cLeft}px`;
+    card.style.top = `${cTop}px`;
+    card.style.opacity = '1';
+    card.style.transform = 'scale(1)';
+}
+
 function renderOnboardingStep() {
+    if (onboardingTimeout) clearTimeout(onboardingTimeout);
+    
     const step = onboardingSteps[onboardingStep];
     const icon = document.getElementById('onboarding-icon');
     const title = document.getElementById('onboarding-title');
     const text = document.getElementById('onboarding-text');
     const nextBtn = document.getElementById('onboarding-next');
-    const dots = document.getElementById('onboarding-dots');
-    if (!icon || !title || !text || !nextBtn || !dots) return;
+    const stepIndicator = document.getElementById('onboarding-step-indicator');
+    const progressBar = document.getElementById('onboarding-progress-bar');
+    
+    if (!icon || !title || !text || !nextBtn) return;
 
     icon.textContent = step.icon;
     title.textContent = step.title;
     text.textContent = step.text;
+
+    if (stepIndicator) {
+        stepIndicator.textContent = `Step ${onboardingStep + 1} of ${onboardingSteps.length}`;
+    }
+    if (progressBar) {
+        progressBar.style.width = `${((onboardingStep + 1) / onboardingSteps.length) * 100}%`;
+    }
+
+    nextBtn.textContent = onboardingStep === onboardingSteps.length - 1 
+        ? (getMessage('ONBOARDING_DONE') !== 'ONBOARDING_DONE' ? getMessage('ONBOARDING_DONE') : 'Done!') 
+        : getMessage('BTN_ONBOARDING_NEXT');
 
     if (step.targetTab) {
         const tabBtn = document.querySelector(`.tab-btn[data-tab="${step.targetTab}"]`);
@@ -2089,31 +2270,53 @@ function renderOnboardingStep() {
             if (syncActive) syncActive.style.display = 'block';
             if (syncInactive) syncInactive.style.display = 'none';
         } else {
-            // Restore actual lock state when on other tabs so we don't leave it unlocked
             const inRoom = elements.sectionActive && elements.sectionActive.style.display === 'block';
             if (syncActive) syncActive.style.display = inRoom ? 'block' : 'none';
             if (syncInactive) syncInactive.style.display = inRoom ? 'none' : 'block';
         }
     }
 
-    dots.replaceChildren();
-    onboardingSteps.forEach((_, i) => {
-        const dot = document.createElement('div');
-        dot.style.cssText = `width:8px; height:8px; border-radius:50%; background:${i === onboardingStep ? 'var(--accent)' : '#475569'};`;
-        dots.appendChild(dot);
-    });
+    const spotlight = document.getElementById('onboarding-spotlight');
+    const card = document.getElementById('onboarding-card');
+    if (spotlight) spotlight.style.opacity = '0';
+    if (card) {
+        card.style.opacity = '0';
+        card.style.transform = 'scale(0.95)';
+    }
 
-    nextBtn.textContent = onboardingStep === onboardingSteps.length - 1 ? (getMessage('ONBOARDING_DONE') !== 'ONBOARDING_DONE' ? getMessage('ONBOARDING_DONE') : 'Done!') : getMessage('BTN_ONBOARDING_NEXT');
+    onboardingTimeout = setTimeout(() => {
+        const targetEl = document.querySelector(step.targetSelector);
+        if (targetEl && targetEl.offsetParent !== null) {
+            positionSpotlightAndCard(targetEl);
+        } else {
+            centerCardFallback();
+        }
+    }, 180);
 }
 
 function completeOnboarding() {
-    const overlay = document.getElementById('onboarding-overlay');
-    if (overlay) overlay.style.display = 'none';
-    document.body.style.minHeight = '';
-    chrome.storage.sync.set({ onboardingComplete: true });
+    if (onboardingTimeout) clearTimeout(onboardingTimeout);
     
-    const inRoom = elements.sectionActive && elements.sectionActive.style.display === 'block';
-    toggleUIState(inRoom);
+    const overlay = document.getElementById('onboarding-overlay');
+    const spotlight = document.getElementById('onboarding-spotlight');
+    const card = document.getElementById('onboarding-card');
+    
+    if (card) {
+        card.style.opacity = '0';
+        card.style.transform = 'scale(0.9)';
+    }
+    if (spotlight) {
+        spotlight.style.opacity = '0';
+    }
+    
+    setTimeout(() => {
+        if (overlay) overlay.style.display = 'none';
+        document.body.style.minHeight = '';
+        chrome.storage.sync.set({ onboardingComplete: true });
+        
+        const inRoom = elements.sectionActive && elements.sectionActive.style.display === 'block';
+        toggleUIState(inRoom);
+    }, 300);
 }
 
 document.getElementById('onboarding-next')?.addEventListener('click', () => {
@@ -2129,4 +2332,9 @@ document.getElementById('onboarding-skip')?.addEventListener('click', completeOn
 
 document.getElementById('onboarding-overlay')?.addEventListener('click', (e) => {
     if (e.target.id === 'onboarding-overlay') completeOnboarding();
+});
+
+elements.restartTourBtn?.addEventListener('click', () => {
+    onboardingStep = 0;
+    showOnboarding();
 });

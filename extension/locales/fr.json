@@ -205,5 +205,8 @@
   "AUDIO_PARAM_ATTACK": "Attack",
   "AUDIO_PARAM_RELEASE": "Release",
   "AUDIO_EQUALIZER": "Égaliseur",
-  "AUDIO_COMING_SOON": "Bientôt disponible"
+  "AUDIO_COMING_SOON": "Bientôt disponible",
+  "BTN_RESTART_TOUR": "",
+  "BTN_RESTART_TOUR_TOOLTIP": "",
+  "HINT_SELECT_VIDEO": ""
 }

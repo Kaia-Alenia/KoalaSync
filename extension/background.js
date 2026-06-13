@@ -708,7 +708,9 @@ function sendPing() {
     if (pingTimeout) clearTimeout(pingTimeout);
     pingTimeout = setTimeout(() => {
         if (pendingPingT === t) {
+            addLog('Ping timeout reached, force disconnecting to trigger reconnect', 'warn');
             pendingPingT = null;
+            forceDisconnect();
         }
         pingTimeout = null;
     }, 5000);
@@ -1333,9 +1335,7 @@ chrome.alarms.onAlarm.addListener(async (alarm) => {
 function leaveOldRoomIfSwitching(newRoomId) {
     if (currentRoom && currentRoom.roomId !== newRoomId) {
         addLog(`Switching rooms: leaving ${currentRoom.roomId} to join ${newRoomId}`, 'info');
-        if (socket && socket.readyState === WebSocket.OPEN && isNamespaceJoined) {
-            emit(EVENTS.LEAVE_ROOM, { peerId });
-        }
+        forceDisconnect();
         currentRoom = null;
         if (storageInitialized) chrome.storage.session.set({ currentRoom: null });
         chrome.runtime.sendMessage({ type: 'PEER_UPDATE', peers: [] }).catch(() => {});
@@ -1389,15 +1389,27 @@ async function handleAsyncMessage(message, sender, sendResponse) {
     await ensureState();
 
     if (message.type === 'CONNECT') {
+        const settings = await getSettings();
+        const desiredUrl = resolveServerUrl(settings);
+
+        if (settings.roomId && currentRoom && currentRoom.roomId === settings.roomId && socket && socket.readyState === WebSocket.OPEN && isNamespaceJoined && desiredUrl === currentServerUrl) {
+            broadcastConnectionStatus('connected');
+            const tabs = await new Promise(resolve => chrome.tabs.query({}, resolve));
+            for (const tab of tabs) {
+                chrome.tabs.sendMessage(tab.id, { type: 'JOIN_STATUS', success: true, message: 'Already in room' }).catch(() => {});
+            }
+            if (typeof sendResponse === 'function') sendResponse({ status: 'ok' });
+            return;
+        }
+
         reconnectFailed = false;
         reconnectStartTime = null;
         reconnectAttempts = 0;
         chrome.storage.session.set({ reconnectFailed: false, reconnectAttempts: 0, reconnectStartTime: null });
-        const settings = await getSettings();
+
         if (settings.roomId) {
             leaveOldRoomIfSwitching(settings.roomId);
         }
-        const desiredUrl = resolveServerUrl(settings);
         if (desiredUrl !== currentServerUrl || !socket || socket.readyState !== WebSocket.OPEN || !isNamespaceJoined) {
             if (desiredUrl !== currentServerUrl) forceDisconnect();
             connect();
@@ -1493,14 +1505,25 @@ async function handleAsyncMessage(message, sender, sendResponse) {
             useCustomServer: !!useCustomServer,
             serverUrl: serverUrl || ''
         }, async () => {
+            const settings = await getSettings();
+            const desiredUrl = resolveServerUrl(settings);
+
+            if (roomId && currentRoom && currentRoom.roomId === roomId && socket && socket.readyState === WebSocket.OPEN && isNamespaceJoined && desiredUrl === currentServerUrl) {
+                broadcastConnectionStatus('connected');
+                const tabs = await new Promise(resolve => chrome.tabs.query({}, resolve));
+                for (const tab of tabs) {
+                    chrome.tabs.sendMessage(tab.id, { type: 'JOIN_STATUS', success: true, message: 'Already in room' }).catch(() => {});
+                }
+                return;
+            }
+
             reconnectFailed = false;
             reconnectStartTime = null;
             reconnectAttempts = 0;
             chrome.storage.session.set({ reconnectFailed: false, reconnectAttempts: 0, reconnectStartTime: null });
             broadcastConnectionStatus('connecting');
             leaveOldRoomIfSwitching(roomId);
-            const settings = await getSettings();
-            const desiredUrl = resolveServerUrl(settings);
+
             if (desiredUrl !== currentServerUrl || !socket || socket.readyState !== WebSocket.OPEN || !isNamespaceJoined) {
                 if (desiredUrl !== currentServerUrl) forceDisconnect();
                 connect();

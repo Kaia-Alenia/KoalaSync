@@ -364,6 +364,14 @@
             0%, 100% { opacity: 0.4; transform: scale(1); }
             50% { opacity: 1; transform: scale(1.3); }
         }
+        @keyframes spotlightPulse {
+            0%, 100% { box-shadow: 0 0 0 9999px rgba(15, 23, 42, 0.65), 0 0 0 0px var(--accent); }
+            50% { box-shadow: 0 0 0 9999px rgba(15, 23, 42, 0.65), 0 0 0 6px var(--accent); }
+        }
+        @keyframes floatHint {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-4px); }
+        }
     </style>
 </head>
 <body>
@@ -457,11 +465,16 @@
     <div id="tab-sync" class="tab-content">
         <!-- SYNC ACTIVE: Visible when in a room -->
         <div id="sync-active">
-        <div class="form-group">
+        <div class="form-group" style="position: relative;">
             <label title="Choose the browser tab containing the video to sync" data-i18n="LABEL_SELECT_VIDEO" data-i18n-title="LABEL_SELECT_VIDEO_TOOLTIP">Select Video</label>
             <select id="targetTab">
                 <option value="" data-i18n="OPTION_SELECT_TAB">-- Select a Tab --</option>
             </select>
+            <!-- Hint Tooltip -->
+            <div id="targetTabHint" style="display: none; position: absolute; top: -25px; right: 0; background: var(--accent); color: white; padding: 4px 8px; border-radius: 6px; font-size: 11px; font-weight: bold; pointer-events: none; animation: floatHint 2s ease-in-out infinite; box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4); z-index: 10;" data-i18n="HINT_SELECT_VIDEO">
+                Select your video here!
+                <div style="position: absolute; bottom: -4px; right: 20px; width: 8px; height: 8px; background: var(--accent); transform: rotate(45deg);"></div>
+            </div>
         </div>
         
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
@@ -578,6 +591,7 @@
         <div style="margin-top: 15px; padding: 8px; border-top: 1px solid var(--card);">
             <label title="Tools for fixing connection issues" data-i18n="LABEL_TROUBLESHOOTING" data-i18n-title="LABEL_TROUBLESHOOTING_TOOLTIP">Troubleshooting</label>
             <button id="regenId" class="secondary" style="width: 100%; font-size: 11px;" title="Regenerate your internal ID and reconnect" data-i18n="BTN_REGEN_ID" data-i18n-title="BTN_REGEN_ID_TOOLTIP">Regenerate Peer ID</button>
+            <button id="restartTourBtn" class="secondary" style="width: 100%; font-size: 11px; margin-top: 8px;" title="Restart the onboarding tutorial" data-i18n="BTN_RESTART_TOUR" data-i18n-title="BTN_RESTART_TOUR_TOOLTIP">Restart Tutorial</button>
             <p style="font-size: 9px; color: var(--text-muted); margin-top: 5px; text-align: center;" data-i18n="REGEN_ID_DESC">Use this if you see "Duplicate Identity" errors.</p>
             <p style="font-size: 9px; text-align: center; margin-top: 6px;"><a href="https://github.com/Shik3i/KoalaSync/issues" target="_blank" style="color: var(--accent); text-decoration: none;" data-i18n="REGEN_ID_OTHER_ISSUE">Other issue? Open a GitHub Issue</a></p>
         </div>
@@ -637,16 +651,31 @@
     <script src="popup.js" type="module"></script>
 
     <!-- Onboarding Overlay -->
-    <div id="onboarding-overlay" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); backdrop-filter: blur(2px); z-index:1000; align-items:flex-end; justify-content:center; padding-bottom: 20px;">
-        <div id="onboarding-card" style="background:var(--card); padding:24px; border-radius:16px; max-width:280px; width:90%; text-align:center; box-shadow:0 8px 32px rgba(0,0,0,0.5); ">
-            <div id="onboarding-icon" style="font-size:48px; margin-bottom:12px;">👋</div>
-            <h2 id="onboarding-title" style="color:var(--accent); margin:0 0 8px; font-size:16px;">Welcome to KoalaSync!</h2>
-            <p id="onboarding-text" style="color:var(--text-muted); font-size:13px; margin:0 0 16px; line-height:1.4;">Let's get you started.</p>
-            <div style="display:flex; gap:8px; justify-content:center;">
-                <button id="onboarding-skip" class="secondary" style="width:auto; padding:8px 16px;" title="Skip the tutorial" data-i18n="BTN_ONBOARDING_SKIP" data-i18n-title="BTN_ONBOARDING_SKIP_TOOLTIP">Skip</button>
-                <button id="onboarding-next" class="primary" style="width:auto; padding:8px 16px;" title="Go to next step" data-i18n="BTN_ONBOARDING_NEXT" data-i18n-title="BTN_ONBOARDING_NEXT_TOOLTIP">Next</button>
+    <div id="onboarding-overlay" style="display:none; position:fixed; inset:0; background:transparent; z-index:1000; pointer-events:auto;">
+        <!-- Spotlight element -->
+        <div id="onboarding-spotlight" style="position:fixed; pointer-events:none; border:2px solid var(--accent); box-shadow:0 0 0 9999px rgba(15, 23, 42, 0.65); border-radius:8px; transition:all 0.3s cubic-bezier(0.4, 0, 0.2, 1); display:none; opacity:0; z-index:1001; animation: spotlightPulse 2s infinite ease-in-out;"></div>
+        
+        <!-- Onboarding Card -->
+        <div id="onboarding-card" style="position:fixed; background:var(--card); padding:16px 20px; border-radius:12px; width:280px; box-shadow:0 8px 32px rgba(0,0,0,0.5); z-index:1002; transition:all 0.3s cubic-bezier(0.4, 0, 0.2, 1); box-sizing:border-box; border:1px solid #334155; opacity:0; transform: scale(0.9); display:none;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                <span id="onboarding-icon" style="font-size:24px;">👋</span>
+                <span id="onboarding-step-indicator" style="font-size:10px; font-weight:700; color:var(--accent); text-transform:uppercase; letter-spacing:0.5px;">Step 1 of 3</span>
             </div>
-            <div id="onboarding-dots" style="margin-top:12px; display:flex; gap:6px; justify-content:center;"></div>
+            <h2 id="onboarding-title" style="color:var(--accent); margin:0 0 6px; font-size:14px; font-weight:700; text-align:left;">Welcome to KoalaSync!</h2>
+            <p id="onboarding-text" style="color:var(--text-muted); font-size:12px; margin:0 0 16px; line-height:1.4; text-align:left;">Let's get you started.</p>
+            
+            <!-- Progress Bar -->
+            <div id="onboarding-progress-container" style="height:4px; background:#334155; border-radius:2px; margin-bottom:16px; overflow:hidden;">
+                <div id="onboarding-progress-bar" style="height:100%; width:33%; background:var(--accent); transition:width 0.3s ease;"></div>
+            </div>
+            
+            <div style="display:flex; gap:8px; justify-content:space-between; align-items:center;">
+                <button id="onboarding-skip" class="secondary" style="width:auto; padding:6px 12px; margin:0; font-size:11px;" title="Skip the tutorial" data-i18n="BTN_ONBOARDING_SKIP" data-i18n-title="BTN_ONBOARDING_SKIP_TOOLTIP">Skip</button>
+                <button id="onboarding-next" class="primary" style="width:auto; padding:6px 16px; margin:0; font-size:11px;" title="Go to next step" data-i18n="BTN_ONBOARDING_NEXT" data-i18n-title="BTN_ONBOARDING_NEXT_TOOLTIP">Next</button>
+            </div>
+            
+            <!-- Tooltip pointer arrow -->
+            <div id="onboarding-arrow" style="position:absolute; width:0; height:0; border:6px solid transparent; transition:all 0.3s ease;"></div>
         </div>
     </div>
 </body>

@@ -205,5 +205,8 @@
   "AUDIO_PARAM_ATTACK": "Attack",
   "AUDIO_PARAM_RELEASE": "Release",
   "AUDIO_EQUALIZER": "Equalizer",
-  "AUDIO_COMING_SOON": "Coming soon"
+  "AUDIO_COMING_SOON": "Coming soon",
+  "BTN_RESTART_TOUR": "Restart Tutorial",
+  "BTN_RESTART_TOUR_TOOLTIP": "Restart the onboarding tutorial",
+  "HINT_SELECT_VIDEO": "Select your video here!"
 }

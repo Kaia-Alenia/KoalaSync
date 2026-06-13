@@ -55,6 +55,7 @@
     const MIN_SEEK_DELTA = 2.0;
     let lastReportedSeekTime = null;  // last currentTime we relayed as a SEEK
     let seekDebounceTimer = null;     // debounce timer for rapid seek events
+    let expectedSeekTime = null;      // strictly track programmatic seeks
 
     // --- Episode Auto-Sync State ---
     let lastKnownMediaTitle = null;
@@ -438,7 +439,7 @@
                         ytButton.click();
                     }
                     if (action === EVENTS.SEEK) {
-                        _setSuppress('seek');
+                        expectedSeekTime = data.targetTime;
                         video.currentTime = data.targetTime;
                     }
                     return;
@@ -454,7 +455,7 @@
                         twitchButton.click();
                     }
                     if (action === EVENTS.SEEK) {
-                        _setSuppress('seek');
+                        expectedSeekTime = data.targetTime;
                         video.currentTime = data.targetTime;
                     }
                     return;
@@ -472,7 +473,7 @@
                 _setSuppress('paused');
                 video.pause();
             } else if (action === EVENTS.SEEK) {
-                _setSuppress('seek');
+                expectedSeekTime = data.targetTime;
                 video.currentTime = data.targetTime;
             }
     } catch (e) {
@@ -575,7 +576,7 @@
                         return;
                     }
                     _setSuppress('paused');
-                    _setSuppress('seek');
+                    expectedSeekTime = payload.targetTime;
                     video.pause();
                     try {
                         video.currentTime = payload.targetTime;
@@ -865,11 +866,17 @@
         const current = video.currentTime;
         if (!Number.isFinite(current)) return;
 
-        // Step 1: Check _suppressTimers (programmatic seek from remote peer)
-        if (_suppressTimers['seek']) {
-            _clearSuppress('seek');
-            lastReportedSeekTime = current;
-            return;
+        // Step 1: Check expectedSeekTime (programmatic seek from remote peer)
+        if (expectedSeekTime !== null) {
+            if (Math.abs(current - expectedSeekTime) < 1.0) {
+                // Video arrived at expected time. Safely clear and ignore.
+                expectedSeekTime = null;
+                lastReportedSeekTime = current;
+                return;
+            } else {
+                // User manually scrubbed to a DIFFERENT time while we were buffering
+                expectedSeekTime = null;
+            }
         }
 
         // Step 2: Suppress during visibility grace period (tab re-focus ghost events)

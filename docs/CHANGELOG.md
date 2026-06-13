@@ -4,9 +4,18 @@ All notable changes to the KoalaSync browser extension and relay server.
 
 ---
 
-## [v2.2.5] — Unreleased
+## [v2.3.0] — Unreleased
+
+### Added
+- **Extension: New Interactive Onboarding Tour**: A fully redesigned, interactive step-by-step onboarding experience.
+- **Extension: Auto-Switch to Sync Tab**: The UI now intelligently switches to the Sync tab when you join a room to guide video selection.
 
 ### Fixed
+- **Extension: Infinite Seek Loop Prevention**: Replaced the fragile time-based seek suppression with an exact target-time verification mechanism, entirely eliminating infinite seek loops on slow buffers.
+- **Extension: Zombie Connections Resolved**: Implemented a forced disconnect upon ping timeouts, ensuring the extension reliably auto-reconnects when the WebSocket hangs in a half-open state.
+- **Extension: Room Switching Architecture**: Joining a new room while already connected now explicitly severs the old connection first, preventing state cross-contamination. 
+- **Extension: Join/Leave Race Conditions**: Added UI locks to prevent users from accidentally sending conflicting connection commands via rapid double-clicking.
+- **Extension: Same-Room Invite Bypass**: Clicking an invite link for the room you are currently in no longer triggers a redundant reconnect, instead instantly confirming the join.
 - **Extension: Audio settings now propagate immediately to video tabs**: Changes made in the audio options page are now instantly applied to the active video tab. Previously, settings saved to `chrome.storage.local` were not picked up by the background listener, which only watched `chrome.storage.sync`.
 - **Extension: Audio compressor now logs enable/disable state and resume failures**: The compressor reports when it is activated or bypassed, and warns if the `AudioContext` cannot be resumed (e.g. browser autoplay policy requires a user gesture on the page first).
 - **Extension: Video heartbeat no longer sent when alone in a room**: The full media metadata `PEER_STATUS` is now only emitted when other peers are present. The session keepalive (background heartbeat) continues to run unaffected, preventing the server reaper from disconnecting idle peers.
