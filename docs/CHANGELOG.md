@@ -4,7 +4,7 @@ All notable changes to the KoalaSync browser extension and relay server.
 
 ---
 
-## [v2.3.0] — Unreleased
+## [v2.3.0] — 2026-06-14
 
 ### Added
 - **Extension: New Interactive Onboarding Tour**: A fully redesigned, interactive step-by-step onboarding experience.
