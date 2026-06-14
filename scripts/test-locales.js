@@ -48,7 +48,7 @@ try {
 const enDict = JSON.parse(fs.readFileSync(enPath, 'utf8'));
 const enKeys = Object.keys(enDict);
 
-const localeFiles = fs.readdirSync(localesDir).filter(file => file.endsWith('.json') && file !== 'en.json');
+const localeFiles = fs.readdirSync(localesDir).filter(file => file.endsWith('.json'));
 
 console.log(`Auditing i18n locales using ${enKeys.length} baseline keys from en.json...\n`);
 
@@ -79,8 +79,21 @@ for (const file of localeFiles) {
 
     const missingKeys = enKeys.filter(k => !keys.includes(k));
     const extraKeys = keys.filter(k => !enKeys.includes(k));
+    const emptyKeys = keys.filter(k => typeof dict[k] === 'string' && dict[k].trim() === '');
+    const placeholderKeys = keys.filter(k => {
+      if (typeof dict[k] !== 'string') return false;
+      const val = dict[k];
+      const lower = val.toLowerCase();
+      return (
+        lower.includes('placeholder') ||
+        lower.includes('todo:') ||
+        lower.includes('tbd:') ||
+        /\bTODO\b/.test(val) ||
+        /\bTBD\b/.test(val)
+      );
+    });
 
-    if (missingKeys.length > 0 || extraKeys.length > 0) {
+    if (missingKeys.length > 0 || extraKeys.length > 0 || emptyKeys.length > 0 || placeholderKeys.length > 0) {
       hasError = true;
       console.error(`❌ ${file} has inconsistencies:`);
       if (missingKeys.length > 0) {
@@ -88,6 +101,12 @@ for (const file of localeFiles) {
       }
       if (extraKeys.length > 0) {
         console.error(`  Extra keys (${extraKeys.length}):`, extraKeys);
+      }
+      if (emptyKeys.length > 0) {
+        console.error(`  Empty translation values (${emptyKeys.length}):`, emptyKeys);
+      }
+      if (placeholderKeys.length > 0) {
+        console.error(`  Placeholder/TODO values (${placeholderKeys.length}):`, placeholderKeys);
       }
     } else {
       console.log(`✓ ${file} is fully consistent (matches all keys).`);

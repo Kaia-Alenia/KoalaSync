@@ -106,7 +106,7 @@ function copyExtensionFiles(targetDir, browserName) {
         const uStart = '// --- UNINSTALL_URL_INJECT_START ---';
         const uEnd = '// --- UNINSTALL_URL_INJECT_END ---';
         const uPattern = new RegExp(`${uStart}[\\s\\S]+?${uEnd}`);
-        const placeholderUrl = "https://example.com/uninstall-placeholder"; // TODO: Replace me
+        const placeholderUrl = "https://bye.koalastuff.net/c/camp_99ztjRVbK1BNN2RU";
         
         let uRep = `${uStart}\n        // This block is automatically updated by /scripts/build-extension.js\n`;
         uRep += `        const UNINSTALL_URL = "${placeholderUrl}";\n`;

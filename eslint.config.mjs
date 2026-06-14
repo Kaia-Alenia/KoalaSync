@@ -8,6 +8,7 @@ export default [
       sourceType: "module",
       globals: {
         chrome: "readonly",
+        browser: "readonly",
         window: "readonly",
         document: "readonly",
         navigator: "readonly",

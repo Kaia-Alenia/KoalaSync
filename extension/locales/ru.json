@@ -206,7 +206,7 @@
   "AUDIO_PARAM_RELEASE": "Release",
   "AUDIO_EQUALIZER": "Эквалайзер",
   "AUDIO_COMING_SOON": "Скоро",
-  "BTN_RESTART_TOUR": "",
-  "BTN_RESTART_TOUR_TOOLTIP": "",
-  "HINT_SELECT_VIDEO": ""
+  "BTN_RESTART_TOUR": "Перезапустить обучение",
+  "BTN_RESTART_TOUR_TOOLTIP": "Запустить приветственное руководство заново",
+  "HINT_SELECT_VIDEO": "Выберите ваше видео здесь!"
 }

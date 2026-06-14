@@ -206,7 +206,7 @@
   "AUDIO_PARAM_RELEASE": "Release",
   "AUDIO_EQUALIZER": "Égaliseur",
   "AUDIO_COMING_SOON": "Bientôt disponible",
-  "BTN_RESTART_TOUR": "",
-  "BTN_RESTART_TOUR_TOOLTIP": "",
-  "HINT_SELECT_VIDEO": ""
+  "BTN_RESTART_TOUR": "Redémarrer le tutoriel",
+  "BTN_RESTART_TOUR_TOOLTIP": "Recommencer le tutoriel d'intégration",
+  "HINT_SELECT_VIDEO": "Sélectionnez votre vidéo ici !"
 }

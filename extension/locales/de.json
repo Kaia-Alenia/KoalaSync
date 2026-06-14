@@ -206,7 +206,7 @@
   "AUDIO_PARAM_RELEASE": "Release",
   "AUDIO_EQUALIZER": "Equalizer",
   "AUDIO_COMING_SOON": "Demnächst",
-  "BTN_RESTART_TOUR": "",
-  "BTN_RESTART_TOUR_TOOLTIP": "",
-  "HINT_SELECT_VIDEO": ""
+  "BTN_RESTART_TOUR": "Einführung neu starten",
+  "BTN_RESTART_TOUR_TOOLTIP": "Startet die Einführung für neue Benutzer erneut",
+  "HINT_SELECT_VIDEO": "Wähle hier dein Video aus!"
 }

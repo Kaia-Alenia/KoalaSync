@@ -206,7 +206,7 @@
   "AUDIO_PARAM_RELEASE": "Release",
   "AUDIO_EQUALIZER": "イコライザー",
   "AUDIO_COMING_SOON": "近日公開",
-  "BTN_RESTART_TOUR": "",
-  "BTN_RESTART_TOUR_TOOLTIP": "",
-  "HINT_SELECT_VIDEO": ""
+  "BTN_RESTART_TOUR": "チュートリアルを再起動",
+  "BTN_RESTART_TOUR_TOOLTIP": "オンボーディングチュートリアルを再起動する",
+  "HINT_SELECT_VIDEO": "ここで動画を選択してください！"
 }

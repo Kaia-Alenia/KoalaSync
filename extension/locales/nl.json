@@ -206,7 +206,7 @@
   "AUDIO_PARAM_RELEASE": "Release",
   "AUDIO_EQUALIZER": "Equalizer",
   "AUDIO_COMING_SOON": "Binnenkort beschikbaar",
-  "BTN_RESTART_TOUR": "",
-  "BTN_RESTART_TOUR_TOOLTIP": "",
-  "HINT_SELECT_VIDEO": ""
+  "BTN_RESTART_TOUR": "Tutorial opnieuw starten",
+  "BTN_RESTART_TOUR_TOOLTIP": "Start de introductie-tutorial opnieuw",
+  "HINT_SELECT_VIDEO": "Selecteer hier je video!"
 }
