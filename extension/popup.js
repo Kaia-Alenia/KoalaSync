@@ -2097,6 +2097,13 @@ const onboardingSteps = [
         get title() { return getMessage('ONBOARDING_1_TITLE'); }, 
         get text() { return getMessage('ONBOARDING_1_TEXT'); }, 
         targetTab: 'tab-room',
+        targetSelector: 'h1'
+    },
+    { 
+        icon: '🏠', 
+        get title() { return getMessage('ONBOARDING_2_TITLE'); }, 
+        get text() { return getMessage('ONBOARDING_2_TEXT'); }, 
+        targetTab: 'tab-room',
         targetSelector: '#createRoomBtn'
     },
     { 
