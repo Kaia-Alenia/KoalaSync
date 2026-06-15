@@ -406,6 +406,9 @@ function clearTargetTabForIdle() {
 async function leaveRoomAfterIdleGrace(reason) {
     if (!currentRoom) return;
     connectIntent = false;
+    reconnectFailed = false;
+    reconnectAttempts = 0;
+    chrome.storage.session.set({ reconnectFailed: false, reconnectAttempts: 0, reconnectStartTime: null });
     emit(EVENTS.LEAVE_ROOM, { peerId });
     forceDisconnect();
     currentRoom = null;
@@ -1500,6 +1503,9 @@ async function handleAsyncMessage(message, sender, sendResponse) {
         });
     } else if (message.type === 'LEAVE_ROOM') {
         connectIntent = false;
+        reconnectFailed = false;
+        reconnectAttempts = 0;
+        chrome.storage.session.set({ reconnectFailed: false, reconnectAttempts: 0, reconnectStartTime: null });
         resetAudioProcessingInTab(currentTabId);
         emit(EVENTS.LEAVE_ROOM, { peerId });
         currentRoom = null;
