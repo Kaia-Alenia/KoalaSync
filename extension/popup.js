@@ -1195,11 +1195,23 @@ elements.joinBtn.addEventListener('click', async () => {
     
     if (joinBtnTimeout) clearTimeout(joinBtnTimeout);
     joinBtnTimeout = setTimeout(() => {
-        elements.joinBtn.disabled = false;
-        elements.joinBtn.textContent = getMessage('BTN_JOIN_ROOM');
-        joinBtnTimeout = null;
-        isProcessingConnection = false;
-        showError(getMessage('ERR_CONN_TIMEOUT'));
+        chrome.runtime.sendMessage({ type: 'GET_STATUS' }, (res) => {
+            if (res && res.status === 'connecting') {
+                joinBtnTimeout = setTimeout(() => {
+                    elements.joinBtn.disabled = false;
+                    elements.joinBtn.textContent = getMessage('BTN_JOIN_ROOM');
+                    joinBtnTimeout = null;
+                    isProcessingConnection = false;
+                    showError(getMessage('ERR_CONN_TIMEOUT'));
+                }, 15000);
+                return;
+            }
+            elements.joinBtn.disabled = false;
+            elements.joinBtn.textContent = getMessage('BTN_JOIN_ROOM');
+            joinBtnTimeout = null;
+            isProcessingConnection = false;
+            if (res && res.status !== 'connected') showError(getMessage('ERR_CONN_TIMEOUT'));
+        });
     }, 15000);
     
     const serverUrl = elements.serverUrl.value.trim();
