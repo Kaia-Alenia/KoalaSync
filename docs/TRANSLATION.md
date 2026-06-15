@@ -18,8 +18,8 @@ We divide supported languages into two tiers: **Core Languages** (fully hand-cra
 
 | Language Code | Language Name | Verification Status | Rationale / Context |
 | :--- | :--- | :--- | :--- |
-| `en` | 🇬🇧 **English** | `100% Manually Verified` | Primary developer language and system default |
-| `de` | 🇩🇪 **German** | `100% Manually Verified` | Core market and compliance baseline |
+| `en` | 🇬🇧 **English** | `100% Manually Verified` | Global default language (Verified by developer) |
+| `de` | 🇩🇪 **German** | `100% Manually Verified` | Developer's native language |
 | `fr` | 🇫🇷 **French** | `Auto-Generated` | Needs manual native review and polishing |
 | `es` | 🇪🇸 **Spanish** | `Auto-Generated` | Needs manual native review and polishing |
 | `pt-BR` | 🇧🇷 **Portuguese (Brasil)** | `Auto-Generated` | Needs manual native review and polishing |
