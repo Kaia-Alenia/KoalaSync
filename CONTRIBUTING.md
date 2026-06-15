@@ -12,7 +12,7 @@ Please note that by participating in this project, you agree to abide by our [Co
 |------|-------------|
 | **Bug Reports** | Found a bug? Open an issue with repro steps (see template below). |
 | **Code** | Fix bugs, add features, or improve the extension / server / website. |
-| **Translations** | Help localize the extension and website into more languages. See [TRANSLATION.md](website/TRANSLATION.md). |
+| **Translations** | Help localize the extension and website into more languages. See [TRANSLATION.md](docs/TRANSLATION.md). |
 | **Documentation** | Improve docs, fix typos, or add missing examples. |
 | **Security** | Found a vulnerability? See [SECURITY.md](SECURITY.md) — do NOT open a public issue. |
 
@@ -100,15 +100,23 @@ KoalaSync uses a **single source of truth** for all protocol constants in `share
 
 ---
 
-## Pull Request Process
+## Open Source Workflow & Pull Requests
 
-1. **Branch** from `main` for your feature or fix.
-2. **Test locally** on both Chrome and Firefox.
-3. **Website changes**: Run `node website/build.js` and verify the compiled output in `www/`.
-4. **Lint**: Ensure `npm run lint` passes with zero errors and zero warnings.
-5. **Syntax**: Run `node -c` on every modified `.js` file.
-6. **Protocol changes**: Update relevant documentation in `docs/`.
-7. **Submit your PR** with a clear description and linked issue (if applicable).
+If you are new to open-source contributions, follow these steps to propose your changes:
+
+1. **Fork the Repository**: Click the "Fork" button at the top right of this repository to create your own copy of KoalaSync.
+2. **Clone your Fork**: `git clone https://github.com/YOUR-USERNAME/KoalaSync.git`
+3. **Create a Branch**: `git checkout -b my-new-feature` (e.g. `feature/dark-mode` or `fix/translation-de`)
+4. **Make your Changes**: Edit the files, then verify them locally.
+   - *Extension/Server changes*: Test on Chrome/Firefox and check `npm run lint`.
+   - *Website/Translation changes*: Run `node website/build.js` and check the output in `www/`.
+5. **Commit and Push**: `git commit -m "Add my feature"` and `git push origin my-new-feature`
+6. **Open a Pull Request (PR)**: Go to the original KoalaSync repository on GitHub and click "New Pull Request".
+
+### PR Code Requirements
+- **Lint**: Ensure `npm run lint` passes with zero errors and warnings.
+- **Syntax**: Run `node -c` on every modified `.js` file.
+- **Protocol changes**: Update relevant documentation in `docs/`.
 
 ---
 
@@ -140,14 +148,18 @@ If you cannot access the Status tab, include as much of the following manually:
 
 ---
 
-## Translation Contributions
+## Translation Contributions (Translators Welcome!)
 
-KoalaSync supports 6 languages: English, German, French, Spanish, Portuguese (Brazilian), and Russian.
+We welcome native speakers to help translate KoalaSync! You **do not** need deep programming knowledge to contribute translations.
 
-To add or improve translations:
-1. Edit the locale files in `website/locales/` (for the website).
-2. For extension translations, see [TRANSLATION.md](website/TRANSLATION.md).
-3. Run `node website/build.js` to regenerate the static site.
+KoalaSync supports multiple languages. To add or improve translations:
+1. Read the **[Translation Guide](docs/TRANSLATION.md)** first. It explains how our localization system works.
+2. Edit the `.json` files in `website/locales/` (for the website) and `extension/locales/` (for the extension).
+3. Test your translations locally by running:
+   - `node scripts/test-locales.js` (for extension)
+   - `node scripts/test-website-locales.mjs` (for website)
+   - `node website/build.js` (to build the site)
+4. Follow the **Open Source Workflow** above (Fork -> Branch -> Edit -> PR) to submit your translations.
 
 ---
 

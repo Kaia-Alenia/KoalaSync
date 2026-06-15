@@ -57,15 +57,23 @@ Our legal pages have strict constraints to protect user privacy and avoid regula
 
 ---
 
-## 🛠️ Step-by-Step: Adding a New Language
+## 🛠️ Step-by-Step: Translating or Adding a Language
 
-Adding a new language (e.g., Italian - `it`) is straightforward. Follow these four structured steps:
+If you want to correct an existing language or add a new one, here is how you do it. 
 
-### Step 1: Create the Translation Dictionary
-Create a new JSON file inside the locales directory named `[lang].json` (e.g., `website/locales/it.json`).
-1. Copy the structure of [`website/locales/en.json`](file:///Users/koala/Documents/KoalaPlay/website/locales/en.json) to use as your baseline.
-2. Translate all string values while keeping the JSON keys identical.
-3. Configure the language metadata keys at the top of the file:
+### Step 1: Fork and Clone the Repository
+If you are an external contributor, you need to use the standard Open Source workflow:
+1. Click the "Fork" button on GitHub to create your own copy of the repository.
+2. Clone your fork locally: `git clone https://github.com/YOUR-USERNAME/KoalaSync.git`
+3. Create a branch: `git checkout -b translation/my-language`
+
+### Step 2: Edit or Create the Dictionaries
+KoalaSync requires two sets of translations: one for the **website** and one for the **browser extension**.
+
+**For the Website:**
+1. Navigate to `website/locales/`. Edit an existing `[lang].json` or copy `en.json` to create a new one (e.g., `it.json`).
+2. Translate all string values. Do not change the JSON keys.
+3. If creating a new language, configure the metadata at the top:
    ```json
    {
      "LANG_CODE": "it",
@@ -75,26 +83,30 @@ Create a new JSON file inside the locales directory named `[lang].json` (e.g., `
      "LANG_TOGGLE_TEXT": "EN"
    }
    ```
+4. If creating a new language, register it in `website/build.js` by adding it to the `languages` array.
 
-### Step 2: Register in the Compiler
-Open the static site generator script [`website/build.js`](file:///Users/koala/Documents/KoalaPlay/website/build.js) and append your new language code to the active `languages` array:
-```javascript
-// Add 'it' to the array
-const languages = ['en', 'de', 'fr', 'es', 'pt-BR', 'ru', 'it'];
-```
+**For the Extension:**
+1. Navigate to `extension/locales/`. Edit an existing `[lang].json` or copy `en.json` to create a new one.
+2. Translate the values.
 
-### Step 3: Run the Build Script
-Execute the compiler from the root of the repository:
+### Step 3: Verify Locally
+Ensure your JSON files are valid and all keys match the English baseline:
 ```bash
+# Tests the extension locales for missing keys or syntax errors
+node scripts/test-locales.js
+
+# Tests the website locales for missing keys or syntax errors
+node scripts/test-website-locales.mjs
+
+# Builds the website with your new translations
 node website/build.js
 ```
-The compiler will automatically:
-1. Load the new JSON translation file.
-2. Create the target subdirectory `/website/www/it/`.
-3. Generate the compiled `/website/www/it/index.html` landing page, injecting correct relative assets and canonical metadata.
 
-### Step 4: Update the Dashboard
-Open this `TRANSLATION.md` file and add your language to the **Supported Languages Dashboard** table, marking it as `Auto-Generated` (unless manually verified).
+### Step 4: Commit and Pull Request
+1. Open this `TRANSLATION.md` file and add/update your language in the **Supported Languages Dashboard**. Mark it as `100% Manually Verified` if you are a native speaker checking an auto-generated file.
+2. Commit your changes: `git commit -m "Update Italian translations"`
+3. Push to your fork: `git push origin translation/my-language`
+4. Open a **Pull Request** on the main KoalaSync repository on GitHub.
 
 ---
 
