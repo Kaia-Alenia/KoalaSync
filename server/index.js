@@ -115,6 +115,7 @@ export const rooms = new Map();
 const socketToRoom = new Map();
 const peerToSocket = new Map(); // peerId -> socketId (Global lookup)
 const roomCreationLocks = new Map(); // roomId -> Promise (prevents race on room creation)
+const peerJoinLocks = new Map(); // peerId -> Promise (prevents race on same peerId joins)
 
 function log(type, message, details = '') {
     const debugLogging = process.env.DEBUG_LOGGING === '1';
@@ -469,7 +470,20 @@ io.on('connection', (socket) => {
                 return;
             }
 
-            if (!createdByMe) {
+            let peerLockPromise = peerJoinLocks.get(peerId);
+            if (peerLockPromise) {
+                await peerLockPromise;
+                room = rooms.get(roomId);
+                if (!room) {
+                    socket.emit(EVENTS.ERROR, { message: "Room no longer exists" });
+                    return;
+                }
+            }
+            let resolvePeerLock;
+            peerLockPromise = new Promise(resolve => { resolvePeerLock = resolve; });
+            peerJoinLocks.set(peerId, peerLockPromise);
+            try {
+                if (!createdByMe) {
                 if (room.passwordHash) {
                     if (!password || hashPassword(password) !== room.passwordHash) {
                         recordAuthFailure(ip, roomId);
@@ -527,6 +541,10 @@ io.on('connection', (socket) => {
                 activeLobby: room.activeLobby || null
             });
             log('ROOM', `Peer ${peerId} joined: ${roomId.substring(0, 3)}***`);
+            } finally {
+                peerJoinLocks.delete(peerId);
+                resolvePeerLock();
+            }
         } catch (err) {
             log('ERROR', `Join error for ${socket.id}`, err);
             if (socket.connected) {
@@ -644,10 +662,14 @@ io.on('connection', (socket) => {
     });
 
     socket.on(EVENTS.LEAVE_ROOM, () => {
-        const mapping = socketToRoom.get(socket.id);
-        if (mapping) {
-            socket.leave(mapping.roomId);
-            removePeerFromRoom(socket.id, mapping.roomId, 'leave');
+        try {
+            const mapping = socketToRoom.get(socket.id);
+            if (mapping) {
+                socket.leave(mapping.roomId);
+                removePeerFromRoom(socket.id, mapping.roomId, 'leave');
+            }
+        } catch (err) {
+            log('ERROR', 'removePeerFromRoom failed in leave', err);
         }
     });
 
@@ -723,10 +745,11 @@ io.on('connection', (socket) => {
         roomListCooldowns.delete(socket.id);
         const mapping = socketToRoom.get(socket.id);
         if (mapping) {
-            // Socket is already disconnected — no need to call socket.leave().
-            // removePeerFromRoom uses io.to() for notifications, which correctly
-            // excludes this dead socket since it has already left all rooms.
-            removePeerFromRoom(socket.id, mapping.roomId, 'disconnect');
+            try {
+                removePeerFromRoom(socket.id, mapping.roomId, 'disconnect');
+            } catch (err) {
+                log('ERROR', 'removePeerFromRoom failed in disconnect', err);
+            }
         }
     });
 });
@@ -751,12 +774,14 @@ const roomCleanupInterval = setInterval(() => {
             }
         }
         for (const sid of staleSids) {
-            // Gracefully evict the socket from the Socket.IO room if it is
-            // still technically connected (zombie with no heartbeat).
             const deadSocket = io.sockets?.sockets?.get(sid);
             if (deadSocket) deadSocket.leave(roomId);
             log('CLEANUP', `Pruning dead peer from room ${roomId.substring(0, 3)}***`);
-            removePeerFromRoom(sid, roomId, 'reaper');
+            try {
+                removePeerFromRoom(sid, roomId, 'reaper');
+            } catch (err) {
+                log('ERROR', 'removePeerFromRoom failed in reaper', err);
+            }
         }
 
         // 2. Prune empty or inactive rooms
@@ -818,6 +843,7 @@ export async function stopServerForTests() {
     socketToRoom.clear();
     peerToSocket.clear();
     roomCreationLocks.clear();
+    peerJoinLocks.clear();
     connectionCounts.clear();
     failedAuthAttempts.clear();
     eventCounts.clear();
@@ -827,6 +853,7 @@ export async function stopServerForTests() {
     healthResponseCache.clear();
     io.removeAllListeners();
     io.disconnectSockets(true);
+    Object.assign(rateLimitDenied, { connections: 0, events: 0, health: 0, adminMetricsAuth: 0, roomList: 0 });
     if (!httpServer.listening) return;
     await new Promise((resolve, reject) => {
         httpServer.close((err) => err ? reject(err) : resolve());
@@ -846,8 +873,19 @@ if (isMainModule) {
         process.exit(1);
     });
 
+    let unhandledRejectionCount = 0;
+    let unhandledRejectionReset = Date.now();
     process.on('unhandledRejection', (reason) => {
-        log('ERROR', `Unhandled rejection: ${reason}`);
-        process.exit(1);
+        log('ERROR', `Unhandled rejection: ${reason}`, reason?.stack || '');
+        const now = Date.now();
+        if (now - unhandledRejectionReset > 60000) {
+            unhandledRejectionCount = 0;
+            unhandledRejectionReset = now;
+        }
+        unhandledRejectionCount++;
+        if (unhandledRejectionCount >= 5) {
+            log('ERROR', `Too many unhandled rejections (${unhandledRejectionCount}/min) — aborting`);
+            process.exit(1);
+        }
     });
 }

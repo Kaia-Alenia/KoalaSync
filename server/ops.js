@@ -61,19 +61,24 @@ export function buildHealthPayload({
 
     if (!includeMetrics) return payload;
 
-    const roomValues = Array.from(rooms.values());
-    const roomSizes = roomValues.map(room => room.peers?.size || 0);
-    const peers = roomSizes.reduce((sum, size) => sum + size, 0);
-    const maxPeersInRoom = roomSizes.length > 0 ? Math.max(...roomSizes) : 0;
-    const avgPeersPerRoom = roomSizes.length > 0
-        ? Math.round((peers / roomSizes.length) * 100) / 100
+    let peers = 0;
+    let maxPeersInRoom = 0;
+    let roomsWithLobby = 0;
+    for (const room of rooms.values()) {
+        const size = room.peers?.size || 0;
+        peers += size;
+        if (size > maxPeersInRoom) maxPeersInRoom = size;
+        if (room.activeLobby) roomsWithLobby++;
+    }
+    const avgPeersPerRoom = rooms.size > 0
+        ? Math.round((peers / rooms.size) * 100) / 100
         : 0;
     const mem = memoryUsage();
 
     return {
         ...payload,
         peers,
-        roomsWithLobby: roomValues.filter(room => !!room.activeLobby).length,
+        roomsWithLobby,
         avgPeersPerRoom,
         maxPeersInRoom,
         rateLimits: {
