@@ -24,7 +24,7 @@ We divide supported languages into two tiers: **Core Languages** (fully hand-cra
 | `es` | 🇪🇸 **Spanish** | `100% Manually Verified` | Manual native review and terminology unification |
 | `pt-BR` | 🇧🇷 **Portuguese (Brasil)** | `Auto-Generated` | Needs manual native review and polishing |
 | `ru` | 🇷🇺 **Russian** | `Auto-Generated` | Needs manual native review and polishing |
-| `it` | 🇮🇹 **Italian** | `Auto-Generated` | Needs manual native review and polishing |
+| `it` | 🇮🇹 **Italian** | `100% Manually Verified` | Manual native review and terminology unification |
 | `pl` | 🇵🇱 **Polish** | `Auto-Generated` | Needs manual native review and polishing |
 | `tr` | 🇹🇷 **Turkish** | `Auto-Generated` | Needs manual native review and polishing |
 | `nl` | 🇳🇱 **Dutch** | `Auto-Generated` | Needs manual native review and polishing |
