@@ -6,12 +6,9 @@ All notable changes to the KoalaSync browser extension and relay server.
 
 ## [v2.3.1] — 2026-06-15
 
-### Fixed
-- **Server: Race condition on concurrent peer joins**: Added a per-peerId serialization lock (`peerJoinLocks`) that prevents two connections with the same `peerId` from both passing the deduplication check and simultaneously registering in `peerToSocket`. Previously, rapid reconnects could leave stale mappings that caused cross-room ACK/PING misdelivery.
-- **Server: Crash-safe error handling in teardown paths**: Wrapped `removePeerFromRoom` calls in the disconnect, leave, and reaper handlers with try/catch to prevent an unhandled exception in any teardown path from crashing the process.
-- **Server: Smart unhandled rejection handling**: Replaced the immediate `process.exit(1)` on any `unhandledRejection` with a rate-limited approach — the server now exits only after 5 unhandled rejections within 60 seconds, surviving transient errors while still failing fast on cascading crashes.
-- **Server: Reduced GC pressure in admin health metrics**: Replaced the three-pass `Array.from()` / `map()` / `reduce()` / `filter()` pattern in `buildHealthPayload()` with a single `for-of` loop, eliminating temporary array allocations proportional to the number of active rooms.
-- **Server: Test isolation for rate-limit denial counters**: `stopServerForTests()` now resets the `rateLimitDenied` counters between test runs.
+### Changed
+- **Server: Smart unhandled rejection handling (exits after 5/min instead of 1)**
+- **Server: Optimized admin health metrics allocation**
 
 ---
 
