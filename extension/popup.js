@@ -1222,6 +1222,8 @@ elements.joinBtn.addEventListener('click', async () => {
         showError(getMessage('ERR_INVALID_SERVER_URL'));
         elements.joinBtn.disabled = false;
         elements.joinBtn.textContent = getMessage('BTN_JOIN_ROOM');
+        if (joinBtnTimeout) { clearTimeout(joinBtnTimeout); joinBtnTimeout = null; }
+        isProcessingConnection = false;
         return;
     }
     if (useCustom && serverUrl) {
@@ -1232,6 +1234,7 @@ elements.joinBtn.addEventListener('click', async () => {
             showError(getMessage('ERR_INVALID_SERVER_URL'));
             elements.joinBtn.disabled = false;
             elements.joinBtn.textContent = getMessage('BTN_JOIN_ROOM');
+            if (joinBtnTimeout) { clearTimeout(joinBtnTimeout); joinBtnTimeout = null; }
             isProcessingConnection = false;
             return;
         }

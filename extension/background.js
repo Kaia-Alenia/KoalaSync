@@ -1571,6 +1571,7 @@ async function handleAsyncMessage(message, sender, sendResponse) {
                 for (const tab of tabs) {
                     chrome.tabs.sendMessage(tab.id, { type: 'JOIN_STATUS', success: true, message: 'Already in room' }).catch(() => {});
                 }
+                sendResponse({ status: 'already_joined' });
                 return;
             }
 
