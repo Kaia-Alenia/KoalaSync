@@ -255,6 +255,13 @@ async function init() {
             updatePeerList(res.peers);
             lastKnownPeers = res.peers || [];
             if (res.lastActionState) updateLastActionUI(res.lastActionState, res.peers);
+
+            // If user has a room configured but background is not connected,
+            // trigger connection now — the popup opening is explicit user intent.
+            if (res.status === 'disconnected' && localData.roomId) {
+                chrome.runtime.sendMessage({ type: 'CONNECT' }).catch(() => {});
+                applyConnectionStatus('connecting');
+            }
             
             // Populate Tabs using the background's targetTabId
             await populateTabs(res.peers, res.targetTabId);
