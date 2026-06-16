@@ -37,9 +37,13 @@ export function isAdminMetricsAuthorized(authHeader, adminToken) {
     // timingSafeEqual throws on different-length buffers, so when lengths
     // differ we compare against a zeroed buffer of the provided length
     // (guaranteed mismatch, constant time).
+    // NOTE: timingSafeEqual must be evaluated eagerly (assigned to const)
+    // before the && short-circuit, otherwise it's skipped on length mismatch
+    // and the timing leak remains.
     const sameLength = expectedBuffer.length === providedBuffer.length;
     const compareBuf = sameLength ? expectedBuffer : Buffer.alloc(providedBuffer.length);
-    return sameLength && crypto.timingSafeEqual(compareBuf, providedBuffer);
+    const equal = crypto.timingSafeEqual(compareBuf, providedBuffer);
+    return sameLength && equal;
 }
 
 export function isAdminMetricsTokenStrong(adminToken, minLength = 32) {
