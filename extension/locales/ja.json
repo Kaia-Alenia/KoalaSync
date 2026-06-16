@@ -29,7 +29,7 @@
   "BTN_JOIN_ROOM": "ルームに参加 / 作成",
   "BTN_JOIN_ROOM_TOOLTIP": "ルームに接続",
   "LABEL_PUBLIC_ROOMS": "公開ルーム",
-  "LABEL_PUBLIC_ROOMS_TOOLTIP": "このサーバー上の公開ルーム의リスト",
+  "LABEL_PUBLIC_ROOMS_TOOLTIP": "このサーバー上の公開ルームのリスト",
   "BTN_REFRESH": "更新",
   "BTN_REFRESH_TOOLTIP": "公開ルームのリストを更新",
   "PUBLIC_ROOMS_REFRESHING": "更新中...",
