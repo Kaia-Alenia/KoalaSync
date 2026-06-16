@@ -115,6 +115,7 @@ export function checkAdminMetricsAuthRate(ip) {
 }
 
 export function startRateLimitCleanup(io) {
+    if (authCleanupId !== null || rateLimitCleanupId !== null) return; // guard double-start
     // Clean up old auth failure records (every 15 minutes)
     authCleanupId = setInterval(() => {
         const now = Date.now();

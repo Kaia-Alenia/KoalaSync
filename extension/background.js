@@ -192,8 +192,6 @@ let forceSyncTimeout = null;
 let episodeLobby = null; // { expectedTitle, initiatorPeerId, readyPeers: [], createdAt }
 let episodeLobbyTimeout = null;
 
-// --- Episode Title Extraction (synced with content.js via episode-utils.js) ---
-
 // --- Storage Utils ---
 
 /**
