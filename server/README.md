@@ -71,3 +71,11 @@ npm start
 - **Single Source of Truth**: The server imports constants directly from the root `shared/` directory.
 - **In-Memory**: Rooms are automatically pruned after 2 hours of inactivity.
 - **Reverse Proxy Boundary**: The server trusts one reverse proxy hop for client IP detection. Keep the Node port private/firewalled so clients can only reach it through Caddy or another trusted proxy.
+
+## Module Structure
+
+| File | Purpose |
+|---|---|
+| `index.js` | Express + Socket.IO server: room management, relay loop, graceful shutdown |
+| `rate-limiter.js` | Connection, event, health, and auth rate limiting with 6 functions + cleanup intervals |
+| `ops.js` | Health endpoint helpers, metrics payload builder, auth validation |

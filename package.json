@@ -3,8 +3,9 @@
   "version": "2.3.2",
   "description": "KoalaSync Build Scripts",
   "private": true,
+  "type": "module",
   "scripts": {
-    "build:extension": "node scripts/build-extension.js",
+    "build:extension": "node scripts/build-extension.cjs",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "verify": "node scripts/verify-release.mjs"

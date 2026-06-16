@@ -13,7 +13,7 @@ const checks = [
   }],
   ['rate-limiter unit tests', 'node', ['scripts/test-rate-limiter.mjs']],
   ['episode-utils unit tests', 'node', ['scripts/test-episode-utils.mjs']],
-  ['content video finder', 'node', ['scripts/test-content-video-finder.js']],
+  ['content video finder', 'node', ['scripts/test-content-video-finder.cjs']],
   ['audio settings', 'node', ['scripts/test-audio-settings.mjs']],
   ['popup refresh cooldown', 'node', ['scripts/test-popup-refresh-cooldown.mjs']],
   ['server syntax index', 'node', ['-c', 'server/index.js']],
@@ -22,13 +22,13 @@ const checks = [
   ['content syntax', 'node', ['-c', 'extension/content.js']],
   ['popup syntax', 'node', ['-c', 'extension/popup.js']],
   ['background syntax', 'node', ['-c', 'extension/background.js']],
-  ['locale coverage', 'node', ['scripts/test-locales.js']],
+  ['locale coverage', 'node', ['scripts/test-locales.cjs']],
   ['website locale coverage', 'node', ['scripts/test-website-locales.mjs']],
   ['lint', 'npm', ['run', 'lint']],
   ['root production audit', 'npm', ['audit', '--omit=dev']],
   ['server production audit', 'npm', ['audit', '--omit=dev'], { cwd: path.join(repoRoot, 'server') }],
   ['extension build', 'npm', ['run', 'build:extension']],
-  ['website build', 'node', ['website/build.js']]
+  ['website build', 'node', ['website/build.cjs']]
 ];
 
 function runCheck([label, command, args, options = {}]) {
