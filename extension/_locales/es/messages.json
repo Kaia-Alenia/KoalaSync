@@ -2,7 +2,10 @@
   "appName": {
     "message": "KoalaSync"
   },
-  "appDesc": {
-    "message": "Sincroniza la reproducción de video en YouTube, Netflix, Emby, Jellyfin y cualquier sitio HTML5 en tiempo real con amigos."
+  "appDescription": {
+    "message": "Mira videos junto a tus amigos en perfecta sincronización. Compatible con Netflix, YouTube, Twitch, Prime Video, Disney+ y cualquier reproductor HTML5."
+  },
+  "contextMenu_syncVideo": {
+    "message": "Sincronizar este video con KoalaSync"
   }
 }

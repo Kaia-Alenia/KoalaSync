@@ -21,16 +21,16 @@ We divide supported languages into two tiers: **Core Languages** (fully hand-cra
 | `en` | 🇬🇧 **English** | `100% Manually Verified` | Global default language (Verified by developer) |
 | `de` | 🇩🇪 **German** | `100% Manually Verified` | Developer's native language |
 | `fr` | 🇫🇷 **French** | `Auto-Generated` | Needs manual native review and polishing |
-| `es` | 🇪🇸 **Spanish** | `Auto-Generated` | Needs manual native review and polishing |
-| `pt-BR` | 🇧🇷 **Portuguese (Brasil)** | `Auto-Generated` | Needs manual native review and polishing |
+| `es` | 🇪🇸 **Spanish** | `100% Manually Verified` | Manual native review by Alenia Studios |
+| `pt-BR` | 🇧🇷 **Portuguese (Brasil)** | `100% Manually Verified` | Manual native review by Alenia Studios |
 | `ru` | 🇷🇺 **Russian** | `Auto-Generated` | Needs manual native review and polishing |
-| `it` | 🇮🇹 **Italian** | `Auto-Generated` | Needs manual native review and polishing |
+| `it` | 🇮🇹 **Italian** | `100% Manually Verified` | Manual native review by Alenia Studios |
 | `pl` | 🇵🇱 **Polish** | `Auto-Generated` | Needs manual native review and polishing |
 | `tr` | 🇹🇷 **Turkish** | `Auto-Generated` | Needs manual native review and polishing |
 | `nl` | 🇳🇱 **Dutch** | `Auto-Generated` | Needs manual native review and polishing |
 | `ja` | 🇯🇵 **Japanese** | `Auto-Generated` | Needs manual native review and polishing |
 | `ko` | 🇰🇷 **Korean** | `Auto-Generated` | Needs manual native review and polishing |
-| `pt` | 🇵🇹 **European Portuguese** | `Auto-Generated` | Needs manual native review and polishing |
+| `pt` | 🇵🇹 **European Portuguese** | `100% Manually Verified` | Manual native review by Alenia Studios |
 
 > [!WARNING]
 > **Autogeneration Quality Rule**
