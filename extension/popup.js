@@ -237,8 +237,7 @@ async function init() {
     refreshLogs();
     refreshHistory();
 
-    // Default connection status (localized) before async check
-    applyConnectionStatus('disconnected');
+    // Initial Status Check (status shows via GET_STATUS below)
 
     // Initial Status Check
     chrome.runtime.sendMessage({ type: 'GET_STATUS' }, async (res) => {

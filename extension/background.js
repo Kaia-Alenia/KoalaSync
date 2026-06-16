@@ -343,6 +343,7 @@ function forceDisconnect() {
         socket = null;
     }
     currentServerUrl = null;
+    isConnecting = false;
     isNamespaceJoined = false;
     isForceSyncInitiator = false;
     expectedAcksCount = 0;
@@ -604,8 +605,6 @@ async function connect() {
             const logType = reconnectAttempts > 1 ? 'error' : 'warn';
             addLog('WebSocket Error: Connection failed', logType);
         };
-
-        isConnecting = false;
 
     } catch (e) {
         isConnecting = false;
