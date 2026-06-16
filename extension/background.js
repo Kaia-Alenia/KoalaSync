@@ -343,7 +343,6 @@ function forceDisconnect() {
         socket = null;
     }
     currentServerUrl = null;
-    isConnecting = false;
     isNamespaceJoined = false;
     isForceSyncInitiator = false;
     expectedAcksCount = 0;
@@ -606,6 +605,8 @@ async function connect() {
             addLog('WebSocket Error: Connection failed', logType);
         };
 
+        isConnecting = false;
+
     } catch (e) {
         isConnecting = false;
         const logType = reconnectAttempts > 1 ? 'error' : 'warn';
@@ -856,6 +857,14 @@ function handleServerEvent(event, data) {
             break;
         case EVENTS.ERROR:
             isConnecting = false;
+            // If we get a server error before successfully joining a room,
+            // clear connectIntent to prevent an infinite reconnect loop.
+            if (!currentRoom) {
+                connectIntent = false;
+                if (reconnectTimer) { clearTimeout(reconnectTimer); reconnectTimer = null; }
+                reconnectAttempts = 0;
+                reconnectFailed = false;
+            }
             broadcastConnectionStatus('disconnected');
             addLog(`Server Error: ${data.message}`, 'error');
             chrome.storage.local.get(['browserNotifications', 'locale'], async (settings) => {
@@ -1554,8 +1563,16 @@ async function handleAsyncMessage(message, sender, sendResponse) {
     } else if (message.type === 'WEB_JOIN_REQUEST') {
         const { roomId: rawRoomId, password, useCustomServer, serverUrl } = message;
         const roomId = typeof rawRoomId === 'string' ? rawRoomId.replace(/[^a-zA-Z0-9\-]/g, '') : '';
-        connectIntent = !!roomId;
-        if (!roomId) { sendResponse({ error: 'invalid_room_id' }); return; }
+        if (!roomId) {
+            const errMsg = { type: 'JOIN_STATUS', success: false, message: 'Invalid room ID' };
+            chrome.runtime.sendMessage(errMsg).catch(() => {});
+            chrome.tabs.query({}, (tabs) => {
+                tabs.forEach(tab => chrome.tabs.sendMessage(tab.id, errMsg).catch(() => {}));
+            });
+            sendResponse({ status: 'invalid_room_id' });
+            return;
+        }
+        connectIntent = true;
         chrome.storage.local.set({ 
             roomId, 
             password,

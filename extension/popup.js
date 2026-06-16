@@ -1623,6 +1623,9 @@ chrome.runtime.onMessage.addListener((msg) => {
         updatePeerList(msg.peers);
         if (msg.peers) detectPeerChanges(msg.peers);
     } else if (msg.type === 'CONNECTION_STATUS') {
+        if (msg.status === 'connected' || msg.status === 'disconnected') {
+            if (joinBtnTimeout) { clearTimeout(joinBtnTimeout); joinBtnTimeout = null; }
+        }
         if (msg.status === 'connected') {
             clearConnectionErrorTimer();
         }
