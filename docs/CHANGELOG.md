@@ -10,7 +10,6 @@ All notable changes to the KoalaSync browser extension and relay server.
 - **Extension: Refined Spanish, Italian, and Portuguese translations**: Complete manual review and improvement of all Spanish (`es`), Italian (`it`), Portuguese — Brazil (`pt-BR`), and Portuguese — Portugal (`pt`) locale files for both the extension UI and the landing website. Thanks to [@Kaia-Alenia](https://github.com/Kaia-Alenia) for the native-quality translations.
 
 ### Fixed
-- **Extension: Locale consistency restored**: Corrected `_locales/` manifest key names (`appDescription` → `appDesc`) and removed an orphaned duplicate Portuguese directory to align with Chrome Web Store requirements.
 - **Extension: Locale typos and corrupted characters fixed**: Repaired a Korean refresh button label (`Refreschi` → `새로고침`), a corrupted Korean connection status string (`연kel` → `연결`), a Korean character contaminating a Japanese string (`의` → `の`), and a Dutch typo (`cmmuniceren` → `communiceren`).
 - **Server: Admin token length leak fixed (timing side-channel)**: `isAdminMetricsAuthorized()` returned early when the provided buffer had a different length than the expected token, leaking the token length via response timing. Now `crypto.timingSafeEqual` runs in constant time on every attempt regardless of length match. Reported by [@Kaia-Alenia](https://github.com/Kaia-Alenia).
 
