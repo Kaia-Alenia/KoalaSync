@@ -14,6 +14,7 @@ const checks = [
   ['rate-limiter unit tests', 'node', ['scripts/test-rate-limiter.mjs']],
   ['episode-utils unit tests', 'node', ['scripts/test-episode-utils.mjs']],
   ['server WebSocket integration', 'node', ['scripts/test-server-ws.mjs']],
+  ['names generator', 'node', ['scripts/test-names.mjs']],
   ['content video finder', 'node', ['scripts/test-content-video-finder.cjs']],
   ['audio settings', 'node', ['scripts/test-audio-settings.mjs']],
   ['popup refresh cooldown', 'node', ['scripts/test-popup-refresh-cooldown.mjs']],
