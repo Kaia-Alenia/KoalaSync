@@ -2,10 +2,7 @@
   "appName": {
     "message": "KoalaSync"
   },
-  "appDescription": {
+  "appDesc": {
     "message": "Assista a vídeos junto com seus amigos em sincronia perfeita. Compatível com Netflix, YouTube, Twitch, Prime Video, Disney+ e qualquer player HTML5."
-  },
-  "contextMenu_syncVideo": {
-    "message": "Sincronizar este vídeo com KoalaSync"
   }
 }
