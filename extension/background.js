@@ -176,6 +176,7 @@ let reconnectAttempts = 0;
 let currentServerUrl = null;
 let roomIdleSince = null;
 let lastContentHeartbeatAt = null;
+let connectIntent = false;
 const MAX_RECONNECT_ATTEMPTS = 20;
 const _RECONNECT_BASE_DELAY = 500;
 const _RECONNECT_MAX_DELAY = 5000;
@@ -404,7 +405,12 @@ function clearTargetTabForIdle() {
 
 async function leaveRoomAfterIdleGrace(reason) {
     if (!currentRoom) return;
+    connectIntent = false;
+    reconnectFailed = false;
+    reconnectAttempts = 0;
+    chrome.storage.session.set({ reconnectFailed: false, reconnectAttempts: 0, reconnectStartTime: null });
     emit(EVENTS.LEAVE_ROOM, { peerId });
+    forceDisconnect();
     currentRoom = null;
     currentTabId = null;
     currentTabTitle = null;
@@ -457,7 +463,9 @@ async function connect() {
             addLog('Browser is offline. Waiting...', 'warn');
             broadcastConnectionStatus('offline');
             isConnecting = false;
-            scheduleReconnect();
+            if (currentRoom || connectIntent) {
+                scheduleReconnect();
+            }
             return;
         }
 
@@ -564,25 +572,32 @@ async function connect() {
             isNamespaceJoined = false;
             stopPing();
             
-            isForceSyncInitiator = false;
-            forceSyncAcks.clear();
-            if (forceSyncTimeout) clearTimeout(forceSyncTimeout);
-            chrome.storage.session.set({ 
-                isForceSyncInitiator: false, 
-                forceSyncAcks: [], 
-                forceSyncDeadline: null 
-            }).catch(() => {});
+            if (!connectIntent && !currentRoom) {
+                isForceSyncInitiator = false;
+                forceSyncAcks.clear();
+                if (forceSyncTimeout) clearTimeout(forceSyncTimeout);
+                chrome.storage.session.set({ 
+                    isForceSyncInitiator: false, 
+                    forceSyncAcks: [], 
+                    forceSyncDeadline: null 
+                }).catch(() => {});
+            }
 
             
-            if (currentRoom) {
+            if (currentRoom && !connectIntent) {
                 currentRoom.peers = [];
                 if (storageInitialized) chrome.storage.session.set({ currentRoom }).catch(() => {});
                 chrome.runtime.sendMessage({ type: 'PEER_UPDATE', peers: [] }).catch(() => {});
             }
             broadcastConnectionStatus('disconnected');
-            addLog('Disconnected. Scheduling reconnect...', 'warn');
-            socket = null;
-            scheduleReconnect();
+            if (currentRoom || connectIntent) {
+                addLog('Disconnected. Scheduling reconnect...', 'warn');
+                socket = null;
+                scheduleReconnect();
+            } else {
+                addLog('Disconnected. No active session — staying disconnected.', 'info');
+                socket = null;
+            }
         };
 
         socket.onerror = () => {
@@ -597,7 +612,9 @@ async function connect() {
         const errMsg = (e && e.message) ? e.message : String(e || 'Unknown connection error');
         addLog(errMsg, logType);
         broadcastConnectionStatus('disconnected');
-        scheduleReconnect();
+        if (currentRoom || connectIntent) {
+            scheduleReconnect();
+        }
     }
 }
 
@@ -738,6 +755,9 @@ function sendPing() {
             addLog('Ping timeout reached, force disconnecting to trigger reconnect', 'warn');
             pendingPingT = null;
             forceDisconnect();
+            if (currentRoom || connectIntent) {
+                scheduleReconnect();
+            }
         }
         pingTimeout = null;
     }, 5000);
@@ -836,6 +856,14 @@ function handleServerEvent(event, data) {
             break;
         case EVENTS.ERROR:
             isConnecting = false;
+            // If we get a server error before successfully joining a room,
+            // clear connectIntent to prevent an infinite reconnect loop.
+            if (!currentRoom) {
+                connectIntent = false;
+                if (reconnectTimer) { clearTimeout(reconnectTimer); reconnectTimer = null; }
+                reconnectAttempts = 0;
+                reconnectFailed = false;
+            }
             broadcastConnectionStatus('disconnected');
             addLog(`Server Error: ${data.message}`, 'error');
             chrome.storage.local.get(['browserNotifications', 'locale'], async (settings) => {
@@ -1334,7 +1362,7 @@ chrome.alarms.onAlarm.addListener(async (alarm) => {
     if (alarm.name === 'keepAlive') {
         chrome.storage.session.get('keepAlive', () => {});
         if (!socket || socket.readyState !== WebSocket.OPEN) {
-            if (!reconnectFailed) {
+            if (!reconnectFailed && (currentRoom || connectIntent)) {
                 connect();
             }
         } else if (currentRoom) {
@@ -1417,6 +1445,7 @@ async function handleAsyncMessage(message, sender, sendResponse) {
 
     if (message.type === 'CONNECT') {
         const settings = await getSettings();
+        connectIntent = !!settings.roomId;
         const desiredUrl = resolveServerUrl(settings);
 
         if (settings.roomId && currentRoom && currentRoom.roomId === settings.roomId && socket && socket.readyState === WebSocket.OPEN && isNamespaceJoined && desiredUrl === currentServerUrl) {
@@ -1439,7 +1468,7 @@ async function handleAsyncMessage(message, sender, sendResponse) {
         }
         if (desiredUrl !== currentServerUrl || !socket || socket.readyState !== WebSocket.OPEN || !isNamespaceJoined) {
             if (desiredUrl !== currentServerUrl) forceDisconnect();
-            connect();
+            if (settings.roomId) connect();
         } else if (settings.roomId) {
             emit(EVENTS.JOIN_ROOM, { 
                 roomId: settings.roomId, 
@@ -1452,6 +1481,7 @@ async function handleAsyncMessage(message, sender, sendResponse) {
         }
         sendResponse({ status: 'ok' });
     } else if (message.type === 'RETRY_CONNECT') {
+        connectIntent = true;
         reconnectFailed = false;
         reconnectStartTime = null;
         reconnectAttempts = 0;
@@ -1480,6 +1510,10 @@ async function handleAsyncMessage(message, sender, sendResponse) {
             ping: currentPingMs
         });
     } else if (message.type === 'LEAVE_ROOM') {
+        connectIntent = false;
+        reconnectFailed = false;
+        reconnectAttempts = 0;
+        chrome.storage.session.set({ reconnectFailed: false, reconnectAttempts: 0, reconnectStartTime: null });
         resetAudioProcessingInTab(currentTabId);
         emit(EVENTS.LEAVE_ROOM, { peerId });
         currentRoom = null;
@@ -1510,8 +1544,10 @@ async function handleAsyncMessage(message, sender, sendResponse) {
             episodeLobby: null,
             expectedAcksCount: 0
         });
+        chrome.storage.local.set({ roomId: '', password: '' }).catch(() => {});
         addLog('Left Room', 'info');
         chrome.runtime.sendMessage({ type: 'PEER_UPDATE', peers: [] }).catch(() => {});
+        forceDisconnect();
         sendResponse({ status: 'ok' });
     } else if (message.type === 'CLEAR_LOGS') {
         logs = [];
@@ -1526,6 +1562,16 @@ async function handleAsyncMessage(message, sender, sendResponse) {
     } else if (message.type === 'WEB_JOIN_REQUEST') {
         const { roomId: rawRoomId, password, useCustomServer, serverUrl } = message;
         const roomId = typeof rawRoomId === 'string' ? rawRoomId.replace(/[^a-zA-Z0-9\-]/g, '') : '';
+        if (!roomId) {
+            const errMsg = { type: 'JOIN_STATUS', success: false, message: 'Invalid room ID' };
+            chrome.runtime.sendMessage(errMsg).catch(() => {});
+            chrome.tabs.query({}, (tabs) => {
+                tabs.forEach(tab => chrome.tabs.sendMessage(tab.id, errMsg).catch(() => {}));
+            });
+            sendResponse({ status: 'invalid_room_id' });
+            return;
+        }
+        connectIntent = true;
         chrome.storage.local.set({ 
             roomId, 
             password,
@@ -1541,6 +1587,7 @@ async function handleAsyncMessage(message, sender, sendResponse) {
                 for (const tab of tabs) {
                     chrome.tabs.sendMessage(tab.id, { type: 'JOIN_STATUS', success: true, message: 'Already in room' }).catch(() => {});
                 }
+                sendResponse({ status: 'already_joined' });
                 return;
             }
 
@@ -1554,7 +1601,7 @@ async function handleAsyncMessage(message, sender, sendResponse) {
             if (desiredUrl !== currentServerUrl || !socket || socket.readyState !== WebSocket.OPEN || !isNamespaceJoined) {
                 if (desiredUrl !== currentServerUrl) forceDisconnect();
                 connect();
-            } else {
+            } else if (roomId) {
                 emit(EVENTS.JOIN_ROOM, { 
                     roomId, 
                     password,
@@ -1939,5 +1986,8 @@ chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, _tab) => {
     }
 });
 
-// Initial Connect
-connect();
+// Initial Connect — only if user has an active room configuration
+getSettings().then(settings => {
+    connectIntent = !!settings.roomId;
+    if (connectIntent) connect();
+}).catch(() => connectIntent = false);

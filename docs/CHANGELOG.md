@@ -17,6 +17,9 @@ All notable changes to the KoalaSync browser extension and relay server.
 
 ## [v2.3.1] — 2026-06-15
 
+### Fixed
+- **Server: Concurrent peer join race condition and teardown error handling**
+
 ### Changed
 - **Server: Smart unhandled rejection handling (exits after 5/min instead of 1)**
 - **Server: Optimized admin health metrics allocation**

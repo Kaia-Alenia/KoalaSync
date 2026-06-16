@@ -237,8 +237,7 @@ async function init() {
     refreshLogs();
     refreshHistory();
 
-    // Default connection status (localized) before async check
-    applyConnectionStatus('disconnected');
+    // Initial Status Check (status shows via GET_STATUS below)
 
     // Initial Status Check
     chrome.runtime.sendMessage({ type: 'GET_STATUS' }, async (res) => {
@@ -255,6 +254,13 @@ async function init() {
             updatePeerList(res.peers);
             lastKnownPeers = res.peers || [];
             if (res.lastActionState) updateLastActionUI(res.lastActionState, res.peers);
+
+            // If user has a room configured but background is not connected,
+            // trigger connection now — the popup opening is explicit user intent.
+            if (res.status === 'disconnected' && localData.roomId) {
+                chrome.runtime.sendMessage({ type: 'CONNECT' }).catch(() => {});
+                applyConnectionStatus('connecting');
+            }
             
             // Populate Tabs using the background's targetTabId
             await populateTabs(res.peers, res.targetTabId);
@@ -1195,11 +1201,23 @@ elements.joinBtn.addEventListener('click', async () => {
     
     if (joinBtnTimeout) clearTimeout(joinBtnTimeout);
     joinBtnTimeout = setTimeout(() => {
-        elements.joinBtn.disabled = false;
-        elements.joinBtn.textContent = getMessage('BTN_JOIN_ROOM');
-        joinBtnTimeout = null;
-        isProcessingConnection = false;
-        showError(getMessage('ERR_CONN_TIMEOUT'));
+        chrome.runtime.sendMessage({ type: 'GET_STATUS' }, (res) => {
+            if (res && res.status === 'connecting') {
+                joinBtnTimeout = setTimeout(() => {
+                    elements.joinBtn.disabled = false;
+                    elements.joinBtn.textContent = getMessage('BTN_JOIN_ROOM');
+                    joinBtnTimeout = null;
+                    isProcessingConnection = false;
+                    showError(getMessage('ERR_CONN_TIMEOUT'));
+                }, 15000);
+                return;
+            }
+            elements.joinBtn.disabled = false;
+            elements.joinBtn.textContent = getMessage('BTN_JOIN_ROOM');
+            joinBtnTimeout = null;
+            isProcessingConnection = false;
+            if (res && res.status !== 'connected') showError(getMessage('ERR_CONN_TIMEOUT'));
+        });
     }, 15000);
     
     const serverUrl = elements.serverUrl.value.trim();
@@ -1210,6 +1228,8 @@ elements.joinBtn.addEventListener('click', async () => {
         showError(getMessage('ERR_INVALID_SERVER_URL'));
         elements.joinBtn.disabled = false;
         elements.joinBtn.textContent = getMessage('BTN_JOIN_ROOM');
+        if (joinBtnTimeout) { clearTimeout(joinBtnTimeout); joinBtnTimeout = null; }
+        isProcessingConnection = false;
         return;
     }
     if (useCustom && serverUrl) {
@@ -1220,6 +1240,7 @@ elements.joinBtn.addEventListener('click', async () => {
             showError(getMessage('ERR_INVALID_SERVER_URL'));
             elements.joinBtn.disabled = false;
             elements.joinBtn.textContent = getMessage('BTN_JOIN_ROOM');
+            if (joinBtnTimeout) { clearTimeout(joinBtnTimeout); joinBtnTimeout = null; }
             isProcessingConnection = false;
             return;
         }
@@ -1608,6 +1629,9 @@ chrome.runtime.onMessage.addListener((msg) => {
         updatePeerList(msg.peers);
         if (msg.peers) detectPeerChanges(msg.peers);
     } else if (msg.type === 'CONNECTION_STATUS') {
+        if (msg.status === 'connected' || msg.status === 'disconnected') {
+            if (joinBtnTimeout) { clearTimeout(joinBtnTimeout); joinBtnTimeout = null; }
+        }
         if (msg.status === 'connected') {
             clearConnectionErrorTimer();
         }
