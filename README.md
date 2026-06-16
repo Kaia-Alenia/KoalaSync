@@ -14,7 +14,7 @@
 
 <p align="center"><i>KoalaSync is a lightweight Browser Extension and Relay Server for synchronized video playback on almost any website with a video element—YouTube, Twitch, Netflix, Emby, Jellyfin, and beyond. Built with a focus on <b>Data Sovereignty</b> and <b>Performance</b>.</i></p>
 
-<p align="center"><a href="docs/CHANGELOG.md"><b>New v2.3.2 Release!</b> — See what's changed</a></p>
+<p align="center"><a href="docs/CHANGELOG.md"><b>New v2.4.0 Release!</b> — See what's changed</a></p>
 
 ### 🌟 Why KoalaSync?
 
@@ -103,7 +103,7 @@ To connect your extension to a self-hosted server, open the popup → **Room** t
 
 To verify your relay is reachable from outside, visit `https://your-domain.com` in a browser — it should return `{"status":"online","service":"KoalaSync Relay"}`.
 
-#### Supply Chain Security (v2.3.2+)
+#### Supply Chain Security (v2.4.0+)
 
 All official release artifacts (Docker images and extension binaries) are published with signed [artifact attestations](https://docs.github.com/en/actions/how-tos/secure-your-work/use-artifact-attestations) to prove they were built from this repository's source code.
 
