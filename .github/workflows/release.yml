@@ -125,7 +125,7 @@ jobs:
           subject-path: dist/koalasync-*.zip
 
       - name: Build Website
-        run: node website/build.js
+        run: node website/build.cjs
 
       - name: Upload Website Artifacts
         uses: actions/upload-artifact@v4
