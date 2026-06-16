@@ -11,11 +11,14 @@ const checks = [
   ['server routes', 'node', ['scripts/test-server-routes.mjs'], {
     env: { ADMIN_METRICS_TOKEN: 'verify-admin-token-with-more-than-32-chars' }
   }],
+  ['rate-limiter unit tests', 'node', ['scripts/test-rate-limiter.mjs']],
+  ['episode-utils unit tests', 'node', ['scripts/test-episode-utils.mjs']],
   ['content video finder', 'node', ['scripts/test-content-video-finder.js']],
   ['audio settings', 'node', ['scripts/test-audio-settings.mjs']],
   ['popup refresh cooldown', 'node', ['scripts/test-popup-refresh-cooldown.mjs']],
   ['server syntax index', 'node', ['-c', 'server/index.js']],
   ['server syntax ops', 'node', ['-c', 'server/ops.js']],
+  ['server syntax rate-limiter', 'node', ['-c', 'server/rate-limiter.js']],
   ['content syntax', 'node', ['-c', 'extension/content.js']],
   ['popup syntax', 'node', ['-c', 'extension/popup.js']],
   ['background syntax', 'node', ['-c', 'extension/background.js']],
