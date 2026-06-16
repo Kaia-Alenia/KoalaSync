@@ -34,6 +34,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
     revealElements.forEach(el => revealObserver.observe(el));
 
+    // Auto-update URL hash as user scrolls through sections
+    // (preserves position across language switches)
+    const sectionObserver = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                history.replaceState(null, null, '#' + entry.target.id);
+            }
+        });
+    }, { threshold: 0.3 });
+    document.querySelectorAll('section[id], header[id]').forEach(el => sectionObserver.observe(el));
+
     // Navbar scroll effect
     const nav = document.querySelector('nav');
     window.addEventListener('scroll', () => {
@@ -44,20 +55,6 @@ document.addEventListener('DOMContentLoaded', () => {
             nav.style.padding = '1rem 0';
             nav.style.background = 'rgba(30, 41, 59, 0.7)';
         }
-    });
-
-    // Smooth scroll for anchors
-    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-        anchor.addEventListener('click', function (e) {
-            e.preventDefault();
-            const target = document.querySelector(this.getAttribute('href'));
-            if (target) {
-                target.scrollIntoView({
-                    behavior: 'smooth',
-                    block: 'start'
-                });
-            }
-        });
     });
 
     // Invite Detection & Bridge
@@ -508,7 +505,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 target = hasHtml ? 'imprint.html' : 'imprint';
                 if (path.includes('/de/')) target = hasHtml ? '../imprint.html' : '../imprint';
             }
-            window.location.href = target;
+            window.location.href = target + window.location.hash;
             return;
         } else if (isLegalPrivacy) {
             let target;
@@ -520,7 +517,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 target = hasHtml ? 'privacy.html' : 'privacy';
                 if (path.includes('/de/')) target = hasHtml ? '../privacy.html' : '../privacy';
             }
-            window.location.href = target;
+            window.location.href = target + window.location.hash;
             return;
         }
         
@@ -549,7 +546,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             }
             
-            window.location.href = targetPath;
+            window.location.href = targetPath + window.location.hash;
         } else {
             // Dynamic page: Toggle classes and update elements dynamically without navigating away
             const html = document.documentElement;

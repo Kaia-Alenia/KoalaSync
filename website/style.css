@@ -61,6 +61,10 @@
     border-radius: 6px;
 }
 
+html {
+    scroll-behavior: smooth;
+}
+
 body {
     font-family: 'Twemoji Country Flags', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
     background-color: var(--bg);
@@ -2007,12 +2011,14 @@ html:not(.lang-de) [lang="de"] {
 }
 
 .lang-select-container .chevron-icon {
+    position: absolute;
+    right: 14px;
+    top: 50%;
+    transform: translateY(-50%);
     width: 12px;
     height: 12px;
-    flex-shrink: 0;
     pointer-events: none;
     opacity: 0.6;
-    margin-left: -2px;
 }
 
 .lang-select-container:hover .chevron-icon {
@@ -2031,21 +2037,16 @@ html:not(.lang-de) [lang="de"] {
     font-weight: 600;
     color: currentColor;
     cursor: pointer;
-    padding: 0 12px 0 0;
+    padding: 0 28px 0 0;
     margin: 0;
     width: auto;
-    max-width: 150px;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    min-width: 110px;
     overflow: hidden;
 }
 
 @supports (appearance: base-select) {
-    .lang-dropdown,
     .lang-dropdown::picker(select) {
         appearance: base-select;
-    }
-    .lang-dropdown::picker(select) {
         background-color: #0f172a;
         border: 1px solid #334155;
         border-radius: 8px;
@@ -2748,7 +2749,9 @@ html:not(.lang-de) [lang="de"] {
 }
 .feature-card,
 .use-case-card,
-.compat-logo {
+.compat-logo,
+section[id],
+header[id] {
     scroll-margin-top: 100px;
 }
 
