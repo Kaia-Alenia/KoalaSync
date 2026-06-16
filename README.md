@@ -81,7 +81,7 @@ Both the official KoalaSync website and the **v2.0 Browser Extension** feature f
 To build the extension from source and synchronize protocol constants:
 ```bash
 npm install
-node scripts/build-extension.js
+npm run build:extension
 ```
 The compiled artifacts will be available in the `dist/` directory.
 

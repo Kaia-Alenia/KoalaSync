@@ -2,9 +2,10 @@
 
 This document describes the communication flows and internal logic of the KoalaSync system.
 
-## 1. Extension Startup & Connection
-- **Initialization**: On startup, `background.js` reads settings (Server URL, Username, Last Room) from `chrome.storage.sync`.
-- **WebSocket Handshake**:
+## 1. Extension Connection (Lazy Connect)
+- **Initialization**: On startup, `background.js` reads settings (Server URL, Username, Last Room) from `chrome.storage.sync`. No WebSocket connection is established at this point.
+- **On-Demand Connection**: The extension only connects when needed — either the user opens the popup with saved room credentials, or when actively in a room. When not in a room, no connection exists. This improves privacy (IP not exposed while idle) and reduces battery/network usage.
+- **WebSocket Handshake (when connecting)**:
   1. Background creates a `new WebSocket` to `/socket.io/?EIO=4&transport=websocket&version=1.0.0`.
   2. Server performs security checks:
      - **IP Rate Limit**: Checks if the IP has exceeded connection limits.
@@ -45,7 +46,7 @@ To maintain a clean room state and eliminate "Ghost Peers":
 - **Video Heartbeat (Content)**: Every 15 seconds, `content.js` sends current playback metadata (time, title, state) if a video is found.
 - **Server Pruning**: The server runs a "Reaper" every 2 minutes. If a peer has sent **zero** activity (no events and no heartbeats) for 5 minutes, they are forcefully disconnected.
 - **Immediate Cleanup**: Rooms are deleted instantly when the last peer leaves or disconnects.
-- **Reconnect Strategy**: Aggressive backoff — 500ms base, 1.5x multiplier, capped at 5s. Max 20 attempts before marking as failed. Events are queued during disconnect and flushed after namespace rejoin.
+- **Reconnect Strategy (while in room)**: Aggressive backoff — 500ms base, 1.5x multiplier, capped at 5s. Max 20 attempts before marking as failed. Events are queued during disconnect and flushed after namespace rejoin. When not in a room, no reconnection occurs.
 
 > [!CAUTION]
 > **Identity Rule**: Differentiate between `peerId` and `socket.id`. Use `socket.id` exclusively for ephemeral transport routing on the server. Use `peerId` exclusively for identity, state management, and room tracking across the stack.
@@ -70,5 +71,5 @@ KoalaSync uses a megaphone routing approach to minimize server logic:
 To maintain a "Single Source of Truth" across the server and extension without using a bundler:
 - **Relay Server & Extension Modules**: `background.js` and `popup.js` import constants directly from `shared/constants.js`.
 - **Content Scripts**: To ensure zero-latency execution, `content.js` uses a synchronized copy of `EVENTS` and constants.
-- **Automation**: The `node scripts/build-extension.js` script automatically injects these constants into `content.js` during the build process, eliminating the risk of manual mirror mismatch.
+- **Automation**: The `npm run build:extension` script automatically injects `EVENTS`, `HEARTBEAT_INTERVAL`, and `episode-utils.js` functions into `content.js` during the build process, eliminating the risk of manual mirror mismatch.
 - **Verification**: Any protocol change is automatically propagated across the stack by running the build script.

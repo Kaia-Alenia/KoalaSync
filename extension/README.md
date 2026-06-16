@@ -6,7 +6,7 @@ A Manifest V3 Browser Extension (Chrome & Firefox) for synchronized video playba
 - **Manifest V3**: Optimized Service Worker architecture with session persistence.
 - **Pure Vanilla JS**: No external dependencies or heavy libraries.
 - **Smart Peer IDs**: Hexadecimal IDs combined with customizable Usernames for easy identification.
-- **Dual Heartbeat**: Advanced session tracking (Background) and video synchronization (Content) to prevent ghost sessions.
+- **On-Demand Connection**: The service worker only maintains a WebSocket connection while you're in a room. No persistent background connections — privacy-first architecture. Based on `connectIntent` flag that gates all reconnect attempts.
 - **Live Diagnostics**: Built-in "Dev" tab for real-time video state debugging (ReadyState, CurrentTime, etc.).
 - **Dynamic i18n (Multi-Language)**: Fully localized in 6 languages (`en`, `de`, `fr`, `es`, `pt-BR`, `ru`) with auto-detected fallback and dynamic on-the-fly language selectors.
 
@@ -26,7 +26,7 @@ KoalaSync requires `<all_urls>` permission to detect and interact with video ele
 ## Installation
 1. **Prepare Extension**: From the repository root, run:
    ```bash
-   node scripts/build-extension.js
+   npm run build:extension
    ```
 2. Open Chrome and go to `chrome://extensions/`.
 3. Enable **Developer mode** (top right).
@@ -35,7 +35,7 @@ KoalaSync requires `<all_urls>` permission to detect and interact with video ele
 ## Development
 If you modify `shared/constants.js`, you must synchronize the changes by running the build script from the root:
 ```bash
-node scripts/build-extension.js
+npm run build:extension
 ```
 This ensures that the `extension/shared` folder is updated with the latest protocol constants.
 

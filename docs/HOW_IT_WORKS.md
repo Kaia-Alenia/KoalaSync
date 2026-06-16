@@ -16,9 +16,9 @@ This guide walks through the complete user flow of KoalaSync, from creating a ro
 
 ## Step 2: Connecting to the Relay Server
 
-When you open the extension popup, the background service worker connects to the relay server:
+When you open the extension popup (with saved room credentials) or when a saved room configuration exists from a previous session, the background service worker connects to the relay server:
 
-1. **WebSocket Handshake**: `background.js` opens a WebSocket to `wss://syncserver.koalastuff.net/socket.io/?EIO=4&transport=websocket`.
+1. **WebSocket Handshake** (on demand): `background.js` opens a WebSocket to `wss://syncserver.koalastuff.net/socket.io/?EIO=4&transport=websocket` only when needed (popup opened or active room).
 2. **Security Checks** (server-side):
    - The server checks the client's **IP rate limit** (max 10 connections per 60 seconds).
    - The server validates the **authentication token** (hardcoded in `shared/constants.js`) to verify this is a legitimate KoalaSync client.
@@ -155,7 +155,7 @@ While in a room, two heartbeats keep the session alive:
 
 | Heartbeat | Interval | Source | Purpose |
 |:----------|:---------|:-------|:--------|
-| **Background** | 30 seconds | `background.js` | Signals "I'm still connected" and triggers aggressive reconnect (500ms base, max 5s) |
+| **Background** | 30 seconds | `background.js` | While connected, signals "I'm still connected" and triggers automatic reconnect (500ms base, max 5s). No heartbeats fire when idle (lazy connect). |
 | **Content** | 15 seconds | `content.js` | Sends video metadata: `currentTime`, `mediaTitle`, `playbackState`, `volume`, `muted` |
 
 - **Server Reaper**: Every 2 minutes, the server checks for peers with no activity for 5+ minutes and disconnects them ("dead peer pruning").

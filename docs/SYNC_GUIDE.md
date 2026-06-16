@@ -17,13 +17,15 @@ You MUST run the build script in any of the following scenarios:
 
 Run the Node.js build script from the repository root:
 ```bash
-node scripts/build-extension.js
+node scripts/build-extension.cjs
+# or simply:
+npm run build:extension
 ```
 
 ## What does it do?
 The build script performs the following actions:
 1. Synchronizes protocol constants by copying `shared/constants.js`, `shared/blacklist.js`, and `shared/README.md` into `extension/shared/`.
-2. Injects `EVENTS` and `HEARTBEAT_INTERVAL` into `content.js` via marker-based replacement.
+2. Injects `EVENTS`, `HEARTBEAT_INTERVAL`, and `episode-utils.js` functions (`extractEpisodeId`, `sameEpisode`) into `content.js` via marker-based replacement.
 3. Compiles browser-specific manifest files.
 4. Packages the final ready-to-publish extension artifacts for Chrome and Firefox into the `dist/` directory.
 

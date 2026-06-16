@@ -33,7 +33,7 @@ The browser extension requires the following permissions:
 - `storage`: To remember your local preferences (username, server URL, room settings).
 - `tabs` & `scripting`: To detect and control video elements on the pages you choose to sync.
 - `<all_urls>` (host permission): Required to detect `<video>` elements on any website the user chooses to synchronize. The extension only activates on the specific tab the user has actively selected — it does not scan, monitor, or interact with any other tabs or pages.
-- `alarms`: To keep the background service worker alive during active sync sessions.
+- `alarms`: To keep the background service worker alive during active sync sessions (the extension only stays connected while you are in a room).
 - `notifications`: To display sync status updates (e.g., "Peer joined", "Force Sync initiated").
 - **No History Access**: We do not read, store, or transmit your browsing history. We only interact with the specific tab you have actively selected for synchronization.
 

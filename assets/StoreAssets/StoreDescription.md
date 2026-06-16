@@ -40,7 +40,7 @@ KoalaSync is built for private watch parties without unnecessary data collection
 ⚙️ UNDER THE HOOD
 KoalaSync is lightweight, transparent, and built with privacy in mind.
 
-• Real-Time Relay: Playback state is synchronized through a custom WebSocket-based relay server for fast room updates.
+• On-Demand Relay: Playback state is synchronized through a custom WebSocket-based relay server. No persistent connection — the relay is only active while you're in a room. No background traffic, no idle connections.
 • No Media Streaming: KoalaSync does not stream, proxy, upload, download, or redistribute any video content. Everyone watches from their own browser on the original website.
 • Temporary Room State Only: The relay server only coordinates room state such as play, pause, seek position, active target, nickname, and readiness status.
 • Docker Self-Hosting: The relay server can be self-hosted with Docker if you prefer to run your own private instance.
