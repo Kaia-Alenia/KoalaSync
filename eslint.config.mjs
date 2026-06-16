@@ -37,8 +37,10 @@ export default [
         URL: "readonly",
         URLSearchParams: "readonly",
         WebSocket: "readonly",
+        history: "readonly",
+        location: "readonly",
         self: "readonly",
-        process: "readonly"
+        process: "readonly",
       }
     },
     rules: {
