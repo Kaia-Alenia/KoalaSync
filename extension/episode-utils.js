@@ -1,0 +1,24 @@
+/**
+ * KoalaSync Episode Title Utilities
+ * Single source of truth — synced to content.js by build-extension.js.
+ * Keep in sync with the injection block in content.js!
+ */
+
+export function extractEpisodeId(title) {
+    if (!title || typeof title !== 'string') return null;
+    const se = title.match(/S(?:eason\s*)?(\d+)[^a-zA-Z0-9]*E(?:pisode\s*)?(\d+)/i);
+    if (se) return `S${String(se[1]).padStart(2, '0')}E${String(se[2]).padStart(2, '0')}`;
+    const ep = title.match(/(?:Episode|Folge|Ep\.?|#)\s*(\d+)/i);
+    if (ep) return `EP${String(ep[1]).padStart(3, '0')}`;
+    return null;
+}
+
+export function sameEpisode(titleA, titleB) {
+    if (!titleA && !titleB) return true;
+    if (!titleA || !titleB) return false;
+    const idA = extractEpisodeId(titleA);
+    const idB = extractEpisodeId(titleB);
+    if (idA && idB) return idA === idB;
+    if (idA || idB) return false;
+    return titleA === titleB;
+}

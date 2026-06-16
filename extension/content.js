@@ -290,28 +290,27 @@
     // Extract a canonical episode identifier from a title string.
     // Handles: S01E01, S1E1, S01 - E01, Season 1 Episode 1, "Folge 5", "Episode 5", "Ep. 5", "#5"
     // Returns null if no episode pattern found.
+    // --- SHARED_EPISODE_UTILS_INJECT_START ---
+    // This block is automatically replaced by /scripts/build-extension.js
     function extractEpisodeId(title) {
         if (!title || typeof title !== 'string') return null;
-        // S01E01 patterns (with any non-alphanumeric separator between season and E)
         const se = title.match(/S(?:eason\s*)?(\d+)[^a-zA-Z0-9]*E(?:pisode\s*)?(\d+)/i);
         if (se) return `S${String(se[1]).padStart(2, '0')}E${String(se[2]).padStart(2, '0')}`;
-        // "Episode X", "Folge X", "Ep. X", "#X"
         const ep = title.match(/(?:Episode|Folge|Ep\.?|#)\s*(\d+)/i);
         if (ep) return `EP${String(ep[1]).padStart(3, '0')}`;
         return null;
     }
 
-    // Returns true if two titles likely refer to the same episode.
-    // Strict: both must have IDs and match, OR neither has IDs and exact match.
     function sameEpisode(titleA, titleB) {
-        if (!titleA && !titleB) return true; // Both unknown → assume same (backward compat)
-        if (!titleA || !titleB) return false; // One unknown, one known → different
+        if (!titleA && !titleB) return true;
+        if (!titleA || !titleB) return false;
         const idA = extractEpisodeId(titleA);
         const idB = extractEpisodeId(titleB);
-        if (idA && idB) return idA === idB; // Both have parseable IDs → compare IDs
-        if (idA || idB) return false;       // One has ID, other doesn't → different
-        return titleA === titleB;            // Neither has ID → exact string match
+        if (idA && idB) return idA === idB;
+        if (idA || idB) return false;
+        return titleA === titleB;
     }
+    // --- SHARED_EPISODE_UTILS_INJECT_END ---
 
     // Returns true only when we are CERTAIN the episodes differ.
     // Permissive: only blocks if BOTH titles have parseable IDs AND they differ.

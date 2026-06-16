@@ -1,6 +1,7 @@
 import { EVENTS, PROTOCOL_VERSION, OFFICIAL_SERVER_URL, OFFICIAL_SERVER_TOKEN, EPISODE_LOBBY_TIMEOUT, FORCE_SYNC_TIMEOUT } from './shared/constants.js';
 import { generateUsername } from './shared/names.js';
 import { loadLocale, getMessage, getSystemLanguage } from './i18n.js';
+import { sameEpisode } from './episode-utils.js';
 
 // --- Uninstall URL Initialization ---
 chrome.runtime.onInstalled.addListener((details) => {
@@ -191,25 +192,7 @@ let forceSyncTimeout = null;
 let episodeLobby = null; // { expectedTitle, initiatorPeerId, readyPeers: [], createdAt }
 let episodeLobbyTimeout = null;
 
-// --- Episode Title Extraction (synced with content.js) ---
-function extractEpisodeId(title) {
-    if (!title || typeof title !== 'string') return null;
-    const se = title.match(/S(?:eason\s*)?(\d+)[\s\-\.]*E(?:pisode\s*)?(\d+)/i);
-    if (se) return `S${String(se[1]).padStart(2, '0')}E${String(se[2]).padStart(2, '0')}`;
-    const ep = title.match(/(?:Episode|Folge|Ep\.?|#)\s*(\d+)/i);
-    if (ep) return `EP${String(ep[1]).padStart(3, '0')}`;
-    return null;
-}
-
-function sameEpisode(titleA, titleB) {
-    if (!titleA && !titleB) return true; // Both unknown → assume same (backward compat)
-    if (!titleA || !titleB) return false; // One unknown, one known → different
-    const idA = extractEpisodeId(titleA);
-    const idB = extractEpisodeId(titleB);
-    if (idA && idB) return idA === idB; // Both have parseable IDs → compare IDs
-    if (idA || idB) return false;       // One has ID, other doesn't → different
-    return titleA === titleB;            // Neither has ID → exact string match
-}
+// --- Episode Title Extraction (synced with content.js via episode-utils.js) ---
 
 // --- Storage Utils ---
 
