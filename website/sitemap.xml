@@ -3,31 +3,31 @@
         xmlns:xhtml="http://www.w3.org/1999/xhtml">
   <url>
     <loc>https://sync.koalastuff.net/imprint</loc>
-    <lastmod>2026-06-09</lastmod>
+    <lastmod>2026-06-16</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.3</priority>
   </url>
   <url>
     <loc>https://sync.koalastuff.net/privacy</loc>
-    <lastmod>2026-06-09</lastmod>
+    <lastmod>2026-06-16</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.3</priority>
   </url>
   <url>
     <loc>https://sync.koalastuff.net/de/impressum</loc>
-    <lastmod>2026-06-09</lastmod>
+    <lastmod>2026-06-16</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.3</priority>
   </url>
   <url>
     <loc>https://sync.koalastuff.net/de/datenschutz</loc>
-    <lastmod>2026-06-09</lastmod>
+    <lastmod>2026-06-16</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.3</priority>
   </url>
   <url>
     <loc>https://sync.koalastuff.net/</loc>
-    <lastmod>2026-06-09</lastmod>
+    <lastmod>2026-06-16</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://sync.koalastuff.net/"/>
@@ -47,7 +47,7 @@
   </url>
   <url>
     <loc>https://sync.koalastuff.net/de/</loc>
-    <lastmod>2026-06-09</lastmod>
+    <lastmod>2026-06-16</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://sync.koalastuff.net/"/>
@@ -67,7 +67,7 @@
   </url>
   <url>
     <loc>https://sync.koalastuff.net/fr/</loc>
-    <lastmod>2026-06-09</lastmod>
+    <lastmod>2026-06-16</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://sync.koalastuff.net/"/>
@@ -87,7 +87,7 @@
   </url>
   <url>
     <loc>https://sync.koalastuff.net/es/</loc>
-    <lastmod>2026-06-09</lastmod>
+    <lastmod>2026-06-16</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://sync.koalastuff.net/"/>
@@ -107,7 +107,7 @@
   </url>
   <url>
     <loc>https://sync.koalastuff.net/pt-BR/</loc>
-    <lastmod>2026-06-09</lastmod>
+    <lastmod>2026-06-16</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://sync.koalastuff.net/"/>
@@ -127,7 +127,7 @@
   </url>
   <url>
     <loc>https://sync.koalastuff.net/ru/</loc>
-    <lastmod>2026-06-09</lastmod>
+    <lastmod>2026-06-16</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://sync.koalastuff.net/"/>
@@ -147,7 +147,7 @@
   </url>
   <url>
     <loc>https://sync.koalastuff.net/it/</loc>
-    <lastmod>2026-06-09</lastmod>
+    <lastmod>2026-06-16</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://sync.koalastuff.net/"/>
@@ -167,7 +167,7 @@
   </url>
   <url>
     <loc>https://sync.koalastuff.net/pl/</loc>
-    <lastmod>2026-06-09</lastmod>
+    <lastmod>2026-06-16</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://sync.koalastuff.net/"/>
@@ -187,7 +187,7 @@
   </url>
   <url>
     <loc>https://sync.koalastuff.net/tr/</loc>
-    <lastmod>2026-06-09</lastmod>
+    <lastmod>2026-06-16</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://sync.koalastuff.net/"/>
@@ -207,7 +207,7 @@
   </url>
   <url>
     <loc>https://sync.koalastuff.net/nl/</loc>
-    <lastmod>2026-06-09</lastmod>
+    <lastmod>2026-06-16</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://sync.koalastuff.net/"/>
@@ -227,7 +227,7 @@
   </url>
   <url>
     <loc>https://sync.koalastuff.net/ja/</loc>
-    <lastmod>2026-06-09</lastmod>
+    <lastmod>2026-06-16</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://sync.koalastuff.net/"/>
@@ -247,7 +247,7 @@
   </url>
   <url>
     <loc>https://sync.koalastuff.net/ko/</loc>
-    <lastmod>2026-06-09</lastmod>
+    <lastmod>2026-06-16</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://sync.koalastuff.net/"/>
@@ -267,7 +267,7 @@
   </url>
   <url>
     <loc>https://sync.koalastuff.net/pt/</loc>
-    <lastmod>2026-06-09</lastmod>
+    <lastmod>2026-06-16</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://sync.koalastuff.net/"/>
