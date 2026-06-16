@@ -4,6 +4,28 @@ All notable changes to the KoalaSync browser extension and relay server.
 
 ---
 
+## [v2.4.0] — 2026-06-16
+
+### Added
+- **Extension: Lazy WebSocket connection** — The extension no longer maintains a permanent WebSocket connection to the relay server. Instead, the connection is established only when actively in a room or when the popup is opened with a saved room configuration. This improves privacy (IP is not exposed while idle), reduces battery/network usage, and prevents the server from tracking online status of inactive users. Automatic reconnect is guaranteed while in a room — zero behavior change during active sync sessions. See `connectIntent` flag in `background.js`.
+- **Extension: Episode title regex unification** — `extractEpisodeId()` had inconsistent regex patterns between `background.js` and `content.js`. The content script correctly matched Crunchyroll-style separators (`S01/E01`) while the service worker's stricter pattern (`[\s\-\.]*`) silently rejected them, causing episode lobby sync failures. Now unified to `[^a-zA-Z0-9]*` via shared `episode-utils.js`.
+- **Unit tests: `rate-limiter` and `episode-utils`** — 12 test groups for rate-limit functions and 30+ assertions for episode title parsing, covering all 6 separator types (dash, dot, slash, colon, comma, space). Run automatically via `npm run verify`.
+
+### Changed
+- **Server: Rate limiter extracted to `rate-limiter.js`** — 6 rate-limit functions, all rate-limit Maps, and cleanup intervals moved from `index.js` (149 lines). `index.js` now imports via facade pattern with re-exports for backward compatibility.
+- **Extension: Episode utilities extracted to `episode-utils.js`** — `extractEpisodeId()` and `sameEpisode()` deduplicated from `background.js` and `content.js`. The shared module is imported as an ES module by the service worker and injected into the content script IIFE by the build script.
+- **Build: `"type": "module"` in root `package.json`** — All scripts standardized to ESM (`.mjs`) or explicitly CommonJS (`.cjs`). Eliminated Node.js `MODULE_TYPELESS_PACKAGE_JSON` warnings.
+- **Build: 4 CJS scripts renamed to `.cjs`** — `build-extension.js`, `test-content-video-finder.js`, `test-locales.js`, `website/build.js`.
+
+### Fixed
+- **Server: npm audit resolved** — `ws` package vulnerability (CVE-2024-37890) fixed. Zero vulnerabilities in production dependencies.
+- **Pop-up: Connection status flicker fixed** — Removed hardcoded `disconnected` state on every pop-up open. Status now reflects actual background state from the first frame.
+- **Pop-up: Join button timeout improved** — No longer blindly re-enables after 15s. Polls connection status and extends window if still connecting.
+- **Pop-up: Validation failure state cleanup** — Custom server URL validation errors now properly reset `isProcessingConnection` and `joinBtnTimeout`.
+- **Extension: `WEB_JOIN_REQUEST` channel leak fixed** — Missing `sendResponse()` call when already in the target room.
+- **Extension: `LEAVE_ROOM` now clears `roomId` from storage** — Prevents phantom auto-reconnect on browser restart after explicit leave.
+- **Extension: Reconnect attempt counters reset on leave** — Prevents stale `reconnecting` status display after intentional disconnect.
+
 ## [v2.3.2] — 2026-06-16
 
 ### Changed

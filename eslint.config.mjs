@@ -58,7 +58,7 @@ export default [
     }
   },
   {
-    files: ["server/**/*.js", "scripts/**/*.js", "website/build.js"],
+    files: ["server/**/*.js", "scripts/**/*.js", "scripts/**/*.cjs", "website/build.cjs"],
     languageOptions: {
       globals: {
         require: "readonly",

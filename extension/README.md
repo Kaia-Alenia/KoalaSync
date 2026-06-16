@@ -38,3 +38,15 @@ If you modify `shared/constants.js`, you must synchronize the changes by running
 node scripts/build-extension.js
 ```
 This ensures that the `extension/shared` folder is updated with the latest protocol constants.
+
+## Module Structure
+
+| File | Purpose |
+|---|---|
+| `background.js` | Service worker: message routing, tab listeners, startup |
+| `content.js` | Video detection, audio processing, episode transition (IIFE) |
+| `popup.js` | Popup UI: join/create, tabs, status, settings |
+| `bridge.js` | Landing page bridge (injected into sync.koalastuff.net) |
+| `episode-utils.js` | Shared `extractEpisodeId()` / `sameEpisode()` — used by background.js, injected into content.js at build time |
+| `i18n.js` | Translation loader |
+| `shared/` | Constants, blacklist, name generator |

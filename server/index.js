@@ -12,6 +12,38 @@ import {
     isAdminMetricsAuthorized,
     isAdminMetricsTokenStrong
 } from './ops.js';
+import {
+    ROOM_LIST_COOLDOWN_MS,
+    HEALTH_RATE_LIMIT_PER_MINUTE,
+    ADMIN_METRICS_AUTH_RATE_LIMIT_PER_MINUTE,
+    connectionCounts,
+    failedAuthAttempts,
+    eventCounts,
+    healthCounts,
+    adminMetricsAuthCounts,
+    roomListCooldowns,
+    rateLimitDenied,
+    checkAuthRate,
+    recordAuthFailure,
+    checkConnectionRate,
+    checkEventRate,
+    checkHealthRate,
+    checkAdminMetricsAuthRate,
+    startRateLimitCleanup,
+    stopRateLimitCleanup,
+    clearRateLimitMaps
+} from './rate-limiter.js';
+
+// Re-export for external consumers (tests, ops)
+export {
+    HEALTH_RATE_LIMIT_PER_MINUTE,
+    ADMIN_METRICS_AUTH_RATE_LIMIT_PER_MINUTE,
+    healthCounts,
+    adminMetricsAuthCounts,
+    connectionCounts,
+    eventCounts,
+    rateLimitDenied
+};
 
 dotenv.config();
 
@@ -26,9 +58,6 @@ const MAX_ROOMS = parseInt(process.env.MAX_ROOMS) || 1000;
 const MAX_PEERS_PER_ROOM = parseInt(process.env.MAX_PEERS_PER_ROOM) || 25;
 const MIN_VERSION = process.env.MIN_VERSION || '1.0.0';
 const ADMIN_METRICS_TOKEN = process.env.ADMIN_METRICS_TOKEN || '';
-const ROOM_LIST_COOLDOWN_MS = 10000;
-export const HEALTH_RATE_LIMIT_PER_MINUTE = 10;
-export const ADMIN_METRICS_AUTH_RATE_LIMIT_PER_MINUTE = 5;
 const HEALTH_RESPONSE_CACHE_TTL_MS = 60000;
 
 if (!isAdminMetricsTokenStrong(ADMIN_METRICS_TOKEN)) {
@@ -108,6 +137,8 @@ export const io = new Server(httpServer, {
     allowUpgrades: false
 });
 
+startRateLimitCleanup(io);
+
 /**
  * In-memory storage
  */
@@ -124,157 +155,6 @@ function log(type, message, details = '') {
 
     const timestamp = new Date().toISOString();
     console.log(`[${timestamp}] [${type}] ${message}`, details);
-}
-
-// Rate Limiting & Security
-export const connectionCounts = new Map(); // ip -> { count, resetTime }
-const failedAuthAttempts = new Map(); // Map<IP+RoomID, {count, lastAttempt}>
-
-function checkAuthRate(ip, roomId) {
-    const key = `${ip}:${roomId}`;
-    const now = Date.now();
-    const record = failedAuthAttempts.get(key) || { count: 0, lastAttempt: 0 };
-    
-    // Block for 15 mins if 5 fails in 2 mins
-    if (record.count >= 5 && (now - record.lastAttempt) < 15 * 60 * 1000) {
-        return false;
-    }
-    
-    // Reset if last attempt was long ago
-    if ((now - record.lastAttempt) > 2 * 60 * 1000) {
-        record.count = 0;
-    }
-    
-    return true;
-}
-
-function recordAuthFailure(ip, roomId) {
-    if (failedAuthAttempts.size > 200000) {
-        const now = Date.now();
-        // 1. Clear expired entries (> 15 mins)
-        for (const [key, record] of failedAuthAttempts.entries()) {
-            if (now - record.lastAttempt > 15 * 60 * 1000) {
-                failedAuthAttempts.delete(key);
-            } else {
-                break;
-            }
-        }
-        
-        // 2. If still over 200k, perform LRU-style eviction on the oldest 10,000 entries (first items in Map order)
-        if (failedAuthAttempts.size > 200000) {
-            log('SECURITY', 'failedAuthAttempts size exceeded 200000. Performing insertion-order eviction.');
-            for (const [key] of failedAuthAttempts.entries()) {
-                if (failedAuthAttempts.size <= 190000) {
-                    break;
-                }
-                failedAuthAttempts.delete(key);
-            }
-        }
-    }
-    const key = `${ip}:${roomId}`;
-    const record = failedAuthAttempts.get(key) || { count: 0, lastAttempt: 0 };
-    record.count++;
-    record.lastAttempt = Date.now();
-    failedAuthAttempts.delete(key); // Remove first to update insertion order (moves key to the end of iteration)
-    failedAuthAttempts.set(key, record);
-}
-
-// Periodically clean up old auth failure records (every 15 minutes)
-const authFailureCleanupInterval = setInterval(() => {
-    const now = Date.now();
-    for (const [key, record] of failedAuthAttempts.entries()) {
-        if (now - record.lastAttempt > 15 * 60 * 1000) {
-            failedAuthAttempts.delete(key);
-        }
-    }
-}, 15 * 60 * 1000);
-
-export const eventCounts = new Map(); // socketId -> { count, resetTime }
-export const healthCounts = new Map(); // ip -> { count, resetTime }
-export const adminMetricsAuthCounts = new Map(); // ip -> { count, resetTime }
-const roomListCooldowns = new Map(); // socketId -> last allowed timestamp
-
-// Actual rate-limit denial counters (incremented only when a request is denied)
-const rateLimitDenied = {
-    connections: 0,
-    events: 0,
-    health: 0,
-    adminMetricsAuth: 0,
-    roomList: 0
-};
-
-// Clean up connection counts and event counts to prevent memory leak
-const rateLimitCleanupInterval = setInterval(() => {
-    const now = Date.now();
-    for (const [ip, entry] of connectionCounts.entries()) {
-        if (now > entry.resetTime) {
-            connectionCounts.delete(ip);
-        }
-    }
-    for (const [socketId, entry] of eventCounts.entries()) {
-        if (now > entry.resetTime || !io.sockets.sockets.has(socketId)) {
-            eventCounts.delete(socketId);
-        }
-    }
-    for (const [ip, entry] of healthCounts.entries()) {
-        if (now > entry.resetTime) {
-            healthCounts.delete(ip);
-        }
-    }
-    for (const [ip, entry] of adminMetricsAuthCounts.entries()) {
-        if (now > entry.resetTime) {
-            adminMetricsAuthCounts.delete(ip);
-        }
-    }
-    for (const [socketId] of roomListCooldowns.entries()) {
-        if (!io.sockets.sockets.has(socketId)) {
-            roomListCooldowns.delete(socketId);
-        }
-    }
-}, 60000);
-
-function checkConnectionRate(ip) {
-    const now = Date.now();
-    const entry = connectionCounts.get(ip) || { count: 0, resetTime: now + 60000 };
-    if (now > entry.resetTime) { entry.count = 0; entry.resetTime = now + 60000; }
-    entry.count++;
-    connectionCounts.set(ip, entry);
-    if (entry.count <= 10) return true;
-    rateLimitDenied.connections++;
-    return false;
-}
-
-function checkEventRate(socketId) {
-    const now = Date.now();
-    const entry = eventCounts.get(socketId) || { count: 0, resetTime: now + 10000 };
-    if (now > entry.resetTime) { entry.count = 0; entry.resetTime = now + 10000; }
-    entry.count++;
-    eventCounts.set(socketId, entry);
-    if (entry.count <= 30) return true;
-    rateLimitDenied.events++;
-    return false;
-}
-
-function checkHealthRate(ip) {
-    const now = Date.now();
-    const entry = healthCounts.get(ip) || { count: 0, resetTime: now + 60000 };
-    if (now > entry.resetTime) { entry.count = 0; entry.resetTime = now + 60000; }
-    entry.count++;
-    healthCounts.set(ip, entry);
-    if (entry.count <= HEALTH_RATE_LIMIT_PER_MINUTE) return true;
-    rateLimitDenied.health++;
-    return false;
-}
-
-function checkAdminMetricsAuthRate(ip) {
-    const now = Date.now();
-    const entry = adminMetricsAuthCounts.get(ip) || { count: 0, resetTime: now + 60000 };
-    if (now > entry.resetTime) { entry.count = 0; entry.resetTime = now + 60000; }
-    entry.count++;
-    adminMetricsAuthCounts.set(ip, entry);
-    if (entry.count <= ADMIN_METRICS_AUTH_RATE_LIMIT_PER_MINUTE) return true;
-    rateLimitDenied.adminMetricsAuth++;
-    return false;
 }
 
 /**
@@ -836,20 +716,14 @@ function gracefulShutdown(signal) {
 }
 
 export async function stopServerForTests() {
-    clearInterval(authFailureCleanupInterval);
-    clearInterval(rateLimitCleanupInterval);
+    stopRateLimitCleanup();
     clearInterval(roomCleanupInterval);
     rooms.clear();
     socketToRoom.clear();
     peerToSocket.clear();
     roomCreationLocks.clear();
     peerJoinLocks.clear();
-    connectionCounts.clear();
-    failedAuthAttempts.clear();
-    eventCounts.clear();
-    healthCounts.clear();
-    adminMetricsAuthCounts.clear();
-    roomListCooldowns.clear();
+    clearRateLimitMaps();
     healthResponseCache.clear();
     io.removeAllListeners();
     io.disconnectSockets(true);

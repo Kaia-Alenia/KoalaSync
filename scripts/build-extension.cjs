@@ -97,6 +97,25 @@ function copyExtensionFiles(targetDir, browserName) {
           console.warn('⚠️ WARNING: Heartbeat markers not found in content.js');
         }
 
+        // 3. Inject Episode Utils
+        const euStart = '// --- SHARED_EPISODE_UTILS_INJECT_START ---';
+        const euEnd = '// --- SHARED_EPISODE_UTILS_INJECT_END ---';
+        const euPattern = new RegExp(euStart.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '[\\s\\S]+?' + euEnd.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+        const euPath = path.join(rootDir, 'extension', 'episode-utils.js');
+        if (fs.existsSync(euPath)) {
+          const euContent = fs.readFileSync(euPath, 'utf8');
+          const stripped = euContent
+            .replace(/^\/\*\*[\s\S]*?\*\/\s*/m, '')
+            .replace(/export function /g, 'function ')
+            .trim();
+          const euRep = `${euStart}\n    // This block is automatically updated by /scripts/build-extension.js\n${stripped.split('\n').map(l => '    ' + l).join('\n')}\n    ${euEnd}`;
+          if (euPattern.test(content)) {
+            content = content.replace(euPattern, euRep);
+          } else {
+            console.warn('⚠ WARNING: Episode utils markers not found in content.js');
+          }
+        }
+
         fs.writeFileSync(destPath, content);
         console.log('✓ Injected shared constants into content.js');
       } else if (item === 'background.js') {
