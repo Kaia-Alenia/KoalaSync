@@ -50,7 +50,7 @@
   "FEATURE_7_TITLE": "Volume egaliseren / Audiocompressor",
   "FEATURE_7_DESC": "Niet langer aan de volumeknop zitten. De ingebouwde audiocompressor versterkt stille dialogen en dempt harde explosies. Werkt op Netflix, Prime Video, Disney+, YouTube en elke HTML5-video. Volledig lokaal — geen audiogegevens verlaten uw computer.",
   "FEATURE_8_TITLE": "Open Source (MIT License)",
-  "FEATURE_8_DESC": "The entire codebase is publicly auditable on GitHub. No black boxes, no proprietary blobs — 100% transparency from the relay server to the browser extension.",
+  "FEATURE_8_DESC": "De volledige codebase is openbaar controleerbaar op GitHub. Geen zwarte dozen, geen propri?taire blobs - 100% transparantie van de relayserver tot de browserextensie.",
   "COMP_TITLE": "KoalaSync vs. Teleparty",
   "COMP_SUBTITLE": "Ontdek waarom open-source, reclamevrij en privacy-first de superieure manier is om samen te kijken.",
   "COMP_COL_FEATURE": "Functie",
@@ -76,7 +76,7 @@
   "COMP_FEAT_5_TELE": "Alleen ondersteunde sites",
   "COMP_FEAT_6_NAME": "Lokalisatie / Vertaling",
   "COMP_FEAT_6_DESC": "Beschikbare interfacetalen en vertaalondersteuning.",
-  "COMP_FEAT_6_KOALA": "13 talen (en groeiend)",
+  "COMP_FEAT_6_KOALA": "15 talen (en groeiend)",
   "COMP_FEAT_6_TELE": "Alleen Engels",
   "COMP_FEAT_7_NAME": "Audiocompressor / Volume Egaliseren",
   "COMP_FEAT_7_DESC": "Ingebouwde audionormalisatie om stille dialogen en luide effecten in balans te brengen",
@@ -176,5 +176,5 @@
   "FOOTER_LEGAL_LINK": "imprint",
   "FOOTER_PRIVACY_LINK": "privacy",
   "FOOTER_DISCLAIMER": "KoalaSync is niet verbonden aan, goedgekeurd door of geassocieerd met Netflix, Disney+, Amazon, YouTube, Twitch of enig ander streamingplatform. Alle handelsmerken zijn eigendom van hun respectieve eigenaren.",
-  "FOOTER_SUPPORT": "Trakteer op een koffie via Ko-Fi"
+  "FOOTER_SUPPORT": "Support KoalaSync"
 }

@@ -76,7 +76,7 @@
   "COMP_FEAT_5_TELE": "サポートされているサイトのみ",
   "COMP_FEAT_6_NAME": "ローカライズ / 翻訳",
   "COMP_FEAT_6_DESC": "利用可能なインターフェース言語と翻訳サポート。",
-  "COMP_FEAT_6_KOALA": "13の言語（今後も追加予定）",
+  "COMP_FEAT_6_KOALA": "15の言語（今後も追加予定）",
   "COMP_FEAT_6_TELE": "英語のみ",
   "COMP_FEAT_7_NAME": "オーディオコンプレッサー / 音量均等化",
   "COMP_FEAT_7_DESC": "静かな会話と大きな効果音のバランスを取る内蔵オーディオノーマライゼーション",
@@ -176,5 +176,5 @@
   "FOOTER_LEGAL_LINK": "imprint",
   "FOOTER_PRIVACY_LINK": "privacy",
   "FOOTER_DISCLAIMER": "KoalaSyncは、Netflix、Disney+、Amazon、YouTube、Twitch、またはその他のストリーミングプラットフォームと提携、承認、または関連付けられているものではありません。すべての商標はそれぞれの所有者に帰属します。",
-  "FOOTER_SUPPORT": "Ko-Fiでコーヒーをおごる"
+  "FOOTER_SUPPORT": "Support KoalaSync"
 }

@@ -181,7 +181,7 @@
   "LOBBY_CANCEL_TIMEOUT_PEERS_LOAD": "Tiempo de espera agotado: no todos los participantes cargaron el episodio",
   "LOBBY_CANCEL_USER": "Cancelado por el usuario",
   "NOTIF_ERROR_TITLE": "Error de KoalaSync",
-  "FOOTER_SUPPORT": "☕ Invítame a un café",
+  "FOOTER_SUPPORT": "Support KoalaSync",
   "FOOTER_REVIEW": "★ Valorar",
   "FOOTER_SUPPORT_PROMPT": "¿Te gusta KoalaSync? ¡Deja una reseña!",
   "LABEL_AUDIO_PROCESSING": "Procesamiento de audio",

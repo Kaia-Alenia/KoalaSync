@@ -181,7 +181,7 @@
   "LOBBY_CANCEL_TIMEOUT_PEERS_LOAD": "Время ожидания истекло — не все участники загрузили серию",
   "LOBBY_CANCEL_USER": "Отменено пользователем",
   "NOTIF_ERROR_TITLE": "Ошибка KoalaSync",
-  "FOOTER_SUPPORT": "☕ Угости кофе",
+  "FOOTER_SUPPORT": "Support KoalaSync",
   "FOOTER_REVIEW": "★ Оценить",
   "FOOTER_SUPPORT_PROMPT": "Нравится KoalaSync? Оставьте отзыв!",
   "LABEL_AUDIO_PROCESSING": "Обработка звука",

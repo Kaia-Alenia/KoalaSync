@@ -181,7 +181,7 @@
   "LOBBY_CANCEL_TIMEOUT_PEERS_LOAD": "タイムアウト — 一部のメンバーがエピソードを読み込めませんでした",
   "LOBBY_CANCEL_USER": "ユーザーによってキャンセルされました",
   "NOTIF_ERROR_TITLE": "KoalaSyncエラー",
-  "FOOTER_SUPPORT": "☕ コーヒーをおごってね",
+  "FOOTER_SUPPORT": "Support KoalaSync",
   "FOOTER_REVIEW": "★ 評価する",
   "FOOTER_SUPPORT_PROMPT": "KoalaSyncはいかが？レビューを書いてください！",
   "LABEL_AUDIO_PROCESSING": "オーディオ処理",

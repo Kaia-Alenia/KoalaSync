@@ -181,7 +181,7 @@
   "LOBBY_CANCEL_TIMEOUT_PEERS_LOAD": "Timeout — not all peers loaded the episode",
   "LOBBY_CANCEL_USER": "Cancelled by user",
   "NOTIF_ERROR_TITLE": "KoalaSync Error",
-  "FOOTER_SUPPORT": "☕ Buy me a coffee",
+  "FOOTER_SUPPORT": "Support KoalaSync",
   "FOOTER_REVIEW": "★ Rate us",
   "FOOTER_SUPPORT_PROMPT": "Enjoying KoalaSync? Leave a review!",
   "LABEL_AUDIO_PROCESSING": "Audio Processing",

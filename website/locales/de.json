@@ -76,7 +76,7 @@
   "COMP_FEAT_5_TELE": "Nur unterstützte Seiten",
   "COMP_FEAT_6_NAME": "Lokalisierung / Übersetzung",
   "COMP_FEAT_6_DESC": "Verfügbare Oberflächensprachen und Übersetzungsunterstützung.",
-  "COMP_FEAT_6_KOALA": "13 Sprachen (wachsend)",
+  "COMP_FEAT_6_KOALA": "15 Sprachen (wachsend)",
   "COMP_FEAT_6_TELE": "Nur Englisch",
   "COMP_FEAT_7_NAME": "Audio Compressor / Lautstärke Angleichen",
   "COMP_FEAT_7_DESC": "Integrierte Audionormalisierung für leise Dialoge und laute Effekte",
@@ -176,5 +176,5 @@
   "FOOTER_LEGAL_LINK": "de/impressum",
   "FOOTER_PRIVACY_LINK": "de/datenschutz",
   "FOOTER_DISCLAIMER": "KoalaSync ist nicht mit Netflix, Disney+, Amazon, YouTube, Twitch oder anderen Streaming-Plattformen verbunden, wird von diesen nicht unterstützt oder steht in keiner Beziehung zu diesen. Alle Markenrechte liegen bei ihren jeweiligen Inhabern.",
-  "FOOTER_SUPPORT": "Kauf mir einen Kaffee auf Ko-Fi"
+  "FOOTER_SUPPORT": "Support KoalaSync"
 }

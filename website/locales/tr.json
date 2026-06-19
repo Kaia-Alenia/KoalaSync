@@ -76,7 +76,7 @@
   "COMP_FEAT_5_TELE": "Sadece desteklenen siteler",
   "COMP_FEAT_6_NAME": "Yerelleştirme / Çeviri",
   "COMP_FEAT_6_DESC": "Mevcut arayüz dilleri ve çeviri desteği.",
-  "COMP_FEAT_6_KOALA": "13 Dil (ve artıyor)",
+  "COMP_FEAT_6_KOALA": "15 Dil (ve artıyor)",
   "COMP_FEAT_6_TELE": "Sadece İngilizce",
   "COMP_FEAT_7_NAME": "Ses Kompresörü / Ses Seviyesi Dengeleme",
   "COMP_FEAT_7_DESC": "Sessiz diyaloglar ve yüksek efektler arasında denge sağlayan yerleşik ses normalizasyonu",
@@ -176,5 +176,5 @@
   "FOOTER_LEGAL_LINK": "imprint",
   "FOOTER_PRIVACY_LINK": "privacy",
   "FOOTER_DISCLAIMER": "KoalaSync; Netflix, Disney+, Amazon, YouTube, Twitch veya başka herhangi bir yayın platformuna bağlı değildir, bunlar tarafından desteklenmemektedir ve bunlarla ilişkili değildir. Tüm ticari markalar ilgili sahiplerinin mülkiyetindedir.",
-  "FOOTER_SUPPORT": "Ko-Fi'de bana kahve ısmarla"
+  "FOOTER_SUPPORT": "Support KoalaSync"
 }

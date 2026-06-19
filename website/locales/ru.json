@@ -76,7 +76,7 @@
   "COMP_FEAT_5_TELE": "Только поддерживаемые сайты",
   "COMP_FEAT_6_NAME": "Локализация / Перевод",
   "COMP_FEAT_6_DESC": "Доступные языки интерфейса и поддержка перевода.",
-  "COMP_FEAT_6_KOALA": "13 языков (и расширяется)",
+  "COMP_FEAT_6_KOALA": "15 языков (и расширяется)",
   "COMP_FEAT_6_TELE": "Только английский",
   "COMP_FEAT_7_NAME": "Аудиокомпрессор / Выравнивание Громкости",
   "COMP_FEAT_7_DESC": "Встроенная нормализация звука для баланса тихих диалогов и громких эффектов",
@@ -151,9 +151,9 @@
   "MOCK_08": "Покинуть комнату",
   "MOCK_09": "Выбрать видео",
   "MOCK_10": "Пульт управления",
-  "MOCK_11": "Воспроизвести",
-  "MOCK_12": "Пауза",
-  "MOCK_13": "Перейти к другим",
+  "MOCK_11": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"currentColor\" width=\"14\" height=\"14\" aria-hidden=\"true\"><polygon points=\"5 3 19 12 5 21 5 3\"/></svg> Воспроизвести",
+  "MOCK_12": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"currentColor\" width=\"14\" height=\"14\" aria-hidden=\"true\"><rect x=\"6\" y=\"4\" width=\"4\" height=\"16\"/><rect x=\"14\" y=\"4\" width=\"4\" height=\"16\"/></svg> Пауза",
+  "MOCK_13": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" width=\"14\" height=\"14\" aria-hidden=\"true\"><polygon points=\"13 2 3 14 12 14 11 22 21 10 12 10 13 2\"/></svg> SYNC",
   "MOCK_14": "Последняя активность",
   "MOCK_15": "Ожидание 1 участника (KoalaPC)...",
   "MOCK_16": "Пропустить и играть",
@@ -176,5 +176,5 @@
   "FOOTER_LEGAL_LINK": "imprint",
   "FOOTER_PRIVACY_LINK": "privacy",
   "FOOTER_DISCLAIMER": "KoalaSync не связан, не спонсируется и не аффилирован с Netflix, Disney+, Amazon, YouTube, Twitch или любой другой стриминговой платформой. Все товарные знаки являются собственностью их соответствующих владельцев.",
-  "FOOTER_SUPPORT": "Угости кофе на Ko-Fi"
+  "FOOTER_SUPPORT": "Support KoalaSync"
 }

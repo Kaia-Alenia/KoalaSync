@@ -76,7 +76,7 @@
   "COMP_FEAT_5_TELE": "Solo sitios compatibles",
   "COMP_FEAT_6_NAME": "Localización / Traducción",
   "COMP_FEAT_6_DESC": "Idiomas de interfaz disponibles y soporte de traducción.",
-  "COMP_FEAT_6_KOALA": "13 idiomas (y sumando)",
+  "COMP_FEAT_6_KOALA": "15 idiomas (y sumando)",
   "COMP_FEAT_6_TELE": "Solo inglés",
   "COMP_FEAT_7_NAME": "Compresor de Audio / Nivelación de Volumen",
   "COMP_FEAT_7_DESC": "Normalización de audio integrada para equilibrar diálogos bajos y efectos fuertes",
@@ -151,9 +151,9 @@
   "MOCK_08": "Salir de la sala",
   "MOCK_09": "Seleccionar video",
   "MOCK_10": "Control remoto",
-  "MOCK_11": "Reproducir",
-  "MOCK_12": "Pausar",
-  "MOCK_13": "SINCRO",
+  "MOCK_11": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"currentColor\" width=\"14\" height=\"14\" aria-hidden=\"true\"><polygon points=\"5 3 19 12 5 21 5 3\"/></svg> Reproducir",
+  "MOCK_12": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"currentColor\" width=\"14\" height=\"14\" aria-hidden=\"true\"><rect x=\"6\" y=\"4\" width=\"4\" height=\"16\"/><rect x=\"14\" y=\"4\" width=\"4\" height=\"16\"/></svg> Pausar",
+  "MOCK_13": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" width=\"14\" height=\"14\" aria-hidden=\"true\"><polygon points=\"13 2 3 14 12 14 11 22 21 10 12 10 13 2\"/></svg> SINCRO",
   "MOCK_14": "Ir a la posición de otros",
   "MOCK_15": "Estado de la última actividad",
   "MOCK_16": "Esperando a 1 participante (KoalaPC)...",
@@ -176,5 +176,5 @@
   "FOOTER_LEGAL_LINK": "imprint",
   "FOOTER_PRIVACY_LINK": "privacy",
   "FOOTER_DISCLAIMER": "KoalaSync no está afiliado, respaldado ni asociado con Netflix, Disney+, Amazon, YouTube, Twitch ni ninguna otra plataforma de streaming. Todas las marcas comerciales pertenecen a sus respectivos dueños.",
-  "FOOTER_SUPPORT": "Invítame a un café en Ko-Fi"
+  "FOOTER_SUPPORT": "Support KoalaSync"
 }

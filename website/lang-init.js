@@ -31,11 +31,15 @@
         'tr': 'tr',
         'nl': 'nl',
         'ja': 'ja',
-        'ko': 'ko'
+        'ko': 'ko',
+        'zh': 'zh',
+        'uk': 'uk'
     };
 
     var getBrowserLang = function() {
         var fullLang = (navigator.language || '').toLowerCase();
+        if (fullLang.indexOf('zh') === 0) return 'zh';
+        if (fullLang.indexOf('uk') === 0) return 'uk';
         if (fullLang.indexOf('pt-br') === 0) return 'pt-br';
         if (fullLang.indexOf('pt') === 0) return 'pt';
         return fullLang.split('-')[0];

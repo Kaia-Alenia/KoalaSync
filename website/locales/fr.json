@@ -50,7 +50,7 @@
   "FEATURE_7_TITLE": "Égalisation du volume / Compresseur audio",
   "FEATURE_7_DESC": "Fini de jouer avec le bouton du volume. Le compresseur audio intégré booste les dialogues discrets et adoucit les explosions. Fonctionne sur Netflix, Prime Video, Disney+, YouTube et toute vidéo HTML5. Entièrement local — aucune donnée audio ne quitte votre ordinateur.",
   "FEATURE_8_TITLE": "Open Source (MIT License)",
-  "FEATURE_8_DESC": "The entire codebase is publicly auditable on GitHub. No black boxes, no proprietary blobs — 100% transparency from the relay server to the browser extension.",
+  "FEATURE_8_DESC": "Tout le code source est publiquement auditable sur GitHub. Pas de boite noire, pas de blob proprietaire - transparence totale du serveur relais a l'extension de navigateur.",
   "COMP_TITLE": "KoalaSync vs Teleparty",
   "COMP_SUBTITLE": "Découvrez pourquoi un outil open-source, sans publicité et respectueux de la vie privée est le meilleur choix pour regarder ensemble.",
   "COMP_COL_FEATURE": "Fonctionnalité",
@@ -76,7 +76,7 @@
   "COMP_FEAT_5_TELE": "Sites pris en charge uniquement",
   "COMP_FEAT_6_NAME": "Localisation / Traduction",
   "COMP_FEAT_6_DESC": "Langues d'interface disponibles et support de traduction.",
-  "COMP_FEAT_6_KOALA": "13 langues (et plus à venir)",
+  "COMP_FEAT_6_KOALA": "15 langues (et plus à venir)",
   "COMP_FEAT_6_TELE": "Anglais uniquement",
   "COMP_FEAT_7_NAME": "Compresseur Audio / Égalisation du Volume",
   "COMP_FEAT_7_DESC": "Normalisation audio intégrée pour équilibrer les dialogues silencieux et les effets sonores",
@@ -151,9 +151,9 @@
   "MOCK_08": "Quitter",
   "MOCK_09": "Choisir la vidéo",
   "MOCK_10": "Télécommande",
-  "MOCK_11": "Lire",
-  "MOCK_12": "Pause",
-  "MOCK_13": "Sauter vers les autres",
+  "MOCK_11": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"currentColor\" width=\"14\" height=\"14\" aria-hidden=\"true\"><polygon points=\"5 3 19 12 5 21 5 3\"/></svg> Lire",
+  "MOCK_12": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"currentColor\" width=\"14\" height=\"14\" aria-hidden=\"true\"><rect x=\"6\" y=\"4\" width=\"4\" height=\"16\"/><rect x=\"14\" y=\"4\" width=\"4\" height=\"16\"/></svg> Pause",
+  "MOCK_13": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" width=\"14\" height=\"14\" aria-hidden=\"true\"><polygon points=\"13 2 3 14 12 14 11 22 21 10 12 10 13 2\"/></svg> SYNC",
   "MOCK_14": "Dernière activité",
   "MOCK_15": "En attente de 1 participant (KoalaPC)...",
   "MOCK_16": "Passer & lire",
@@ -176,5 +176,5 @@
   "FOOTER_LEGAL_LINK": "imprint",
   "FOOTER_PRIVACY_LINK": "privacy",
   "FOOTER_DISCLAIMER": "KoalaSync n'est pas affilié à Netflix, Disney+, Amazon, YouTube, Twitch ou toute autre plateforme de streaming. Toutes les marques déposées appartiennent à leurs détenteurs respectifs.",
-  "FOOTER_SUPPORT": "Offre-moi un café sur Ko-Fi"
+  "FOOTER_SUPPORT": "Support KoalaSync"
 }

@@ -162,7 +162,7 @@ async function compile() {
     }
     const templateContent = fs.readFileSync(templatePath, 'utf8');
     const localesDir = path.join(websiteDir, 'locales');
-    const languages = ['en', 'de', 'fr', 'es', 'pt-BR', 'ru', 'it', 'pl', 'tr', 'nl', 'ja', 'ko', 'pt'];
+    const languages = ['en', 'de', 'fr', 'es', 'it', 'nl', 'pl', 'pt', 'pt-BR', 'tr', 'ru', 'ja', 'ko', 'zh', 'uk'];
 
     // Read version for build-time injection (SEO: crawlers see real version)
     const versionJson = JSON.parse(fs.readFileSync(path.join(websiteDir, 'version.json'), 'utf8'));

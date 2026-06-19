@@ -76,7 +76,7 @@
   "COMP_FEAT_5_TELE": "Solo siti selezionati",
   "COMP_FEAT_6_NAME": "Traduzione",
   "COMP_FEAT_6_DESC": "Lingue disponibili per l'interfaccia.",
-  "COMP_FEAT_6_KOALA": "13 Lingue (in crescita)",
+  "COMP_FEAT_6_KOALA": "15 Lingue (in crescita)",
   "COMP_FEAT_6_TELE": "Solo Inglese",
   "COMP_FEAT_7_NAME": "Compressore Audio",
   "COMP_FEAT_7_DESC": "Bilanciamento automatico del suono per voci più chiare.",
@@ -151,9 +151,9 @@
   "MOCK_08": "Esci dalla stanza",
   "MOCK_09": "Scegli Video",
   "MOCK_10": "Telecomando",
-  "MOCK_11": "Play",
-  "MOCK_12": "Pausa",
-  "MOCK_13": "SINCRO",
+  "MOCK_11": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"currentColor\" width=\"14\" height=\"14\" aria-hidden=\"true\"><polygon points=\"5 3 19 12 5 21 5 3\"/></svg> Riproduci",
+  "MOCK_12": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"currentColor\" width=\"14\" height=\"14\" aria-hidden=\"true\"><rect x=\"6\" y=\"4\" width=\"4\" height=\"16\"/><rect x=\"14\" y=\"4\" width=\"4\" height=\"16\"/></svg> Pausa",
+  "MOCK_13": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" width=\"14\" height=\"14\" aria-hidden=\"true\"><polygon points=\"13 2 3 14 12 14 11 22 21 10 12 10 13 2\"/></svg> SYNC",
   "MOCK_14": "Vai dagli altri",
   "MOCK_15": "Ultima attività",
   "MOCK_16": "In attesa di un amico (KoalaPC)...",
@@ -176,5 +176,5 @@
   "FOOTER_LEGAL_LINK": "imprint",
   "FOOTER_PRIVACY_LINK": "privacy",
   "FOOTER_DISCLAIMER": "KoalaSync non è affiliato a Netflix, YouTube o altre piattaforme. I marchi appartengono ai rispettivi proprietari.",
-  "FOOTER_SUPPORT": "Offrimi un caffè su Ko-Fi"
+  "FOOTER_SUPPORT": "Support KoalaSync"
 }

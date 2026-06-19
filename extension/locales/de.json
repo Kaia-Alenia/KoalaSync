@@ -181,7 +181,7 @@
   "LOBBY_CANCEL_TIMEOUT_PEERS_LOAD": "Zeitüberschreitung — nicht alle Teilnehmer haben die Episode geladen",
   "LOBBY_CANCEL_USER": "Vom Benutzer abgebrochen",
   "NOTIF_ERROR_TITLE": "KoalaSync-Fehler",
-  "FOOTER_SUPPORT": "☕ Kauf mir einen Kaffee",
+  "FOOTER_SUPPORT": "Support KoalaSync",
   "FOOTER_REVIEW": "★ Bewerten",
   "FOOTER_SUPPORT_PROMPT": "Gefällt dir KoalaSync? Hinterlasse eine Bewertung!",
   "LABEL_AUDIO_PROCESSING": "Audio-Verarbeitung",

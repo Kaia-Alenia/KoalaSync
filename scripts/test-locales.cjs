@@ -128,7 +128,8 @@ const chromeLocalesDir = path.join(__dirname, '..', 'extension', '_locales');
 const chromeLocaleMap = {
   'en': 'en', 'de': 'de', 'fr': 'fr', 'es': 'es', 'it': 'it',
   'ja': 'ja', 'ko': 'ko', 'nl': 'nl', 'pl': 'pl',
-  'pt-BR': 'pt_BR', 'pt': 'pt_PT', 'ru': 'ru', 'tr': 'tr'
+  'pt-BR': 'pt_BR', 'pt': 'pt_PT', 'ru': 'ru', 'tr': 'tr',
+  'zh': 'zh_CN', 'uk': 'uk'
 };
 
 // Read SUPPORTED_LANGUAGES from i18n.js

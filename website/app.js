@@ -480,11 +480,11 @@ document.addEventListener('DOMContentLoaded', () => {
         const activeLang = safeGetLocalStorage('koala_lang') || (navigator.language.startsWith('de') ? 'de' : 'en');
         const path = window.location.pathname;
         const pathSegments = path.split('/');
-        const isSubdir = pathSegments.some(seg => ['de', 'fr', 'es', 'pt-BR', 'ru', 'it', 'pl', 'tr', 'nl', 'ja', 'ko', 'pt'].includes(seg));
+        const isSubdir = pathSegments.some(seg => ['de', 'fr', 'es', 'it', 'nl', 'pl', 'pt', 'pt-BR', 'tr', 'ru', 'ja', 'ko', 'zh', 'uk'].includes(seg));
 
         // Only need to do this dynamic rewrite if we are NOT already inside a localized subdirectory
         if (!isSubdir) {
-            const homeLinks = document.querySelectorAll('a[href="./"], a[href="de/"], a[href="fr/"], a[href="es/"], a[href="pt-BR/"], a[href="ru/"], a[href="it/"], a[href="pl/"], a[href="tr/"], a[href="nl/"], a[href="ja/"], a[href="ko/"], a[href="pt/"]');
+            const homeLinks = document.querySelectorAll('a[href="./"], a[href="de/"], a[href="fr/"], a[href="es/"], a[href="it/"], a[href="nl/"], a[href="pl/"], a[href="pt/"], a[href="pt-BR/"], a[href="tr/"], a[href="ru/"], a[href="ja/"], a[href="ko/"], a[href="zh/"], a[href="uk/"]');
             homeLinks.forEach(link => {
                 link.href = (activeLang === 'en') ? './' : `${activeLang}/`;
             });
@@ -535,7 +535,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (isIndex) {
             // Static navigation: Route to correct subdirectory
             const pathSegments = path.split('/');
-            const isSubdir = pathSegments.some(seg => ['de', 'fr', 'es', 'pt-BR', 'ru', 'it', 'pl', 'tr', 'nl', 'ja', 'ko', 'pt'].includes(seg));
+            const isSubdir = pathSegments.some(seg => ['de', 'fr', 'es', 'it', 'nl', 'pl', 'pt', 'pt-BR', 'tr', 'ru', 'ja', 'ko', 'zh', 'uk'].includes(seg));
             
             let targetPath;
             if (newLang === 'en') {
@@ -558,7 +558,7 @@ document.addEventListener('DOMContentLoaded', () => {
         } else {
             // Dynamic page: Toggle classes and update elements dynamically without navigating away
             const html = document.documentElement;
-            html.classList.remove('lang-en', 'lang-de', 'lang-fr', 'lang-es', 'lang-pt-br', 'lang-ru', 'lang-it', 'lang-pl', 'lang-tr', 'lang-nl', 'lang-ja', 'lang-ko', 'lang-pt');
+            html.classList.remove('lang-en', 'lang-de', 'lang-fr', 'lang-es', 'lang-it', 'lang-nl', 'lang-pl', 'lang-pt', 'lang-pt-br', 'lang-tr', 'lang-ru', 'lang-ja', 'lang-ko', 'lang-zh', 'lang-uk');
             
             // Fallback dynamic pages to 'en' if 'de' is not chosen (since fr/es markup is not present)
             const activeDisplayLang = (newLang === 'de') ? 'de' : 'en';

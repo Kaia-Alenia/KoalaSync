@@ -181,7 +181,7 @@
   "LOBBY_CANCEL_TIMEOUT_PEERS_LOAD": "Zaman aşımı — tüm bağlantılar bölümü yüklemedi",
   "LOBBY_CANCEL_USER": "Kullanıcı tarafından iptal edildi",
   "NOTIF_ERROR_TITLE": "KoalaSync Hatası",
-  "FOOTER_SUPPORT": "☕ Bana kahve ısmarla",
+  "FOOTER_SUPPORT": "Support KoalaSync",
   "FOOTER_REVIEW": "★ Değerlendir",
   "FOOTER_SUPPORT_PROMPT": "KoalaSync'i beğendin mi? Bir yorum bırak!",
   "LABEL_AUDIO_PROCESSING": "Ses işleme",

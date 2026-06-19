@@ -181,7 +181,7 @@
   "LOBBY_CANCEL_TIMEOUT_PEERS_LOAD": "Délai dépassé — tous les membres n'ont pas chargé l'épisode",
   "LOBBY_CANCEL_USER": "Annulé par l'utilisateur",
   "NOTIF_ERROR_TITLE": "Erreur KoalaSync",
-  "FOOTER_SUPPORT": "☕ Offre-moi un café",
+  "FOOTER_SUPPORT": "Support KoalaSync",
   "FOOTER_REVIEW": "★ Évaluer",
   "FOOTER_SUPPORT_PROMPT": "Tu aimes KoalaSync? Laisse un avis!",
   "LABEL_AUDIO_PROCESSING": "Traitement audio",

@@ -76,7 +76,7 @@
   "COMP_FEAT_5_TELE": "지원되는 사이트만 가능",
   "COMP_FEAT_6_NAME": "로컬라이징 / 다국어 지원",
   "COMP_FEAT_6_DESC": "제공되는 인터페이스 언어 및 번역 지원 여부.",
-  "COMP_FEAT_6_KOALA": "13개 언어 지원 (추가 중)",
+  "COMP_FEAT_6_KOALA": "15개 언어 지원 (추가 중)",
   "COMP_FEAT_6_TELE": "영어만 지원",
   "COMP_FEAT_7_NAME": "오디오 압축기 / 볼륨 레벨링",
   "COMP_FEAT_7_DESC": "조용한 대화와 큰 효과음의 균형을 맞추는 내장 오디오 노멀라이제이션",
@@ -176,5 +176,5 @@
   "FOOTER_LEGAL_LINK": "imprint",
   "FOOTER_PRIVACY_LINK": "privacy",
   "FOOTER_DISCLAIMER": "KoalaSync는 Netflix, Disney+, Amazon, YouTube, Twitch 또는 기타 스트리밍 플랫폼과 제휴, 보증 또는 연관되어 있지 않습니다. 모든 상표는 해당 소유자의 재산입니다.",
-  "FOOTER_SUPPORT": "Ko-Fi에서 커피 한 잔 사주세요"
+  "FOOTER_SUPPORT": "Support KoalaSync"
 }

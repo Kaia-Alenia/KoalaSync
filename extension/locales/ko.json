@@ -181,7 +181,7 @@
   "LOBBY_CANCEL_TIMEOUT_PEERS_LOAD": "시간 초과 — 모든 피어가 에피소드를 로드하지 못했습니다",
   "LOBBY_CANCEL_USER": "사용자에 의해 취소됨",
   "NOTIF_ERROR_TITLE": "KoalaSync 오류",
-  "FOOTER_SUPPORT": "☕ 커피 한 잔 사주세요",
+  "FOOTER_SUPPORT": "Support KoalaSync",
   "FOOTER_REVIEW": "★ 평가하기",
   "FOOTER_SUPPORT_PROMPT": "KoalaSync가 마음에 드세요? 리뷰를 남겨주세요!",
   "LABEL_AUDIO_PROCESSING": "오디오 처리",
