@@ -183,6 +183,13 @@
       ]
     }
     </script>
+    <noscript>
+        <!-- Without JS the scroll-reveal observer never runs, so make all
+             reveal-animated content visible by default. -->
+        <style>
+            [data-reveal] { opacity: 1 !important; transform: none !important; }
+        </style>
+    </noscript>
 </head>
 <body>
 

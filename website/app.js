@@ -19,31 +19,39 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Scroll Reveal Logic (IntersectionObserver for performance)
     const revealElements = document.querySelectorAll('[data-reveal]');
-    
-    const revealObserver = new IntersectionObserver((entries) => {
-        entries.forEach(entry => {
-            if (entry.isIntersecting) {
-                entry.target.classList.add('revealed');
-                revealObserver.unobserve(entry.target);
-            }
-        });
-    }, {
-        rootMargin: '0px 0px -150px 0px',
-        threshold: 0.1
-    });
 
-    revealElements.forEach(el => revealObserver.observe(el));
+    if ('IntersectionObserver' in window) {
+        const revealObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('revealed');
+                    revealObserver.unobserve(entry.target);
+                }
+            });
+        }, {
+            rootMargin: '0px 0px -150px 0px',
+            threshold: 0.1
+        });
+
+        revealElements.forEach(el => revealObserver.observe(el));
+    } else {
+        // Fallback: without IntersectionObserver support, reveal everything
+        // immediately so no content can ever stay hidden.
+        revealElements.forEach(el => el.classList.add('revealed'));
+    }
 
     // Auto-update URL hash as user scrolls through sections
     // (preserves position across language switches)
-    const sectionObserver = new IntersectionObserver((entries) => {
-        entries.forEach(entry => {
-            if (entry.isIntersecting) {
-                history.replaceState(null, null, '#' + entry.target.id);
-            }
-        });
-    }, { threshold: 0.3 });
-    document.querySelectorAll('section[id], header[id]').forEach(el => sectionObserver.observe(el));
+    if ('IntersectionObserver' in window) {
+        const sectionObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    history.replaceState(null, null, '#' + entry.target.id);
+                }
+            });
+        }, { threshold: 0.3 });
+        document.querySelectorAll('section[id], header[id]').forEach(el => sectionObserver.observe(el));
+    }
 
     // Navbar scroll effect
     const nav = document.querySelector('nav');

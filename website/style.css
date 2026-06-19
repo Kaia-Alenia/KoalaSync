@@ -358,7 +358,8 @@ nav {
 }
 
 .extension-mockup {
-    width: 320px;
+    width: 100%;
+    max-width: 320px;
     height: 520px;
     background: #0f172a;
     border-radius: 20px;
@@ -1900,7 +1901,7 @@ footer {
 
 @media (max-width: 768px) {
     .hero-grid, .step {
-        grid-template-columns: 1fr;
+        grid-template-columns: minmax(0, 1fr);
         text-align: center;
     }
     .hero-text h1 {
@@ -1931,7 +1932,7 @@ footer {
         margin-left: auto;
     }
     .hamburger {
-        display: none !important;
+        display: inline-flex !important;
     }
     nav .container {
         padding: 0 0.5rem;
@@ -1963,6 +1964,21 @@ footer {
     }
     .legal-card {
         padding: 1.5rem;
+    }
+}
+
+/* Extra-narrow phones: make sure logo, language picker and the menu button
+   never crowd each other in the header (kept comfortable down to ~320px). */
+@media (max-width: 380px) {
+    nav .container {
+        padding: 0 0.4rem;
+    }
+    .nav-right {
+        gap: 0.35rem;
+    }
+    .logo-area {
+        font-size: 1rem;
+        gap: 0.4rem;
     }
 }
 
@@ -2450,13 +2466,115 @@ html:not(.lang-de) [lang="de"] {
 }
 
 @media (max-width: 768px) {
-    .comparison-table th, 
+    .comparison-table th,
     .comparison-table td {
         padding: 1rem;
         font-size: 0.85rem;
     }
+}
+
+/* On phones the 3-column table is turned into stacked cards so there is
+   no horizontal scrolling — one card per feature, KoalaSync above Teleparty. */
+@media (max-width: 600px) {
+    .comparison-table-wrapper {
+        overflow-x: visible;
+        background: transparent;
+        border: none;
+        box-shadow: none;
+        backdrop-filter: none;
+        -webkit-backdrop-filter: none;
+        margin-top: 0;
+    }
+
+    .comparison-table {
+        display: block;
+        font-size: 0.95rem;
+    }
+
+    /* Visually hide the header row but keep it for screen readers. */
+    .comparison-table thead {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+        border: 0;
+    }
+
+    .comparison-table tbody,
+    .comparison-table tr,
+    .comparison-table td {
+        display: block;
+        width: 100%;
+    }
+
+    .comparison-table tbody tr {
+        background: rgba(30, 41, 59, 0.35);
+        border: 1px solid var(--glass-border);
+        border-radius: 14px;
+        box-shadow: 0 6px 18px rgba(0, 0, 0, 0.18);
+        margin-bottom: 1rem;
+        overflow: hidden;
+    }
+
+    .comparison-table tbody tr:last-child {
+        margin-bottom: 0;
+    }
+
+    .comparison-table td {
+        padding: 0.85rem 1.1rem;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    }
+
+    .comparison-table tbody tr td:last-child {
+        border-bottom: none;
+    }
+
+    /* Feature name acts as the card header. */
+    .comparison-table td.feat-name {
+        background: rgba(15, 23, 42, 0.55);
+        padding: 0.9rem 1.1rem;
+    }
+
+    /* Room is back on the card, so show the description again. */
     .feat-desc {
-        display: none;
+        display: block;
+        margin-top: 0.15rem;
+    }
+
+    /* Label each value cell with the product it belongs to. */
+    .comparison-table td.check,
+    .comparison-table td.cross {
+        display: flex;
+        align-items: baseline;
+        gap: 0.4rem;
+    }
+
+    .comparison-table td.check::before,
+    .comparison-table td.cross::before {
+        flex: 0 0 5.5rem;
+        font-size: 0.7rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: var(--text-muted);
+        opacity: 0.85;
+    }
+
+    .comparison-table td.check::before {
+        content: "KoalaSync";
+    }
+
+    .comparison-table td.cross::before {
+        content: "Teleparty";
+    }
+
+    /* Keep the KoalaSync row subtly highlighted, like on desktop. */
+    .comparison-table td.check.highlight {
+        background: rgba(99, 102, 241, 0.08);
     }
 }
 
