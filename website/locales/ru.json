@@ -7,6 +7,7 @@
   "OG_LOCALE": "ru_RU",
   "META_TITLE": "KoalaSync | Синхронизация Netflix, YouTube и любого видео с друзьями",
   "META_DESCRIPTION": "Смотрите Netflix, YouTube, Twitch и любые HTML5-видео в синхронизации с друзьями. Бесплатное расширение браузера с открытым кодом. Регистрация не требуется.",
+  "SCHEMA_APP_DESC": "Смотрите Netflix, YouTube, Twitch и любые HTML5-видео в синхронизации с друзьями. Бесплатное расширение браузера с открытым кодом. Регистрация не требуется.",
   "OG_TITLE": "KoalaSync | Синхронизация Netflix, Emby, Jellyfin и почти любого видео с друзьями",
   "OG_DESCRIPTION": "Смотрите Netflix, Emby, Jellyfin, YouTube, Twitch и почти любое HTML5-видео в идеальной синхронизации. Открытое и ориентированное на конфиденциальность расширение для Chrome и Firefox.",
   "TWITTER_TITLE": "KoalaSync | Синхронизация Netflix, Emby, Jellyfin и почти любого видео с друзьями – Расширение",
