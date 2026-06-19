@@ -7,7 +7,7 @@
  */
 
 export const PROTOCOL_VERSION = "1.0.0";
-export const APP_VERSION = "2.4.2";
+export const APP_VERSION = "2.4.3";
 
 export const OFFICIAL_SERVER_URL = 'wss://syncserver.koalastuff.net';
 export const OFFICIAL_LANDING_PAGE_URL = 'https://sync.koalastuff.net';
