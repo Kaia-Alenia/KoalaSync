@@ -4,6 +4,22 @@ All notable changes to the KoalaSync browser extension and relay server.
 
 ---
 
+## [v2.4.1] — 2026-06-19
+
+### Added
+- **Extension: Onboarding tour now has a closing step** — The first-run tour ends on a dedicated "You're all set!" card (the `ONBOARDING_5` copy that already existed in all 13 locales but was never shown). The tour no longer stops abruptly on the username step.
+- **Extension: One-click invite from the empty peer list** — The "No peers yet" state now shows a **📋 Invite Link** button that copies the invite link to the clipboard, so users can share it without hunting for the field.
+
+### Changed
+- **Extension: Cleaner onboarding welcome** — Step 1 is now a centered welcome card instead of spotlighting the logo title. Added a guard so target-less tour steps center cleanly.
+- **Website: Mobile comparison table** — The KoalaSync vs Teleparty table stacks into per-feature cards on phones instead of forcing horizontal scrolling; feature descriptions are shown again on mobile.
+
+### Fixed
+- **Extension: Onboarding step counter/progress placeholders** — Static `Step 1 of 3` / 33% fallbacks in `popup.html` corrected to match the actual 5-step tour (`Step 1 of 5` / 20%).
+- **Website: Mobile navigation restored** — The header hamburger menu was hidden by a `display:none !important` rule, leaving the nav links unreachable on phones. Re-enabled, with spacing kept comfortable down to ~320px.
+- **Website: Hero alignment on mobile** — A fixed-width extension mockup forced the hero grid column wider than the container, shifting all hero content off-center (larger left margin than right). The mockup is now responsive (`width:100%/max-width` + `minmax(0,1fr)` grid track).
+- **Website: Reveal-animation fallback** — Added a `<noscript>` style fallback and `IntersectionObserver` feature guards so scroll-revealed content can never stay invisible if JavaScript is disabled or unsupported.
+
 ## [v2.4.0] — 2026-06-16
 
 ### Added

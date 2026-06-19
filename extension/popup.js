@@ -503,6 +503,24 @@ function renderEmpty(container, type) {
     wrapper.appendChild(iconDiv);
     wrapper.appendChild(titleDiv);
     wrapper.appendChild(hintDiv);
+
+    // "No peers yet" — turn the hint into a one-click action so the user can
+    // immediately copy and share the invite link instead of hunting for it.
+    if (type === 'peers' && elements.inviteLink && elements.inviteLink.value) {
+        const copyBtn = document.createElement('button');
+        copyBtn.type = 'button';
+        copyBtn.className = 'primary';
+        copyBtn.style.cssText = 'display:inline-block; width:auto; margin-top:12px; padding:6px 14px; font-size:11px;';
+        copyBtn.textContent = getMessage('BTN_COPY_INVITE');
+        copyBtn.title = getMessage('BTN_COPY_INVITE_TOOLTIP');
+        copyBtn.addEventListener('click', () => {
+            navigator.clipboard.writeText(elements.inviteLink.value)
+                .then(() => showToast(getMessage('TOAST_INVITE_COPIED'), 'success', 2000))
+                .catch(() => showToast(getMessage('TOAST_COPY_FAILED'), 'error'));
+        });
+        wrapper.appendChild(copyBtn);
+    }
+
     container.replaceChildren(wrapper);
 }
 
