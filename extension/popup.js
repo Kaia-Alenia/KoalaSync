@@ -2119,9 +2119,9 @@ const onboardingSteps = [
     { 
         icon: '👋', 
         get title() { return getMessage('ONBOARDING_1_TITLE'); }, 
-        get text() { return getMessage('ONBOARDING_1_TEXT'); }, 
+        get text() { return getMessage('ONBOARDING_1_TEXT'); },
         targetTab: 'tab-room',
-        targetSelector: 'h1'
+        targetSelector: null
     },
     { 
         icon: '🏠', 
@@ -2140,9 +2140,16 @@ const onboardingSteps = [
     { 
         icon: '⚙️', 
         get title() { return getMessage('ONBOARDING_4_TITLE'); }, 
-        get text() { return getMessage('ONBOARDING_4_TEXT'); }, 
+        get text() { return getMessage('ONBOARDING_4_TEXT'); },
         targetTab: 'tab-settings',
         targetSelector: '#username'
+    },
+    {
+        icon: '🍿',
+        get title() { return getMessage('ONBOARDING_5_TITLE'); },
+        get text() { return getMessage('ONBOARDING_5_TEXT'); },
+        targetTab: 'tab-room',
+        targetSelector: null
     }
 ];
 
@@ -2316,7 +2323,7 @@ function renderOnboardingStep() {
     }
 
     onboardingTimeout = setTimeout(() => {
-        const targetEl = document.querySelector(step.targetSelector);
+        const targetEl = step.targetSelector ? document.querySelector(step.targetSelector) : null;
         if (targetEl && targetEl.offsetParent !== null) {
             positionSpotlightAndCard(targetEl);
         } else {
