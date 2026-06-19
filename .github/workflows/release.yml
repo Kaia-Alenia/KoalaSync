@@ -109,8 +109,9 @@ jobs:
           sed -i "s/\"softwareVersion\": \".*\"/\"softwareVersion\": \"$VERSION\"/" website/template.html
           echo "  ✓ website/template.html -> softwareVersion $VERSION"
 
-          # 6. README.md — version badge
-          sed -i "s/v[0-9]\+\.[0-9]\+\.[0-9]\+/v$VERSION/g" README.md
+          # 6. README.md — version badge & banner
+          sed -i "s|Release-v[0-9]\+\.[0-9]\+\.[0-9]\+-blue|Release-v$VERSION-blue|g" README.md
+          sed -i "s/New v[0-9]\+\.[0-9]\+\.[0-9]\+ Release/New v$VERSION Release/g" README.md
           echo "  ✓ README.md -> v$VERSION"
 
           # 7. website/sitemap.xml — lastmod dates

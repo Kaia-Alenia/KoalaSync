@@ -103,7 +103,7 @@ To connect your extension to a self-hosted server, open the popup → **Room** t
 
 To verify your relay is reachable from outside, visit `https://your-domain.com` in a browser — it should return `{"status":"online","service":"KoalaSync Relay"}`.
 
-#### Supply Chain Security (v2.4.1+)
+#### Supply Chain Security (v2.2.2+)
 
 All official release artifacts (Docker images and extension binaries) are published with signed [artifact attestations](https://docs.github.com/en/actions/how-tos/secure-your-work/use-artifact-attestations) to prove they were built from this repository's source code.
 
