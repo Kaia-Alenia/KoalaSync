@@ -79,15 +79,4 @@
 |---|---|
 | *(none yet)* | |
 
----
 
-## ✅ Completed
-
-*Shipped milestones.*
-
-| Feature | Shipped |
-|---|---|
-| **Lazy WebSocket Connection** (only connects when active/popup open) | v2.4.0 |
-| **Interactive Onboarding Tour** (guided first-run user experience) | v2.3.0 |
-| **Artifact Attestations** (SLSA supply chain security via GitHub Actions) | v2.2.3 |
-| **Multi-Language Support** (expanded to 13 locales with dynamic switching) | v2.2.0 |
