@@ -4,8 +4,14 @@ import { loadLocale, getMessage, getSystemLanguage } from './i18n.js';
 import { sameEpisode } from './episode-utils.js';
 
 // --- Uninstall URL Initialization ---
-chrome.runtime.onInstalled.addListener((details) => {
-    if (details.reason === 'install' || details.reason === 'update') {
+let uninstallURLInitPromise = null;
+
+async function initUninstallURL() {
+    if (uninstallURLInitPromise) {
+        return uninstallURLInitPromise;
+    }
+    
+    uninstallURLInitPromise = (async () => {
         // --- UNINSTALL_URL_INJECT_START ---
         const UNINSTALL_URL = ""; // Populated during build
         const BROWSER_TYPE = "unknown";
@@ -13,8 +19,24 @@ chrome.runtime.onInstalled.addListener((details) => {
         
         if (UNINSTALL_URL && UNINSTALL_URL.trim() !== '') {
             try {
+                if (typeof chrome === 'undefined' || !chrome.storage || !chrome.storage.local) {
+                    console.warn("Storage API not available, skipping uninstall URL token generation");
+                    return;
+                }
+
+                const data = await chrome.storage.local.get("koalaByeToken");
+                let token = data?.koalaByeToken;
+                
+                if (!token) {
+                    token = (typeof self.crypto !== 'undefined' && typeof self.crypto.randomUUID === 'function')
+                        ? self.crypto.randomUUID()
+                        : Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+                    await chrome.storage.local.set({ koalaByeToken: token });
+                }
+
                 const url = new URL(UNINSTALL_URL);
                 url.searchParams.set("browser", BROWSER_TYPE);
+                url.searchParams.set("t", token);
                 
                 const runtimeAPI = typeof browser !== 'undefined' ? browser.runtime : chrome.runtime;
                 if (runtimeAPI && runtimeAPI.setUninstallURL) {
@@ -25,10 +47,22 @@ chrome.runtime.onInstalled.addListener((details) => {
                     }
                 }
             } catch (err) {
-                console.error("Invalid uninstall URL provided:", err);
+                console.error("Failed to initialize uninstall URL:", err);
             }
         }
+    })();
+
+    return uninstallURLInitPromise;
+}
+
+chrome.runtime.onInstalled.addListener((details) => {
+    if (details.reason === 'install' || details.reason === 'update') {
+        initUninstallURL();
     }
+});
+
+chrome.runtime.onStartup.addListener(() => {
+    initUninstallURL();
 });
 
 // --- State Management ---
