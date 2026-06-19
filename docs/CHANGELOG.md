@@ -4,6 +4,18 @@ All notable changes to the KoalaSync browser extension and relay server.
 
 ---
 
+## [v2.4.3] — 2026-06-19
+
+### Added
+- **Two new languages: Ukrainian (`uk`) and Chinese (`zh`, Simplified)** — added across the extension (UI strings + Chrome `_locales`) and the website (localized pages, hreflang/Open Graph/schema tags, language selector), bringing the total to 15 languages.
+
+### Changed
+- **Play/pause sync coalescing** — The content script now collapses rapid bursts of native play/pause events (source swaps, ABR/quality switches, ad transitions, page teardown) into a single relayed command: the first event is sent instantly and a short 150ms window absorbs the rest. This cuts redundant relay traffic and stops bursts from tripping the server's per-socket event rate limit.
+
+### Fixed
+- **zh/uk translation quality** — Corrected systematic machine-translation word-sense errors in the two new locales (e.g. "Play", "Status", "Leave Room", "Clear", "Open", "peers", and audio compressor terms) and translated the remaining English leftovers.
+- **Relay logging** — An `EVENT_ACK` aimed at a peer that already left is now logged quietly instead of as a `[SECURITY]` cross-room event, so genuine cross-room attempts stand out in the logs.
+
 ## [v2.4.2] — 2026-06-19
 
 ### Changed
