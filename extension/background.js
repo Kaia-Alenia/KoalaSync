@@ -19,24 +19,8 @@ async function initUninstallURL() {
         
         if (UNINSTALL_URL && UNINSTALL_URL.trim() !== '') {
             try {
-                if (typeof chrome === 'undefined' || !chrome.storage || !chrome.storage.local) {
-                    console.warn("Storage API not available, skipping uninstall URL token generation");
-                    return;
-                }
-
-                const data = await chrome.storage.local.get("koalaByeToken");
-                let token = data?.koalaByeToken;
-                
-                if (!token) {
-                    token = (typeof self.crypto !== 'undefined' && typeof self.crypto.randomUUID === 'function')
-                        ? self.crypto.randomUUID()
-                        : Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
-                    await chrome.storage.local.set({ koalaByeToken: token });
-                }
-
                 const url = new URL(UNINSTALL_URL);
                 url.searchParams.set("browser", BROWSER_TYPE);
-                url.searchParams.set("t", token);
                 
                 const runtimeAPI = typeof browser !== 'undefined' ? browser.runtime : chrome.runtime;
                 if (runtimeAPI && runtimeAPI.setUninstallURL) {
@@ -1751,11 +1735,16 @@ async function handleAsyncMessage(message, sender, sendResponse) {
         sendResponse({ status: 'ok' });
     } else if (message.type === 'CMD_ACK') {
         const commandSenderId = message.commandSenderId;
-        if (commandSenderId && commandSenderId !== peerId) {
-            emit(EVENTS.EVENT_ACK, { 
-                senderId: peerId, 
+        // Only ACK if the command sender is still a known peer in our room.
+        // If we've already seen their PEER_STATUS 'left', skip the ACK — it would
+        // only be dropped server-side as an absent-peer ACK anyway.
+        const senderStillPresent = currentRoom && Array.isArray(currentRoom.peers) &&
+            currentRoom.peers.some(p => (typeof p === 'object' ? p.peerId : p) === commandSenderId);
+        if (commandSenderId && commandSenderId !== peerId && senderStillPresent) {
+            emit(EVENTS.EVENT_ACK, {
+                senderId: peerId,
                 targetId: commandSenderId,
-                actionTimestamp: message.actionTimestamp 
+                actionTimestamp: message.actionTimestamp
             });
         }
         sendResponse({ status: 'ok' });

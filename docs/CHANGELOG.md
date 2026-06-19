@@ -7,7 +7,7 @@ All notable changes to the KoalaSync browser extension and relay server.
 ## [v2.4.2] — 2026-06-19
 
 ### Changed
-- **Extension: Optimized uninstall URL registration** — Extracted registration into a reusable, race-condition-protected `initUninstallURL()` helper. It now generates a unique, anonymous token (`t`) stored in `chrome.storage.local` to securely track uninstalls, and registers the URL on both extension installation/update and browser startup to prevent state loss.
+- **Extension: Optimized uninstall URL registration** — Extracted registration into a reusable, race-condition-protected `initUninstallURL()` helper. It registers the uninstall feedback URL with browser context on both extension installation/update and browser startup to prevent state loss, without storing or sending an installation token.
 
 ## [v2.4.1] — 2026-06-19
 
@@ -149,7 +149,7 @@ All notable changes to the KoalaSync browser extension and relay server.
 - **Feature Hint System**: Generic `dismissedHints` array in sync storage for announcing new features. First hint highlights the Audio Options entry in Settings. Extensible for future features.
 
 ### Changed
-- **Ko-Fi Support Links**: Static footer badges on the Settings and Status tabs linking to the developer's support page. README and website footer updated with Ko-Fi badge.
+- **Support Links**: Static footer badges on the Settings and Status tabs linking to the developer's support page. README and website footer updated with a Support KoalaSync badge.
 
 ### Fixed
 - **Portuguese (PT) locale**: Removed Italian contamination — "sincronizzazione" → "sincronização", "tempo reale" → "tempo real", "Link di Invito" → "Link de Convite", "Sair della Sala" → "Sair da Sala".

@@ -138,7 +138,7 @@ gh attestation verify dist/koalasync-chrome.zip \
 ---
 
 <div align="center">
-  <sub><a href="https://ko-fi.com/koaladev"><img src="https://img.shields.io/badge/Ko--Fi-Support-FF5E5B?logo=ko-fi&logoColor=white" alt="Ko-Fi"></a></sub>
+  <sub><a href="https://support.koalastuff.net"><img src="https://img.shields.io/badge/Support-KoalaSync-FF5E5B" alt="Support KoalaSync"></a></sub>
   <sub><a href="https://gitgem.org/github/Shik3i/KoalaSync"><img src="https://gitgem.org/api/badge/github/Shik3i/KoalaSync.svg" alt="GitGem Badge" /></a></sub>
 
   <sub>Built with ❤️ by <a href="https://github.com/Shik3i">Shik3i</a>. KoalaSync is Open Source under the <a href="LICENSE">MIT License</a>.</sub>
