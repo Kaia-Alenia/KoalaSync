@@ -57,6 +57,29 @@
     let seekDebounceTimer = null;     // debounce timer for rapid seek events
     let expectedSeekTime = null;      // strictly track programmatic seeks
 
+    // --- Play/Pause Coalescing (leading + trailing) ---
+    // Media players (HLS/DASH, ad insertion, ABR/quality switches, source swaps,
+    // page teardown) fire bursts of native play/pause events within a few hundred
+    // ms. Relaying each as a distinct command spams peers and the relay.
+    //
+    // Strategy: emit the FIRST event immediately (leading edge → a deliberate
+    // single play/pause has zero added latency), then hold a short window. If
+    // more play/pause events arrive during the window it's a burst — we suppress
+    // the intermediate churn and, once it settles, emit the FINAL state on the
+    // trailing edge.
+    //
+    // We deliberately do NOT dedup the trailing send against the leading one. A
+    // remote play/pause may be applied mid-window (e.g. I pause, peer plays, I
+    // pause again within 150ms): the settled state then equals my last *sent*
+    // state yet is a genuine change versus the now-shared state — suppressing it
+    // would desync. Re-sending an unchanged state is a harmless no-op on peers,
+    // so re-sending is always the safe choice. Echo-suppression and seek-flush
+    // still run synchronously on event arrival (see reportEvent) — only the
+    // network emit is governed here.
+    const PLAY_PAUSE_COALESCE_MS = 150;
+    let playPauseCoalesceTimer = null;  // non-null = a coalescing window is open
+    let pendingPlayPauseAction = null;  // last play/pause seen during the window, awaiting trailing flush
+
     // --- Episode Auto-Sync State ---
     let lastKnownMediaTitle = null;
     let episodeTransitionDebounce = null;
@@ -768,6 +791,46 @@
     });
 
     // Detect native events
+    // Build the relay payload from the *current* media state and send it to
+    // background.js. Re-reads the video each call so deferred (coalesced) emits
+    // carry an up-to-date position. Safe with no/invalid video — it no-ops.
+    function sendContentEvent(action) {
+        const video = findVideo();
+        if (!video) return;
+
+        const current = video.currentTime;
+        if (!Number.isFinite(current)) return;
+
+        const mediaTitle = (navigator.mediaSession && navigator.mediaSession.metadata) ? navigator.mediaSession.metadata.title : null;
+
+        chrome.runtime.sendMessage({
+            type: 'CONTENT_EVENT',
+            action,
+            payload: {
+                currentTime: current,
+                targetTime: current,
+                mediaTitle: mediaTitle,
+                timestamp: Date.now()
+            }
+        }).catch(() => {});
+
+        // Trigger proactive heartbeat to push stabilized state
+        scheduleProactiveHeartbeat();
+    }
+
+    // Trailing-edge flush of a coalesced play/pause burst: emit the final settled
+    // state. No-ops only when no burst followed the leading edge. We do NOT skip
+    // when the state matches the leading send — a remote command may have changed
+    // the shared state mid-window, so re-sending is the safe (idempotent) choice.
+    function flushPlayPause() {
+        playPauseCoalesceTimer = null;
+        const finalAction = pendingPlayPauseAction;
+        pendingPlayPauseAction = null;
+        // No burst follow-up (only the leading edge fired), or invalid state.
+        if (finalAction !== EVENTS.PLAY && finalAction !== EVENTS.PAUSE) return;
+        sendContentEvent(finalAction);
+    }
+
     function reportEvent(action) {
         if (seekDebounceTimer && (action === EVENTS.PLAY || action === EVENTS.PAUSE)) {
             clearTimeout(seekDebounceTimer);
@@ -786,10 +849,11 @@
         const current = video.currentTime;
         if (!Number.isFinite(current)) return;
 
-        const mediaTitle = (navigator.mediaSession && navigator.mediaSession.metadata) ? navigator.mediaSession.metadata.title : null;
-
         const eventState = action === EVENTS.PLAY ? 'playing' : (action === EVENTS.PAUSE ? 'paused' : (action === EVENTS.SEEK ? 'seek' : null));
-        
+
+        // Echo-suppression for remotely-applied commands. MUST stay synchronous
+        // on event arrival: the suppress timer is short-lived (300ms) and would
+        // expire if deferred, leaking an echo back to peers.
         if (_suppressTimers[eventState]) {
             _clearSuppress(eventState);
             return;
@@ -798,20 +862,29 @@
         // Suppress only SEEK during visibility grace period (tab re-focus ghost jump).
         // Play/Pause pass through — user may want to immediately pause after tabbing back.
         if (Date.now() < visibilityGraceUntil && action === EVENTS.SEEK) return;
-        
-        chrome.runtime.sendMessage({
-            type: 'CONTENT_EVENT',
-            action,
-            payload: {
-                currentTime: current,
-                targetTime: current,
-                mediaTitle: mediaTitle,
-                timestamp: Date.now()
-            }
-        }).catch(() => {});
 
-        // Trigger proactive heartbeat to push stabilized state
-        scheduleProactiveHeartbeat();
+        // Coalesce play/pause bursts (source swaps, ABR, ads, teardown). The
+        // synchronous gates above have already run; only the network emit is
+        // governed here. Leading edge sends the first event instantly; further
+        // events within the window are collapsed to the final state by the
+        // trailing flush. A pending burst is REPLACED, never dropped — the last
+        // event in the window always wins.
+        if (action === EVENTS.PLAY || action === EVENTS.PAUSE) {
+            if (playPauseCoalesceTimer === null) {
+                // Window closed → fresh action. Emit now (zero added latency).
+                sendContentEvent(action);
+                pendingPlayPauseAction = null;
+            } else {
+                // Window open → part of a burst. Defer to the trailing flush.
+                pendingPlayPauseAction = action;
+                clearTimeout(playPauseCoalesceTimer);
+            }
+            playPauseCoalesceTimer = setTimeout(flushPlayPause, PLAY_PAUSE_COALESCE_MS);
+            return;
+        }
+
+        // SEEK (and any non play/pause action): emit immediately.
+        sendContentEvent(action);
     }
 
     // --- Tab Visibility Handling ---
@@ -843,6 +916,10 @@
         if (lobbyPollTimer) { clearInterval(lobbyPollTimer); lobbyPollTimer = null; }
         if (heartbeatTimeout) { clearTimeout(heartbeatTimeout); heartbeatTimeout = null; }
         if (proactiveHeartbeatTimeout) { clearTimeout(proactiveHeartbeatTimeout); proactiveHeartbeatTimeout = null; }
+        // Drop any pending coalesced play/pause: we are tearing down and will
+        // disconnect — peers learn we are gone via PEER_STATUS 'left'. This also
+        // intentionally suppresses the teardown play/pause burst at the source.
+        if (playPauseCoalesceTimer) { clearTimeout(playPauseCoalesceTimer); playPauseCoalesceTimer = null; pendingPlayPauseAction = null; }
         observer.disconnect();
     });
     window.addEventListener('pageshow', (event) => {

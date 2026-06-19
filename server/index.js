@@ -150,7 +150,7 @@ const peerJoinLocks = new Map(); // peerId -> Promise (prevents race on same pee
 
 function log(type, message, details = '') {
     const debugLogging = process.env.DEBUG_LOGGING === '1';
-    const isVerbose = type === 'CONN' || type === 'ROOM' || type === 'DEDUPE' || type === 'CORS';
+    const isVerbose = type === 'CONN' || type === 'ROOM' || type === 'DEDUPE' || type === 'CORS' || type === 'ACKDROP';
     if (!debugLogging && isVerbose) return;
 
     const timestamp = new Date().toISOString();
@@ -569,12 +569,18 @@ io.on('connection', (socket) => {
 
         // Security: Only relay ACK if both peers are in the same room
         if (senderMapping && targetMapping && senderMapping.roomId === targetMapping.roomId) {
-            io.to(targetSocketId).emit(EVENTS.EVENT_ACK, { 
+            io.to(targetSocketId).emit(EVENTS.EVENT_ACK, {
                 senderId: senderMapping.peerId,
                 actionTimestamp: data.actionTimestamp
             });
-        } else {
+        } else if (senderMapping && targetMapping) {
+            // Both peers exist but live in different rooms — genuinely suspicious.
             log('SECURITY', `Blocked cross-room ACK attempt from ${socket.id} to ${data.targetId}`);
+        } else {
+            // Benign + common: sender or target left/disconnected before the ACK
+            // arrived (a command was in-flight when they went). Not an attack —
+            // log quietly (verbose only) so it doesn't drown out real signals.
+            log('ACKDROP', `Dropped ACK from ${socket.id} to absent peer ${data.targetId}`);
         }
     });
 
