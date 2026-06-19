@@ -6,7 +6,7 @@
 
 <p align="center">
   <a href="https://github.com/Shik3i/KoalaSync/actions/workflows/release.yml"><img src="https://github.com/Shik3i/KoalaSync/actions/workflows/release.yml/badge.svg" alt="Release Status"></a>
-  <a href="https://github.com/Shik3i/KoalaSync/releases"><img src="https://img.shields.io/badge/Release-v2.4.0-blue?logo=github" alt="GitHub release"></a>
+  <a href="https://github.com/Shik3i/KoalaSync/releases"><img src="https://img.shields.io/badge/Release-v2.4.1-blue?logo=github" alt="GitHub release"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue" alt="License"></a>
   <a href="https://addons.mozilla.org/de/firefox/addon/koalasync/"><img src="https://img.shields.io/badge/Firefox-Download-orange?logo=firefoxbrowser&logoColor=white" alt="Firefox Add-on"></a>
   <a href="https://chromewebstore.google.com/detail/koalasync/obbnmkmlaaddodakcbdljknjpagklifc"><img src="https://img.shields.io/badge/Chrome-Download-blue?logo=googlechrome&logoColor=white" alt="Chrome Extension"></a>
@@ -14,7 +14,7 @@
 
 <p align="center"><i>KoalaSync is a lightweight Browser Extension and Relay Server for synchronized video playback on almost any website with a video element—YouTube, Twitch, Netflix, Emby, Jellyfin, and beyond. Built with a focus on <b>Data Sovereignty</b> and <b>Performance</b>.</i></p>
 
-<p align="center"><a href="docs/CHANGELOG.md"><b>New v2.4.0 Release!</b> — See what's changed</a></p>
+<p align="center"><a href="docs/CHANGELOG.md"><b>New v2.4.1 Release!</b> — See what's changed</a></p>
 
 ### 🌟 Why KoalaSync?
 
@@ -103,7 +103,7 @@ To connect your extension to a self-hosted server, open the popup → **Room** t
 
 To verify your relay is reachable from outside, visit `https://your-domain.com` in a browser — it should return `{"status":"online","service":"KoalaSync Relay"}`.
 
-#### Supply Chain Security (v2.4.0+)
+#### Supply Chain Security (v2.4.1+)
 
 All official release artifacts (Docker images and extension binaries) are published with signed [artifact attestations](https://docs.github.com/en/actions/how-tos/secure-your-work/use-artifact-attestations) to prove they were built from this repository's source code.
 
