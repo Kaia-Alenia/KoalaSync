@@ -94,7 +94,7 @@ jobs:
           echo "  ✓ manifest.base.json -> $VERSION"
 
           # 2. shared/constants.js — APP_VERSION
-          sed -i "s/export const APP_VERSION = '.*'/export const APP_VERSION = '$VERSION'/" shared/constants.js
+          sed -i "s/export const APP_VERSION = [\"'].*[\"']/export const APP_VERSION = \"$VERSION\"/" shared/constants.js
           echo "  ✓ shared/constants.js -> $VERSION"
 
           # 3. package.json

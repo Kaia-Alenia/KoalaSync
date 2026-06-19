@@ -77,7 +77,7 @@ function copyExtensionFiles(targetDir, browserName) {
         const eStart = '// --- SHARED_EVENTS_INJECT_START ---';
         const eEnd = '// --- SHARED_EVENTS_INJECT_END ---';
         const ePattern = new RegExp(`${eStart}[\\s\\S]+?${eEnd}`);
-        const eRep = `${eStart}\n    // This block is automatically updated by /scripts/build-extension.js\n    const EVENTS = ${eventsObject};\n    ${eEnd}`;
+        const eRep = `${eStart}\n    // This block is automatically updated by /scripts/build-extension.cjs\n    const EVENTS = ${eventsObject};\n    ${eEnd}`;
         
         if (ePattern.test(content)) {
           content = content.replace(ePattern, eRep);
@@ -108,7 +108,7 @@ function copyExtensionFiles(targetDir, browserName) {
             .replace(/^\/\*\*[\s\S]*?\*\/\s*/m, '')
             .replace(/export function /g, 'function ')
             .trim();
-          const euRep = `${euStart}\n    // This block is automatically updated by /scripts/build-extension.js\n${stripped.split('\n').map(l => '    ' + l).join('\n')}\n    ${euEnd}`;
+          const euRep = `${euStart}\n    // This block is automatically updated by /scripts/build-extension.cjs\n${stripped.split('\n').map(l => '    ' + l).join('\n')}\n    ${euEnd}`;
           if (euPattern.test(content)) {
             content = content.replace(euPattern, euRep);
           } else {
@@ -127,7 +127,7 @@ function copyExtensionFiles(targetDir, browserName) {
         const uPattern = new RegExp(`${uStart}[\\s\\S]+?${uEnd}`);
         const placeholderUrl = "https://bye.koalastuff.net/c/camp_99ztjRVbK1BNN2RU";
         
-        let uRep = `${uStart}\n        // This block is automatically updated by /scripts/build-extension.js\n`;
+        let uRep = `${uStart}\n        // This block is automatically updated by /scripts/build-extension.cjs\n`;
         uRep += `        const UNINSTALL_URL = "${placeholderUrl}";\n`;
         uRep += `        const BROWSER_TYPE = "${browserName}";\n`;
         uRep += `        ${uEnd}`;

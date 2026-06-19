@@ -4,7 +4,7 @@ This directory contains constants and protocol definitions used by both the exte
 
 ## Syncing with the Extension
 > [!IMPORTANT]
-> Every time this directory is modified, you must run `node scripts/build-extension.js` to keep the extension's copy up to date.
+> Every time this directory is modified, you must run `node scripts/build-extension.cjs` to keep the extension's copy up to date.
 
 Because Browser Extensions (Manifest V3) cannot load files outside their root directory, all files in this directory must be copied to `extension/shared/` whenever they are modified. The build script handles this automatically.
 

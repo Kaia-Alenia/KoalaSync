@@ -2,7 +2,7 @@
 
 This directory contains utility scripts for the KoalaSync development workflow.
 
-## build-extension.js
+## build-extension.cjs
 
 The primary build tool for KoalaSync. This Node.js script automates two critical tasks:
 
@@ -15,7 +15,7 @@ The primary build tool for KoalaSync. This Node.js script automates two critical
 From the **repository root**, run:
 
 ```bash
-node scripts/build-extension.js
+node scripts/build-extension.cjs
 ```
 
 ### Why this script exists

@@ -69,19 +69,19 @@ The website hosts the landing page and invitation bridge.
      "LANG_TOGGLE_TEXT": "EN"
    }
    ```
-5. If creating a **brand new language**, register it in `website/build.js` by adding it to the `languages` array.
+5. If creating a **brand new language**, register it in `website/build.cjs` by adding it to the `languages` array.
 
 ### Step 4: Verify Locally
 Ensure your JSON files are valid and all keys match the English baseline. Open your terminal in the KoalaSync root folder and run:
 ```bash
 # Tests the extension locales for missing keys or syntax errors
-node scripts/test-locales.js
+node scripts/test-locales.cjs
 
 # Tests the website locales for missing keys or syntax errors
 node scripts/test-website-locales.mjs
 
 # Builds the website with your new translations
-node website/build.js
+node website/build.cjs
 ```
 *Note: If you receive any errors about missing keys or `TODO` placeholders, please fix them before submitting.*
 

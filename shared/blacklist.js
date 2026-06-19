@@ -2,7 +2,7 @@
  * blacklist.js
  * 
  * ⚠️ WARNING: This is the SINGLE SOURCE OF TRUTH.
- * If you edit this file, you MUST run: node scripts/build-extension.js
+ * If you edit this file, you MUST run: node scripts/build-extension.cjs
  * to propagate changes to the extension and relay server.
  * 
  * Domains to be filtered out from the tab selection dropdown to reduce "noise".

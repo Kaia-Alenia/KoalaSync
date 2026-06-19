@@ -37,7 +37,7 @@ Closes #
 - [ ] I have performed a self-review of my code
 - [ ] I have added/updated tests if needed
 - [ ] I have updated documentation if needed (`docs/`, README, etc.)
-- [ ] Protocol changes: I ran `node scripts/build-extension.js` and updated relevant docs
+- [ ] Protocol changes: I ran `node scripts/build-extension.cjs` and updated relevant docs
 - [ ] No new warnings, secrets, or hardcoded credentials introduced
 
 ### Additional Context

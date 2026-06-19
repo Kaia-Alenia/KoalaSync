@@ -21,14 +21,14 @@ KoalaSync is a specialized tool for **synchronized video playback** across multi
 - `extension/`: Browser Extension (Chrome & Firefox, Manifest V3). Contains background service worker, content scripts, and popup UI.
 - `server/`: Node.js Relay Server using Socket.IO (WebSocket-only).
 - `website/`: **Landing Page** & Invitation Bridge (Marketing, Tutorials, and Downloads).
-  - **`build.js`**: Zero-dependency static site compiler. Translates `template.html` + `locales/*.json` → `www/`. Also minifies CSS/JS automatically.
-  - **`www/` is auto-generated**: Never edit files in `www/` directly. Always edit source files (`template.html`, `style.css`, `app.js`, `lang-init.js`, `locales/*.json`) and run `node website/build.js` to regenerate. CSS/JS are output as `.min.*` files — a built-in cleanup step removes stale artifacts on each build.
+  - **`build.cjs`**: Zero-dependency static site compiler. Translates `template.html` + `locales/*.json` → `www/`. Also minifies CSS/JS automatically.
+  - **`www/` is auto-generated**: Never edit files in `www/` directly. Always edit source files (`template.html`, `style.css`, `app.js`, `lang-init.js`, `locales/*.json`) and run `node website/build.cjs` to regenerate. CSS/JS are output as `.min.*` files — a built-in cleanup step removes stale artifacts on each build.
 - `shared/`: **Single Source of Truth** for protocol constants and event names.
-- `scripts/`: Development utilities (e.g., `build-extension.js`).
+- `scripts/`: Development utilities (e.g., `build-extension.cjs`).
 - `docker-compose.yml`: Root-level orchestration for the relay server.
 
 > [!IMPORTANT]
-> **Single Source of Truth**: `shared/constants.js` and `shared/blacklist.js` are the master files. They must be synchronized to the `extension/shared/` directory using `node scripts/build-extension.js`. 
+> **Single Source of Truth**: `shared/constants.js` and `shared/blacklist.js` are the master files. They must be synchronized to the `extension/shared/` directory using `node scripts/build-extension.cjs`. 
 > - **Extension Modules** (`background.js`, `popup.js`) import directly from `./shared/constants.js`.
 > - **Content Scripts** (`content.js`) use a **marker-injected synchronous copy** of the constants. The build script automatically replaces the marked blocks — no manual mirroring needed.
 
@@ -41,7 +41,7 @@ Before touching any code, you MUST read the following documents in order:
 ## 4. The "Vanilla JS Mirror" Pattern
 To avoid boot-time race conditions in Manifest V3 without a bundler, the following architectural trade-off is enforced:
 - **Synchronous Execution**: `content.js` MUST execute synchronously to catch early media events. 
-- **Automated Injection**: The build script (`node scripts/build-extension.js`) automatically injects `EVENTS` and `HEARTBEAT_INTERVAL` into `content.js` using marker-based replacement (see `../scripts/README.md` for marker details).
+- **Automated Injection**: The build script (`node scripts/build-extension.cjs`) automatically injects `EVENTS` and `HEARTBEAT_INTERVAL` into `content.js` using marker-based replacement (see `../scripts/README.md` for marker details).
 - **Maintenance**: After modifying `shared/constants.js`, simply run the build script. No manual mirroring is required.
 
 ## 5. File Responsibility Map
@@ -137,18 +137,18 @@ Before starting any task, committing, or pushing, you **MUST** run `git pull --r
 
 ### Adding a Protocol Event
 1. Add the event name to `shared/constants.js`.
-2. Run the build script (`node scripts/build-extension.js`).
+2. Run the build script (`node scripts/build-extension.cjs`).
 3. Implement the handler in `server/index.js` and `background.js`.
 
 ### Making Website Changes
 1. Edit source files in `website/` (`template.html`, `style.css`, `app.js`, `lang-init.js`, or `locales/*.json`).
-2. Run the compiler: `node website/build.js`. This generates the multilingual pages in `www/` and minifies CSS/JS.
+2. Run the compiler: `node website/build.cjs`. This generates the multilingual pages in `www/` and minifies CSS/JS.
 3. Verify the output: `node --check website/www/app.js && node --check website/www/lang-init.js`.
 4. Test locally: `npx serve website/www` or `python3 -m http.server 8080 -d website/www`.
 5. Commit both source changes and the updated `www/` output.
 
 ### Testing Locally
-1. Run the build script: `node scripts/build-extension.js`.
+1. Run the build script: `node scripts/build-extension.cjs`.
 2. Load `dist/chrome/` as an "Unpacked Extension" in Chrome (or `dist/firefox/` in Firefox).
 3. Start the server from the root: `docker-compose up --build`.
 4. Use **different browser profiles** or vendors to test multi-peer logic.

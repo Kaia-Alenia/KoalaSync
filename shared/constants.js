@@ -2,12 +2,12 @@
  * KoalaSync Shared Constants & Protocol Definitions
  * 
  * ⚠️ WARNING: This is the SINGLE SOURCE OF TRUTH.
- * If you edit this file, you MUST run: node scripts/build-extension.js
+ * If you edit this file, you MUST run: node scripts/build-extension.cjs
  * to propagate changes to the extension and relay server.
  */
 
 export const PROTOCOL_VERSION = "1.0.0";
-export const APP_VERSION = "1.9.0";
+export const APP_VERSION = "2.4.1";
 
 export const OFFICIAL_SERVER_URL = 'wss://syncserver.koalastuff.net';
 export const OFFICIAL_LANDING_PAGE_URL = 'https://sync.koalastuff.net';

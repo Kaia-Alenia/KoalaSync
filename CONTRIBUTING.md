@@ -31,7 +31,7 @@ Please note that by participating in this project, you agree to abide by our [Co
 git clone https://github.com/Shik3i/KoalaSync.git
 cd KoalaSync
 npm install
-node scripts/build-extension.js
+node scripts/build-extension.cjs
 ```
 
 ---
@@ -62,7 +62,7 @@ node scripts/build-extension.js
 ### Website
 
 ```bash
-node website/build.js           # Compile static site → www/
+node website/build.cjs           # Compile static site → www/
 python3 -m http.server 8080 -d website/www  # Serve locally
 ```
 
@@ -77,7 +77,7 @@ KoalaSync uses a **single source of truth** for all protocol constants in `share
 > [!IMPORTANT]
 > After modifying `shared/constants.js`, you **must** run the build script to sync changes to the extension:
 > ```bash
-> node scripts/build-extension.js
+> node scripts/build-extension.cjs
 > ```
 > This automatically injects constants into `content.js` and regenerates browser bundles in `dist/`.
 
@@ -109,7 +109,7 @@ If you are new to open-source contributions, follow these steps to propose your 
 3. **Create a Branch**: `git checkout -b my-new-feature` (e.g. `feature/dark-mode` or `fix/translation-de`)
 4. **Make your Changes**: Edit the files, then verify them locally.
    - *Extension/Server changes*: Test on Chrome/Firefox and check `npm run lint`.
-   - *Website/Translation changes*: Run `node website/build.js` and check the output in `www/`.
+   - *Website/Translation changes*: Run `node website/build.cjs` and check the output in `www/`.
 5. **Commit and Push**: `git commit -m "Add my feature"` and `git push origin my-new-feature`
 6. **Open a Pull Request (PR)**: Go to the original KoalaSync repository on GitHub and click "New Pull Request".
 
@@ -156,9 +156,9 @@ KoalaSync supports multiple languages. To add or improve translations:
 1. Read the **[Translation Guide](docs/TRANSLATION.md)** first. It explains how our localization system works.
 2. Edit the `.json` files in `website/locales/` (for the website) and `extension/locales/` (for the extension).
 3. Test your translations locally by running:
-   - `node scripts/test-locales.js` (for extension)
+   - `node scripts/test-locales.cjs` (for extension)
    - `node scripts/test-website-locales.mjs` (for website)
-   - `node website/build.js` (to build the site)
+   - `node website/build.cjs` (to build the site)
 4. Follow the **Open Source Workflow** above (Fork -> Branch -> Edit -> PR) to submit your translations.
 
 ---
