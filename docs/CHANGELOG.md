@@ -4,6 +4,11 @@ All notable changes to the KoalaSync browser extension and relay server.
 
 ---
 
+## [v2.4.2] — 2026-06-19
+
+### Changed
+- **Extension: Optimized uninstall URL registration** — Extracted registration into a reusable, race-condition-protected `initUninstallURL()` helper. It now generates a unique, anonymous token (`t`) stored in `chrome.storage.local` to securely track uninstalls, and registers the URL on both extension installation/update and browser startup to prevent state loss.
+
 ## [v2.4.1] — 2026-06-19
 
 ### Added
