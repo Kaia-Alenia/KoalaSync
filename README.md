@@ -59,7 +59,7 @@ The easiest and safest way to install KoalaSync is directly through the official
 ### 🌐 Localization & Translations
 
 Both the official KoalaSync website and the **v2.0 Browser Extension** feature full dynamic localization:
-- **Available Languages**: Support is included for 13 languages: English (`en`), German (`de`), French (`fr`), Spanish (`es`), Portuguese (Brazil) (`pt-BR`), Russian (`ru`), Italian (`it`), Polish (`pl`), Turkish (`tr`), Dutch (`nl`), Japanese (`ja`), Korean (`ko`), and European Portuguese (`pt`).
+- **Available Languages**: Support is included for 15 languages: English (`en`), German (`de`), French (`fr`), Spanish (`es`), Portuguese (Brazil) (`pt-BR`), Russian (`ru`), Italian (`it`), Polish (`pl`), Turkish (`tr`), Dutch (`nl`), Japanese (`ja`), Korean (`ko`), Chinese (Simplified) (`zh`), Ukrainian (`uk`), and European Portuguese (`pt`).
 - **Real-Time Extension Localization**: Inside the extension Settings panel, users can swap languages instantly. The entire interface, notifications, Empty States, and onboarding guides re-translate dynamically in real-time.
 - **Contributing**: We welcome community translations for both the website and the extension! Please refer directly to the [TRANSLATION.md](docs/TRANSLATION.md) guide for step-by-step instructions on how to audit, refine, or add new languages.
 
