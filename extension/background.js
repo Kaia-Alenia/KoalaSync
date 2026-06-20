@@ -2,6 +2,7 @@ import { EVENTS, PROTOCOL_VERSION, OFFICIAL_SERVER_URL, OFFICIAL_SERVER_TOKEN, E
 import { generateUsername } from './shared/names.js';
 import { loadLocale, getMessage, getSystemLanguage } from './i18n.js';
 import { sameEpisode } from './episode-utils.js';
+import { initTabManager } from './modules/tab-manager.js';
 
 // --- Uninstall URL Initialization ---
 let uninstallURLInitPromise = null;
@@ -1922,72 +1923,22 @@ async function handleAsyncMessage(message, sender, sendResponse) {
     }
 }
 
-chrome.storage.onChanged.addListener(async (changes, area) => {
-    if (area !== 'local' || !changes.audioSettings) return;
-    await ensureState();
-    if (!currentTabId) return;
-
-    chrome.tabs.sendMessage(currentTabId, {
-        action: 'APPLY_AUDIO_SETTINGS',
-        settings: changes.audioSettings.newValue
-    }).catch(() => {});
-});
-
-// Tab removal listener
-chrome.tabs.onRemoved.addListener(async (tabId) => {
-    await ensureState();
-    if (tabId === currentTabId) {
-        const wasInRoom = !!currentRoom;
-        currentTabId = null;
-        currentTabTitle = null;
-        lastContentHeartbeatAt = null;
-        roomIdleSince = Date.now();
-        chrome.storage.session.set({ currentTabId: null, currentTabTitle: null, roomIdleSince, lastContentHeartbeatAt });
-        updateBadgeStatus();
-        addLog('Target tab closed.', 'warn');
-
-        if (wasInRoom) {
-            const roomAtClose = currentRoom;
-            getSettings().then(settings => {
-                if (currentRoom !== roomAtClose) return;
-
-                emit(EVENTS.PEER_STATUS, {
-                    peerId,
-                    playbackState: 'paused',
-                    currentTime: null,
-                    mediaTitle: null,
-                    username: settings.username,
-                    tabTitle: null
-                });
-
-                if (currentRoom && Array.isArray(currentRoom.peers)) {
-                    const me = currentRoom.peers.find(p => (p.peerId || p) === peerId);
-                    if (me && typeof me === 'object') {
-                        me.playbackState = 'paused';
-                        me.currentTime = null;
-                        me.mediaTitle = null;
-                        me.tabTitle = null;
-                        me.lastHeartbeat = Date.now();
-                        if (storageInitialized) chrome.storage.session.set({ currentRoom });
-                        chrome.runtime.sendMessage({ type: 'PEER_UPDATE', peers: currentRoom.peers }).catch(() => {});
-                    }
-                }
-            }).catch(() => {});
-        }
-    }
-});
-
-// Re-inject on full page refresh
-chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, _tab) => {
-    await ensureState();
-    if (currentTabId && tabId === parseInt(currentTabId) && changeInfo.status === 'complete') {
-        chrome.scripting.executeScript({
-            target: { tabId },
-            files: ['content.js']
-        })
-            .then(() => applyAudioSettingsToTab(tabId))
-            .catch(() => {});
-    }
+initTabManager({
+    getCurrentTabId: () => currentTabId,
+    setCurrentTabId: (val) => { currentTabId = val; },
+    setCurrentTabTitle: (val) => { currentTabTitle = val; },
+    setLastContentHeartbeatAt: (val) => { lastContentHeartbeatAt = val; },
+    setRoomIdleSince: (val) => { roomIdleSince = val; },
+    getCurrentRoom: () => currentRoom,
+    getPeerId: () => peerId,
+    getStorageInitialized: () => storageInitialized,
+    updateBadgeStatus,
+    addLog,
+    getSettings,
+    emit,
+    applyAudioSettingsToTab,
+    ensureState,
+    EVENTS
 });
 
 // Initial Connect — only if user has an active room configuration
