@@ -15,7 +15,9 @@ import {
     roomListCooldowns,
     rateLimitDenied,
     startRateLimitCleanup,
-    stopRateLimitCleanup
+    stopRateLimitCleanup,
+    CONNECTION_RATE_LIMIT,
+    EVENT_RATE_LIMIT
 } from '../server/rate-limiter.js';
 
 // Helper: mock io for cleanup
@@ -31,8 +33,9 @@ function reset() {
 // --- checkConnectionRate ---
 reset();
 assert.equal(checkConnectionRate('1.1.1.1'), true, 'first connection allowed');
-for (let i = 0; i < 9; i++) checkConnectionRate('1.1.1.1');
-assert.equal(checkConnectionRate('1.1.1.1'), false, '11th connection blocked');
+// Exhaust the rest of the budget (first call above counted as 1).
+for (let i = 0; i < CONNECTION_RATE_LIMIT - 1; i++) checkConnectionRate('1.1.1.1');
+assert.equal(checkConnectionRate('1.1.1.1'), false, `connection beyond ${CONNECTION_RATE_LIMIT}/window blocked`);
 assert.equal(rateLimitDenied.connections, 1, 'denial counter incremented');
 
 reset();
@@ -41,8 +44,9 @@ assert.equal(checkConnectionRate('2.2.2.2'), true, 'separate IP independent');
 // --- checkEventRate ---
 reset();
 assert.equal(checkEventRate('sock1'), true, 'first event allowed');
-for (let i = 0; i < 29; i++) checkEventRate('sock1');
-assert.equal(checkEventRate('sock1'), false, '31st event blocked');
+// Exhaust the rest of the budget (first call above counted as 1).
+for (let i = 0; i < EVENT_RATE_LIMIT - 1; i++) checkEventRate('sock1');
+assert.equal(checkEventRate('sock1'), false, `event beyond ${EVENT_RATE_LIMIT}/window blocked`);
 assert.equal(rateLimitDenied.events, 1);
 
 reset();

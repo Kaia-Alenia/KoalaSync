@@ -7,6 +7,14 @@ export const ROOM_LIST_COOLDOWN_MS = 10000;
 export const HEALTH_RATE_LIMIT_PER_MINUTE = 10;
 export const ADMIN_METRICS_AUTH_RATE_LIMIT_PER_MINUTE = 5;
 
+// --- Connection & event budgets (formerly inline magic numbers) ---
+export const CONNECTION_RATE_LIMIT = 10;           // max new connections per IP per window
+export const CONNECTION_RATE_WINDOW_MS = 60000;    // 1 minute
+export const EVENT_RATE_LIMIT = 50;                // max relayed events per socket per window
+export const EVENT_RATE_WINDOW_MS = 10000;         // 10 seconds
+export const HEALTH_RATE_WINDOW_MS = 60000;        // 1 minute
+export const ADMIN_METRICS_AUTH_WINDOW_MS = 60000; // 1 minute
+
 export const connectionCounts = new Map(); // ip -> { count, resetTime }
 export const failedAuthAttempts = new Map(); // Map<IP+RoomID, {count, lastAttempt}>
 export const eventCounts = new Map(); // socketId -> { count, resetTime }
@@ -72,30 +80,30 @@ export function recordAuthFailure(ip, roomId) {
 
 export function checkConnectionRate(ip) {
     const now = Date.now();
-    const entry = connectionCounts.get(ip) || { count: 0, resetTime: now + 60000 };
-    if (now > entry.resetTime) { entry.count = 0; entry.resetTime = now + 60000; }
+    const entry = connectionCounts.get(ip) || { count: 0, resetTime: now + CONNECTION_RATE_WINDOW_MS };
+    if (now > entry.resetTime) { entry.count = 0; entry.resetTime = now + CONNECTION_RATE_WINDOW_MS; }
     entry.count++;
     connectionCounts.set(ip, entry);
-    if (entry.count <= 10) return true;
+    if (entry.count <= CONNECTION_RATE_LIMIT) return true;
     rateLimitDenied.connections++;
     return false;
 }
 
 export function checkEventRate(socketId) {
     const now = Date.now();
-    const entry = eventCounts.get(socketId) || { count: 0, resetTime: now + 10000 };
-    if (now > entry.resetTime) { entry.count = 0; entry.resetTime = now + 10000; }
+    const entry = eventCounts.get(socketId) || { count: 0, resetTime: now + EVENT_RATE_WINDOW_MS };
+    if (now > entry.resetTime) { entry.count = 0; entry.resetTime = now + EVENT_RATE_WINDOW_MS; }
     entry.count++;
     eventCounts.set(socketId, entry);
-    if (entry.count <= 30) return true;
+    if (entry.count <= EVENT_RATE_LIMIT) return true;
     rateLimitDenied.events++;
     return false;
 }
 
 export function checkHealthRate(ip) {
     const now = Date.now();
-    const entry = healthCounts.get(ip) || { count: 0, resetTime: now + 60000 };
-    if (now > entry.resetTime) { entry.count = 0; entry.resetTime = now + 60000; }
+    const entry = healthCounts.get(ip) || { count: 0, resetTime: now + HEALTH_RATE_WINDOW_MS };
+    if (now > entry.resetTime) { entry.count = 0; entry.resetTime = now + HEALTH_RATE_WINDOW_MS; }
     entry.count++;
     healthCounts.set(ip, entry);
     if (entry.count <= HEALTH_RATE_LIMIT_PER_MINUTE) return true;
@@ -105,8 +113,8 @@ export function checkHealthRate(ip) {
 
 export function checkAdminMetricsAuthRate(ip) {
     const now = Date.now();
-    const entry = adminMetricsAuthCounts.get(ip) || { count: 0, resetTime: now + 60000 };
-    if (now > entry.resetTime) { entry.count = 0; entry.resetTime = now + 60000; }
+    const entry = adminMetricsAuthCounts.get(ip) || { count: 0, resetTime: now + ADMIN_METRICS_AUTH_WINDOW_MS };
+    if (now > entry.resetTime) { entry.count = 0; entry.resetTime = now + ADMIN_METRICS_AUTH_WINDOW_MS; }
     entry.count++;
     adminMetricsAuthCounts.set(ip, entry);
     if (entry.count <= ADMIN_METRICS_AUTH_RATE_LIMIT_PER_MINUTE) return true;
