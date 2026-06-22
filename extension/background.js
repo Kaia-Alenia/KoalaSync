@@ -63,6 +63,7 @@ let storageInitialized = false;
 let pendingLogs = [];
 let pendingHistory = [];
 let eventQueue = [];
+let flushTimer = null; // paces draining of eventQueue after (re)connect
 let isNamespaceJoined = false;
 let lastActionState = { action: null, senderId: null, timestamp: 0, acks: [] };
 let localSeq = 0;                         // Monotonically increasing command sequence for this peer
@@ -75,6 +76,7 @@ let pingInterval = null;
 let pingTimeout = null;
 let pendingPingT = null;
 let currentPingMs = null;
+let missedPongs = 0;
 
 // --- Keep-Alive Port Listener ---
 chrome.runtime.onConnect.addListener((port) => {
@@ -198,8 +200,28 @@ let roomIdleSince = null;
 let lastContentHeartbeatAt = null;
 let connectIntent = false;
 const MAX_RECONNECT_ATTEMPTS = 20;
-const _RECONNECT_BASE_DELAY = 500;
-const _RECONNECT_MAX_DELAY = 5000;
+// Backoff tuned so that at most ~8 connection attempts land in any 60s window,
+// keeping a single client comfortably under the server's per-IP connection
+// budget (10/min) even before jitter. Cumulative (no jitter): 1, 2.8, 6, 11.9,
+// 22.4, 34.4, 46.4, 58.4s → 8th attempt at ~58s.
+const _RECONNECT_BASE_DELAY = 1000;
+const _RECONNECT_MAX_DELAY = 12000;
+const _RECONNECT_FACTOR = 1.8;
+const _RECONNECT_GIVEUP_MS = 300000;  // switch to slow mode after 5 min of fast retries
+const _RECONNECT_SLOW_DELAY = 300000; // slow-mode interval: every 5 min
+const _RECONNECT_JITTER = 0.2;        // ±20% randomization to de-synchronize reconnect herds
+// Paced queue flush: after a (re)connect we drain the offline event backlog in
+// small batches instead of one synchronous burst, so we stay well under the
+// server's per-socket event budget (50 / 10s) and leave headroom for the
+// heartbeats/pings/commands that also count toward it. 10 per 3s ≈ 33/10s.
+const FLUSH_BATCH_SIZE = 10;
+const FLUSH_BATCH_INTERVAL_MS = 3000;
+// Ping liveness: a single unanswered ping is tolerated (transient network
+// blip); only MAX_MISSED_PONGS consecutive misses force a reconnect. With a
+// 15s interval and 5s timeout that means ~20s to detect a genuinely dead link.
+const PING_INTERVAL_MS = 15000;
+const PING_TIMEOUT_MS = 5000;
+const MAX_MISSED_PONGS = 2;
 const ROOM_IDLE_AUTO_LEAVE_MS = 2 * 60 * 60 * 1000;
 
 // Force Sync Coordination
@@ -350,6 +372,7 @@ function forceDisconnect() {
     roomIdleSince = null;
     lastContentHeartbeatAt = null;
     forceSyncAcks.clear();
+    if (flushTimer) { clearTimeout(flushTimer); flushTimer = null; }
     eventQueue = [];
     chrome.storage.session.set({
         isForceSyncInitiator: false,
@@ -547,12 +570,7 @@ async function connect() {
                         protocolVersion: PROTOCOL_VERSION
                     });
                 }
-                while (eventQueue.length > 0) {
-                    const queuedMsg = eventQueue.shift();
-                    emit(queuedMsg.event, queuedMsg.data);
-                }
-                eventQueue = [];
-                chrome.storage.session.set({ eventQueue: [] });
+                flushEventQueue();
             } else if (msg.startsWith('42')) {
                 try {
                     const payload = JSON.parse(msg.substring(2));
@@ -571,6 +589,7 @@ async function connect() {
             isConnecting = false;
             isNamespaceJoined = false;
             stopPing();
+            if (flushTimer) { clearTimeout(flushTimer); flushTimer = null; }
             
             if (!connectIntent && !currentRoom) {
                 isForceSyncInitiator = false;
@@ -689,17 +708,22 @@ function scheduleReconnect() {
     const elapsed = Date.now() - reconnectStartTime;
     reconnectAttempts++;
 
-    if (!reconnectFailed && (elapsed > 300000 || reconnectAttempts > MAX_RECONNECT_ATTEMPTS)) {
+    if (!reconnectFailed && (elapsed > _RECONNECT_GIVEUP_MS || reconnectAttempts > MAX_RECONNECT_ATTEMPTS)) {
         reconnectFailed = true;
         addLog('Switching to slow reconnect mode (every 5 minutes)', 'warn');
     }
 
-    const delay = reconnectFailed
-        ? 300000
-        : Math.min(_RECONNECT_BASE_DELAY * Math.pow(1.5, reconnectAttempts - 1), _RECONNECT_MAX_DELAY);
+    const baseDelay = reconnectFailed
+        ? _RECONNECT_SLOW_DELAY
+        : Math.min(_RECONNECT_BASE_DELAY * Math.pow(_RECONNECT_FACTOR, reconnectAttempts - 1), _RECONNECT_MAX_DELAY);
+    // Jitter de-synchronizes herds: many clients dropped by the same server
+    // blip won't all reconnect on the same tick and exhaust the connection
+    // budget in lockstep. Applied in both fast and slow mode.
+    const jitterFactor = 1 - _RECONNECT_JITTER + Math.random() * 2 * _RECONNECT_JITTER;
+    const delay = Math.round(baseDelay * jitterFactor);
 
     if (reconnectFailed) {
-        addLog(`Slow reconnect in 5min (attempt ${reconnectAttempts})`, 'info');
+        addLog(`Slow reconnect in ~5min (attempt ${reconnectAttempts})`, 'info');
     } else {
         addLog(`Reconnect in ${Math.round(delay)}ms (attempt ${reconnectAttempts})`, 'warn');
     }
@@ -717,15 +741,56 @@ function scheduleReconnect() {
 function emit(event, data) {
     if (socket && socket.readyState === WebSocket.OPEN && isNamespaceJoined) {
         const msg = `42${JSON.stringify([event, data])}`;
-        socket.send(msg);
-    } else {
-        eventQueue.push({ event, data });
-        if (eventQueue.length > 50) {
-            eventQueue.shift();
-            addLog('Event queue cap reached, dropping oldest event', 'warn');
+        try {
+            socket.send(msg);
+        } catch (e) {
+            // The socket can close between the readyState check and send()
+            // (race with a server-side disconnect). Re-queue so the event is
+            // retried on the next successful (re)connect instead of being lost.
+            addLog(`Send failed, re-queueing ${event}: ${e.message}`, 'warn');
+            queueEvent(event, data);
         }
-        chrome.storage.session.set({ eventQueue });
+    } else {
+        queueEvent(event, data);
     }
+}
+
+function queueEvent(event, data) {
+    eventQueue.push({ event, data });
+    if (eventQueue.length > 50) {
+        eventQueue.shift();
+        addLog('Event queue cap reached, dropping oldest event', 'warn');
+    }
+    chrome.storage.session.set({ eventQueue });
+}
+
+/**
+ * Drain the offline event queue in paced batches. A reconnect after a long
+ * outage can leave up to 50 queued events; dumping them in one tick would
+ * exceed the server's per-socket event budget and get us disconnected right
+ * after rejoining. We send FLUSH_BATCH_SIZE events, then wait
+ * FLUSH_BATCH_INTERVAL_MS before the next batch. Remaining events drain across
+ * subsequent batches; if the connection drops mid-drain, the rest stay queued.
+ */
+function flushEventQueue() {
+    if (flushTimer) return; // a drain is already in progress
+    const drainBatch = () => {
+        flushTimer = null;
+        if (!socket || socket.readyState !== WebSocket.OPEN || !isNamespaceJoined) {
+            return; // lost the connection — leave the rest queued for next connect
+        }
+        let sent = 0;
+        while (eventQueue.length > 0 && sent < FLUSH_BATCH_SIZE) {
+            const queuedMsg = eventQueue.shift();
+            emit(queuedMsg.event, queuedMsg.data);
+            sent++;
+        }
+        chrome.storage.session.set({ eventQueue }).catch(() => {});
+        if (eventQueue.length > 0) {
+            flushTimer = setTimeout(drainBatch, FLUSH_BATCH_INTERVAL_MS);
+        }
+    };
+    drainBatch();
 }
 
 function addToHistory(action, senderId) {
@@ -751,16 +816,23 @@ function sendPing() {
     emit(EVENTS.PING, { t });
     if (pingTimeout) clearTimeout(pingTimeout);
     pingTimeout = setTimeout(() => {
-        if (pendingPingT === t) {
-            addLog('Ping timeout reached, force disconnecting to trigger reconnect', 'warn');
-            pendingPingT = null;
+        pingTimeout = null;
+        if (pendingPingT !== t) return; // a PONG arrived in time
+        // This ping went unanswered. Tolerate transient blips: only force a
+        // reconnect after MAX_MISSED_PONGS consecutive misses, not the first.
+        pendingPingT = null;
+        missedPongs++;
+        if (missedPongs >= MAX_MISSED_PONGS) {
+            addLog(`${missedPongs} consecutive pings unanswered — force disconnecting to trigger reconnect`, 'warn');
+            missedPongs = 0;
             forceDisconnect();
             if (currentRoom || connectIntent) {
                 scheduleReconnect();
             }
+        } else {
+            addLog(`Ping unanswered (${missedPongs}/${MAX_MISSED_PONGS}) — retrying next interval`, 'warn');
         }
-        pingTimeout = null;
-    }, 5000);
+    }, PING_TIMEOUT_MS);
 }
 
 function startPing() {
@@ -768,7 +840,8 @@ function startPing() {
     if (pingTimeout) { clearTimeout(pingTimeout); pingTimeout = null; }
     currentPingMs = null;
     pendingPingT = null;
-    pingInterval = setInterval(sendPing, 15000);
+    missedPongs = 0;
+    pingInterval = setInterval(sendPing, PING_INTERVAL_MS);
     sendPing();
 }
 
@@ -783,6 +856,7 @@ function stopPing() {
     }
     currentPingMs = null;
     pendingPingT = null;
+    missedPongs = 0;
 }
 
 // --- Event Handlers ---
@@ -1123,6 +1197,7 @@ function handleServerEvent(event, data) {
             if (data && typeof data.t === 'number' && Number.isFinite(data.t)) {
                 if (pendingPingT === data.t) {
                     pendingPingT = null;
+                    missedPongs = 0;
                     if (pingTimeout) {
                         clearTimeout(pingTimeout);
                         pingTimeout = null;
