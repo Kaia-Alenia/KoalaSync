@@ -4,6 +4,18 @@ All notable changes to the KoalaSync browser extension and relay server.
 
 ---
 
+## [v2.4.4] — 2026-06-23
+
+### Changed
+- **Server: Event rate limit raised 30 → 50 per 10s**, and all connection/event/health rate-limit thresholds and windows extracted into named constants.
+- **Extension: Reconnect backoff tuned and jittered** — capped at ~8 attempts/60s (under the per-IP connection limit) with ±20% jitter to de-synchronize reconnect herds after a server blip.
+- **CI: Added a verification workflow** running lint, tests, audits, and builds on every push/PR; the release build now uses `npm ci`.
+
+### Fixed
+- **Extension: Offline event-queue flush is now paced** (small batches instead of one synchronous burst) so a reconnect after a long outage no longer trips the server event limit and gets disconnected on rejoin.
+- **Extension: Ping liveness tolerates one missed PONG** — a reconnect is forced only after 2 consecutive misses (~20s) instead of a single 5s timeout, avoiding spurious drops under transient load.
+- **Extension: `socket.send()` failures are caught and re-queued** instead of losing the event on a disconnect race.
+
 ## [v2.4.3] — 2026-06-19
 
 ### Added
