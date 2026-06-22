@@ -8,6 +8,7 @@
     "build:extension": "node scripts/build-extension.cjs",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
+    "test": "node scripts/verify-release.mjs",
     "verify": "node scripts/verify-release.mjs"
   },
   "devDependencies": {

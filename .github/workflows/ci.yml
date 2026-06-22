@@ -1,0 +1,43 @@
+name: CI
+
+# Runs the full verification suite (lint, unit/integration tests, production
+# audits, extension + website build) on every push to main and every PR, so a
+# regression can never reach main or a release tag unchecked.
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# Cancel superseded runs on the same ref to save CI minutes. Unlike the release
+# workflow, an interrupted CI run has no side effects.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+          cache: 'npm'
+          cache-dependency-path: |
+            package-lock.json
+            server/package-lock.json
+
+      - name: Install root dependencies
+        run: npm ci
+
+      # The server test suite (test-server-ws/routes/ops) imports express,
+      # socket.io, and dotenv from server/node_modules, so install them too.
+      - name: Install server dependencies
+        run: npm ci
+        working-directory: server
+
+      - name: Run verification suite
+        run: npm run verify

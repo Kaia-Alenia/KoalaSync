@@ -132,7 +132,7 @@ jobs:
 
       - name: Build Extensions
         run: |
-          npm install
+          npm ci
           npm run build:extension
 
       - name: Generate artifact attestation for extensions
