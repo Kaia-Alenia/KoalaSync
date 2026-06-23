@@ -4,6 +4,12 @@ All notable changes to the KoalaSync browser extension and relay server.
 
 ---
 
+## [v2.4.5] — 2026-06-23
+
+### Fixed
+- **Room and settings are no longer stored in `chrome.storage.sync`** — Room ID, password, and username were being resurrected from synced storage on a fresh install (sync survives an uninstall in the user's Google account), which made the extension silently auto-connect to a dead room and appear permanently connected. `getSettings()` and all settings reads are now local-only, and legacy keys are actively purged from sync on install/update/startup. Only `onboardingComplete` and `dismissedHints` remain in sync.
+- **No server traffic while alone in a room** — When you are the only peer, heartbeats, force-sync, and episode auto-sync are now fully suppressed (previously the keepAlive heartbeat, force-sync, and episode lobby were still broadcast to an empty room). The solo state is re-evaluated live on every event — never cached — so the instant another peer joins, syncing resumes immediately, including an instant state push so the newcomer sees your current position without waiting for the next heartbeat.
+
 ## [v2.4.4] — 2026-06-23
 
 ### Changed
