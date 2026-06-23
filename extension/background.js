@@ -1081,12 +1081,20 @@ function handleServerEvent(event, data) {
                 if (!Array.isArray(currentRoom.peers)) currentRoom.peers = [];
                 if (data.status === 'joined') {
                     if (!currentRoom.peers.find(p => (p.peerId || p) === data.peerId)) {
+                        const wasSolo = currentRoom.peers.filter(p => (p.peerId || p) !== peerId).length === 0;
                         delete lastSeqBySender[data.peerId];
                         _persistLastSeq();
-                        
+
                         currentRoom.peers.push(createPeerData(data));
                         if (storageInitialized) chrome.storage.session.set({ currentRoom });
                         chrome.runtime.sendMessage({ type: 'PEER_UPDATE', peers: currentRoom.peers }).catch(() => {});
+
+                        // We were alone and now we're not — proactively push our
+                        // current playback state so the newcomer syncs immediately
+                        // instead of waiting up to a full heartbeat interval.
+                        if (wasSolo && currentTabId) {
+                            chrome.tabs.sendMessage(currentTabId, { type: 'REQUEST_HEARTBEAT' }).catch(() => {});
+                        }
 
                         if (episodeLobby && episodeLobby.initiatorPeerId === peerId) {
                             emit(EVENTS.EPISODE_LOBBY, { peerId, expectedTitle: episodeLobby.expectedTitle });
@@ -1450,14 +1458,18 @@ chrome.alarms.onAlarm.addListener(async (alarm) => {
                 await leaveRoomAfterIdleGrace('Left room after 2 hours without a selected video heartbeat.');
                 return;
             }
-            // Heartbeat Logic: Always include identity metadata
-            const settings = await getSettings();
-            emit(EVENTS.PEER_STATUS, { 
-                peerId, 
-                status: 'heartbeat',
-                username: settings.username,
-                tabTitle: currentTabTitle
-            });
+            // Heartbeat — only broadcast when someone else is in the room.
+            // Recomputed live so a freshly joined peer is picked up immediately.
+            const otherCount = currentRoom && Array.isArray(currentRoom.peers) ? currentRoom.peers.filter(p => (typeof p === 'object' ? p.peerId : p) !== peerId).length : 0;
+            if (otherCount > 0) {
+                const settings = await getSettings();
+                emit(EVENTS.PEER_STATUS, {
+                    peerId,
+                    status: 'heartbeat',
+                    username: settings.username,
+                    tabTitle: currentTabTitle
+                });
+            }
         }
     }
 });
@@ -1706,6 +1718,19 @@ async function handleAsyncMessage(message, sender, sendResponse) {
         });
     } else if (message.type === 'CONTENT_EVENT') {
         const processEvent = () => {
+            // Live solo check — recomputed from the current peer list on every
+            // event (the list is updated synchronously on PEER_STATUS join/leave),
+            // never cached, so the instant a peer joins we resume sending.
+            const otherCount = currentRoom && Array.isArray(currentRoom.peers) ? currentRoom.peers.filter(p => (typeof p === 'object' ? p.peerId : p) !== peerId).length : 0;
+            const hasOtherPeers = otherCount > 0;
+
+            // Force Sync only makes sense with other peers. Solo it is a no-op:
+            // skip the pause/seek + ACK-wait entirely (no freeze, no server traffic).
+            if (message.action === EVENTS.FORCE_SYNC_PREPARE && !hasOtherPeers) {
+                sendResponse({ status: 'ok_solo' });
+                return;
+            }
+
             const timestamp = Date.now();
             localSeq++;
             chrome.storage.session.set({ localSeq });
@@ -1749,11 +1774,8 @@ async function handleAsyncMessage(message, sender, sendResponse) {
                 }, FORCE_SYNC_TIMEOUT);
             }
             addToHistory(message.action, 'You');
-            
+
             const isNonEssentialEvent = message.action === EVENTS.PLAY || message.action === EVENTS.PAUSE || message.action === EVENTS.SEEK;
-            const otherCount = currentRoom && Array.isArray(currentRoom.peers) ? currentRoom.peers.filter(p => (typeof p === 'object' ? p.peerId : p) !== peerId).length : 0;
-            const hasOtherPeers = otherCount > 0;
-            
             if (isNonEssentialEvent && !hasOtherPeers) {
                 sendResponse({ status: 'ok_solo' });
                 return;
@@ -1910,6 +1932,16 @@ async function handleAsyncMessage(message, sender, sendResponse) {
         if (epSettings.autoSyncNextEpisode === false) {
             addLog(`Episode change detected ("${newTitle}") but Auto-Sync is disabled.`, 'info');
             sendResponse({ status: 'disabled' });
+            return;
+        }
+
+        // Variant A: alone in the room → no one to wait for. Skip the lobby
+        // entirely so the next episode just plays through (no pause, no traffic).
+        // Live peer check, so the moment someone joins the next transition syncs.
+        const otherCount = currentRoom && Array.isArray(currentRoom.peers) ? currentRoom.peers.filter(p => (typeof p === 'object' ? p.peerId : p) !== peerId).length : 0;
+        if (otherCount === 0) {
+            addLog(`Episode change ("${newTitle}") — alone in room, playing through without a lobby.`, 'info');
+            sendResponse({ status: 'solo_no_lobby' });
             return;
         }
 

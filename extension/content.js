@@ -538,6 +538,14 @@
             return true;
         }
 
+        // Background asks for an immediate state push (e.g. the first peer just
+        // joined while we were solo) so the newcomer syncs without waiting.
+        if (message.type === 'REQUEST_HEARTBEAT') {
+            sendHeartbeat();
+            sendResponse({ ok: true });
+            return true;
+        }
+
         if (message.type === 'SERVER_COMMAND') {
             const { action, payload } = message;
             let actionCompleted = false;
