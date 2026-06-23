@@ -89,25 +89,8 @@
     let _audioSettings = null;
     let _audioProcessingAllowed = true;
 
-    // Cache the autoSyncNextEpisode setting
+    // Cache the autoSyncNextEpisode setting (local-only; never read from sync)
     chrome.storage.local.get(['autoSyncNextEpisode', 'audioSettings'], (data) => {
-        if (data.autoSyncNextEpisode === undefined || data.audioSettings === undefined) {
-            chrome.storage.sync.get(['autoSyncNextEpisode', 'audioSettings'], (syncData) => {
-                const migrate = {};
-                if (data.autoSyncNextEpisode === undefined && syncData.autoSyncNextEpisode !== undefined) {
-                    migrate.autoSyncNextEpisode = syncData.autoSyncNextEpisode;
-                }
-                if (data.audioSettings === undefined && syncData.audioSettings !== undefined) {
-                    migrate.audioSettings = syncData.audioSettings;
-                }
-                if (Object.keys(migrate).length) chrome.storage.local.set(migrate);
-                _autoSyncEnabled = syncData.autoSyncNextEpisode !== false;
-                _audioSettings = mergeAudioSettings(syncData.audioSettings);
-                const v = findVideo();
-                if (v && _audioProcessingAllowed) applyAudioSettings(v, _audioSettings);
-            });
-            return;
-        }
         _autoSyncEnabled = data.autoSyncNextEpisode !== false;
         _audioSettings = mergeAudioSettings(data.audioSettings);
         const video = findVideo();

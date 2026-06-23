@@ -43,11 +43,13 @@ async function initUninstallURL() {
 chrome.runtime.onInstalled.addListener((details) => {
     if (details.reason === 'install' || details.reason === 'update') {
         initUninstallURL();
+        purgeLegacySyncKeys();
     }
 });
 
 chrome.runtime.onStartup.addListener(() => {
     initUninstallURL();
+    purgeLegacySyncKeys();
 });
 
 // --- State Management ---
@@ -286,29 +288,14 @@ async function getPeerId() {
 }
 
 async function getSettings() {
-    // Try local (per-device) first, fall back to sync for migration
-    let data = await chrome.storage.local.get(['serverUrl', 'useCustomServer', 'roomId', 'password', 'username']);
-    let migrated = false;
-    if (!data.username) {
-        const syncData = await chrome.storage.sync.get(['serverUrl', 'useCustomServer', 'roomId', 'password', 'username']);
-        if (syncData.username || syncData.roomId) {
-            data = syncData;
-            migrated = true;
-        }
-    }
+    // Local-only by design. Room credentials (roomId/password) and identity
+    // (username) must NEVER come from storage.sync — syncing them across devices
+    // both leaks them and resurrects dead rooms on reinstall (a fresh install
+    // has empty local storage but sync survives in the user's Google account).
+    const data = await chrome.storage.local.get(['serverUrl', 'useCustomServer', 'roomId', 'password', 'username']);
     let username = data.username;
     if (!username) {
         username = generateUsername();
-    }
-    if (migrated) {
-        await chrome.storage.local.set({ 
-            serverUrl: data.serverUrl || '',
-            useCustomServer: data.useCustomServer || false,
-            roomId: data.roomId || '',
-            password: data.password || '',
-            username
-        });
-    } else if (!data.username) {
         await chrome.storage.local.set({ username });
     }
     return {
@@ -318,6 +305,19 @@ async function getSettings() {
         password: data.password || '',
         username
     };
+}
+
+// Privacy + correctness: only onboardingComplete and dismissedHints belong in
+// storage.sync. Everything else is per-device local storage. This actively
+// removes legacy keys that older versions wrote to sync (and that would
+// otherwise be redistributed across devices and resurrected on reinstall).
+const LEGACY_SYNC_KEYS = [
+    'serverUrl', 'useCustomServer', 'roomId', 'password', 'username',
+    'filterNoise', 'autoSyncNextEpisode', 'forceSyncMode',
+    'browserNotifications', 'autoCopyInvite', 'locale', 'audioSettings'
+];
+function purgeLegacySyncKeys() {
+    chrome.storage.sync.remove(LEGACY_SYNC_KEYS).catch(() => {});
 }
 
 function addLog(message, type = 'info') {
@@ -1494,14 +1494,8 @@ function resetAudioProcessingInTab(tabId) {
 
 async function applyAudioSettingsToTab(tabId) {
     if (!tabId) return;
-    let data = (await chrome.storage.local.get(['audioSettings']));
-    if (!data.audioSettings) {
-        const syncData = await chrome.storage.sync.get(['audioSettings']);
-        if (syncData.audioSettings) {
-            data = syncData;
-            await chrome.storage.local.set({ audioSettings: syncData.audioSettings });
-        }
-    }
+    // Local-only: audioSettings are never read from storage.sync.
+    const data = await chrome.storage.local.get(['audioSettings']);
     chrome.tabs.sendMessage(tabId, {
         action: 'APPLY_AUDIO_SETTINGS',
         settings: data.audioSettings

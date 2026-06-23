@@ -175,19 +175,9 @@ function setRoomRefreshCooldown() {
 
 // --- Initialization ---
 async function init() {
+    // Local-only by design — settings and room credentials never come from
+    // storage.sync (only onboardingComplete + dismissedHints live there).
     const localData = await chrome.storage.local.get(['serverUrl', 'useCustomServer', 'roomId', 'password', 'username', 'filterNoise', 'autoSyncNextEpisode', 'forceSyncMode', 'browserNotifications', 'autoCopyInvite', 'locale', 'audioSettings', 'activeTab']);
-    // Migrate preferences from sync → local for existing users
-    const oldSync = await chrome.storage.sync.get(['serverUrl', 'useCustomServer', 'roomId', 'password', 'username', 'filterNoise', 'autoSyncNextEpisode', 'forceSyncMode', 'browserNotifications', 'autoCopyInvite', 'locale', 'audioSettings']);
-    const toMigrate = {};
-    for (const key of ['serverUrl', 'useCustomServer', 'roomId', 'password', 'username', 'filterNoise', 'autoSyncNextEpisode', 'forceSyncMode', 'browserNotifications', 'autoCopyInvite', 'locale', 'audioSettings']) {
-        if (localData[key] === undefined && oldSync[key] !== undefined) {
-            toMigrate[key] = oldSync[key];
-            localData[key] = oldSync[key];
-        }
-    }
-    if (Object.keys(toMigrate).length) {
-        await chrome.storage.local.set(toMigrate);
-    }
 
     let activeLang = localData.locale;
     if (!activeLang) {
