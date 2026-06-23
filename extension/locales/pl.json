@@ -143,6 +143,8 @@
   "STATUS_CONNECTING": "Łączenie...",
   "STATUS_FAILED": "Nieudane",
   "STATUS_DISCONNECTED": "Rozłączono",
+  "STATUS_IDLE": "Gotowy do połączenia",
+  "STATUS_IDLE_TOOLTIP": "KoalaSync jest gotowy. Dołącz do pokoju lub utwórz go, aby się połączyć i rozpocząć synchronizację.",
   "BTN_STATE_JOINING": "🚀 Dołączanie...",
   "BTN_STATE_RECONNECTING": "🔄 Ponowne łączenie...",
   "BTN_STATE_PLAYING": "▶ Odtwarzanie...",

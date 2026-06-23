@@ -143,6 +143,8 @@
   "STATUS_CONNECTING": "Verbinden...",
   "STATUS_FAILED": "Mislukt",
   "STATUS_DISCONNECTED": "Verbinding verbroken",
+  "STATUS_IDLE": "Gereed om te verbinden",
+  "STATUS_IDLE_TOOLTIP": "KoalaSync is gereed. Neem deel aan een kamer of maak er een aan om te verbinden en te synchroniseren.",
   "BTN_STATE_JOINING": "🚀 Deelnemen...",
   "BTN_STATE_RECONNECTING": "🔄 Opnieuw verbinden...",
   "BTN_STATE_PLAYING": "▶ Afspelen...",

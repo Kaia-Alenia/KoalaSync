@@ -143,6 +143,8 @@
   "STATUS_CONNECTING": "正在连接...",
   "STATUS_FAILED": "失败的",
   "STATUS_DISCONNECTED": "已断开连接",
+  "STATUS_IDLE": "已准备好连接",
+  "STATUS_IDLE_TOOLTIP": "KoalaSync 已准备就绪。加入或创建房间以连接并开始同步。",
   "BTN_STATE_JOINING": "🚀 正在加入...",
   "BTN_STATE_RECONNECTING": "🔄 正在重新连接...",
   "BTN_STATE_PLAYING": "▶ 播放中...",

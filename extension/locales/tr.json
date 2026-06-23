@@ -143,6 +143,8 @@
   "STATUS_CONNECTING": "Bağlanılıyor...",
   "STATUS_FAILED": "Başarısız",
   "STATUS_DISCONNECTED": "Bağlantı Kesildi",
+  "STATUS_IDLE": "Bağlanmaya hazır",
+  "STATUS_IDLE_TOOLTIP": "KoalaSync hazır. Bağlanmak ve senkronizasyonu başlatmak için bir odaya katılın veya oluşturun.",
   "BTN_STATE_JOINING": "🚀 Katılınıyor...",
   "BTN_STATE_RECONNECTING": "🔄 Yeniden bağlanılıyor...",
   "BTN_STATE_PLAYING": "▶ Oynatılıyor...",

@@ -143,6 +143,8 @@
   "STATUS_CONNECTING": "Conectando...",
   "STATUS_FAILED": "Error",
   "STATUS_DISCONNECTED": "Desconectado",
+  "STATUS_IDLE": "Listo para conectar",
+  "STATUS_IDLE_TOOLTIP": "KoalaSync está listo. Únete o crea una sala para conectarte y empezar a sincronizar.",
   "BTN_STATE_JOINING": "🚀 Uniéndose...",
   "BTN_STATE_RECONNECTING": "🔄 Reconectando...",
   "BTN_STATE_PLAYING": "▶ Reproduciendo...",

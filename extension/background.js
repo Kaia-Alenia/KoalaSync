@@ -639,6 +639,12 @@ async function connect() {
 
 
 function broadcastConnectionStatus(status) {
+    // No room and no intent to connect → this isn't a failure, it's the normal
+    // resting state. Surface a distinct 'idle' status so the UI can say
+    // "ready to connect" instead of a misleading red "Disconnected".
+    if (status === 'disconnected' && !currentRoom && !connectIntent) {
+        status = 'idle';
+    }
     chrome.runtime.sendMessage({ type: 'CONNECTION_STATUS', status }).catch(() => {});
     updateBadgeStatus();
 }
@@ -1574,6 +1580,8 @@ async function handleAsyncMessage(message, sender, sendResponse) {
         const isConnected = socket && socket.readyState === WebSocket.OPEN && isNamespaceJoined;
         const isReconnecting = !isConnected && reconnectAttempts > 0;
         let status = isConnected ? 'connected' : (isConnecting || (socket && socket.readyState === WebSocket.CONNECTING) ? 'connecting' : (isReconnecting ? 'reconnecting' : 'disconnected'));
+        // Distinguish the normal "not in a room" resting state from a real drop.
+        if (status === 'disconnected' && !currentRoom && !connectIntent) status = 'idle';
         sendResponse({ 
             status, 
             peerId, 

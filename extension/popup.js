@@ -16,6 +16,7 @@ const elements = {
     clearLogs: document.getElementById('clearLogs'),
     connDot: document.getElementById('connDot'),
     connText: document.getElementById('connText'),
+    connInfo: document.getElementById('connInfo'),
     connPing: document.getElementById('connPing'),
     serverUrl: document.getElementById('serverUrl'),
     serverOfficial: document.getElementById('serverOfficial'),
@@ -245,9 +246,9 @@ async function init() {
             lastKnownPeers = res.peers || [];
             if (res.lastActionState) updateLastActionUI(res.lastActionState, res.peers);
 
-            // If user has a room configured but background is not connected,
+            // If user has a room configured but background is not connected (disconnected or idle),
             // trigger connection now — the popup opening is explicit user intent.
-            if (res.status === 'disconnected' && localData.roomId) {
+            if ((res.status === 'disconnected' || res.status === 'idle') && localData.roomId) {
                 chrome.runtime.sendMessage({ type: 'CONNECT' }).catch(() => {});
                 applyConnectionStatus('connecting');
             }
@@ -818,19 +819,33 @@ async function populateTabs(providedPeers = null, providedTargetTabId = null) {
 }
 
 function applyConnectionStatus(status) {
+    // Coerce 'idle' to 'disconnected' if a room is actively configured.
+    // An 'idle' status with a configured room indicates the background
+    // worker dropped connection intent due to a server error.
+    if (status === 'idle' && elements.sectionActive && elements.sectionActive.style.display !== 'none') {
+        status = 'disconnected';
+    }
+
     const connected = status === 'connected';
     const connecting = status === 'connecting';
     const reconnecting = status === 'reconnecting';
+    // 'idle' = not in a room and not trying to connect. This is the normal
+    // resting state (lazy connect), NOT an error — surface it neutrally.
+    const idle = status === 'idle';
 
     if (elements.connDot) {
         elements.connDot.className = 'status-dot ' + (connected ? 'status-online' : ((connecting || reconnecting) ? 'status-online' : 'status-offline'));
-        
+
         if (reconnecting) {
             elements.connDot.style.background = '#f59e0b';
             elements.connDot.style.boxShadow = '0 0 8px #f59e0b';
         } else if (connecting) {
             elements.connDot.style.background = '#fbbf24';
             elements.connDot.style.boxShadow = '0 0 8px #fbbf24';
+        } else if (idle) {
+            // Neutral grey — ready, not failed.
+            elements.connDot.style.background = '#9ca3af';
+            elements.connDot.style.boxShadow = 'none';
         } else if (!connected) {
             elements.connDot.style.background = '#ef4444';
             elements.connDot.style.boxShadow = 'none';
@@ -841,7 +856,12 @@ function applyConnectionStatus(status) {
     }
 
     if (elements.connText) {
-        elements.connText.textContent = connected ? getMessage('STATUS_CONNECTED') : (reconnecting ? getMessage('STATUS_RECONNECTING') : (connecting ? getMessage('STATUS_CONNECTING') : getMessage('STATUS_DISCONNECTED')));
+        elements.connText.textContent = connected ? getMessage('STATUS_CONNECTED') : (reconnecting ? getMessage('STATUS_RECONNECTING') : (connecting ? getMessage('STATUS_CONNECTING') : (idle ? getMessage('STATUS_IDLE') : getMessage('STATUS_DISCONNECTED'))));
+    }
+
+    // Show the info "i" + tooltip only in the idle state.
+    if (elements.connInfo) {
+        elements.connInfo.style.display = idle ? '' : 'none';
     }
     if (!connected) {
         updatePingDisplay(null);

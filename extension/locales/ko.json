@@ -143,6 +143,8 @@
   "STATUS_CONNECTING": "연결 중...",
   "STATUS_FAILED": "실패",
   "STATUS_DISCONNECTED": "연결 끊김",
+  "STATUS_IDLE": "연결 준비 완료",
+  "STATUS_IDLE_TOOLTIP": "KoalaSync가 준비되었습니다. 방에 참여하거나 생성하여 연결하고 동기화를 시작하세요.",
   "BTN_STATE_JOINING": "🚀 참여 중...",
   "BTN_STATE_RECONNECTING": "🔄 재연결 중...",
   "BTN_STATE_PLAYING": "▶ 재생 중...",

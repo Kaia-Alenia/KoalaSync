@@ -613,7 +613,10 @@
         <label title="Current WebSocket connection state" data-i18n="LABEL_CONN_STATUS" data-i18n-title="LABEL_CONN_STATUS_TOOLTIP">Connection Status</label>
         <div id="connStatus" class="info-card" style="display:flex; align-items:center; gap: 10px;">
             <span id="connDot" class="status-dot status-offline"></span>
-            <span id="connText" style="flex:1;">Disconnected</span>
+            <span style="flex:1; display:flex; align-items:center; gap:6px; min-width:0;">
+                <span id="connText">Disconnected</span>
+                <span id="connInfo" data-i18n-title="STATUS_IDLE_TOOLTIP" title="KoalaSync is ready. Join or create a room to connect and start syncing." style="display:none; cursor:help; flex:none; width:15px; height:15px; line-height:14px; text-align:center; border-radius:50%; border:1px solid var(--text-muted); color:var(--text-muted); font-size:10px; font-weight:700; font-style:normal;">i</span>
+            </span>
             <span id="connPing" style="font-size:11px; font-family:monospace; font-weight:600; opacity:0.8;"></span>
             <button id="retryBtn" class="secondary" style="display:none; width: auto; padding: 4px 8px; font-size: 10px; margin: 0;" title="Attempt to reconnect to the server" data-i18n="BTN_RETRY" data-i18n-title="BTN_RETRY_TOOLTIP">RETRY</button>
             <button id="copyLogs" class="btn secondary" style="width: auto; padding: 4px 10px; font-size: 11px; margin: 0;" title="Copy logs to clipboard for sharing" data-i18n="BTN_COPY_LOGS" data-i18n-title="BTN_COPY_LOGS_TOOLTIP">Copy Logs</button>

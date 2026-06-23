@@ -143,6 +143,8 @@
   "STATUS_CONNECTING": "接続中...",
   "STATUS_FAILED": "失敗",
   "STATUS_DISCONNECTED": "切断されました",
+  "STATUS_IDLE": "接続準備完了",
+  "STATUS_IDLE_TOOLTIP": "KoalaSyncの準備ができました。ルームに参加するか作成して接続し、同期を開始してください。",
   "BTN_STATE_JOINING": "🚀 参加中...",
   "BTN_STATE_RECONNECTING": "🔄 再接続中...",
   "BTN_STATE_PLAYING": "▶ 再生中...",

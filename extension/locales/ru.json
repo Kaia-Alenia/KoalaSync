@@ -143,6 +143,8 @@
   "STATUS_CONNECTING": "Подключение...",
   "STATUS_FAILED": "Ошибка",
   "STATUS_DISCONNECTED": "Отключено",
+  "STATUS_IDLE": "Готов к подключению",
+  "STATUS_IDLE_TOOLTIP": "KoalaSync готов. Присоединитесь к комнате или создайте её, чтобы подключиться и начать синхронизацию.",
   "BTN_STATE_JOINING": "🚀 Вход...",
   "BTN_STATE_RECONNECTING": "🔄 Переподключение...",
   "BTN_STATE_PLAYING": "▶ Запуск...",

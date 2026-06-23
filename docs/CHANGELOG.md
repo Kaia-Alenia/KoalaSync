@@ -4,7 +4,7 @@ All notable changes to the KoalaSync browser extension and relay server.
 
 ---
 
-## [v2.4.5] — 2026-06-23
+## [v2.4.6] — 2026-06-23
 
 ### Fixed
 - **Room and settings are no longer stored in `chrome.storage.sync`** — Room ID, password, and username were being resurrected from synced storage on a fresh install (sync survives an uninstall in the user's Google account), which made the extension silently auto-connect to a dead room and appear permanently connected. `getSettings()` and all settings reads are now local-only, and legacy keys are actively purged from sync on install/update/startup. Only `onboardingComplete` and `dismissedHints` remain in sync.
