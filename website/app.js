@@ -488,6 +488,14 @@ document.addEventListener('DOMContentLoaded', () => {
             homeLinks.forEach(link => {
                 link.href = (activeLang === 'en') ? './' : `${activeLang}/`;
             });
+
+            const altLinks = document.querySelectorAll('a[href*="alternatives"]');
+            altLinks.forEach(link => {
+                const attr = link.getAttribute('href');
+                if (attr === 'alternatives' || attr === 'alternatives/teleparty' || attr.endsWith('/alternatives')) {
+                    link.href = (activeLang === 'en') ? 'alternatives' : `${activeLang}/alternatives`;
+                }
+            });
         }
     };
 
@@ -525,6 +533,29 @@ document.addEventListener('DOMContentLoaded', () => {
                 target = hasHtml ? 'privacy.html' : 'privacy';
                 if (path.includes('/de/')) target = hasHtml ? '../privacy.html' : '../privacy';
             }
+            window.location.href = target + window.location.hash;
+            return;
+        }
+        
+        const pathSegments = path.split('/');
+        const isAlternative = pathSegments.includes('alternatives');
+        if (isAlternative) {
+            let target;
+            const firstSeg = pathSegments[1];
+            const isLangSubdir = ['de', 'fr', 'es', 'it', 'nl', 'pl', 'pt', 'pt-BR', 'tr', 'ru', 'ja', 'ko', 'zh', 'uk'].includes(firstSeg);
+            
+            if (newLang === 'en') {
+                if (isLangSubdir) {
+                    pathSegments.splice(1, 1);
+                }
+            } else {
+                if (isLangSubdir) {
+                    pathSegments[1] = newLang;
+                } else {
+                    pathSegments.splice(1, 0, newLang);
+                }
+            }
+            target = pathSegments.join('/');
             window.location.href = target + window.location.hash;
             return;
         }

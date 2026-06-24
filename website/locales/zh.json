@@ -176,5 +176,6 @@
   "FOOTER_LEGAL_LINK": "imprint",
   "FOOTER_PRIVACY_LINK": "privacy",
   "FOOTER_DISCLAIMER": "KoalaSync 不隶属于 Netflix、Disney+、Amazon、YouTube、Twitch 或任何其他流媒体平台，也不受其认可或关联。所有商标均为其各自所有者的财产。",
-  "FOOTER_SUPPORT": "Support KoalaSync"
+  "FOOTER_SUPPORT": "Support KoalaSync",
+  "ALT_TRY_KOALASYNC": "Try KoalaSync"
 }
