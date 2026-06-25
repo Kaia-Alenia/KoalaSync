@@ -58,6 +58,40 @@ try {
 
     close();
 
+    // --- Host Control Mode ---
+    const hrid = 'host-'+Date.now();
+    const h1 = await c(), h2 = await c();          // h1 = host (first joiner), h2 = guest
+    await j(h1, hrid, 'host1'); await j(h2, hrid, 'guest1'); h1._m.length = h2._m.length = 0;
+
+    // Host enables host-only -> both peers get the control_mode broadcast
+    s(h1,'set_control_mode',{controlMode:'host-only'});
+    await w(h1,'control_mode'); await w(h2,'control_mode');
+    h1._m.length = h2._m.length = 0;
+
+    // Guest's room-moving event (pause) is dropped -> host must NOT receive it
+    s(h2,'pause',{currentTime:5});
+    let guestPauseDropped = false; try { await w(h1,'pause',600); } catch { guestPauseDropped = true; }
+    assert.ok(guestPauseDropped, 'guest pause dropped in host-only');
+
+    // Host's own pause still relays to the guest
+    s(h1,'pause',{currentTime:7}); await w(h2,'pause');
+    h1._m.length = h2._m.length = 0;
+
+    // Guest cannot change the control mode -> no broadcast
+    s(h2,'set_control_mode',{controlMode:'everyone'});
+    let guestSetBlocked = false; try { await w(h1,'control_mode',600); } catch { guestSetBlocked = true; }
+    assert.ok(guestSetBlocked, 'non-host cannot set control mode');
+
+    // Host leaves -> room falls back to 'everyone' and reassigns host to the guest
+    s(h1,'leave_room',{});
+    let fb = null; const fbStart = Date.now();
+    while (Date.now()-fbStart < 2000 && !fb) {
+        for (let i=0;i<h2._m.length;i++){ const r=h2._m[i]; if(r.startsWith('42')){ const [e,dd]=JSON.parse(r.substring(2)); if(e==='control_mode'){ h2._m.splice(i,1); fb=dd; break; } } }
+        await new Promise(r=>setTimeout(r,50));
+    }
+    assert.ok(fb && fb.controlMode==='everyone' && fb.hostPeerId==='guest1', 'host leave -> fallback everyone + new host');
+    close();
+
     // --- Password room ---
     const prid = 'pw-'+Date.now();
     const pw1 = await c(); await j(pw1, prid, 'admin', 's3cret');
@@ -93,7 +127,7 @@ try {
         let d=''; res.on('data',c=>d+=c); res.on('end',()=>r([res.statusCode,JSON.parse(d)])); }));
     assert.equal(st,200); assert.equal(body.status,'online');
 
-    console.log('All 13 WebSocket integration tests passed');
+    console.log('All WebSocket integration tests passed (incl. host control mode)');
 } catch(e) {
     console.error('FAILED:', e.message);
     process.exitCode=1;
