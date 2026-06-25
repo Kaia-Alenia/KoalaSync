@@ -35,6 +35,7 @@
     <meta property="og:title" content="{{ALT_TELEPARTY_TITLE}}">
     <meta property="og:description" content="{{ALT_TELEPARTY_META_DESC}}">
     <meta property="og:image" content="https://sync.koalastuff.net/assets/ProContraKoala.webp">
+    <meta property="og:locale" content="{{OG_LOCALE}}">
 
     <!-- Twitter / X -->
     <meta name="twitter:card" content="summary_large_image">
@@ -66,6 +67,21 @@
           "name": "KoalaSync vs Teleparty",
           "item": "https://sync.koalastuff.net/{{LANG_PREFIX}}alternatives/teleparty"
         }
+      ]
+    }
+    </script>
+
+    <!-- Organization Schema -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Organization",
+      "name": "KoalaSync",
+      "url": "https://sync.koalastuff.net/",
+      "logo": "https://sync.koalastuff.net/assets/NewLogoIcon_128.webp",
+      "sameAs": [
+        "https://github.com/Shik3i/KoalaSync",
+        "https://mastodon.social/@koalastuff"
       ]
     }
     </script>
@@ -173,7 +189,7 @@
             <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; margin-top: 3rem; padding-top: 2rem; border-top: 1px solid var(--glass-border);">
                 <a href="{{ASSET_PATH}}" class="btn btn-primary" style="margin-bottom: 1.5rem;">{{ALT_TRY_KOALASYNC}}</a>
                 <p style="font-size: 0.9rem; text-align: center;">
-                    <a href="{{ASSET_PATH}}alternatives/screen-sharing" style="color: var(--accent); text-decoration: none;">{{ALT_SCREEN_TITLE}}</a>
+                    <a href="{{ASSET_PATH}}{{LANG_PREFIX}}alternatives/screen-sharing" style="color: var(--accent); text-decoration: none;">{{ALT_SCREEN_TITLE}}</a>
                 </p>
             </div>
 

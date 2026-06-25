@@ -215,6 +215,15 @@ async function compile() {
         compiled = compiled.replace(/\{\{ALT_INDEX_TITLE\}\}/g, indexTitle);
         compiled = compiled.replace(/\{\{ALT_INDEX_META_DESC\}\}/g, indexDesc);
 
+        // og:locale mapping for Facebook
+        const ogLocales = {
+            en: 'en_US', de: 'de_DE', fr: 'fr_FR', es: 'es_ES',
+            'pt-BR': 'pt_BR', ru: 'ru_RU', it: 'it_IT', pl: 'pl_PL',
+            tr: 'tr_TR', nl: 'nl_NL', ja: 'ja_JP', ko: 'ko_KR',
+            zh: 'zh_CN', uk: 'uk_UA', pt: 'pt_PT'
+        };
+        compiled = compiled.replace(/\{\{OG_LOCALE\}\}/g, ogLocales[lang] || 'en_US');
+
         // Merge locale with English fallback for keys not present in current locale
         const mergedLocale = { ...englishLocale, ...locale };
         for (const [key, value] of Object.entries(mergedLocale)) {
