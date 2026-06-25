@@ -204,9 +204,25 @@ Host hammering the toggle → many `SET_CONTROL_MODE`. Covered by existing
 | Disney+ / DRM     |                 |             |                  |               |       |
 | Jellyfin / Emby   |                 |             |                  |               |       |
 
-## 8. Open decisions to lock before/while coding
-- [ ] Intent-classifier signal set (EC-9) — design first.
-- [ ] Host grace period on disconnect, yes/no + duration (EC-10).
-- [ ] Desync semantics: full solo vs receive-only (EC-12).
-- [ ] Snap-back cooldown duration + retry cap (EC-4).
-- [ ] Does host-only apply to live streams or degrade (EC-15)?
+## 8. Decisions (audited)
+- [x] **Intent-classifier (EC-9):** A `pause`/`seek` is **involuntary** if ANY of:
+  `readyState < 3`, `video.seeking`, a `waiting` fired < ~1500ms ago (`isBuffering`
+  flag), inside `visibilityGraceUntil`, OR no own-tracked user gesture
+  (`Date.now() - lastUserGestureAt < 1000`, via capturing keydown/pointerdown — do
+  NOT use sticky `navigator.userActivation.hasBeenActive`). Bias: only *clearly*
+  involuntary is ignored; everything else = deliberate. **Note:** in host-only the
+  guest never broadcasts anyway, so this only decides dialog-vs-silent — a UX call,
+  not a room-integrity call. Start simple, tune later.
+- [x] **Host grace on disconnect (EC-10): NOT in v1.** Immediate fallback to
+  `everyone` (EC-3). A grace window risks a multi-second hard-lock if the host never
+  returns. Revisit as polish once the core flow works.
+- [x] **Desync semantics (EC-12): full solo.** Ignore host play/pause/seek while
+  desynced; Resync snaps to host position + adopts host play/pause state. Desync
+  auto-clears on new media/episode. Requires a persistent, obvious "You are desynced"
+  UI.
+- [x] **Snap-back cooldown (EC-4): until-settled, not fixed.** Suppress re-trigger
+  until `readyState>=3 && playing && |Δt|<tol`, hard-cap ~1500ms. Retry target up to
+  3×, then give up (no infinite loop).
+- [x] **Live streams (EC-15): degrade.** Disable the gate when
+  `video.duration === Infinity`. Caveat: live-DVR may report finite duration and slip
+  through — acceptable for v1.

@@ -33,6 +33,10 @@ export const EVENTS = {
     ROOM_DATA: "room_data", // Server -> Client: current room state
     ERROR: "error",
 
+    // Host Control Mode
+    SET_CONTROL_MODE: "set_control_mode", // Client -> Server: host sets room control mode ('everyone' | 'host-only')
+    CONTROL_MODE: "control_mode",          // Server -> Client: room control mode changed { controlMode, hostPeerId }
+
     // Media Control
     PLAY: "play",
     PAUSE: "pause",
@@ -55,6 +59,14 @@ export const EVENTS = {
     // Ping / Latency
     PING: "ping",  // { t: timestamp, target?: peerId } — empty target = server echo
     PONG: "pong"   // server responds with same { t } for client RTT calculation
+};
+
+// Room control modes (Host Control Mode feature).
+// NOTE: content.js does not import this module — it uses the string literals
+// 'everyone' / 'host-only' directly. Keep these values in sync there.
+export const CONTROL_MODES = {
+    EVERYONE: 'everyone',   // default: anyone can play/pause/seek for the room
+    HOST_ONLY: 'host-only'  // only the host drives the room
 };
 
 export const HEARTBEAT_INTERVAL = 15000; // 15s
