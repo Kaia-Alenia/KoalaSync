@@ -331,7 +331,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const updateDynamicVersion = async () => {
         try {
-            const versionPath = document.documentElement.lang === 'en' ? 'version.json' : '../version.json';
+            const versionPath = '/version.json';
             const response = await fetch(versionPath);
             if (!response.ok) return;
             const data = await response.json();
