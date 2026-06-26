@@ -140,7 +140,8 @@ function ensureState() {
                 'logs', 'history', 'currentRoom', 'lastActionState', 
                 'eventQueue', 'isForceSyncInitiator', 'forceSyncAcks', 
                 'forceSyncDeadline', 'reconnectFailed', 'reconnectStartTime', 'reconnectAttempts', 'currentTabId', 'currentTabTitle',
-                'episodeLobby', 'localSeq', 'lastSeqBySender', 'expectedAcksCount', 'roomIdleSince', 'lastContentHeartbeatAt'
+                'episodeLobby', 'localSeq', 'lastSeqBySender', 'expectedAcksCount', 'roomIdleSince', 'lastContentHeartbeatAt',
+                'hcmDesynced'
             ], (data) => {
                 clearTimeout(storageTimeout);
                 if (data.expectedAcksCount !== undefined) expectedAcksCount = data.expectedAcksCount;
@@ -156,6 +157,7 @@ function ensureState() {
                     controlMode = currentRoom.controlMode || CONTROL_MODES.EVERYONE;
                     hostPeerId = currentRoom.hostPeerId || null;
                 }
+                if (data.hcmDesynced !== undefined) hcmDesynced = data.hcmDesynced;
                 if (data.lastActionState) lastActionState = data.lastActionState;
                 
                 if (data.eventQueue) eventQueue = [...eventQueue, ...data.eventQueue].slice(0, 50);
@@ -485,7 +487,8 @@ async function leaveRoomAfterIdleGrace(reason) {
         currentTabTitle: null,
         roomIdleSince: null,
         lastContentHeartbeatAt: null,
-        episodeLobby: null
+        episodeLobby: null,
+        hcmDesynced: false
     }).catch(() => {});
     await chrome.storage.local.set({ roomId: '', password: '' }).catch(() => {});
     addLog(reason, 'info');
@@ -1571,7 +1574,7 @@ function leaveOldRoomIfSwitching(newRoomId) {
         // Notify content.js/popup so they drop any guest-side HCM state from the
         // previous room (badge/dialog/desync) — H-2/H-3.
         broadcastControlMode();
-        if (storageInitialized) chrome.storage.session.set({ currentRoom: null });
+        if (storageInitialized) chrome.storage.session.set({ currentRoom: null, hcmDesynced: false });
         chrome.runtime.sendMessage({ type: 'PEER_UPDATE', peers: [] }).catch(() => {});
 
         // Reset force sync states
@@ -1709,9 +1712,16 @@ async function handleAsyncMessage(message, sender, sendResponse) {
         sendResponse({ target: getHostSyncTarget() });
     } else if (message.type === 'HCM_DESYNC_STATE') {
         // content.js tells us whether the local user chose to watch on their own.
+        // Only accept from the currently selected tab.
+        if (sender.tab && currentTabId && currentTabId !== sender.tab.id) {
+            sendResponse({ status: 'ignored_unselected_tab' });
+            return;
+        }
         // Mirrored into heartbeats so the host's UI can show "Solo" instead of
-        // silently waiting for ACKs that will never come.
+        // silently waiting for ACKs that will never come. Persisted so the
+        // heartbeat survives SW restarts (idle timeout, crash).
         hcmDesynced = !!message.desynced;
+        if (storageInitialized) chrome.storage.session.set({ hcmDesynced });
         sendResponse({ status: 'ok' });
     } else if (message.type === 'LEAVE_ROOM') {
         connectIntent = false;
@@ -1752,7 +1762,8 @@ async function handleAsyncMessage(message, sender, sendResponse) {
             forceSyncAcks: [],
             forceSyncDeadline: null,
             episodeLobby: null,
-            expectedAcksCount: 0
+            expectedAcksCount: 0,
+            hcmDesynced: false
         });
         chrome.storage.local.set({ roomId: '', password: '' }).catch(() => {});
         addLog('Left Room', 'info');
@@ -1846,6 +1857,13 @@ async function handleAsyncMessage(message, sender, sendResponse) {
             }
         });
     } else if (message.type === 'CONTENT_EVENT') {
+        // Only process media events from the currently selected tab — ignore
+        // stale content scripts in previously-selected tabs. Popup-originated
+        // events (no sender.tab) always pass through.
+        if (sender.tab && currentTabId && currentTabId !== sender.tab.id) {
+            sendResponse({ status: 'ignored_unselected_tab' });
+            return;
+        }
         const processEvent = () => {
             // Host Control Mode (sender-side): a guest in host-only mode must not
             // drive the room. Don't broadcast; hand the action back to content.js so
