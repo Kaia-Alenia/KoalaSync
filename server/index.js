@@ -161,6 +161,11 @@ const HOST_ONLY_GATED_EVENTS = new Set([
     EVENTS.EPISODE_LOBBY_CANCEL
 ]);
 
+// M-4: minimum interval between CONTROL_MODE changes per room. Stops a rapidly
+// toggling host from thrashing every guest's UI (locked/unlocked/locked...) and
+// from generating one broadcast per toggle across all peers.
+const CONTROL_MODE_MIN_INTERVAL_MS = 500;
+
 function log(type, message, details = '') {
     const debugLogging = process.env.DEBUG_LOGGING === '1';
     const isVerbose = type === 'CONN' || type === 'ROOM' || type === 'DEDUPE' || type === 'CORS' || type === 'ACKDROP';
@@ -361,7 +366,8 @@ io.on('connection', (socket) => {
                             lastActivity: Date.now(),
                             // Host Control Mode: creator (first joiner) is the host.
                             hostPeerId: peerId,
-                            controlMode: CONTROL_MODES.EVERYONE
+                            controlMode: CONTROL_MODES.EVERYONE,
+                            lastControlModeChangeAt: 0 // M-4: per-room debounce for control-mode toggles
                         };
                         rooms.set(roomId, room);
                         createdByMe = true;
@@ -516,6 +522,7 @@ io.on('connection', (socket) => {
                         currentTime:   data.currentTime   !== undefined ? (clampNum(data.currentTime, 0, 86400) ?? existing.currentTime)   : existing.currentTime,
                         volume:        data.volume        !== undefined ? (clampNum(data.volume, 0, 1) ?? existing.volume)                 : existing.volume,
                         muted:         data.muted         !== undefined ? (validBool(data.muted) ?? existing.muted)                       : existing.muted,
+                        desynced:      data.desynced      !== undefined ? (validBool(data.desynced) === true) : (existing.desynced || false),
                         lastSeen: Date.now()
                     });
 
@@ -531,6 +538,7 @@ io.on('connection', (socket) => {
                         mediaTitle:      clamp(data.mediaTitle, 100),
                         volume:          clampNum(data.volume, 0, 1),
                         muted:           validBool(data.muted),
+                        desynced:        validBool(data.desynced),
                         peerId:          mapping.peerId,
                         status:          typeof data.status === 'string' ? data.status.substring(0, 16) : undefined,
                         expectedTitle:   clamp(data.expectedTitle, 100),
@@ -612,12 +620,27 @@ io.on('connection', (socket) => {
         // Only the host may change the control mode.
         if (mapping.peerId !== room.hostPeerId) {
             log('AUTH', `Non-host ${mapping.peerId} tried to set control mode in ${mapping.roomId.substring(0, 3)}***`);
+            // Re-sync the sender to the actual room state so any optimistic UI
+            // (e.g. popup toggle) reverts — covers stale-local-amHost races (H-5).
+            socket.emit(EVENTS.CONTROL_MODE, { controlMode: room.controlMode, hostPeerId: room.hostPeerId });
             return;
         }
         if (room.controlMode === mode) return; // no-op, ignore (UI debounce backstop)
 
+        // M-4: per-room debounce — reject toggles faster than CONTROL_MODE_MIN_INTERVAL_MS.
+        // The host still gets the final state via the next legit change; this just
+        // kills the spam vector.
+        const now = Date.now();
+        if (now - room.lastControlModeChangeAt < CONTROL_MODE_MIN_INTERVAL_MS) {
+            log('ROOM', `Control mode toggle debounced in ${mapping.roomId.substring(0, 3)}***`);
+            // Re-sync the sender so any optimistic UI matches the actual (unchanged) state.
+            socket.emit(EVENTS.CONTROL_MODE, { controlMode: room.controlMode, hostPeerId: room.hostPeerId });
+            return;
+        }
+
         room.controlMode = mode;
-        room.lastActivity = Date.now();
+        room.lastControlModeChangeAt = now;
+        room.lastActivity = now;
         io.to(mapping.roomId).emit(EVENTS.CONTROL_MODE, { controlMode: mode, hostPeerId: room.hostPeerId });
         log('ROOM', `Control mode set to '${mode}' by host in room ${mapping.roomId.substring(0, 3)}***`);
     });

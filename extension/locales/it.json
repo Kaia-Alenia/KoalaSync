@@ -50,6 +50,8 @@
   "NOTICE_HOST_CONTROLS": "L'host controlla la riproduzione per tutti.",
   "BADGE_HOST": "Host",
   "BADGE_GUEST": "Ospite",
+  "BADGE_DESYNCED": "Solo",
+  "TOOLTIP_PEER_DESYNCED": "Guarda per conto proprio — ignora i comandi dell'host",
   "NO_PEERS_CONNECTED": "Nessun partecipante connesso",
   "BTN_LEAVE_ROOM": "Lascia Stanza",
   "LABEL_SELECT_VIDEO": "Seleziona Video",

@@ -50,6 +50,8 @@
   "NOTICE_HOST_CONTROLS": "Host steruje odtwarzaniem dla wszystkich.",
   "BADGE_HOST": "Host",
   "BADGE_GUEST": "Gość",
+  "BADGE_DESYNCED": "Solo",
+  "TOOLTIP_PEER_DESYNCED": "Ogląda samodzielnie — ignoruje polecenia hosta",
   "NO_PEERS_CONNECTED": "Brak połączonych uczestników",
   "BTN_LEAVE_ROOM": "Opuść pokój",
   "LABEL_SELECT_VIDEO": "Wybierz wideo",

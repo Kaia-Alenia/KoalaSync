@@ -50,6 +50,8 @@
   "NOTICE_HOST_CONTROLS": "L'hôte contrôle la lecture pour tout le monde.",
   "BADGE_HOST": "Hôte",
   "BADGE_GUEST": "Invité",
+  "BADGE_DESYNCED": "Solo",
+  "TOOLTIP_PEER_DESYNCED": "Regarde de son côté — ignore les commandes de l'hôte",
   "NO_PEERS_CONNECTED": "Aucun membre connecté",
   "BTN_LEAVE_ROOM": "Quitter le salon",
   "LABEL_SELECT_VIDEO": "Choisir une vidéo",

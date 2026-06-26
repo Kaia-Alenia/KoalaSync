@@ -50,6 +50,8 @@
   "NOTICE_HOST_CONTROLS": "Ведучий керує відтворенням для всіх.",
   "BADGE_HOST": "Ведучий",
   "BADGE_GUEST": "Гість",
+  "BADGE_DESYNCED": "Соло",
+  "TOOLTIP_PEER_DESYNCED": "Дивиться окремо — ігнорує команди ведучого",
   "NO_PEERS_CONNECTED": "Немає підключених однорангових пристроїв",
   "BTN_LEAVE_ROOM": "Вийти з кімнати",
   "LABEL_SELECT_VIDEO": "Виберіть Відео",

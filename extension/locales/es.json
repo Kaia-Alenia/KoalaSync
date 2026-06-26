@@ -50,6 +50,8 @@
   "NOTICE_HOST_CONTROLS": "El anfitrión controla la reproducción para todos.",
   "BADGE_HOST": "Anfitrión",
   "BADGE_GUEST": "Invitado",
+  "BADGE_DESYNCED": "Solo",
+  "TOOLTIP_PEER_DESYNCED": "Viendo por su cuenta — ignora los comandos del anfitrión",
   "NO_PEERS_CONNECTED": "Sin participantes conectados",
   "BTN_LEAVE_ROOM": "Salir de la sala",
   "LABEL_SELECT_VIDEO": "Seleccionar video",

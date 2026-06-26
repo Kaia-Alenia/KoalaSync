@@ -50,6 +50,8 @@
   "NOTICE_HOST_CONTROLS": "Der Host steuert die Wiedergabe für alle.",
   "BADGE_HOST": "Host",
   "BADGE_GUEST": "Gast",
+  "BADGE_DESYNCED": "Solo",
+  "TOOLTIP_PEER_DESYNCED": "Schaut alleine — ignoriert die Befehle des Hosts",
   "NO_PEERS_CONNECTED": "Keine Teilnehmer verbunden",
   "BTN_LEAVE_ROOM": "Raum verlassen",
   "LABEL_SELECT_VIDEO": "Video auswählen",

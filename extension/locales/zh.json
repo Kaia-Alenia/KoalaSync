@@ -50,6 +50,8 @@
   "NOTICE_HOST_CONTROLS": "由主持人为所有人控制播放。",
   "BADGE_HOST": "主持人",
   "BADGE_GUEST": "访客",
+  "BADGE_DESYNCED": "单独",
+  "TOOLTIP_PEER_DESYNCED": "单独观看中 — 忽略主持人的命令",
   "NO_PEERS_CONNECTED": "没有对等点连接",
   "BTN_LEAVE_ROOM": "离开房间",
   "LABEL_SELECT_VIDEO": "选择视频",

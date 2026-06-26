@@ -50,6 +50,8 @@
   "NOTICE_HOST_CONTROLS": "호스트가 모두의 재생을 제어합니다.",
   "BADGE_HOST": "호스트",
   "BADGE_GUEST": "게스트",
+  "BADGE_DESYNCED": "단독",
+  "TOOLTIP_PEER_DESYNCED": "혼자 시청 중 — 호스트 명령을 무시합니다",
   "NO_PEERS_CONNECTED": "연결된 참여자가 없습니다",
   "BTN_LEAVE_ROOM": "방 나가기",
   "LABEL_SELECT_VIDEO": "비디오 선택",

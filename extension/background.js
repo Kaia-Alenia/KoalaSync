@@ -74,6 +74,10 @@ const lastSeqBySender = {};               // senderId → last received seq (sta
 // --- Host Control Mode ---
 let controlMode = CONTROL_MODES.EVERYONE;  // 'everyone' | 'host-only'
 let hostPeerId = null;                     // peerId of the room host (creator / fallback)
+// Local peer's desync state (content.js reports it via HCM_DESYNC_STATE). Relayed
+// in heartbeats so the host's popup UI can show "Solo" instead of silently
+// appearing un-ACK'd.
+let hcmDesynced = false;
 function amHost() { return !!peerId && hostPeerId === peerId; }
 // Room-moving actions a guest may not initiate while in host-only mode.
 const HOST_ONLY_GATED_ACTIONS = [
@@ -281,6 +285,7 @@ function createPeerData(raw) {
         currentTime:   raw.currentTime   != null ? raw.currentTime : null,
         volume:        raw.volume        != null ? raw.volume       : null,
         muted:         raw.muted         != null ? raw.muted        : null,
+        desynced:      raw.desynced === true,   // HCM: peer is watching on their own
         lastHeartbeat: Date.now()
     };
 }
@@ -465,6 +470,10 @@ async function leaveRoomAfterIdleGrace(reason) {
     currentRoom = null;
     controlMode = CONTROL_MODES.EVERYONE;
     hostPeerId = null;
+    hcmDesynced = false;
+    // Notify content.js/popup BEFORE currentTabId is cleared so they can reset
+    // any stale guest-side HCM state (dialog/badge/desync) — H-2.
+    broadcastControlMode();
     currentTabId = null;
     currentTabTitle = null;
     roomIdleSince = null;
@@ -915,7 +924,11 @@ function handleServerEvent(event, data) {
     // Host Control Mode (receiver-side backstop): in host-only mode, ignore
     // room-moving events from any non-host peer. The server already drops these,
     // so this covers old/buggy/modified clients that slipped through.
+    // Defensive: require a known hostPeerId — if the server ever sends host-only
+    // without a host (state inconsistency), gate-everyone would lock the host
+    // out of their own room (L-6).
     if (controlMode === CONTROL_MODES.HOST_ONLY &&
+        hostPeerId &&
         HOST_ONLY_GATED_ACTIONS.includes(event) &&
         data.senderId && data.senderId !== hostPeerId) {
         addLog(`Ignored ${event} from non-host ${data.senderId} (host-only)`, 'warn');
@@ -1199,6 +1212,7 @@ function handleServerEvent(event, data) {
                             peer.mediaTitle = data.mediaTitle !== undefined ? data.mediaTitle : peer.mediaTitle;
                             peer.volume = data.volume !== undefined ? data.volume : peer.volume;
                             peer.muted = data.muted !== undefined ? data.muted : peer.muted;
+                            peer.desynced = data.desynced === true;
 
                             const timeSinceReactive = peer.lastReactiveUpdate ? (Date.now() - peer.lastReactiveUpdate) : Infinity;
                             const ignoreStatus = timeSinceReactive < 300;
@@ -1553,6 +1567,10 @@ function leaveOldRoomIfSwitching(newRoomId) {
         currentRoom = null;
         controlMode = CONTROL_MODES.EVERYONE;
         hostPeerId = null;
+        hcmDesynced = false;
+        // Notify content.js/popup so they drop any guest-side HCM state from the
+        // previous room (badge/dialog/desync) — H-2/H-3.
+        broadcastControlMode();
         if (storageInitialized) chrome.storage.session.set({ currentRoom: null });
         chrome.runtime.sendMessage({ type: 'PEER_UPDATE', peers: [] }).catch(() => {});
 
@@ -1689,6 +1707,12 @@ async function handleAsyncMessage(message, sender, sendResponse) {
     } else if (message.type === 'REQUEST_HOST_SYNC') {
         // content.js resync: hand back the host's extrapolated current position.
         sendResponse({ target: getHostSyncTarget() });
+    } else if (message.type === 'HCM_DESYNC_STATE') {
+        // content.js tells us whether the local user chose to watch on their own.
+        // Mirrored into heartbeats so the host's UI can show "Solo" instead of
+        // silently waiting for ACKs that will never come.
+        hcmDesynced = !!message.desynced;
+        sendResponse({ status: 'ok' });
     } else if (message.type === 'LEAVE_ROOM') {
         connectIntent = false;
         reconnectFailed = false;
@@ -1699,6 +1723,10 @@ async function handleAsyncMessage(message, sender, sendResponse) {
         currentRoom = null;
         controlMode = CONTROL_MODES.EVERYONE;
         hostPeerId = null;
+        hcmDesynced = false;
+        // Notify content.js/popup BEFORE currentTabId is cleared so they drop any
+        // stale guest-side HCM state (dialog/badge/desync) — H-2/H-3.
+        broadcastControlMode();
         currentTabId = null;
         currentTabTitle = null;
         roomIdleSince = null;
@@ -1822,7 +1850,9 @@ async function handleAsyncMessage(message, sender, sendResponse) {
             // Host Control Mode (sender-side): a guest in host-only mode must not
             // drive the room. Don't broadcast; hand the action back to content.js so
             // it can snap the local player back (and, in step 4, offer desync).
-            if (controlMode === CONTROL_MODES.HOST_ONLY && !amHost() &&
+            // Defensive: require a known hostPeerId (L-6) — otherwise the actual
+            // host would gate themselves if state ever becomes inconsistent.
+            if (controlMode === CONTROL_MODES.HOST_ONLY && hostPeerId && !amHost() &&
                 HOST_ONLY_GATED_ACTIONS.includes(message.action)) {
                 addLog(`Host-only: blocked local ${message.action} (you are a guest)`, 'warn');
                 if (sender.tab && sender.tab.id) {
@@ -1974,7 +2004,7 @@ async function handleAsyncMessage(message, sender, sendResponse) {
 
         markRoomUseful();
         getSettings().then(settings => {
-            const statusPayload = { ...message.payload, peerId, username: settings.username, tabTitle: currentTabTitle };
+            const statusPayload = { ...message.payload, peerId, username: settings.username, tabTitle: currentTabTitle, desynced: hcmDesynced };
             const otherCount = currentRoom && Array.isArray(currentRoom.peers) ? currentRoom.peers.filter(p => (typeof p === 'object' ? p.peerId : p) !== peerId).length : 0;
             if (otherCount > 0) emit(EVENTS.PEER_STATUS, statusPayload);
 

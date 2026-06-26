@@ -50,6 +50,8 @@
   "NOTICE_HOST_CONTROLS": "Oynatmayı herkes için sunucu kontrol eder.",
   "BADGE_HOST": "Sunucu",
   "BADGE_GUEST": "Misafir",
+  "BADGE_DESYNCED": "Solo",
+  "TOOLTIP_PEER_DESYNCED": "Tek başına izliyor — sunucu komutlarını yok sayar",
   "NO_PEERS_CONNECTED": "Bağlı kimse yok",
   "BTN_LEAVE_ROOM": "Odadan Ayrıl",
   "LABEL_SELECT_VIDEO": "Video Seç",

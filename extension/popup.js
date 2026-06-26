@@ -346,6 +346,15 @@ function setRemoteControlsLocked(locked) {
         btn.style.cursor = locked ? 'not-allowed' : '';
         btn.title = locked ? (getMessage('NOTICE_HOST_CONTROLS') || 'The host controls playback for everyone.') : '';
     });
+    // When unlocking, also restore the default labels. The action handlers leave
+    // the text in a transitional state ("Playing..." / "Pausing...") and the 2.5s
+    // safety reset skips the refresh while we were guest-locked, so without this
+    // the button can be re-enabled with stale text after the host disables
+    // host-only (L-1).
+    if (!locked) {
+        if (elements.playBtn) elements.playBtn.textContent = getMessage('BTN_PLAY') || 'Play';
+        if (elements.pauseBtn) elements.pauseBtn.textContent = getMessage('BTN_PAUSE') || 'Pause';
+    }
 }
 
 if (elements.hostControlToggle) {
@@ -648,6 +657,16 @@ function updatePeerList(peers) {
                 you.style.cssText = 'font-size:10px; color:var(--accent); font-weight:bold;';
                 you.textContent = getMessage('LABEL_YOU') || 'YOU';
                 header.appendChild(you);
+            }
+
+            // Host Control Mode: show "Solo" badge for peers watching on their own.
+            if (typeof p === 'object' && p.desynced) {
+                const solo = document.createElement('span');
+                solo.style.cssText = 'font-size:10px; color:#fff; background:#b45309; padding:2px 6px; border-radius:6px; font-weight:600;';
+                const soloText = getMessage('BADGE_DESYNCED') || 'Solo';
+                solo.textContent = soloText;
+                solo.title = getMessage('TOOLTIP_PEER_DESYNCED') || soloText;
+                header.appendChild(solo);
             }
 
             peerItem.appendChild(header);
