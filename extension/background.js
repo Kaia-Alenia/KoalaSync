@@ -1683,6 +1683,12 @@ async function handleAsyncMessage(message, sender, sendResponse) {
         }
         emit(EVENTS.SET_CONTROL_MODE, { controlMode: mode });
         sendResponse({ status: 'ok' });
+    } else if (message.type === 'GET_CONTROL_MODE') {
+        // content.js asks for current mode/role (e.g. injected after ROOM_DATA).
+        sendResponse({ controlMode, hostPeerId, amHost: amHost() });
+    } else if (message.type === 'REQUEST_HOST_SYNC') {
+        // content.js resync: hand back the host's extrapolated current position.
+        sendResponse({ target: getHostSyncTarget() });
     } else if (message.type === 'LEAVE_ROOM') {
         connectIntent = false;
         reconnectFailed = false;
