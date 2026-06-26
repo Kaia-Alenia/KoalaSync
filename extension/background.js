@@ -1731,6 +1731,20 @@ async function handleAsyncMessage(message, sender, sendResponse) {
     } else if (message.type === 'REQUEST_HOST_SYNC') {
         // content.js resync: hand back the host's extrapolated current position.
         sendResponse({ target: getHostSyncTarget() });
+    } else if (message.type === 'GET_HCM_STRINGS') {
+        // Localized strings for the in-page host-control dialog/badge. content.js
+        // has no i18n loader of its own, so background resolves them here.
+        const settings = await chrome.storage.local.get(['locale']);
+        const lang = settings.locale || getSystemLanguage();
+        await loadLocale(lang);
+        sendResponse({
+            title:  getMessage('HCM_DIALOG_TITLE'),
+            body:   getMessage('HCM_DIALOG_BODY'),
+            stay:   getMessage('HCM_DIALOG_STAY'),
+            solo:   getMessage('HCM_DIALOG_SOLO'),
+            badge:  getMessage('HCM_BADGE_SOLO'),
+            resync: getMessage('HCM_BADGE_RESYNC')
+        });
     } else if (message.type === 'HCM_DESYNC_STATE') {
         // content.js tells us whether the local user chose to watch on their own.
         // Only accept from the currently selected tab.

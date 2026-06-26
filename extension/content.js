@@ -115,6 +115,16 @@
     let hcmLastUserGestureAt = 0;      // for deliberate-vs-involuntary classification
     let hcmBufferingUntil = 0;         // set on 'waiting' — buffering grace window
     let hcmDialogTimer = null;         // 8s auto-stay timer — cleared on dialog replace (H-4)
+    // Localized strings for the in-page dialog/badge (content has no i18n loader;
+    // background resolves them via GET_HCM_STRINGS on init). English fallbacks here.
+    const hcmStrings = {
+        title:  'KoalaSync · Host controls this room',
+        body:   'Only the host can control playback in this room. Keep watching together, or watch on your own?',
+        stay:   'Stay in sync',
+        solo:   'Watch on my own',
+        badge:  'Watching on your own',
+        resync: 'Resync'
+    };
     const HCM_USER_GESTURE_MS = 1000;
     const HCM_BUFFERING_GRACE_MS = 1500;
     const HCM_SNAP_BACK_COOLDOWN_MS = 1000;
@@ -256,12 +266,11 @@
 
         const wrap = hcmEl('div', 'position:fixed;z-index:2147483647;left:50%;bottom:32px;transform:translateX(-50%);background:#1f2937;color:#f9fafb;font:14px/1.4 system-ui,sans-serif;padding:16px 18px;border-radius:12px;box-shadow:0 8px 30px rgba(0,0,0,.45);max-width:360px;border:1px solid #374151');
         wrap.setAttribute('role', 'dialog');
-        const verb = action === EVENTS.SEEK ? 'jumped' : 'paused';
-        const title = hcmEl('div', 'font-weight:600;margin-bottom:6px', 'KoalaSync · Host controls this room');
-        const body = hcmEl('div', 'margin-bottom:12px;color:#d1d5db', `You ${verb} your player. Only the host can control the group. Keep watching together, or watch on your own?`);
+        const title = hcmEl('div', 'font-weight:600;margin-bottom:6px', hcmStrings.title);
+        const body = hcmEl('div', 'margin-bottom:12px;color:#d1d5db', hcmStrings.body);
         const btnRow = hcmEl('div', 'display:flex;gap:8px;justify-content:flex-end');
-        const soloBtn = hcmEl('button', 'background:#374151;color:#f9fafb;border:0;padding:8px 12px;border-radius:8px;cursor:pointer', 'Watch on my own');
-        const stayBtn = hcmEl('button', 'background:#10b981;color:#062a20;border:0;padding:8px 12px;border-radius:8px;cursor:pointer;font-weight:600', 'Stay in sync');
+        const soloBtn = hcmEl('button', 'background:#374151;color:#f9fafb;border:0;padding:8px 12px;border-radius:8px;cursor:pointer', hcmStrings.solo);
+        const stayBtn = hcmEl('button', 'background:#10b981;color:#062a20;border:0;padding:8px 12px;border-radius:8px;cursor:pointer;font-weight:600', hcmStrings.stay);
         btnRow.append(soloBtn, stayBtn);
         wrap.append(title, body, btnRow);
         root.appendChild(wrap);
@@ -326,7 +335,7 @@
         const host = hcmEl('div', 'all:initial');
         const root = host.attachShadow({ mode: 'open' });
         const b = hcmEl('div', 'position:fixed;z-index:2147483646;right:16px;bottom:16px;background:#b45309;color:#fff;font:13px/1.3 system-ui,sans-serif;padding:8px 12px;border-radius:10px;box-shadow:0 6px 20px rgba(0,0,0,.4);cursor:pointer;display:flex;align-items:center;gap:8px');
-        b.append(hcmEl('span', null, '● Watching on your own'), hcmEl('span', 'text-decoration:underline', 'Resync'));
+        b.append(hcmEl('span', null, '● ' + hcmStrings.badge), hcmEl('span', 'text-decoration:underline', hcmStrings.resync));
         b.addEventListener('click', hcmExitDesync);
         root.appendChild(b);
         document.body.appendChild(host);
@@ -1446,6 +1455,15 @@
             hcmDesynced = true;
             hcmShowBadge();
         }
+    });
+
+    // Pull localized strings for the in-page dialog/badge (English fallback above).
+    chrome.runtime.sendMessage({ type: 'GET_HCM_STRINGS' }, (res) => {
+        if (chrome.runtime.lastError || !res) return;
+        Object.keys(hcmStrings).forEach(k => { if (res[k]) hcmStrings[k] = res[k]; });
+        // If the badge is already showing (early desync), re-render it with the
+        // localized text now that we have it.
+        if (hcmBadgeHost) { hcmRemoveBadge(); hcmShowBadge(); }
     });
 
 })();

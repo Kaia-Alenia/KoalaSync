@@ -49,8 +49,9 @@ Deferred by decision (see §8): host grace period on disconnect (EC-10).
 - ~~**Control-mode race at join:**~~ FIXED — `hcmHandleBlocked` now treats `HOST_BLOCKED`
   as authoritative (adopts host-only/guest role) instead of re-checking local mode,
   since background only sends it to gated guests.
-- **Dialog/badge text is English-only** — content.js has no i18n loader; the in-page
-  strings aren't localized yet. Follow-up.
+- ~~**Dialog/badge text is English-only**~~ FIXED — background resolves the strings
+  via GET_HCM_STRINGS (it has the i18n loader); content fetches them on init with
+  English fallback. 6 new keys (HCM_DIALOG_*/HCM_BADGE_*) across all 15 locales.
 
 ---
 
