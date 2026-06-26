@@ -9,6 +9,24 @@
 
 ---
 
+## 0. Implementation status
+
+All five layers are implemented & pushed (server + background + content + popup + i18n).
+Automated checks green: ESLint, WS integration tests (incl. host-only gate, toggle
+reject, host-leave fallback), content video-finder, locale consistency (15 langs),
+full release verification.
+
+**Still needs real-device testing** — the EC test matrix in §7 (YouTube/Netflix/
+Twitch/Disney+/Jellyfin): involuntary-pause classification (EC-1/EC-5/EC-8), snap-back
+reliability and fight-loops (EC-4), and the desync/resync flow across players. The
+intent classifier (EC-9) and snap-back cooldown are first-pass heuristics tuned by
+reading the code, not yet by watching them behave on each site.
+
+Deferred by decision (see §8): host grace period on disconnect (EC-10), live-DVR
+detection beyond `duration === Infinity` (EC-15).
+
+---
+
 ## 1. What this branch is for
 
 Origin: a GitHub feature request. When watching with larger groups, anyone can pause
