@@ -1857,13 +1857,6 @@ async function handleAsyncMessage(message, sender, sendResponse) {
             }
         });
     } else if (message.type === 'CONTENT_EVENT') {
-        // Only process media events from the currently selected tab — ignore
-        // stale content scripts in previously-selected tabs. Popup-originated
-        // events (no sender.tab) always pass through.
-        if (sender.tab && currentTabId && currentTabId !== sender.tab.id) {
-            sendResponse({ status: 'ignored_unselected_tab' });
-            return;
-        }
         const processEvent = () => {
             // Host Control Mode (sender-side): a guest in host-only mode must not
             // drive the room. Don't broadcast; hand the action back to content.js so
