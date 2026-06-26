@@ -1440,7 +1440,9 @@
         hcmHostPeerId = res.hostPeerId || null;
         // Re-adopt persisted desync after a page reload so we don't start synced
         // while background still relays us as "Solo" to the host (split-brain).
-        if (res.desynced && !hcmDesynced) {
+        // Only when we're actually a gated guest — never adopt a stale flag as the
+        // host or in 'everyone' mode (would self-label "Solo" / ignore commands).
+        if (res.desynced && res.controlMode === 'host-only' && !res.amHost && !hcmDesynced) {
             hcmDesynced = true;
             hcmShowBadge();
         }

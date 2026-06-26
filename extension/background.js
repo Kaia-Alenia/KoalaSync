@@ -680,6 +680,18 @@ async function connect() {
 }
 
 
+// Invariant: only a gated guest (host-only room AND not the host) can be
+// "desynced". Any role/mode change that makes us the host, or switches the room
+// to 'everyone', must clear the persisted flag — otherwise a stale value would
+// mislabel us as "Solo" to peers and (in content) keep us ignoring host commands
+// after the reason to is gone. Call after any controlMode/hostPeerId change.
+function hcmEnforceDesyncInvariant() {
+    if (hcmDesynced && !(controlMode === CONTROL_MODES.HOST_ONLY && !amHost())) {
+        hcmDesynced = false;
+        if (storageInitialized) chrome.storage.session.set({ hcmDesynced: false });
+    }
+}
+
 function broadcastControlMode() {
     // Notify popup (role badge / host toggle) and the active content tab
     // (so it can enable/disable the host-only guest gate).
@@ -943,6 +955,7 @@ function handleServerEvent(event, data) {
             // Host Control Mode: adopt room role/mode on (re)join.
             controlMode = data.controlMode || CONTROL_MODES.EVERYONE;
             hostPeerId = data.hostPeerId || null;
+            hcmEnforceDesyncInvariant();
             broadcastControlMode();
             markRoomPotentiallyIdle();
             if (currentRoom && Array.isArray(currentRoom.peers)) {
@@ -1005,6 +1018,7 @@ function handleServerEvent(event, data) {
             // Host Control Mode changed (toggle or host-leave fallback).
             controlMode = data.controlMode || CONTROL_MODES.EVERYONE;
             hostPeerId = data.hostPeerId || null;
+            hcmEnforceDesyncInvariant();
             if (currentRoom) {
                 currentRoom.controlMode = controlMode;
                 currentRoom.hostPeerId = hostPeerId;
@@ -1215,7 +1229,10 @@ function handleServerEvent(event, data) {
                             peer.mediaTitle = data.mediaTitle !== undefined ? data.mediaTitle : peer.mediaTitle;
                             peer.volume = data.volume !== undefined ? data.volume : peer.volume;
                             peer.muted = data.muted !== undefined ? data.muted : peer.muted;
-                            peer.desynced = data.desynced === true;
+                            // Only update when present — the background-driven keepAlive
+                            // heartbeat omits 'desynced', and clobbering it to false there
+                            // would make the host's "Solo" badge flicker between heartbeats.
+                            if (data.desynced !== undefined) peer.desynced = data.desynced === true;
 
                             const timeSinceReactive = peer.lastReactiveUpdate ? (Date.now() - peer.lastReactiveUpdate) : Infinity;
                             const ignoreStatus = timeSinceReactive < 300;
@@ -1556,7 +1573,8 @@ chrome.alarms.onAlarm.addListener(async (alarm) => {
                     peerId,
                     status: 'heartbeat',
                     username: settings.username,
-                    tabTitle: currentTabTitle
+                    tabTitle: currentTabTitle,
+                    desynced: hcmDesynced
                 });
             }
         }
