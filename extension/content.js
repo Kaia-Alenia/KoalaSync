@@ -181,6 +181,25 @@
         reportLog('Host-only: snapped back to host position', 'info');
     }
 
+    // Resync to the host's current position, retrying briefly if the host's state
+    // isn't known yet (e.g. they just paused and no heartbeat has propagated) —
+    // otherwise the request is a silent no-op and the user thinks they're synced
+    // when they aren't. Shared by the dialog's "Stay in sync" and the Resync badge.
+    function hcmRequestHostSyncWithRetry() {
+        let attempts = 0;
+        const tryOnce = () => {
+            chrome.runtime.sendMessage({ type: 'REQUEST_HOST_SYNC' }, (res) => {
+                if (chrome.runtime.lastError || !res || !res.target) {
+                    if (++attempts < 5) setTimeout(tryOnce, 250);
+                    else reportLog('Host-only: resync requested but host state unavailable', 'warn');
+                    return;
+                }
+                hcmSnapBackToHost(res.target);
+            });
+        };
+        tryOnce();
+    }
+
     // Entry point: background told us our local action was blocked in host-only.
     function hcmHandleBlocked(action, target) {
         // HOST_BLOCKED is only ever sent to a gated guest (background verifies
@@ -254,10 +273,7 @@
         // potentially stale target captured at HOST_BLOCKED time (M-1).
         const stay = () => {
             if (settled) return; settled = true; hcmRemoveDialog();
-            chrome.runtime.sendMessage({ type: 'REQUEST_HOST_SYNC' }, (res) => {
-                if (chrome.runtime.lastError) return;
-                if (res && res.target) hcmSnapBackToHost(res.target);
-            });
+            hcmRequestHostSyncWithRetry();
         };
         const solo = () => { if (settled) return; settled = true; hcmRemoveDialog(); hcmEnterDesync(); };
         stayBtn.addEventListener('click', stay);
@@ -283,22 +299,8 @@
         if (wasDesynced) {
             chrome.runtime.sendMessage({ type: 'HCM_DESYNC_STATE', desynced: false }).catch(() => {});
         }
-        // Resync: ask background for the host's current position and snap to it.
-        // Retry briefly if the host's state isn't known yet (e.g. they just paused
-        // and no heartbeat has propagated) — otherwise the user's "Resync" tap is
-        // a silent no-op and they think they're synced when they aren't (L-3).
-        let attempts = 0;
-        const tryResync = () => {
-            chrome.runtime.sendMessage({ type: 'REQUEST_HOST_SYNC' }, (res) => {
-                if (chrome.runtime.lastError || !res || !res.target) {
-                    if (++attempts < 5) setTimeout(tryResync, 250);
-                    else reportLog('Host-only: resync requested but host state unavailable', 'warn');
-                    return;
-                }
-                hcmSnapBackToHost(res.target);
-            });
-        };
-        tryResync();
+        // Resync to the host's current position (retries if host state not yet known).
+        hcmRequestHostSyncWithRetry();
         reportLog('Host-only: resynced with the host', 'info');
     }
 
