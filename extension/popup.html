@@ -450,6 +450,18 @@
                 </div>
             </div>
 
+            <div id="hostControlCard" class="info-card" style="margin-bottom: 20px; display:none;">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <label style="margin:0;" title="Restrict who can control playback in this room" data-i18n="LABEL_HOST_CONTROL" data-i18n-title="LABEL_HOST_CONTROL_TOOLTIP">Host Control</label>
+                    <span id="hostRoleBadge" style="font-size:10px; font-weight:700; text-transform:uppercase; padding:2px 8px; border-radius:8px; background:var(--accent); color:#fff;"></span>
+                </div>
+                <label id="hostControlToggleRow" style="display:none; align-items:center; gap:8px; margin-top:10px; cursor:pointer; font-size:12px; color:var(--text-muted);">
+                    <input type="checkbox" id="hostControlToggle">
+                    <span data-i18n="LABEL_HOST_ONLY_TOGGLE">Only I can control playback</span>
+                </label>
+                <div id="hostControlGuestNote" style="display:none; margin-top:10px; font-size:12px; color:var(--text-muted);" data-i18n="NOTICE_HOST_CONTROLS">The host controls playback for everyone.</div>
+            </div>
+
             <div style="margin-bottom: 20px;">
                 <label title="Other users currently connected to this room" data-i18n="LABEL_PEERS_IN_ROOM" data-i18n-title="LABEL_PEERS_IN_ROOM_TOOLTIP">Peers in Room</label>
                 <div id="peerList" class="info-card">

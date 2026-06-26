@@ -41,6 +41,11 @@ const elements = {
     retryBtn: document.getElementById('retryBtn'),
     sectionJoin: document.getElementById('section-join'),
     sectionActive: document.getElementById('section-active'),
+    hostControlCard: document.getElementById('hostControlCard'),
+    hostRoleBadge: document.getElementById('hostRoleBadge'),
+    hostControlToggleRow: document.getElementById('hostControlToggleRow'),
+    hostControlToggle: document.getElementById('hostControlToggle'),
+    hostControlGuestNote: document.getElementById('hostControlGuestNote'),
     activeRoomId: document.getElementById('activeRoomId'),
     activeServer: document.getElementById('activeServer'),
     peerListSync: document.getElementById('peerListSync'),
@@ -244,6 +249,7 @@ async function init() {
             updatePingDisplay(res.ping);
             updatePeerList(res.peers);
             lastKnownPeers = res.peers || [];
+            updateHostControlUI(res.controlMode, res.amHost, res.status === 'connected');
             if (res.lastActionState) updateLastActionUI(res.lastActionState, res.peers);
 
             // If user has a room configured but background is not connected (disconnected or idle),
@@ -301,6 +307,34 @@ function toggleUIState(inRoom) {
     const syncInactive = document.getElementById('sync-inactive');
     if (syncActive) syncActive.style.display = inRoom ? 'block' : 'none';
     if (syncInactive) syncInactive.style.display = inRoom ? 'none' : 'block';
+}
+
+// --- Host Control Mode UI ---
+function updateHostControlUI(controlMode, amHost, inRoom) {
+    const card = elements.hostControlCard;
+    if (!card) return;
+    if (!inRoom) { card.style.display = 'none'; return; }
+    card.style.display = 'block';
+    const hostOnly = controlMode === 'host-only';
+    if (elements.hostRoleBadge) {
+        elements.hostRoleBadge.textContent = amHost ? (getMessage('BADGE_HOST') || 'Host') : (getMessage('BADGE_GUEST') || 'Guest');
+        elements.hostRoleBadge.style.background = amHost ? 'var(--accent)' : 'var(--text-muted)';
+    }
+    if (elements.hostControlToggleRow) elements.hostControlToggleRow.style.display = amHost ? 'flex' : 'none';
+    if (elements.hostControlToggle) elements.hostControlToggle.checked = hostOnly;
+    if (elements.hostControlGuestNote) elements.hostControlGuestNote.style.display = (!amHost && hostOnly) ? 'block' : 'none';
+}
+
+if (elements.hostControlToggle) {
+    elements.hostControlToggle.addEventListener('change', () => {
+        const mode = elements.hostControlToggle.checked ? 'host-only' : 'everyone';
+        chrome.runtime.sendMessage({ type: 'SET_CONTROL_MODE', controlMode: mode }, (res) => {
+            // Server broadcasts CONTROL_MODE back to refresh the UI; revert on failure.
+            if (chrome.runtime.lastError || !res || res.status !== 'ok') {
+                elements.hostControlToggle.checked = (mode === 'everyone');
+            }
+        });
+    });
 }
 
 function updateUI(roomId, password, useCustomServer = false, serverUrl = '') {
@@ -1656,6 +1690,9 @@ chrome.runtime.onMessage.addListener((msg) => {
     } else if (msg.type === 'PEER_UPDATE') {
         updatePeerList(msg.peers);
         if (msg.peers) detectPeerChanges(msg.peers);
+    } else if (msg.type === 'CONTROL_MODE') {
+        const inRoom = elements.sectionActive && elements.sectionActive.style.display === 'block';
+        updateHostControlUI(msg.controlMode, msg.amHost, inRoom);
     } else if (msg.type === 'CONNECTION_STATUS') {
         if (msg.status === 'connected' || msg.status === 'disconnected') {
             if (joinBtnTimeout) { clearTimeout(joinBtnTimeout); joinBtnTimeout = null; }
@@ -1673,6 +1710,7 @@ chrome.runtime.onMessage.addListener((msg) => {
                 if (res.peers) updatePeerList(res.peers);
                 if (res.lastActionState) updateLastActionUI(res.lastActionState, res.peers);
                 updatePingDisplay(res.ping);
+                updateHostControlUI(res.controlMode, res.amHost, true);
             });
         }
         if (msg.status === 'disconnected') {
