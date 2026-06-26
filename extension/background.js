@@ -1,4 +1,4 @@
-import { EVENTS, PROTOCOL_VERSION, OFFICIAL_SERVER_URL, OFFICIAL_SERVER_TOKEN, EPISODE_LOBBY_TIMEOUT, FORCE_SYNC_TIMEOUT } from './shared/constants.js';
+import { EVENTS, CONTROL_MODES, PROTOCOL_VERSION, OFFICIAL_SERVER_URL, OFFICIAL_SERVER_TOKEN, EPISODE_LOBBY_TIMEOUT, FORCE_SYNC_TIMEOUT } from './shared/constants.js';
 import { generateUsername } from './shared/names.js';
 import { loadLocale, getMessage, getSystemLanguage } from './i18n.js';
 import { sameEpisode } from './episode-utils.js';
@@ -70,6 +70,29 @@ let isNamespaceJoined = false;
 let lastActionState = { action: null, senderId: null, timestamp: 0, acks: [] };
 let localSeq = 0;                         // Monotonically increasing command sequence for this peer
 const lastSeqBySender = {};               // senderId → last received seq (stale command guard)
+
+// --- Host Control Mode ---
+let controlMode = CONTROL_MODES.EVERYONE;  // 'everyone' | 'host-only'
+let hostPeerId = null;                     // peerId of the room host (creator / fallback)
+function amHost() { return !!peerId && hostPeerId === peerId; }
+// Room-moving actions a guest may not initiate while in host-only mode.
+const HOST_ONLY_GATED_ACTIONS = [
+    EVENTS.PLAY, EVENTS.PAUSE, EVENTS.SEEK,
+    EVENTS.FORCE_SYNC_PREPARE, EVENTS.FORCE_SYNC_EXECUTE,
+    EVENTS.EPISODE_LOBBY, EVENTS.EPISODE_LOBBY_CANCEL
+];
+// Best-effort estimate of where the room (host) is right now, for guest snap-back.
+// Extrapolates from the host peer's last known state (±~1s). Used by content.js.
+function getHostSyncTarget() {
+    if (!currentRoom || !Array.isArray(currentRoom.peers)) return null;
+    const host = currentRoom.peers.find(p => (typeof p === 'object' ? p.peerId : p) === hostPeerId);
+    if (!host || typeof host !== 'object') return null;
+    let targetTime = typeof host.currentTime === 'number' ? host.currentTime : null;
+    if (targetTime !== null && host.playbackState === 'playing' && host.lastHeartbeat) {
+        targetTime += Math.max(0, (Date.now() - host.lastHeartbeat) / 1000);
+    }
+    return { playbackState: host.playbackState || null, targetTime };
+}
 const activePorts = new Set();            // New: track active content ports for keep-alive
 let expectedAcksCount = 0;                // Snapshot of peerCount when initiating Force Sync
 
@@ -123,7 +146,12 @@ function ensureState() {
                 // New entries (added during boot) must stay at the top (index 0)
                 if (data.logs) logs = [...logs, ...data.logs].slice(0, 200);
                 if (data.history) history = [...history, ...data.history].slice(0, 20);
-                if (data.currentRoom) currentRoom = data.currentRoom;
+                if (data.currentRoom) {
+                    currentRoom = data.currentRoom;
+                    // Host Control Mode: restore role/mode from persisted room.
+                    controlMode = currentRoom.controlMode || CONTROL_MODES.EVERYONE;
+                    hostPeerId = currentRoom.hostPeerId || null;
+                }
                 if (data.lastActionState) lastActionState = data.lastActionState;
                 
                 if (data.eventQueue) eventQueue = [...eventQueue, ...data.eventQueue].slice(0, 50);
@@ -435,6 +463,8 @@ async function leaveRoomAfterIdleGrace(reason) {
     emit(EVENTS.LEAVE_ROOM, { peerId });
     forceDisconnect();
     currentRoom = null;
+    controlMode = CONTROL_MODES.EVERYONE;
+    hostPeerId = null;
     currentTabId = null;
     currentTabTitle = null;
     roomIdleSince = null;
@@ -637,6 +667,17 @@ async function connect() {
     }
 }
 
+
+function broadcastControlMode() {
+    // Notify popup (role badge / host toggle) and the active content tab
+    // (so it can enable/disable the host-only guest gate).
+    const payload = { type: 'CONTROL_MODE', controlMode, hostPeerId, amHost: amHost() };
+    chrome.runtime.sendMessage(payload).catch(() => {});
+    if (currentTabId) {
+        const tabId = parseInt(currentTabId);
+        if (!isNaN(tabId)) chrome.tabs.sendMessage(tabId, payload).catch(() => {});
+    }
+}
 
 function broadcastConnectionStatus(status) {
     // No room and no intent to connect → this isn't a failure, it's the normal
@@ -871,9 +912,22 @@ function handleServerEvent(event, data) {
         addLog(`Ignored server event ${event} due to empty payload`, 'warn');
         return;
     }
+    // Host Control Mode (receiver-side backstop): in host-only mode, ignore
+    // room-moving events from any non-host peer. The server already drops these,
+    // so this covers old/buggy/modified clients that slipped through.
+    if (controlMode === CONTROL_MODES.HOST_ONLY &&
+        HOST_ONLY_GATED_ACTIONS.includes(event) &&
+        data.senderId && data.senderId !== hostPeerId) {
+        addLog(`Ignored ${event} from non-host ${data.senderId} (host-only)`, 'warn');
+        return;
+    }
     switch (event) {
         case EVENTS.ROOM_DATA:
             currentRoom = data;
+            // Host Control Mode: adopt room role/mode on (re)join.
+            controlMode = data.controlMode || CONTROL_MODES.EVERYONE;
+            hostPeerId = data.hostPeerId || null;
+            broadcastControlMode();
             markRoomPotentiallyIdle();
             if (currentRoom && Array.isArray(currentRoom.peers)) {
                 currentRoom.peers = currentRoom.peers.map(p => typeof p === 'object' ? createPeerData(p) : { peerId: p, username: null, tabTitle: null, mediaTitle: null, playbackState: null, currentTime: null, volume: null, muted: null, lastHeartbeat: Date.now() });
@@ -930,6 +984,18 @@ function handleServerEvent(event, data) {
                     chrome.tabs.sendMessage(tab.id, joinStatusMsg).catch(() => {});
                 });
             });
+            break;
+        case EVENTS.CONTROL_MODE:
+            // Host Control Mode changed (toggle or host-leave fallback).
+            controlMode = data.controlMode || CONTROL_MODES.EVERYONE;
+            hostPeerId = data.hostPeerId || null;
+            if (currentRoom) {
+                currentRoom.controlMode = controlMode;
+                currentRoom.hostPeerId = hostPeerId;
+                if (storageInitialized) chrome.storage.session.set({ currentRoom });
+            }
+            addLog(`Control mode: ${controlMode}${amHost() ? ' (you are host)' : ''}`, 'info');
+            broadcastControlMode();
             break;
         case EVENTS.ROOM_LIST:
             chrome.runtime.sendMessage({ type: 'ROOM_LIST', rooms: data.rooms }).catch(() => {});
@@ -1485,6 +1551,8 @@ function leaveOldRoomIfSwitching(newRoomId) {
         addLog(`Switching rooms: leaving ${currentRoom.roomId} to join ${newRoomId}`, 'info');
         forceDisconnect();
         currentRoom = null;
+        controlMode = CONTROL_MODES.EVERYONE;
+        hostPeerId = null;
         if (storageInitialized) chrome.storage.session.set({ currentRoom: null });
         chrome.runtime.sendMessage({ type: 'PEER_UPDATE', peers: [] }).catch(() => {});
 
@@ -1596,8 +1664,25 @@ async function handleAsyncMessage(message, sender, sendResponse) {
             version: chrome.runtime.getManifest().version,
             protocolVersion: PROTOCOL_VERSION,
             roomPassword: currentRoom ? currentRoom.password : null,
-            ping: currentPingMs
+            ping: currentPingMs,
+            controlMode,
+            hostPeerId,
+            amHost: amHost()
         });
+    } else if (message.type === 'SET_CONTROL_MODE') {
+        // Popup (host) toggles the room control mode. Server validates host authority
+        // and broadcasts CONTROL_MODE back, which updates our local state + UI.
+        const mode = message.controlMode;
+        if (mode !== CONTROL_MODES.EVERYONE && mode !== CONTROL_MODES.HOST_ONLY) {
+            sendResponse({ status: 'invalid' });
+            return;
+        }
+        if (!amHost()) {
+            sendResponse({ status: 'not_host' });
+            return;
+        }
+        emit(EVENTS.SET_CONTROL_MODE, { controlMode: mode });
+        sendResponse({ status: 'ok' });
     } else if (message.type === 'LEAVE_ROOM') {
         connectIntent = false;
         reconnectFailed = false;
@@ -1606,6 +1691,8 @@ async function handleAsyncMessage(message, sender, sendResponse) {
         resetAudioProcessingInTab(currentTabId);
         emit(EVENTS.LEAVE_ROOM, { peerId });
         currentRoom = null;
+        controlMode = CONTROL_MODES.EVERYONE;
+        hostPeerId = null;
         currentTabId = null;
         currentTabTitle = null;
         roomIdleSince = null;
@@ -1726,6 +1813,23 @@ async function handleAsyncMessage(message, sender, sendResponse) {
         });
     } else if (message.type === 'CONTENT_EVENT') {
         const processEvent = () => {
+            // Host Control Mode (sender-side): a guest in host-only mode must not
+            // drive the room. Don't broadcast; hand the action back to content.js so
+            // it can snap the local player back (and, in step 4, offer desync).
+            if (controlMode === CONTROL_MODES.HOST_ONLY && !amHost() &&
+                HOST_ONLY_GATED_ACTIONS.includes(message.action)) {
+                addLog(`Host-only: blocked local ${message.action} (you are a guest)`, 'warn');
+                if (sender.tab && sender.tab.id) {
+                    chrome.tabs.sendMessage(sender.tab.id, {
+                        type: 'HOST_BLOCKED',
+                        action: message.action,
+                        target: getHostSyncTarget()
+                    }).catch(() => {});
+                }
+                sendResponse({ status: 'blocked_host_only' });
+                return;
+            }
+
             // Live solo check — recomputed from the current peer list on every
             // event (the list is updated synchronously on PEER_STATUS join/leave),
             // never cached, so the instant a peer joins we resume sending.
