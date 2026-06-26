@@ -175,7 +175,12 @@
 
     // Entry point: background told us our local action was blocked in host-only.
     function hcmHandleBlocked(action, target) {
-        if (!hcmIsGuestGated()) return;
+        // HOST_BLOCKED is only ever sent to a gated guest (background verifies
+        // host-only + !host before sending), so it's authoritative. Adopt the
+        // role/mode from it in case our CONTROL_MODE broadcast hasn't landed yet
+        // (join race, EC-5) — otherwise we'd miss the dialog/snap-back.
+        hcmControlMode = 'host-only';
+        hcmAmHost = false;
         if (Date.now() < hcmSnapBackCooldownUntil) return; // EC-4 loop guard
         if (hcmDesynced) return; // already solo, nothing to do
 

@@ -39,13 +39,16 @@ Deferred by decision (see §8): host grace period on disconnect (EC-10).
 
 ### Pre-test self-audit (open, watch during device testing)
 - **EC-4/EC-1 snap-back thrash:** for *involuntary* events we still actively seek+play,
-  which can fight a buffering player for the duration of the stall. Likely fix: on
-  involuntary, don't re-play — let catch-up re-sync — or use an exponential cooldown.
-  Decide after watching it on Netflix/YouTube.
-- **Control-mode race at join:** a `HOST_BLOCKED` arriving before content.js learns the
-  mode is ignored (`hcmIsGuestGated()` false). Fix: trust `HOST_BLOCKED` as
-  authoritative (background only sends it to gated guests) instead of re-checking local
-  mode. Small change, deferred pending test.
+  which can fight a buffering player for the duration of the stall. NOTE: "just let
+  catch-up re-sync" is NOT a valid fix — sync is event-driven, there is no continuous
+  catch-up loop, so skipping the snap-back risks leaving the guest stuck paused/behind
+  until the host next acts. Correct fix is a **buffer-aware deferred snap-back**: when
+  involuntary + buffering, wait for readyState>=3 (à la pollSeekReady) then seek+play
+  once — avoids thrash AND guarantees re-sync. Build after device testing reveals which
+  players fire pause() vs only 'waiting'.
+- ~~**Control-mode race at join:**~~ FIXED — `hcmHandleBlocked` now treats `HOST_BLOCKED`
+  as authoritative (adopts host-only/guest role) instead of re-checking local mode,
+  since background only sends it to gated guests.
 - **Dialog/badge text is English-only** — content.js has no i18n loader; the in-page
   strings aren't localized yet. Follow-up.
 
