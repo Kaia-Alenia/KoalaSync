@@ -1705,8 +1705,11 @@ async function handleAsyncMessage(message, sender, sendResponse) {
         emit(EVENTS.SET_CONTROL_MODE, { controlMode: mode });
         sendResponse({ status: 'ok' });
     } else if (message.type === 'GET_CONTROL_MODE') {
-        // content.js asks for current mode/role (e.g. injected after ROOM_DATA).
-        sendResponse({ controlMode, hostPeerId, amHost: amHost() });
+        // content.js asks for current mode/role on (re)injection. Include the
+        // persisted desync state so a page reload re-adopts it — otherwise a fresh
+        // content script would start synced while background keeps relaying us as
+        // "Solo" to the host (stale-badge split-brain).
+        sendResponse({ controlMode, hostPeerId, amHost: amHost(), desynced: hcmDesynced });
     } else if (message.type === 'REQUEST_HOST_SYNC') {
         // content.js resync: hand back the host's extrapolated current position.
         sendResponse({ target: getHostSyncTarget() });

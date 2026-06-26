@@ -1435,6 +1435,13 @@
         if (chrome.runtime.lastError || !res) return;
         hcmControlMode = res.controlMode || 'everyone';
         hcmAmHost = !!res.amHost;
+        hcmHostPeerId = res.hostPeerId || null;
+        // Re-adopt persisted desync after a page reload so we don't start synced
+        // while background still relays us as "Solo" to the host (split-brain).
+        if (res.desynced && !hcmDesynced) {
+            hcmDesynced = true;
+            hcmShowBadge();
+        }
     });
 
 })();
