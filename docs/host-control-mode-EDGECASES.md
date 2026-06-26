@@ -22,8 +22,32 @@ reliability and fight-loops (EC-4), and the desync/resync flow across players. T
 intent classifier (EC-9) and snap-back cooldown are first-pass heuristics tuned by
 reading the code, not yet by watching them behave on each site.
 
-Deferred by decision (see §8): host grace period on disconnect (EC-10), live-DVR
-detection beyond `duration === Infinity` (EC-15).
+Deferred by decision (see §8): host grace period on disconnect (EC-10).
+
+### Pre-test self-audit (fixed)
+- **Popup remote buttons froze for guests** — in host-only a guest's Play/Pause/SYNC
+  click was gated server-side but the button stuck on "Playing"/disabled with no
+  feedback. Now the remote controls are locked (disabled + tooltip) for guests, with
+  backstop guards in the handlers. (popup.js)
+- **Desync dialog could break under strict CSP** — it used `innerHTML` with inline
+  `style=""` attributes, which Netflix/YouTube/Disney+ strip via `style-src`. Rebuilt
+  with the DOM API (CSSOM `.style` is CSP-safe) inside a **Shadow DOM** so page CSS
+  can't restyle/hide it. (content.js)
+- **Live-DVR not detected (EC-15)** — `duration === Infinity` misses Twitch/YouTube
+  live-DVR (finite, sliding duration). Added a `seekable.start(0) > 1` sliding-window
+  heuristic in `hcmIsLive()`. (content.js)
+
+### Pre-test self-audit (open, watch during device testing)
+- **EC-4/EC-1 snap-back thrash:** for *involuntary* events we still actively seek+play,
+  which can fight a buffering player for the duration of the stall. Likely fix: on
+  involuntary, don't re-play — let catch-up re-sync — or use an exponential cooldown.
+  Decide after watching it on Netflix/YouTube.
+- **Control-mode race at join:** a `HOST_BLOCKED` arriving before content.js learns the
+  mode is ignored (`hcmIsGuestGated()` false). Fix: trust `HOST_BLOCKED` as
+  authoritative (background only sends it to gated guests) instead of re-checking local
+  mode. Small change, deferred pending test.
+- **Dialog/badge text is English-only** — content.js has no i18n loader; the in-page
+  strings aren't localized yet. Follow-up.
 
 ---
 

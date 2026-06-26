@@ -310,10 +310,18 @@ function toggleUIState(inRoom) {
 }
 
 // --- Host Control Mode UI ---
+// True when we're a guest in a host-only room → remote-control buttons are locked.
+let hcmGuestLocked = false;
+
 function updateHostControlUI(controlMode, amHost, inRoom) {
     const card = elements.hostControlCard;
     if (!card) return;
-    if (!inRoom) { card.style.display = 'none'; return; }
+    if (!inRoom) {
+        card.style.display = 'none';
+        hcmGuestLocked = false;
+        setRemoteControlsLocked(false);
+        return;
+    }
     card.style.display = 'block';
     const hostOnly = controlMode === 'host-only';
     if (elements.hostRoleBadge) {
@@ -323,6 +331,21 @@ function updateHostControlUI(controlMode, amHost, inRoom) {
     if (elements.hostControlToggleRow) elements.hostControlToggleRow.style.display = amHost ? 'flex' : 'none';
     if (elements.hostControlToggle) elements.hostControlToggle.checked = hostOnly;
     if (elements.hostControlGuestNote) elements.hostControlGuestNote.style.display = (!amHost && hostOnly) ? 'block' : 'none';
+
+    // A guest in host-only mode can't drive the room → lock the remote controls so
+    // clicks don't silently get gated (and leave the button stuck).
+    hcmGuestLocked = (!amHost && hostOnly);
+    setRemoteControlsLocked(hcmGuestLocked);
+}
+
+function setRemoteControlsLocked(locked) {
+    [elements.playBtn, elements.pauseBtn, elements.forceSyncBtn].forEach(btn => {
+        if (!btn) return;
+        btn.disabled = locked;
+        btn.style.opacity = locked ? '0.5' : '';
+        btn.style.cursor = locked ? 'not-allowed' : '';
+        btn.title = locked ? (getMessage('NOTICE_HOST_CONTROLS') || 'The host controls playback for everyone.') : '';
+    });
 }
 
 if (elements.hostControlToggle) {
@@ -1488,6 +1511,7 @@ elements.forceSyncBtn.addEventListener('click', async () => {
 });
 
 elements.playBtn.addEventListener('click', () => {
+    if (hcmGuestLocked) return; // guest in host-only room — backstop
     if (!elements.targetTab.value) {
         showToast(getMessage('ERR_SELECT_VIDEO'), 'warning');
         return;
@@ -1506,7 +1530,7 @@ elements.playBtn.addEventListener('click', () => {
     });
     // Safety reset: restore button after 2.5s in case no peers respond
     setTimeout(() => {
-        if (elements.playBtn.disabled) {
+        if (elements.playBtn.disabled && !hcmGuestLocked) {
             elements.playBtn.textContent = getMessage('BTN_PLAY');
             elements.playBtn.disabled = false;
         }
@@ -1514,6 +1538,7 @@ elements.playBtn.addEventListener('click', () => {
 });
 
 elements.pauseBtn.addEventListener('click', () => {
+    if (hcmGuestLocked) return; // guest in host-only room — backstop
     if (!elements.targetTab.value) {
         showToast(getMessage('ERR_SELECT_VIDEO'), 'warning');
         return;
@@ -1532,7 +1557,7 @@ elements.pauseBtn.addEventListener('click', () => {
     });
     // Safety reset: restore button after 2.5s in case no peers respond
     setTimeout(() => {
-        if (elements.pauseBtn.disabled) {
+        if (elements.pauseBtn.disabled && !hcmGuestLocked) {
             elements.pauseBtn.textContent = getMessage('BTN_PAUSE');
             elements.pauseBtn.disabled = false;
         }

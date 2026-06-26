@@ -134,13 +134,25 @@
     function hcmClassifyIntent() {
         const video = findVideo();
         if (!video) return 'involuntary';
-        if (video.duration === Infinity) return 'live';        // EC-15: degrade, don't gate
+        if (hcmIsLive(video)) return 'live';                   // EC-15: degrade, don't gate
         if (video.readyState < 3) return 'involuntary';        // buffering / not enough data
         if (video.seeking) return 'involuntary';
         if (Date.now() < hcmBufferingUntil) return 'involuntary';
         if (Date.now() < visibilityGraceUntil) return 'involuntary';
         if (Date.now() - hcmLastUserGestureAt > HCM_USER_GESTURE_MS) return 'involuntary';
         return 'deliberate';
+    }
+
+    // Live detection (EC-15 + DVR). Pure live reports duration Infinity/NaN. Live-DVR
+    // (Twitch/YouTube-live with rewind) reports a *finite, sliding* duration — its
+    // seekable window doesn't start at 0, which we use as the DVR signal.
+    function hcmIsLive(video) {
+        if (!Number.isFinite(video.duration)) return true;
+        try {
+            const s = video.seekable;
+            if (s && s.length > 0 && s.start(0) > 1) return true; // sliding DVR window
+        } catch (_e) { /* seekable may throw if empty */ }
+        return false;
     }
 
     // Snap the local player back to the host's current position/state.
@@ -178,37 +190,49 @@
         hcmShowDesyncDialog(action, target);
     }
 
-    // --- Minimal in-page UI (dialog + persistent desync badge) ---
-    const HCM_UI_ID = 'koalasync-hcm-dialog';
-    const HCM_BADGE_ID = 'koalasync-hcm-badge';
+    // --- In-page UI (dialog + persistent desync badge) ---
+    // Built with the DOM API (CSSOM .style is CSP-safe; inline style="" in innerHTML
+    // is stripped by strict style-src on Netflix/YouTube/Disney+). Hosted in a
+    // Shadow DOM so the page's CSS can't restyle or hide our controls.
+    let hcmDialogHost = null;  // shadow host element for the dialog
+    let hcmBadgeHost = null;   // shadow host element for the persistent badge
+
+    function hcmEl(tag, css, text) {
+        const el = document.createElement(tag);
+        if (css) el.style.cssText = css;        // CSSOM assignment — not gated by CSP
+        if (text != null) el.textContent = text;
+        return el;
+    }
 
     function hcmRemoveDialog() {
-        const el = document.getElementById(HCM_UI_ID);
-        if (el) el.remove();
+        if (hcmDialogHost) { hcmDialogHost.remove(); hcmDialogHost = null; }
     }
 
     function hcmShowDesyncDialog(action, target) {
         if (!document.body) { hcmSnapBackToHost(target); return; }
         hcmRemoveDialog();
-        const wrap = document.createElement('div');
-        wrap.id = HCM_UI_ID;
+        const host = hcmEl('div', 'all:initial');
+        const root = host.attachShadow({ mode: 'open' });
+
+        const wrap = hcmEl('div', 'position:fixed;z-index:2147483647;left:50%;bottom:32px;transform:translateX(-50%);background:#1f2937;color:#f9fafb;font:14px/1.4 system-ui,sans-serif;padding:16px 18px;border-radius:12px;box-shadow:0 8px 30px rgba(0,0,0,.45);max-width:360px;border:1px solid #374151');
         wrap.setAttribute('role', 'dialog');
-        wrap.style.cssText = 'position:fixed;z-index:2147483647;left:50%;bottom:32px;transform:translateX(-50%);background:#1f2937;color:#f9fafb;font:14px/1.4 system-ui,sans-serif;padding:16px 18px;border-radius:12px;box-shadow:0 8px 30px rgba(0,0,0,.45);max-width:360px;border:1px solid #374151';
         const verb = action === EVENTS.SEEK ? 'jumped' : 'paused';
-        wrap.innerHTML =
-            '<div style="font-weight:600;margin-bottom:6px">KoalaSync · Host controls this room</div>' +
-            `<div style="margin-bottom:12px;color:#d1d5db">You ${verb} your player. Only the host can control the group. Keep watching together, or watch on your own?</div>` +
-            '<div style="display:flex;gap:8px;justify-content:flex-end">' +
-            `<button id="${HCM_UI_ID}-solo" style="background:#374151;color:#f9fafb;border:0;padding:8px 12px;border-radius:8px;cursor:pointer">Watch on my own</button>` +
-            `<button id="${HCM_UI_ID}-stay" style="background:#10b981;color:#062a20;border:0;padding:8px 12px;border-radius:8px;cursor:pointer;font-weight:600">Stay in sync</button>` +
-            '</div>';
-        document.body.appendChild(wrap);
+        const title = hcmEl('div', 'font-weight:600;margin-bottom:6px', 'KoalaSync · Host controls this room');
+        const body = hcmEl('div', 'margin-bottom:12px;color:#d1d5db', `You ${verb} your player. Only the host can control the group. Keep watching together, or watch on your own?`);
+        const btnRow = hcmEl('div', 'display:flex;gap:8px;justify-content:flex-end');
+        const soloBtn = hcmEl('button', 'background:#374151;color:#f9fafb;border:0;padding:8px 12px;border-radius:8px;cursor:pointer', 'Watch on my own');
+        const stayBtn = hcmEl('button', 'background:#10b981;color:#062a20;border:0;padding:8px 12px;border-radius:8px;cursor:pointer;font-weight:600', 'Stay in sync');
+        btnRow.append(soloBtn, stayBtn);
+        wrap.append(title, body, btnRow);
+        root.appendChild(wrap);
+        document.body.appendChild(host);
+        hcmDialogHost = host;
 
         let settled = false;
         const stay = () => { if (settled) return; settled = true; hcmRemoveDialog(); hcmSnapBackToHost(target); };
         const solo = () => { if (settled) return; settled = true; hcmRemoveDialog(); hcmEnterDesync(); };
-        wrap.querySelector(`#${HCM_UI_ID}-stay`).addEventListener('click', stay);
-        wrap.querySelector(`#${HCM_UI_ID}-solo`).addEventListener('click', solo);
+        stayBtn.addEventListener('click', stay);
+        soloBtn.addEventListener('click', solo);
         // EC-18: if the user ignores the prompt, default to staying in sync.
         setTimeout(() => { if (!settled) stay(); }, 8000);
     }
@@ -231,18 +255,19 @@
     }
 
     function hcmShowBadge() {
-        if (document.getElementById(HCM_BADGE_ID) || !document.body) return;
-        const b = document.createElement('div');
-        b.id = HCM_BADGE_ID;
-        b.style.cssText = 'position:fixed;z-index:2147483646;right:16px;bottom:16px;background:#b45309;color:#fff;font:13px/1.3 system-ui,sans-serif;padding:8px 12px;border-radius:10px;box-shadow:0 6px 20px rgba(0,0,0,.4);cursor:pointer;display:flex;align-items:center;gap:8px';
-        b.innerHTML = '<span>● Watching on your own</span><span style="text-decoration:underline">Resync</span>';
+        if (hcmBadgeHost || !document.body) return;
+        const host = hcmEl('div', 'all:initial');
+        const root = host.attachShadow({ mode: 'open' });
+        const b = hcmEl('div', 'position:fixed;z-index:2147483646;right:16px;bottom:16px;background:#b45309;color:#fff;font:13px/1.3 system-ui,sans-serif;padding:8px 12px;border-radius:10px;box-shadow:0 6px 20px rgba(0,0,0,.4);cursor:pointer;display:flex;align-items:center;gap:8px');
+        b.append(hcmEl('span', null, '● Watching on your own'), hcmEl('span', 'text-decoration:underline', 'Resync'));
         b.addEventListener('click', hcmExitDesync);
-        document.body.appendChild(b);
+        root.appendChild(b);
+        document.body.appendChild(host);
+        hcmBadgeHost = host;
     }
 
     function hcmRemoveBadge() {
-        const el = document.getElementById(HCM_BADGE_ID);
-        if (el) el.remove();
+        if (hcmBadgeHost) { hcmBadgeHost.remove(); hcmBadgeHost = null; }
     }
 
     function hcmReset() {
