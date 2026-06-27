@@ -261,7 +261,12 @@
             // Buffering/ads/throttle — silently re-sync, no dialog spam.
             const video = findVideo();
             if (video && video.readyState >= 3 && !video.seeking) {
-                hcmSnapBackToHost(target);        // ready now → snap immediately
+                // Ready now → snap immediately. Use the captured target if it's
+                // usable, otherwise re-query+retry (host state may not be known yet)
+                // so we never leave the guest silently stuck (consistent with the
+                // deferred and "Stay in sync" paths).
+                if (target && Number.isFinite(target.targetTime)) hcmSnapBackToHost(target);
+                else hcmRequestHostSyncWithRetry();
             } else {
                 hcmDeferredSnapBack();             // buffering → wait for ready, then snap once (#3)
             }
