@@ -24,6 +24,16 @@ reading the code, not yet by watching them behave on each site.
 
 Deferred by decision (see §8): host grace period on disconnect (EC-10).
 
+### Capability detection (forward-compat hook)
+The relay advertises `capabilities: ['host-control']` in `ROOM_DATA`
+(`SERVER_CAPABILITIES` in server, `CAPABILITIES` in shared/constants). The client
+enables host-control UI/behavior only when the flag is present, so the feature
+degrades cleanly on an older relay (absent → off) and old clients ignore the
+field. This is the extensible hook for the planned **co-host** feature (owner
+promotes guests to additional controllers): it will add a `'co-host'` capability
++ events without a protocol bump or breaking older relays/clients. Add new flags
+to `CAPABILITIES` / `SERVER_CAPABILITIES` as features land.
+
 ### Pre-test self-audit (fixed)
 - **Popup remote buttons froze for guests** — in host-only a guest's Play/Pause/SYNC
   click was gated server-side but the button stuck on "Playing"/disabled with no

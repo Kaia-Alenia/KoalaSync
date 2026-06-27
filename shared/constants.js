@@ -69,6 +69,16 @@ export const CONTROL_MODES = {
     HOST_ONLY: 'host-only'  // only the host drives the room
 };
 
+// Server feature capabilities, advertised to clients in ROOM_DATA. Lets a client
+// detect what the relay actually supports instead of inferring it from the
+// presence of a data field — so new server features degrade cleanly on older
+// relays (unknown/absent list → feature treated as unavailable) and old clients
+// simply ignore the field. Add a flag here as each server-gated feature lands.
+export const CAPABILITIES = {
+    HOST_CONTROL: 'host-control'
+    // Future: CO_HOST: 'co-host'  // owner promotes guests to additional controllers
+};
+
 export const HEARTBEAT_INTERVAL = 15000; // 15s
 export const FORCE_SYNC_TIMEOUT = 8500; // 8.5s timeout for force sync ACKs (must be > content.js poll timeout of 8s)
 export const EPISODE_LOBBY_TIMEOUT = 60000; // 60s timeout for episode lobby

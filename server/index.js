@@ -4,7 +4,7 @@ import { fileURLToPath } from 'url';
 import { Server } from 'socket.io';
 import crypto from 'crypto';
 import dotenv from 'dotenv';
-import { EVENTS, OFFICIAL_SERVER_TOKEN, PROTOCOL_VERSION, CONTROL_MODES } from '../shared/constants.js';
+import { EVENTS, OFFICIAL_SERVER_TOKEN, PROTOCOL_VERSION, CONTROL_MODES, CAPABILITIES } from '../shared/constants.js';
 import {
     buildHealthPayload,
     checkCooldown,
@@ -160,6 +160,11 @@ const HOST_ONLY_GATED_EVENTS = new Set([
     EVENTS.EPISODE_LOBBY,
     EVENTS.EPISODE_LOBBY_CANCEL
 ]);
+
+// Features this relay supports, advertised to clients in ROOM_DATA so they can
+// enable matching UI/behavior only when the server actually backs it. Append a
+// flag here when a new server-gated feature ships (e.g. co-host promotion).
+const SERVER_CAPABILITIES = [CAPABILITIES.HOST_CONTROL];
 
 // M-4: minimum interval between CONTROL_MODE changes per room. Stops a rapidly
 // toggling host from thrashing every guest's UI (locked/unlocked/locked...) and
@@ -454,7 +459,8 @@ io.on('connection', (socket) => {
                 peers: Array.from(room.peers).map(sid => room.peerData.get(sid)),
                 activeLobby: room.activeLobby || null,
                 hostPeerId: room.hostPeerId || null,
-                controlMode: room.controlMode || CONTROL_MODES.EVERYONE
+                controlMode: room.controlMode || CONTROL_MODES.EVERYONE,
+                capabilities: SERVER_CAPABILITIES
             });
             log('ROOM', `Peer ${peerId} joined: ${roomId.substring(0, 3)}***`);
             } finally {

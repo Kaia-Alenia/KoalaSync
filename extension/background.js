@@ -1,4 +1,4 @@
-import { EVENTS, CONTROL_MODES, PROTOCOL_VERSION, OFFICIAL_SERVER_URL, OFFICIAL_SERVER_TOKEN, EPISODE_LOBBY_TIMEOUT, FORCE_SYNC_TIMEOUT } from './shared/constants.js';
+import { EVENTS, CONTROL_MODES, CAPABILITIES, PROTOCOL_VERSION, OFFICIAL_SERVER_URL, OFFICIAL_SERVER_TOKEN, EPISODE_LOBBY_TIMEOUT, FORCE_SYNC_TIMEOUT } from './shared/constants.js';
 import { generateUsername } from './shared/names.js';
 import { loadLocale, getMessage, getSystemLanguage } from './i18n.js';
 import { sameEpisode } from './episode-utils.js';
@@ -74,6 +74,10 @@ const lastSeqBySender = {};               // senderId → last received seq (sta
 // --- Host Control Mode ---
 let controlMode = CONTROL_MODES.EVERYONE;  // 'everyone' | 'host-only'
 let hostPeerId = null;                     // peerId of the room host (creator / fallback)
+// Features the connected relay advertises in ROOM_DATA. Empty against an older
+// relay (no capabilities field) → host-control UI/behavior stays unavailable.
+let serverCapabilities = [];
+function serverSupports(cap) { return Array.isArray(serverCapabilities) && serverCapabilities.includes(cap); }
 // Local peer's desync state (content.js reports it via HCM_DESYNC_STATE). Relayed
 // in heartbeats so the host's popup UI can show "Solo" instead of silently
 // appearing un-ACK'd.
@@ -153,9 +157,10 @@ function ensureState() {
                 if (data.history) history = [...history, ...data.history].slice(0, 20);
                 if (data.currentRoom) {
                     currentRoom = data.currentRoom;
-                    // Host Control Mode: restore role/mode from persisted room.
+                    // Host Control Mode: restore role/mode/capabilities from persisted room.
                     controlMode = currentRoom.controlMode || CONTROL_MODES.EVERYONE;
                     hostPeerId = currentRoom.hostPeerId || null;
+                    serverCapabilities = Array.isArray(currentRoom.capabilities) ? currentRoom.capabilities : [];
                 }
                 if (data.hcmDesynced !== undefined) hcmDesynced = data.hcmDesynced;
                 if (data.lastActionState) lastActionState = data.lastActionState;
@@ -472,6 +477,7 @@ async function leaveRoomAfterIdleGrace(reason) {
     currentRoom = null;
     controlMode = CONTROL_MODES.EVERYONE;
     hostPeerId = null;
+    serverCapabilities = [];
     hcmDesynced = false;
     // Notify content.js/popup BEFORE currentTabId is cleared so they can reset
     // any stale guest-side HCM state (dialog/badge/desync) — H-2.
@@ -695,7 +701,7 @@ function hcmEnforceDesyncInvariant() {
 function broadcastControlMode() {
     // Notify popup (role badge / host toggle) and the active content tab
     // (so it can enable/disable the host-only guest gate).
-    const payload = { type: 'CONTROL_MODE', controlMode, hostPeerId, amHost: amHost() };
+    const payload = { type: 'CONTROL_MODE', controlMode, hostPeerId, amHost: amHost(), hostControlSupported: serverSupports(CAPABILITIES.HOST_CONTROL) };
     chrome.runtime.sendMessage(payload).catch(() => {});
     if (currentTabId) {
         const tabId = parseInt(currentTabId);
@@ -955,6 +961,7 @@ function handleServerEvent(event, data) {
             // Host Control Mode: adopt room role/mode on (re)join.
             controlMode = data.controlMode || CONTROL_MODES.EVERYONE;
             hostPeerId = data.hostPeerId || null;
+            serverCapabilities = Array.isArray(data.capabilities) ? data.capabilities : [];
             hcmEnforceDesyncInvariant();
             broadcastControlMode();
             markRoomPotentiallyIdle();
@@ -1588,6 +1595,7 @@ function leaveOldRoomIfSwitching(newRoomId) {
         currentRoom = null;
         controlMode = CONTROL_MODES.EVERYONE;
         hostPeerId = null;
+        serverCapabilities = [];
         hcmDesynced = false;
         // Notify content.js/popup so they drop any guest-side HCM state from the
         // previous room (badge/dialog/desync) — H-2/H-3.
@@ -1706,7 +1714,8 @@ async function handleAsyncMessage(message, sender, sendResponse) {
             ping: currentPingMs,
             controlMode,
             hostPeerId,
-            amHost: amHost()
+            amHost: amHost(),
+            hostControlSupported: serverSupports(CAPABILITIES.HOST_CONTROL)
         });
     } else if (message.type === 'SET_CONTROL_MODE') {
         // Popup (host) toggles the room control mode. Server validates host authority
@@ -1727,7 +1736,7 @@ async function handleAsyncMessage(message, sender, sendResponse) {
         // persisted desync state so a page reload re-adopts it — otherwise a fresh
         // content script would start synced while background keeps relaying us as
         // "Solo" to the host (stale-badge split-brain).
-        sendResponse({ controlMode, hostPeerId, amHost: amHost(), desynced: hcmDesynced });
+        sendResponse({ controlMode, hostPeerId, amHost: amHost(), desynced: hcmDesynced, hostControlSupported: serverSupports(CAPABILITIES.HOST_CONTROL) });
     } else if (message.type === 'REQUEST_HOST_SYNC') {
         // content.js resync: hand back the host's extrapolated current position.
         sendResponse({ target: getHostSyncTarget() });
@@ -1768,6 +1777,7 @@ async function handleAsyncMessage(message, sender, sendResponse) {
         currentRoom = null;
         controlMode = CONTROL_MODES.EVERYONE;
         hostPeerId = null;
+        serverCapabilities = [];
         hcmDesynced = false;
         // Notify content.js/popup BEFORE currentTabId is cleared so they drop any
         // stale guest-side HCM state (dialog/badge/desync) — H-2/H-3.

@@ -249,7 +249,7 @@ async function init() {
             updatePingDisplay(res.ping);
             updatePeerList(res.peers);
             lastKnownPeers = res.peers || [];
-            updateHostControlUI(res.controlMode, res.amHost, res.hostPeerId, res.status === 'connected');
+            updateHostControlUI(res.controlMode, res.amHost, res.hostControlSupported, res.status === 'connected');
             if (res.lastActionState) updateLastActionUI(res.lastActionState, res.peers);
 
             // If user has a room configured but background is not connected (disconnected or idle),
@@ -313,14 +313,14 @@ function toggleUIState(inRoom) {
 // True when we're a guest in a host-only room → remote-control buttons are locked.
 let hcmGuestLocked = false;
 
-function updateHostControlUI(controlMode, amHost, hostPeerId, inRoom) {
+function updateHostControlUI(controlMode, amHost, hostControlSupported, inRoom) {
     const card = elements.hostControlCard;
     if (!card) return;
     const hostOnly = controlMode === 'host-only';
-    // The server only sends hostPeerId once it supports host control. Against an
-    // older relay it's absent → the feature is unavailable, so hide the card
+    // Explicit capability advertised by the relay in ROOM_DATA. Against an older
+    // relay it's false/absent → the feature is unavailable, so hide the card
     // entirely instead of showing a misleading "Guest".
-    const serverSupportsHostControl = !!hostPeerId;
+    const serverSupportsHostControl = !!hostControlSupported;
     // Only show the card when it's actually meaningful:
     //   - host: always (so they can enable/disable host-only)
     //   - guest: only while host-only is active (explains why they can't control)
@@ -1745,7 +1745,7 @@ chrome.runtime.onMessage.addListener((msg) => {
         if (msg.peers) detectPeerChanges(msg.peers);
     } else if (msg.type === 'CONTROL_MODE') {
         const inRoom = elements.sectionActive && elements.sectionActive.style.display === 'block';
-        updateHostControlUI(msg.controlMode, msg.amHost, msg.hostPeerId, inRoom);
+        updateHostControlUI(msg.controlMode, msg.amHost, msg.hostControlSupported, inRoom);
     } else if (msg.type === 'CONNECTION_STATUS') {
         if (msg.status === 'connected' || msg.status === 'disconnected') {
             if (joinBtnTimeout) { clearTimeout(joinBtnTimeout); joinBtnTimeout = null; }
@@ -1763,7 +1763,7 @@ chrome.runtime.onMessage.addListener((msg) => {
                 if (res.peers) updatePeerList(res.peers);
                 if (res.lastActionState) updateLastActionUI(res.lastActionState, res.peers);
                 updatePingDisplay(res.ping);
-                updateHostControlUI(res.controlMode, res.amHost, res.hostPeerId, true);
+                updateHostControlUI(res.controlMode, res.amHost, res.hostControlSupported, true);
             });
         }
         if (msg.status === 'disconnected') {

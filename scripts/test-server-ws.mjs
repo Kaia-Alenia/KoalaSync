@@ -63,6 +63,16 @@ try {
     close();
     resetConnectionRate();
 
+    // --- Capabilities: ROOM_DATA advertises server features for client detection ---
+    const capClient = await c();
+    s(capClient, 'join_room', { roomId: 'cap-'+Date.now(), peerId: 'capp', protocolVersion: '1.0.0' });
+    const [capEv, capData] = await a(capClient);
+    assert.equal(capEv, 'room_data');
+    assert.ok(Array.isArray(capData.capabilities) && capData.capabilities.includes('host-control'),
+        'ROOM_DATA advertises the host-control capability');
+    close();
+    resetConnectionRate();
+
     // --- Host Control Mode ---
     const hrid = 'host-'+Date.now();
     const h1 = await c(), h2 = await c();          // h1 = host (first joiner), h2 = guest
