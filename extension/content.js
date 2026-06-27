@@ -112,6 +112,7 @@
     let hcmHostPeerId = null;          // last known host peerId (room/host identity)
     let hcmDesynced = false;           // user chose to go solo
     let hcmSnapBackCooldownUntil = 0;  // suppress re-trigger right after a snap-back
+    let hcmDeferredSnapPending = false; // a buffer-aware snap-back is waiting for readiness
     let hcmLastUserGestureAt = 0;      // for deliberate-vs-involuntary classification
     let hcmBufferingUntil = 0;         // set on 'waiting' — buffering grace window
     let hcmDialogTimer = null;         // 8s auto-stay timer — cleared on dialog replace (H-4)
@@ -128,6 +129,7 @@
     const HCM_USER_GESTURE_MS = 1000;
     const HCM_BUFFERING_GRACE_MS = 1500;
     const HCM_SNAP_BACK_COOLDOWN_MS = 1000;
+    const HCM_BUFFER_WAIT_MS = 8000;   // cap on waiting for a buffering player before snapping anyway
 
     // Track genuine user input so we can tell a deliberate pause/seek from a
     // player-/browser-initiated one. Capturing + passive so we never interfere.
@@ -210,6 +212,34 @@
         tryOnce();
     }
 
+    // Buffer-aware snap-back (#3). An involuntary pause/seek often coincides with the
+    // player buffering — and a player can't actually play while it's stalled. Snapping
+    // immediately just fights the buffer (seek → re-buffer → another pause → …), which
+    // looks like stutter. Instead: if the player isn't ready, wait until it can play
+    // (readyState>=3, not seeking), then snap ONCE to the host's *current* position
+    // (re-queried, since the captured target may be stale by the time buffering ends).
+    // Player-agnostic on purpose — we can't enumerate every site, so this must be safe
+    // regardless of whether a given player fires 'pause' or only 'waiting'.
+    function hcmDeferredSnapBack() {
+        if (hcmDeferredSnapPending) return; // already waiting — don't stack polls
+        hcmDeferredSnapPending = true;
+        const deadline = Date.now() + HCM_BUFFER_WAIT_MS;
+        const poll = () => {
+            // Abort if the reason to snap is gone: user went solo, we're no longer a
+            // gated guest, or the video vanished.
+            if (hcmDesynced || !hcmIsGuestGated()) { hcmDeferredSnapPending = false; return; }
+            const video = findVideo();
+            const ready = video && video.readyState >= 3 && !video.seeking;
+            if (ready || Date.now() >= deadline) {
+                hcmDeferredSnapPending = false;
+                hcmRequestHostSyncWithRetry(); // fresh host position + snap once
+                return;
+            }
+            setTimeout(poll, 300);
+        };
+        poll();
+    }
+
     // Entry point: background told us our local action was blocked in host-only.
     function hcmHandleBlocked(action, target) {
         // HOST_BLOCKED is only ever sent to a gated guest (background verifies
@@ -227,9 +257,14 @@
             // cooldown — the deliberate dialog path below must still go through,
             // otherwise a second deliberate pause inside the cooldown window leaves
             // the user stuck paused with no UI (M-3).
-            if (Date.now() < hcmSnapBackCooldownUntil) return;
+            if (Date.now() < hcmSnapBackCooldownUntil || hcmDeferredSnapPending) return;
             // Buffering/ads/throttle — silently re-sync, no dialog spam.
-            hcmSnapBackToHost(target);
+            const video = findVideo();
+            if (video && video.readyState >= 3 && !video.seeking) {
+                hcmSnapBackToHost(target);        // ready now → snap immediately
+            } else {
+                hcmDeferredSnapBack();             // buffering → wait for ready, then snap once (#3)
+            }
             return;
         }
         // Deliberate: offer the choice (Teleparty-style), default = snap back.
@@ -349,6 +384,7 @@
     function hcmReset() {
         const wasDesynced = hcmDesynced;
         hcmDesynced = false;
+        hcmDeferredSnapPending = false;
         hcmRemoveDialog();
         hcmRemoveBadge();
         // If we were desynced, notify background so it stops reporting us as

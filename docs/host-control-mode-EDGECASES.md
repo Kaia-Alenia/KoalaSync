@@ -47,15 +47,14 @@ to `CAPABILITIES` / `SERVER_CAPABILITIES` as features land.
   live-DVR (finite, sliding duration). Added a `seekable.start(0) > 1` sliding-window
   heuristic in `hcmIsLive()`. (content.js)
 
-### Pre-test self-audit (open, watch during device testing)
-- **EC-4/EC-1 snap-back thrash:** for *involuntary* events we still actively seek+play,
-  which can fight a buffering player for the duration of the stall. NOTE: "just let
-  catch-up re-sync" is NOT a valid fix — sync is event-driven, there is no continuous
-  catch-up loop, so skipping the snap-back risks leaving the guest stuck paused/behind
-  until the host next acts. Correct fix is a **buffer-aware deferred snap-back**: when
-  involuntary + buffering, wait for readyState>=3 (à la pollSeekReady) then seek+play
-  once — avoids thrash AND guarantees re-sync. Build after device testing reveals which
-  players fire pause() vs only 'waiting'.
+### Pre-test self-audit
+- ~~**EC-4/EC-1 snap-back thrash:**~~ FIXED — implemented the **buffer-aware deferred
+  snap-back** (`hcmDeferredSnapBack`): on an involuntary event, if the player isn't
+  ready (`readyState<3` or seeking) we wait (poll, 8s cap) until it can play, then snap
+  ONCE to the host's re-queried position instead of repeatedly fighting the buffer.
+  Done defensively/player-agnostically — we can't enumerate every site, so this is safe
+  whether a player fires `pause()` or only `waiting`. Aborts if the user goes solo or is
+  no longer a gated guest; single pending poll (no stacking).
 - ~~**Control-mode race at join:**~~ FIXED — `hcmHandleBlocked` now treats `HOST_BLOCKED`
   as authoritative (adopts host-only/guest role) instead of re-checking local mode,
   since background only sends it to gated guests.
