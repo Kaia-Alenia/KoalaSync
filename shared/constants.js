@@ -35,7 +35,8 @@ export const EVENTS = {
 
     // Host Control Mode
     SET_CONTROL_MODE: "set_control_mode", // Client -> Server: host sets room control mode ('everyone' | 'host-only')
-    CONTROL_MODE: "control_mode",          // Server -> Client: room control mode changed { controlMode, hostPeerId }
+    CONTROL_MODE: "control_mode",          // Server -> Client: control mode/role changed { controlMode, hostPeerId, controllers }
+    SET_PEER_ROLE: "set_peer_role",        // Client -> Server: owner promotes/demotes a peer { peerId, controller }
 
     // Media Control
     PLAY: "play",
@@ -75,8 +76,8 @@ export const CONTROL_MODES = {
 // relays (unknown/absent list → feature treated as unavailable) and old clients
 // simply ignore the field. Add a flag here as each server-gated feature lands.
 export const CAPABILITIES = {
-    HOST_CONTROL: 'host-control'
-    // Future: CO_HOST: 'co-host'  // owner promotes guests to additional controllers
+    HOST_CONTROL: 'host-control',
+    CO_HOST: 'co-host'  // owner promotes guests to additional controllers
 };
 
 export const HEARTBEAT_INTERVAL = 15000; // 15s

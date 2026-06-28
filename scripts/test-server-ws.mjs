@@ -186,6 +186,46 @@ try {
     close();
     resetConnectionRate();
 
+    // --- Co-Host: owner promotes a guest to controller (can drive); demote re-gates ---
+    const crid = 'cohost-'+Date.now();
+    const co1 = await c(), co2 = await c(), co3 = await c(); // owner / to-promote / stays guest
+    await j(co1, crid, 'owner'); await j(co2, crid, 'cohost'); await j(co3, crid, 'guestx');
+    co1._m.length = co2._m.length = co3._m.length = 0;
+    s(co1,'set_control_mode',{controlMode:'host-only'});
+    await w(co1,'control_mode'); await w(co2,'control_mode'); await w(co3,'control_mode');
+    co1._m.length = co2._m.length = co3._m.length = 0;
+    // before promotion the co-host is gated
+    s(co2,'pause',{currentTime:1});
+    let coGatedBefore=false; try { await w(co1,'pause',500); } catch { coGatedBefore=true; }
+    assert.ok(coGatedBefore, 'co-host gated before promotion');
+    // owner promotes co-host → controllers broadcast includes owner + cohost
+    s(co1,'set_peer_role',{peerId:'cohost',controller:true});
+    let promo=null; const pps=Date.now();
+    while(Date.now()-pps<800 && !promo){ for(let i=0;i<co2._m.length;i++){const r=co2._m[i];if(r.startsWith('42')){const[e,dd]=JSON.parse(r.substring(2));if(e==='control_mode'){co2._m.splice(i,1);promo=dd;break;}}} await new Promise(r=>setTimeout(r,30)); }
+    assert.ok(promo && Array.isArray(promo.controllers) && promo.controllers.includes('cohost') && promo.controllers.includes('owner'),
+        'promotion broadcasts controllers (owner + cohost)');
+    co1._m.length = co2._m.length = co3._m.length = 0;
+    // promoted co-host can now drive; a plain guest still cannot
+    s(co2,'pause',{currentTime:2}); await w(co1,'pause');
+    s(co3,'play',{currentTime:3});
+    let plainGuestGated=false; try { await w(co1,'play',500); } catch { plainGuestGated=true; }
+    assert.ok(plainGuestGated, 'plain guest still gated after a co-host is promoted');
+    co1._m.length = co2._m.length = co3._m.length = 0;
+    // a non-owner (the co-host) cannot promote anyone
+    s(co2,'set_peer_role',{peerId:'guestx',controller:true});
+    let nonOwnerBlocked=false; try { await w(co3,'control_mode',500); } catch { nonOwnerBlocked=true; }
+    assert.ok(nonOwnerBlocked, 'non-owner cannot promote (no room broadcast)');
+    co1._m.length = co2._m.length = co3._m.length = 0;
+    // owner demotes the co-host → gated again
+    s(co1,'set_peer_role',{peerId:'cohost',controller:false});
+    await w(co2,'control_mode');
+    co1._m.length = co2._m.length = co3._m.length = 0;
+    s(co2,'seek',{currentTime:4});
+    let coGatedAfter=false; try { await w(co1,'seek',500); } catch { coGatedAfter=true; }
+    assert.ok(coGatedAfter, 'demoted co-host is gated again');
+    close();
+    resetConnectionRate();
+
     // --- Password room ---
     const prid = 'pw-'+Date.now();
     const pw1 = await c(); await j(pw1, prid, 'admin', 's3cret');
