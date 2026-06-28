@@ -249,7 +249,7 @@ async function init() {
             updatePingDisplay(res.ping);
             updatePeerList(res.peers);
             lastKnownPeers = res.peers || [];
-            updateHostControlUI(res.controlMode, res.amHost, res.hostControlSupported, res.status === 'connected');
+            updateHostControlUI({ controlMode: res.controlMode, amHost: res.amHost, amController: res.amController, controllers: res.controllers, hostPeerId: res.hostPeerId, hostControlSupported: res.hostControlSupported, coHostSupported: res.coHostSupported, inRoom: res.status === 'connected' });
             if (res.lastActionState) updateLastActionUI(res.lastActionState, res.peers);
 
             // If user has a room configured but background is not connected (disconnected or idle),
@@ -313,19 +313,37 @@ function toggleUIState(inRoom) {
 // True when we're a guest in a host-only room → remote-control buttons are locked.
 let hcmGuestLocked = false;
 
-function updateHostControlUI(controlMode, amHost, hostControlSupported, inRoom) {
+// Co-Host state mirrored for the peer-list renderer (promote/demote + role badges).
+let hcmAmOwner = false;
+let hcmControllers = [];
+let hcmCoHostSupported = false;
+let hcmOwnerPeerId = null;
+let hcmRoomIsHostOnly = false;
+
+function updateHostControlUI(state) {
+    const s = state || {};
+    const controlMode = s.controlMode;
+    const amHost = !!s.amHost;
+    const amController = !!s.amController;
+    const hostOnly = controlMode === 'host-only';
+
+    // Stash for the peer-list renderer, then force it to re-render with new roles.
+    hcmAmOwner = amHost;
+    hcmControllers = Array.isArray(s.controllers) ? s.controllers : [];
+    hcmCoHostSupported = !!s.coHostSupported;
+    hcmOwnerPeerId = s.hostPeerId || null;
+    hcmRoomIsHostOnly = hostOnly;
+    lastPeersJson = '';
+    if (activePeers) updatePeerList(activePeers);
+
     const card = elements.hostControlCard;
     if (!card) return;
-    const hostOnly = controlMode === 'host-only';
-    // Explicit capability advertised by the relay in ROOM_DATA. Against an older
-    // relay it's false/absent → the feature is unavailable, so hide the card
-    // entirely instead of showing a misleading "Guest".
-    const serverSupportsHostControl = !!hostControlSupported;
-    // Only show the card when it's actually meaningful:
-    //   - host: always (so they can enable/disable host-only)
-    //   - guest: only while host-only is active (explains why they can't control)
-    // A guest in a normal "everyone" room sees nothing — no confusing noise.
-    const show = inRoom && serverSupportsHostControl && (amHost || hostOnly);
+    // Explicit capability advertised by the relay. Against an older relay it's
+    // false/absent → feature unavailable, so hide the card instead of misleading UI.
+    const serverSupportsHostControl = !!s.hostControlSupported;
+    // Show the card only when meaningful: owner always (to manage); a non-controller
+    // guest only while host-only is active. A guest in a normal room sees nothing.
+    const show = s.inRoom && serverSupportsHostControl && (amHost || hostOnly);
     if (!show) {
         card.style.display = 'none';
         hcmGuestLocked = false;
@@ -334,16 +352,18 @@ function updateHostControlUI(controlMode, amHost, hostControlSupported, inRoom) 
     }
     card.style.display = 'block';
     if (elements.hostRoleBadge) {
-        elements.hostRoleBadge.textContent = amHost ? (getMessage('BADGE_HOST') || 'Host') : (getMessage('BADGE_GUEST') || 'Guest');
-        elements.hostRoleBadge.style.background = amHost ? 'var(--accent)' : 'var(--text-muted)';
+        const role = amHost ? (getMessage('BADGE_HOST') || 'Host')
+                   : amController ? (getMessage('BADGE_CONTROLLER') || 'Controller')
+                   : (getMessage('BADGE_GUEST') || 'Guest');
+        elements.hostRoleBadge.textContent = role;
+        elements.hostRoleBadge.style.background = (amHost || amController) ? 'var(--accent)' : 'var(--text-muted)';
     }
     if (elements.hostControlToggleRow) elements.hostControlToggleRow.style.display = amHost ? 'flex' : 'none';
     if (elements.hostControlToggle) elements.hostControlToggle.checked = hostOnly;
-    if (elements.hostControlGuestNote) elements.hostControlGuestNote.style.display = (!amHost && hostOnly) ? 'block' : 'none';
+    if (elements.hostControlGuestNote) elements.hostControlGuestNote.style.display = (!amController && hostOnly) ? 'block' : 'none';
 
-    // A guest in host-only mode can't drive the room → lock the remote controls so
-    // clicks don't silently get gated (and leave the button stuck).
-    hcmGuestLocked = (!amHost && hostOnly);
+    // Only a non-controller is locked out of the remote controls.
+    hcmGuestLocked = (!amController && hostOnly);
     setRemoteControlsLocked(hcmGuestLocked);
 }
 
@@ -674,6 +694,31 @@ function updatePeerList(peers) {
                 solo.textContent = soloText;
                 solo.title = getMessage('TOOLTIP_PEER_DESYNCED') || soloText;
                 header.appendChild(solo);
+            }
+
+            // Co-Host: role badges + the owner's promote/demote control. Shown when the
+            // feature is active and either the room is host-only or we're the owner
+            // (so a guest in a normal room sees no role noise).
+            const showRoles = !!hcmOwnerPeerId && (hcmRoomIsHostOnly || hcmAmOwner);
+            if (showRoles) {
+                const isOwner = pId === hcmOwnerPeerId;
+                const isController = !isOwner && hcmControllers.includes(pId);
+                if (isOwner || isController) {
+                    const roleBadge = document.createElement('span');
+                    roleBadge.style.cssText = 'font-size:10px; color:#fff; background:var(--accent); padding:2px 6px; border-radius:6px; font-weight:600;';
+                    roleBadge.textContent = isOwner ? (getMessage('BADGE_HOST') || 'Host') : (getMessage('BADGE_CONTROLLER') || 'Controller');
+                    header.appendChild(roleBadge);
+                }
+                // Owner can promote/demote any non-owner peer.
+                if (hcmAmOwner && hcmCoHostSupported && !isOwner) {
+                    const btn = document.createElement('button');
+                    btn.style.cssText = 'font-size:10px; padding:2px 8px; border-radius:6px; cursor:pointer; border:1px solid var(--accent); background:transparent; color:var(--accent); white-space:nowrap;';
+                    btn.textContent = isController ? (getMessage('BTN_REVOKE_CONTROL') || 'Revoke') : (getMessage('BTN_GIVE_CONTROL') || 'Give control');
+                    btn.addEventListener('click', () => {
+                        chrome.runtime.sendMessage({ type: 'SET_PEER_ROLE', peerId: pId, controller: !isController }, () => {});
+                    });
+                    header.appendChild(btn);
+                }
             }
 
             peerItem.appendChild(header);
@@ -1743,7 +1788,7 @@ chrome.runtime.onMessage.addListener((msg) => {
         if (msg.peers) detectPeerChanges(msg.peers);
     } else if (msg.type === 'CONTROL_MODE') {
         const inRoom = elements.sectionActive && elements.sectionActive.style.display === 'block';
-        updateHostControlUI(msg.controlMode, msg.amHost, msg.hostControlSupported, inRoom);
+        updateHostControlUI({ controlMode: msg.controlMode, amHost: msg.amHost, amController: msg.amController, controllers: msg.controllers, hostPeerId: msg.hostPeerId, hostControlSupported: msg.hostControlSupported, coHostSupported: msg.coHostSupported, inRoom });
     } else if (msg.type === 'CONNECTION_STATUS') {
         if (msg.status === 'connected' || msg.status === 'disconnected') {
             if (joinBtnTimeout) { clearTimeout(joinBtnTimeout); joinBtnTimeout = null; }
@@ -1761,7 +1806,7 @@ chrome.runtime.onMessage.addListener((msg) => {
                 if (res.peers) updatePeerList(res.peers);
                 if (res.lastActionState) updateLastActionUI(res.lastActionState, res.peers);
                 updatePingDisplay(res.ping);
-                updateHostControlUI(res.controlMode, res.amHost, res.hostControlSupported, true);
+                updateHostControlUI({ controlMode: res.controlMode, amHost: res.amHost, amController: res.amController, controllers: res.controllers, hostPeerId: res.hostPeerId, hostControlSupported: res.hostControlSupported, coHostSupported: res.coHostSupported, inRoom: true });
             });
         }
         if (msg.status === 'disconnected') {
