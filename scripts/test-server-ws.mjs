@@ -73,6 +73,21 @@ try {
     close();
     resetConnectionRate();
 
+    // --- Default 'everyone' mode does NOT gate anyone (host-control OFF = unchanged) ---
+    // Confirms that with host-only off, a non-host guest can still drive every
+    // room-moving event exactly like before the feature existed.
+    const erid = 'every-'+Date.now();
+    const e1 = await c(), e2 = await c();        // e1 = creator/host, e2 = guest
+    await j(e1, erid, 'ehost'); await j(e2, erid, 'eguest'); e1._m.length = e2._m.length = 0;
+    s(e2,'play',{currentTime:1});                 await w(e1,'play');
+    s(e2,'pause',{currentTime:2});                await w(e1,'pause');
+    s(e2,'seek',{currentTime:3});                 await w(e1,'seek');
+    s(e2,'force_sync_prepare',{targetTime:0});    await w(e1,'force_sync_prepare');
+    s(e2,'episode_lobby',{expectedTitle:'S1E1'}); await w(e1,'episode_lobby');
+    // (reaching here without a wait timeout == nothing was gated)
+    close();
+    resetConnectionRate();
+
     // --- Host Control Mode ---
     const hrid = 'host-'+Date.now();
     const h1 = await c(), h2 = await c();          // h1 = host (first joiner), h2 = guest

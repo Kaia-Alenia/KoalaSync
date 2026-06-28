@@ -86,7 +86,7 @@ If you find a way to bypass any of these protections, we want to know about it.
 > Some frequently-reported "issues" are **intentional and out of scope** for our
 > threat model (ephemeral, account-less rooms of invited participants) — e.g. an
 > unauthenticated `peerId` or non-constant-time room-password compare. Before
-> reporting, please read **[`KNOWN_LIMITATIONS.md`](KNOWN_LIMITATIONS.md)**.
+> reporting, please read **[`docs/KNOWN_LIMITATIONS.md`](docs/KNOWN_LIMITATIONS.md)**.
 
 ---
 
