@@ -1744,7 +1744,6 @@ async function handleAsyncMessage(message, sender, sendResponse) {
             serverUrl: currentServerUrl,
             version: chrome.runtime.getManifest().version,
             protocolVersion: PROTOCOL_VERSION,
-            roomPassword: currentRoom ? currentRoom.password : null,
             ping: currentPingMs,
             controlMode,
             hostPeerId,
