@@ -339,7 +339,14 @@ function updateLocalPeerState(targetPeerId, updates) {
 async function getPeerId() {
     const data = await chrome.storage.local.get(['peerId']);
     if (data.peerId) return data.peerId;
-    const newId = self.crypto.randomUUID().substring(0, 8);
+    // 16 hex chars = 64 bits. At a busy relay (25k concurrent peers) the 32-bit
+    // (8-hex) generation would hit ~7% collision probability per snapshot —
+    // and a same-room collision triggers our dedup path, kicking the older
+    // session with a confusing error. 16 hex chars drops the probability to
+    // ~1e-10 even at a million peers, and the server already clamps peerId to
+    // 16 chars (server/index.js JOIN_ROOM sanitizer). Existing persisted 8-char
+    // IDs continue to work — this only affects newly-generated IDs.
+    const newId = self.crypto.randomUUID().replace(/-/g, '').substring(0, 16);
     await chrome.storage.local.set({ peerId: newId });
     return newId;
 }
@@ -1930,7 +1937,8 @@ async function handleAsyncMessage(message, sender, sendResponse) {
             sendResponse({ status: 'ok' });
         });
     } else if (message.type === 'REGENERATE_ID') {
-        const newId = self.crypto.randomUUID().substring(0, 8);
+        // Match getPeerId()'s 16-hex-char generation — see comment there.
+        const newId = self.crypto.randomUUID().replace(/-/g, '').substring(0, 16);
         chrome.storage.local.set({ peerId: newId }, () => {
             peerId = newId;
             addLog(`Identity regenerated: ${newId}`, 'success');
