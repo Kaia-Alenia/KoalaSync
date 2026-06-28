@@ -82,7 +82,10 @@ function serverSupports(cap) { return Array.isArray(serverCapabilities) && serve
 // in heartbeats so the host's popup UI can show "Solo" instead of silently
 // appearing un-ACK'd.
 let hcmDesynced = false;
-function amHost() { return !!peerId && hostPeerId === peerId; }
+// Co-Host: peerIds allowed to drive in host-only (always includes the owner).
+let controllers = [];
+function amHost() { return !!peerId && hostPeerId === peerId; }            // owner: can toggle mode / promote
+function amController() { return amHost() || (!!peerId && controllers.includes(peerId)); } // can drive the room
 // Room-moving actions a guest may not initiate while in host-only mode.
 const HOST_ONLY_GATED_ACTIONS = [
     EVENTS.PLAY, EVENTS.PAUSE, EVENTS.SEEK,
@@ -160,6 +163,7 @@ function ensureState() {
                     // Host Control Mode: restore role/mode/capabilities from persisted room.
                     controlMode = currentRoom.controlMode || CONTROL_MODES.EVERYONE;
                     hostPeerId = currentRoom.hostPeerId || null;
+                    controllers = Array.isArray(currentRoom.controllers) ? currentRoom.controllers : [];
                     serverCapabilities = Array.isArray(currentRoom.capabilities) ? currentRoom.capabilities : [];
                 }
                 if (data.hcmDesynced !== undefined) hcmDesynced = data.hcmDesynced;
@@ -477,6 +481,7 @@ async function leaveRoomAfterIdleGrace(reason) {
     currentRoom = null;
     controlMode = CONTROL_MODES.EVERYONE;
     hostPeerId = null;
+    controllers = [];
     serverCapabilities = [];
     hcmDesynced = false;
     // Notify content.js/popup BEFORE currentTabId is cleared so they can reset
@@ -692,7 +697,7 @@ async function connect() {
 // mislabel us as "Solo" to peers and (in content) keep us ignoring host commands
 // after the reason to is gone. Call after any controlMode/hostPeerId change.
 function hcmEnforceDesyncInvariant() {
-    if (hcmDesynced && !(controlMode === CONTROL_MODES.HOST_ONLY && !amHost())) {
+    if (hcmDesynced && !(controlMode === CONTROL_MODES.HOST_ONLY && !amController())) {
         hcmDesynced = false;
         if (storageInitialized) chrome.storage.session.set({ hcmDesynced: false });
     }
@@ -701,7 +706,7 @@ function hcmEnforceDesyncInvariant() {
 function broadcastControlMode() {
     // Notify popup (role badge / host toggle) and the active content tab
     // (so it can enable/disable the host-only guest gate).
-    const payload = { type: 'CONTROL_MODE', controlMode, hostPeerId, amHost: amHost(), hostControlSupported: serverSupports(CAPABILITIES.HOST_CONTROL) };
+    const payload = { type: 'CONTROL_MODE', controlMode, hostPeerId, controllers, amHost: amHost(), amController: amController(), hostControlSupported: serverSupports(CAPABILITIES.HOST_CONTROL), coHostSupported: serverSupports(CAPABILITIES.CO_HOST) };
     chrome.runtime.sendMessage(payload).catch(() => {});
     if (currentTabId) {
         const tabId = parseInt(currentTabId);
@@ -943,16 +948,16 @@ function handleServerEvent(event, data) {
         return;
     }
     // Host Control Mode (receiver-side backstop): in host-only mode, ignore
-    // room-moving events from any non-host peer. The server already drops these,
+    // room-moving events from any non-controller. The server already drops these,
     // so this covers old/buggy/modified clients that slipped through.
     // Defensive: require a known hostPeerId — if the server ever sends host-only
-    // without a host (state inconsistency), gate-everyone would lock the host
+    // without a host (state inconsistency), gate-everyone would lock the owner
     // out of their own room (L-6).
     if (controlMode === CONTROL_MODES.HOST_ONLY &&
         hostPeerId &&
         HOST_ONLY_GATED_ACTIONS.includes(event) &&
-        data.senderId && data.senderId !== hostPeerId) {
-        addLog(`Ignored ${event} from non-host ${data.senderId} (host-only)`, 'warn');
+        data.senderId && data.senderId !== hostPeerId && !controllers.includes(data.senderId)) {
+        addLog(`Ignored ${event} from non-controller ${data.senderId} (host-only)`, 'warn');
         return;
     }
     switch (event) {
@@ -961,6 +966,7 @@ function handleServerEvent(event, data) {
             // Host Control Mode: adopt room role/mode on (re)join.
             controlMode = data.controlMode || CONTROL_MODES.EVERYONE;
             hostPeerId = data.hostPeerId || null;
+            controllers = Array.isArray(data.controllers) ? data.controllers : [];
             serverCapabilities = Array.isArray(data.capabilities) ? data.capabilities : [];
             hcmEnforceDesyncInvariant();
             broadcastControlMode();
@@ -1025,13 +1031,15 @@ function handleServerEvent(event, data) {
             // Host Control Mode changed (toggle or host-leave fallback).
             controlMode = data.controlMode || CONTROL_MODES.EVERYONE;
             hostPeerId = data.hostPeerId || null;
+            controllers = Array.isArray(data.controllers) ? data.controllers : [];
             hcmEnforceDesyncInvariant();
             if (currentRoom) {
                 currentRoom.controlMode = controlMode;
                 currentRoom.hostPeerId = hostPeerId;
+                currentRoom.controllers = controllers;
                 if (storageInitialized) chrome.storage.session.set({ currentRoom });
             }
-            addLog(`Control mode: ${controlMode}${amHost() ? ' (you are host)' : ''}`, 'info');
+            addLog(`Control mode: ${controlMode}${amHost() ? ' (you are owner)' : (amController() ? ' (you are controller)' : '')}`, 'info');
             broadcastControlMode();
             break;
         case EVENTS.ROOM_LIST:
@@ -1596,6 +1604,7 @@ function leaveOldRoomIfSwitching(newRoomId) {
         currentRoom = null;
         controlMode = CONTROL_MODES.EVERYONE;
         hostPeerId = null;
+        controllers = [];
         serverCapabilities = [];
         hcmDesynced = false;
         // Notify content.js/popup so they drop any guest-side HCM state from the
@@ -1715,8 +1724,11 @@ async function handleAsyncMessage(message, sender, sendResponse) {
             ping: currentPingMs,
             controlMode,
             hostPeerId,
+            controllers,
             amHost: amHost(),
-            hostControlSupported: serverSupports(CAPABILITIES.HOST_CONTROL)
+            amController: amController(),
+            hostControlSupported: serverSupports(CAPABILITIES.HOST_CONTROL),
+            coHostSupported: serverSupports(CAPABILITIES.CO_HOST)
         });
     } else if (message.type === 'SET_CONTROL_MODE') {
         // Popup (host) toggles the room control mode. Server validates host authority
@@ -1732,12 +1744,26 @@ async function handleAsyncMessage(message, sender, sendResponse) {
         }
         emit(EVENTS.SET_CONTROL_MODE, { controlMode: mode });
         sendResponse({ status: 'ok' });
+    } else if (message.type === 'SET_PEER_ROLE') {
+        // Popup (owner) promotes/demotes a peer to/from controller. Server validates
+        // owner authority and broadcasts CONTROL_MODE back, refreshing all clients.
+        const targetPeerId = typeof message.peerId === 'string' ? message.peerId : null;
+        if (!targetPeerId) {
+            sendResponse({ status: 'invalid' });
+            return;
+        }
+        if (!amHost()) {
+            sendResponse({ status: 'not_owner' });
+            return;
+        }
+        emit(EVENTS.SET_PEER_ROLE, { peerId: targetPeerId, controller: message.controller === true });
+        sendResponse({ status: 'ok' });
     } else if (message.type === 'GET_CONTROL_MODE') {
         // content.js asks for current mode/role on (re)injection. Include the
         // persisted desync state so a page reload re-adopts it — otherwise a fresh
         // content script would start synced while background keeps relaying us as
         // "Solo" to the host (stale-badge split-brain).
-        sendResponse({ controlMode, hostPeerId, amHost: amHost(), desynced: hcmDesynced, hostControlSupported: serverSupports(CAPABILITIES.HOST_CONTROL) });
+        sendResponse({ controlMode, hostPeerId, controllers, amHost: amHost(), amController: amController(), desynced: hcmDesynced, hostControlSupported: serverSupports(CAPABILITIES.HOST_CONTROL), coHostSupported: serverSupports(CAPABILITIES.CO_HOST) });
     } else if (message.type === 'REQUEST_HOST_SYNC') {
         // content.js resync: hand back the host's extrapolated current position.
         sendResponse({ target: getHostSyncTarget() });
@@ -1782,6 +1808,7 @@ async function handleAsyncMessage(message, sender, sendResponse) {
         currentRoom = null;
         controlMode = CONTROL_MODES.EVERYONE;
         hostPeerId = null;
+        controllers = [];
         serverCapabilities = [];
         hcmDesynced = false;
         // Notify content.js/popup BEFORE currentTabId is cleared so they drop any
@@ -1908,12 +1935,12 @@ async function handleAsyncMessage(message, sender, sendResponse) {
         });
     } else if (message.type === 'CONTENT_EVENT') {
         const processEvent = () => {
-            // Host Control Mode (sender-side): a guest in host-only mode must not
-            // drive the room. Don't broadcast; hand the action back to content.js so
-            // it can snap the local player back (and, in step 4, offer desync).
+            // Host Control Mode (sender-side): a non-controller in host-only mode must
+            // not drive the room. Don't broadcast; hand the action back to content.js so
+            // it can snap the local player back / offer desync.
             // Defensive: require a known hostPeerId (L-6) — otherwise the actual
-            // host would gate themselves if state ever becomes inconsistent.
-            if (controlMode === CONTROL_MODES.HOST_ONLY && hostPeerId && !amHost() &&
+            // owner would gate themselves if state ever becomes inconsistent.
+            if (controlMode === CONTROL_MODES.HOST_ONLY && hostPeerId && !amController() &&
                 HOST_ONLY_GATED_ACTIONS.includes(message.action)) {
                 addLog(`Host-only: blocked local ${message.action} (you are a guest)`, 'warn');
                 if (sender.tab && sender.tab.id) {

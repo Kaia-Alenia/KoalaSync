@@ -108,7 +108,7 @@
     // we handle the *local* UX: snap back to the host's position, or — if the user
     // really wants to — let them go solo (desync) with a resync escape hatch.
     let hcmControlMode = 'everyone';   // mirror of room control mode
-    let hcmAmHost = false;             // are we the host?
+    let hcmAmController = false;        // are we allowed to drive (owner or co-host)?
     let hcmHostPeerId = null;          // last known host peerId (room/host identity)
     let hcmDesynced = false;           // user chose to go solo
     let hcmSnapBackCooldownUntil = 0;  // suppress re-trigger right after a snap-back
@@ -138,7 +138,7 @@
     document.addEventListener('pointerdown', _hcmGesture, { capture: true, passive: true });
 
     function hcmIsGuestGated() {
-        return hcmControlMode === 'host-only' && !hcmAmHost;
+        return hcmControlMode === 'host-only' && !hcmAmController;
     }
 
     // EC-9 intent classifier: only a *clearly deliberate* guest action triggers the
@@ -247,7 +247,7 @@
         // role/mode from it in case our CONTROL_MODE broadcast hasn't landed yet
         // (join race, EC-5) — otherwise we'd miss the dialog/snap-back.
         hcmControlMode = 'host-only';
-        hcmAmHost = false;
+        hcmAmController = false;
         if (hcmDesynced) return; // already solo, nothing to do
 
         const intent = hcmClassifyIntent();
@@ -847,7 +847,7 @@
             const wasGated = hcmIsGuestGated();
             const prevHostPeerId = hcmHostPeerId;
             hcmControlMode = message.controlMode || 'everyone';
-            hcmAmHost = !!message.amHost;
+            hcmAmController = !!message.amController;
             hcmHostPeerId = message.hostPeerId || null;
             // Reset guest-side state when leaving the gated state, OR when the
             // host identity changes (room switch, host-leave fallback, missed
@@ -1488,13 +1488,13 @@
     chrome.runtime.sendMessage({ type: 'GET_CONTROL_MODE' }, (res) => {
         if (chrome.runtime.lastError || !res) return;
         hcmControlMode = res.controlMode || 'everyone';
-        hcmAmHost = !!res.amHost;
+        hcmAmController = !!res.amController;
         hcmHostPeerId = res.hostPeerId || null;
         // Re-adopt persisted desync after a page reload so we don't start synced
         // while background still relays us as "Solo" to the host (split-brain).
-        // Only when we're actually a gated guest — never adopt a stale flag as the
-        // host or in 'everyone' mode (would self-label "Solo" / ignore commands).
-        if (res.desynced && res.controlMode === 'host-only' && !res.amHost && !hcmDesynced) {
+        // Only when we're actually a gated guest — never adopt a stale flag as a
+        // controller or in 'everyone' mode (would self-label "Solo" / ignore commands).
+        if (res.desynced && res.controlMode === 'host-only' && !res.amController && !hcmDesynced) {
             hcmDesynced = true;
             hcmShowBadge();
         }
