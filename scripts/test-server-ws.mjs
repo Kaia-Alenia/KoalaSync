@@ -245,6 +245,9 @@ try {
     await w(ho,'force_sync_prepare'); await w(hg,'force_sync_prepare');
     ho._m.length = hc._m.length = hg._m.length = 0;
     // owner demotes the co-host mid-flight — the EXECUTE must still go through.
+    // Wait out the per-room role-change debounce (M-4) so this demote broadcasts:
+    // in real usage the host can't promote, run a force-sync, and demote inside 500ms.
+    await new Promise(r => setTimeout(r, 550));
     s(ho,'set_peer_role',{peerId:'cohost',controller:false});
     await w(hc,'control_mode');
     ho._m.length = hc._m.length = hg._m.length = 0;

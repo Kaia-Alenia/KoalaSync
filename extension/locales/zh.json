@@ -109,6 +109,7 @@
   "BTN_REGEN_ID_TOOLTIP": "重新生成您的内部 ID 并重新连接",
   "REGEN_ID_DESC": "如果您看到“重复身份”错误，请使用此选项。",
   "REGEN_ID_OTHER_ISSUE": "其他问题？打开 GitHub 问题",
+  "TOAST_ID_REGENERATED": "身份已重新生成 — 正在重新连接…",
   "LABEL_CONN_STATUS": "连接状态",
   "LABEL_CONN_STATUS_TOOLTIP": "当前WebSocket连接状态",
   "CONN_STATUS_DISCONNECTED": "已断开连接",

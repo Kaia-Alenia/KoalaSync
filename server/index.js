@@ -411,6 +411,7 @@ io.on('connection', (socket) => {
                             hostPeerId: peerId,
                             controlMode: CONTROL_MODES.EVERYONE,
                             lastControlModeChangeAt: 0, // M-4: per-room debounce for control-mode toggles
+                            lastRoleChangeAt: 0, // M-4: per-room debounce for role promote/demote
                             // Co-Host: peers allowed to drive in 'host-only'. Always includes the owner.
                             controllers: new Set([peerId]),
                             // H-1: peerId of the in-flight force-sync initiator. Lets a demoted
@@ -585,10 +586,10 @@ io.on('connection', (socket) => {
                     room.peerData.set(socket.id, { 
                         ...existing,
                         username:      data.username      !== undefined ? (clamp(data.username, 30)   ?? existing.username)      : existing.username,
-                        tabTitle:      data.tabTitle      !== undefined ? (clamp(data.tabTitle, 100)  ?? existing.tabTitle)      : existing.tabTitle,
-                        mediaTitle:    data.mediaTitle    !== undefined ? (clamp(data.mediaTitle, 100) ?? existing.mediaTitle)   : existing.mediaTitle,
+                        tabTitle:      data.tabTitle      === null ? null : (data.tabTitle      !== undefined ? (clamp(data.tabTitle, 100)  ?? existing.tabTitle)      : existing.tabTitle),
+                        mediaTitle:    data.mediaTitle    === null ? null : (data.mediaTitle    !== undefined ? (clamp(data.mediaTitle, 100) ?? existing.mediaTitle)   : existing.mediaTitle),
                         playbackState: data.playbackState !== undefined ? (validState(data.playbackState) ?? existing.playbackState) : existing.playbackState,
-                        currentTime:   data.currentTime   !== undefined ? (clampNum(data.currentTime, 0, 86400) ?? existing.currentTime)   : existing.currentTime,
+                        currentTime:   data.currentTime   === null ? null : (data.currentTime   !== undefined ? (clampNum(data.currentTime, 0, 86400) ?? existing.currentTime)   : existing.currentTime),
                         volume:        data.volume        !== undefined ? (clampNum(data.volume, 0, 1) ?? existing.volume)                 : existing.volume,
                         muted:         data.muted         !== undefined ? (validBool(data.muted) ?? existing.muted)                       : existing.muted,
                         desynced:      data.desynced      !== undefined ? (validBool(data.desynced) === true) : (existing.desynced || false),
@@ -599,12 +600,12 @@ io.on('connection', (socket) => {
                     const relayPayload = {
                         senderId:        mapping.peerId,
                         seq:             clampNum(data.seq, 0, Number.MAX_SAFE_INTEGER),
-                        currentTime:     clampNum(data.currentTime, 0, 86400),
+                        currentTime:     data.currentTime === null ? null : clampNum(data.currentTime, 0, 86400),
                         targetTime:      clampNum(data.targetTime, 0, 86400),
                         playbackState:   validState(data.playbackState),
                         username:        clamp(data.username, 30),
-                        tabTitle:        clamp(data.tabTitle, 100),
-                        mediaTitle:      clamp(data.mediaTitle, 100),
+                        tabTitle:        data.tabTitle === null ? null : clamp(data.tabTitle, 100),
+                        mediaTitle:      data.mediaTitle === null ? null : clamp(data.mediaTitle, 100),
                         volume:          clampNum(data.volume, 0, 1),
                         muted:           validBool(data.muted),
                         desynced:        validBool(data.desynced),
@@ -742,6 +743,13 @@ io.on('connection', (socket) => {
         const targetPresent = Array.from(room.peerData.values()).some(d => d.peerId === targetPeerId);
         if (!targetPresent) return;
 
+        const now = Date.now();
+        if (now - (room.lastRoleChangeAt || 0) < CONTROL_MODE_MIN_INTERVAL_MS) {
+            log('ROOM', `Role change debounced in ${mapping.roomId.substring(0, 3)}***`);
+            socket.emit(EVENTS.CONTROL_MODE, controlModePayload(room));
+            return;
+        }
+
         if (makeController) {
             if (room.controllers.has(targetPeerId)) return; // no-op
             room.controllers.add(targetPeerId);
@@ -749,7 +757,8 @@ io.on('connection', (socket) => {
             if (!room.controllers.has(targetPeerId)) return; // no-op
             room.controllers.delete(targetPeerId);
         }
-        room.lastActivity = Date.now();
+        room.lastRoleChangeAt = now;
+        room.lastActivity = now;
         io.to(mapping.roomId).emit(EVENTS.CONTROL_MODE, controlModePayload(room));
         log('ROOM', `Peer ${targetPeerId} ${makeController ? 'promoted to' : 'demoted from'} controller in ${mapping.roomId.substring(0, 3)}***`);
     });

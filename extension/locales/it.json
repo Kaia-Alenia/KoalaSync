@@ -109,6 +109,7 @@
   "BTN_REGEN_ID_TOOLTIP": "Genera un nuovo ID interno e riconnettiti",
   "REGEN_ID_DESC": "Usa questa opzione se riscontri errori di 'Identità Duplicata'.",
   "REGEN_ID_OTHER_ISSUE": "Hai altri problemi? Apri una segnalazione su GitHub",
+  "TOAST_ID_REGENERATED": "Identità rigenerata — riconnessione…",
   "LABEL_CONN_STATUS": "Stato Connessione",
   "LABEL_CONN_STATUS_TOOLTIP": "Stato attuale della connessione",
   "CONN_STATUS_DISCONNECTED": "Disconnesso",

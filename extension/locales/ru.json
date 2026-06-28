@@ -109,6 +109,7 @@
   "BTN_REGEN_ID_TOOLTIP": "Сбросить ваш внутренний идентификатор и переподключиться",
   "REGEN_ID_DESC": "Используйте при появлении ошибок дублирования идентификации.",
   "REGEN_ID_OTHER_ISSUE": "Другая проблема? Откройте Issue на GitHub",
+  "TOAST_ID_REGENERATED": "Идентичность перегенерирована — переподключение…",
   "LABEL_CONN_STATUS": "Статус подключения",
   "LABEL_CONN_STATUS_TOOLTIP": "Текущий статус WebSocket-соединения с сервером",
   "CONN_STATUS_DISCONNECTED": "Отключено",

@@ -109,6 +109,7 @@
   "BTN_REGEN_ID_TOOLTIP": "Regerar o seu ID interno e voltar a ligar",
   "REGEN_ID_DESC": "Use isto se encontrar erros de 'Identidade Duplicada'.",
   "REGEN_ID_OTHER_ISSUE": "Outro problema? Abra um relatório no GitHub",
+  "TOAST_ID_REGENERATED": "Identidade regenerada — a voltar a ligar…",
   "LABEL_CONN_STATUS": "Estado da Ligação",
   "LABEL_CONN_STATUS_TOOLTIP": "Estado atual da ligação",
   "CONN_STATUS_DISCONNECTED": "Desligado",

@@ -109,6 +109,7 @@
   "BTN_REGEN_ID_TOOLTIP": "Dahili kimliğinizi yeniden oluşturun ve tekrar bağlanın",
   "REGEN_ID_DESC": "\"Duplicate Identity\" (Mükerrer Kimlik) hataları görüyorsanız bunu kullanın.",
   "REGEN_ID_OTHER_ISSUE": "Başka bir sorun? GitHub Issue açın",
+  "TOAST_ID_REGENERATED": "Kimlik yeniden oluşturuldu — yeniden bağlanılıyor…",
   "LABEL_CONN_STATUS": "Bağlantı Durumu",
   "LABEL_CONN_STATUS_TOOLTIP": "Mevcut WebSocket bağlantı durumu",
   "CONN_STATUS_DISCONNECTED": "Bağlantı Kesildi",

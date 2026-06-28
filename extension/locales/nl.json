@@ -109,6 +109,7 @@
   "BTN_REGEN_ID_TOOLTIP": "Genereer uw interne ID opnieuw en maak opnieuw verbinding",
   "REGEN_ID_DESC": "Gebruik dit als u fouten ziet over 'Duplicate Identity'.",
   "REGEN_ID_OTHER_ISSUE": "Ander probleem? Open een GitHub Issue",
+  "TOAST_ID_REGENERATED": "Identiteit opnieuw gegenereerd — opnieuw verbinden…",
   "LABEL_CONN_STATUS": "Verbindingsstatus",
   "LABEL_CONN_STATUS_TOOLTIP": "Huidige WebSocket-verbindingsstatus",
   "CONN_STATUS_DISCONNECTED": "Verbinding verbroken",

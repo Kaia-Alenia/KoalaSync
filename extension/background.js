@@ -132,8 +132,14 @@ chrome.runtime.onConnect.addListener((port) => {
     }
 });
 
+let _persistLastSeqTimer = null;
 function _persistLastSeq() {
-    if (storageInitialized) chrome.storage.session.set({ lastSeqBySender });
+    if (!storageInitialized) return;
+    if (_persistLastSeqTimer) clearTimeout(_persistLastSeqTimer);
+    _persistLastSeqTimer = setTimeout(() => {
+        _persistLastSeqTimer = null;
+        chrome.storage.session.set({ lastSeqBySender });
+    }, 500);
 }
 
 // --- Boot Sequence Lock ---

@@ -109,6 +109,7 @@
   "BTN_REGEN_ID_TOOLTIP": "Regenerar tu ID interno y volver a conectarte",
   "REGEN_ID_DESC": "Usa esto si ves errores de 'Identidad duplicada'.",
   "REGEN_ID_OTHER_ISSUE": "¿Tienes otro problema? Abre un reporte en GitHub",
+  "TOAST_ID_REGENERATED": "Identidad regenerada — reconectando…",
   "LABEL_CONN_STATUS": "Estado de la conexión",
   "LABEL_CONN_STATUS_TOOLTIP": "Estado actual de la conexión WebSocket",
   "CONN_STATUS_DISCONNECTED": "Desconectado",

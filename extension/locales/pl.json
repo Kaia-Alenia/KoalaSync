@@ -109,6 +109,7 @@
   "BTN_REGEN_ID_TOOLTIP": "Wygeneruj ponownie swój identyfikator i połącz się ponownie",
   "REGEN_ID_DESC": "Użyj tego, jeśli widzisz błędy o zduplikowanej tożsamości.",
   "REGEN_ID_OTHER_ISSUE": "Inny problem? Otwórz Issue na GitHub",
+  "TOAST_ID_REGENERATED": "Tożsamość wygenerowana ponownie — ponowne łączenie…",
   "LABEL_CONN_STATUS": "Status połączenia",
   "LABEL_CONN_STATUS_TOOLTIP": "Bieżący stan połączenia WebSocket",
   "CONN_STATUS_DISCONNECTED": "Rozłączono",

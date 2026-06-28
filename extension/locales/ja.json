@@ -109,6 +109,7 @@
   "BTN_REGEN_ID_TOOLTIP": "内部IDを再生成して再接続します",
   "REGEN_ID_DESC": "「Duplicate Identity」（ID重複）エラーが表示される場合に使用します。",
   "REGEN_ID_OTHER_ISSUE": "他の問題？GitHub Issueを開く",
+  "TOAST_ID_REGENERATED": "IDを再生成しました — 再接続中…",
   "LABEL_CONN_STATUS": "接続状態",
   "LABEL_CONN_STATUS_TOOLTIP": "現在のWebSocket接続状態",
   "CONN_STATUS_DISCONNECTED": "切断されました",
