@@ -1236,9 +1236,10 @@ function handleServerEvent(event, data) {
                             peer.mediaTitle = data.mediaTitle !== undefined ? data.mediaTitle : peer.mediaTitle;
                             peer.volume = data.volume !== undefined ? data.volume : peer.volume;
                             peer.muted = data.muted !== undefined ? data.muted : peer.muted;
-                            // Only update when present — the background-driven keepAlive
-                            // heartbeat omits 'desynced', and clobbering it to false there
-                            // would make the host's "Solo" badge flicker between heartbeats.
+                            // Only update when present. Our own heartbeats now carry
+                            // 'desynced', but other PEER_STATUS variants (server join
+                            // broadcast, future/old clients) omit it — and clobbering it
+                            // to false there would flicker the host's "Solo" badge.
                             if (data.desynced !== undefined) peer.desynced = data.desynced === true;
 
                             const timeSinceReactive = peer.lastReactiveUpdate ? (Date.now() - peer.lastReactiveUpdate) : Infinity;
@@ -1746,13 +1747,17 @@ async function handleAsyncMessage(message, sender, sendResponse) {
         const settings = await chrome.storage.local.get(['locale']);
         const lang = settings.locale || getSystemLanguage();
         await loadLocale(lang);
+        // getMessage returns the key name itself if the dictionary failed to load.
+        // Return undefined in that case so content keeps its English fallback rather
+        // than rendering a raw key like "HCM_DIALOG_TITLE".
+        const m = (k) => { const v = getMessage(k); return v === k ? undefined : v; };
         sendResponse({
-            title:  getMessage('HCM_DIALOG_TITLE'),
-            body:   getMessage('HCM_DIALOG_BODY'),
-            stay:   getMessage('HCM_DIALOG_STAY'),
-            solo:   getMessage('HCM_DIALOG_SOLO'),
-            badge:  getMessage('HCM_BADGE_SOLO'),
-            resync: getMessage('HCM_BADGE_RESYNC')
+            title:  m('HCM_DIALOG_TITLE'),
+            body:   m('HCM_DIALOG_BODY'),
+            stay:   m('HCM_DIALOG_STAY'),
+            solo:   m('HCM_DIALOG_SOLO'),
+            badge:  m('HCM_BADGE_SOLO'),
+            resync: m('HCM_BADGE_RESYNC')
         });
     } else if (message.type === 'HCM_DESYNC_STATE') {
         // content.js tells us whether the local user chose to watch on their own.
@@ -2136,6 +2141,16 @@ async function handleAsyncMessage(message, sender, sendResponse) {
         if (epSettings.autoSyncNextEpisode === false) {
             addLog(`Episode change detected ("${newTitle}") but Auto-Sync is disabled.`, 'info');
             sendResponse({ status: 'disabled' });
+            return;
+        }
+
+        // Host Control Mode: a gated guest must NOT initiate an episode lobby — the
+        // server drops the guest's EPISODE_LOBBY, so the lobby would never complete
+        // and the guest would self-pause (PAUSE_FOR_LOBBY) into a 60s freeze. In
+        // host-only the host drives episode sync; the guest just follows / snaps back.
+        if (controlMode === CONTROL_MODES.HOST_ONLY && !amHost()) {
+            addLog(`Episode change ("${newTitle}") — host-only guest, not creating a lobby (host drives).`, 'info');
+            sendResponse({ status: 'host_only_guest_skip' });
             return;
         }
 

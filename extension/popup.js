@@ -355,15 +355,13 @@ function setRemoteControlsLocked(locked) {
         btn.style.cursor = locked ? 'not-allowed' : '';
         btn.title = locked ? (getMessage('NOTICE_HOST_CONTROLS') || 'The host controls playback for everyone.') : '';
     });
-    // When unlocking, also restore the default labels. The action handlers leave
-    // the text in a transitional state ("Playing..." / "Pausing...") and the 2.5s
-    // safety reset skips the refresh while we were guest-locked, so without this
-    // the button can be re-enabled with stale text after the host disables
-    // host-only (L-1).
-    if (!locked) {
-        if (elements.playBtn) elements.playBtn.textContent = getMessage('BTN_PLAY') || 'Play';
-        if (elements.pauseBtn) elements.pauseBtn.textContent = getMessage('BTN_PAUSE') || 'Pause';
-    }
+    // Always restore the default labels. The action handlers leave the text in a
+    // transitional state ("Playing..." / "Pausing...") and the 2.5s safety reset
+    // skips the refresh while guest-locked — so reset on BOTH transitions: on lock
+    // (host enabled host-only just as the guest clicked → don't freeze "Playing...")
+    // and on unlock (L-1).
+    if (elements.playBtn) elements.playBtn.textContent = getMessage('BTN_PLAY') || 'Play';
+    if (elements.pauseBtn) elements.pauseBtn.textContent = getMessage('BTN_PAUSE') || 'Pause';
 }
 
 if (elements.hostControlToggle) {

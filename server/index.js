@@ -228,7 +228,13 @@ function removePeerFromRoom(socketId, roomId, reason) {
     //      socket), fall back to 'everyone' so the room never gets stuck locked, and
     //      reassign host to the earliest remaining peer so the feature stays usable.
     //      (v1: immediate fallback, no grace period — see host-control-mode docs.)
-    if (!isPeerStillConnected && room.hostPeerId === peerId && room.peers.size > 0) {
+    //      Skip while a join for this peerId is in flight (peerJoinLocks holds it):
+    //      that's a reconnect / second tab where the same peerId is being re-added
+    //      right after — covers both the explicit 'dedupe' removal AND the
+    //      'disconnect' the kicked old socket fires. Demoting there would silently
+    //      unlock the room on every host network blip.
+    const peerRejoining = peerJoinLocks.has(peerId);
+    if (!peerRejoining && !isPeerStillConnected && room.hostPeerId === peerId && room.peers.size > 0) {
         const nextPeerData = room.peerData.values().next().value;
         room.hostPeerId = nextPeerData ? nextPeerData.peerId : null;
         room.controlMode = CONTROL_MODES.EVERYONE;

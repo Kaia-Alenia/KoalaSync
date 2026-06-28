@@ -390,6 +390,8 @@
         const wasDesynced = hcmDesynced;
         hcmDesynced = false;
         hcmDeferredSnapPending = false;
+        hcmSnapBackCooldownUntil = 0; // don't let a stale cooldown swallow the next snap-back
+        hcmBufferingUntil = 0;
         hcmRemoveDialog();
         hcmRemoveBadge();
         // If we were desynced, notify background so it stops reporting us as

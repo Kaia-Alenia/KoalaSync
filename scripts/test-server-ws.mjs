@@ -151,6 +151,25 @@ try {
     assert.ok(dSenderResync && dSenderResync.controlMode==='host-only',
         'debounced toggle re-syncs sender to actual state');
     close();
+    resetConnectionRate();
+
+    // --- Host role survives peerId dedup (reconnect / second tab) ---
+    const hdrid = 'dedup-host-'+Date.now();
+    const hd1 = await c(), hd2 = await c();
+    await j(hd1, hdrid, 'dhost'); await j(hd2, hdrid, 'dguest'); hd1._m.length = hd2._m.length = 0;
+    s(hd1,'set_control_mode',{controlMode:'host-only'});
+    await w(hd1,'control_mode'); await w(hd2,'control_mode');
+    hd1._m.length = hd2._m.length = 0;
+    // The host's peerId re-joins on a fresh socket → server dedupes the old socket.
+    // This must NOT demote the host or reset the mode (a network blip / second tab).
+    const hd3 = await c();
+    s(hd3,'join_room',{roomId:hdrid,peerId:'dhost',protocolVersion:'1.0.0'});
+    const hdrd = await a(hd3);
+    assert.equal(hdrd[0],'room_data');
+    assert.ok(hdrd[1].controlMode === 'host-only' && hdrd[1].hostPeerId === 'dhost',
+        'host role + host-only mode survive peerId dedup (reconnect/second tab)');
+    close();
+    resetConnectionRate();
 
     // --- Password room ---
     const prid = 'pw-'+Date.now();
