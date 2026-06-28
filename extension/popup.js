@@ -1645,6 +1645,20 @@ elements.clearLogs.addEventListener('click', () => {
     });
 });
 
+if (elements.regenId) {
+    elements.regenId.addEventListener('click', () => {
+        elements.regenId.disabled = true;
+        chrome.runtime.sendMessage({ type: 'REGENERATE_ID' }, (res) => {
+            elements.regenId.disabled = false;
+            if (chrome.runtime.lastError || !res || !res.peerId) {
+                showToast(getMessage('TOAST_ID_REGENERATED') || 'Failed to regenerate identity', 'error');
+                return;
+            }
+            showToast(getMessage('TOAST_ID_REGENERATED') || 'Identity regenerated — reconnecting…', 'success', 3000);
+        });
+    });
+}
+
 elements.copyInvite.addEventListener('click', () => {
     navigator.clipboard.writeText(elements.inviteLink.value).then(() => {
         const original = elements.copyInvite.textContent;

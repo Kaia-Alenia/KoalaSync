@@ -175,10 +175,6 @@ const SERVER_CAPABILITIES = [CAPABILITIES.HOST_CONTROL, CAPABILITIES.CO_HOST];
 // from generating one broadcast per toggle across all peers.
 const CONTROL_MODE_MIN_INTERVAL_MS = 500;
 
-// Co-Host: max peers (incl. the owner) allowed to drive a 'host-only' room. Bounds
-// the controller set + the CONTROL_MODE payload. Beyond this, just use 'everyone'.
-const MAX_CONTROLLERS = 10;
-
 // Canonical control-mode/role snapshot sent to clients. controllers always includes
 // the owner (hostPeerId). Built in one place so every emit stays consistent.
 function controlModePayload(room) {
@@ -748,11 +744,6 @@ io.on('connection', (socket) => {
 
         if (makeController) {
             if (room.controllers.has(targetPeerId)) return; // no-op
-            if (room.controllers.size >= MAX_CONTROLLERS) {
-                log('ROOM', `Controller cap (${MAX_CONTROLLERS}) reached in ${mapping.roomId.substring(0, 3)}***`);
-                socket.emit(EVENTS.CONTROL_MODE, controlModePayload(room)); // re-sync owner UI
-                return;
-            }
             room.controllers.add(targetPeerId);
         } else {
             if (!room.controllers.has(targetPeerId)) return; // no-op
