@@ -247,15 +247,21 @@ function removePeerFromRoom(socketId, roomId, reason) {
     //      reassign host to the earliest remaining peer so the feature stays usable.
     //      (v1: immediate fallback, no grace period — see host-control-mode docs.)
     //      Skip while a join for this peerId is in flight (peerJoinLocks holds it):
-    //      that's a reconnect / second tab where the same peerId is being re-added
-    //      right after — covers both the explicit 'dedupe' removal AND the
-    //      'disconnect' the kicked old socket fires. Demoting there would silently
-    //      unlock the room on every host network blip.
+    //      that's the reconnect / second-tab case where the same peerId is being
+    //      re-added right after the dedupe kicked the old socket. Demoting there
+    //      would silently unlock the room on every second-tab open.
+    //      NOTE: this does *not* cover a true network blip where the old socket's
+    //      'disconnect' fires before the new socket acquires its join lock — in that
+    //      window peerJoinLocks is empty, so the fallback fires. Documented v1
+    //      limitation (no host grace period); see KNOWN_LIMITATIONS.md.
     const peerRejoining = peerJoinLocks.has(peerId);
     const peerGone = !isPeerStillConnected && !peerRejoining;
     if (peerGone && room.controllers && room.peers.size > 0) {
         const wasController = room.controllers.has(peerId);
         room.controllers.delete(peerId);
+        // H-1: a leaving initiator strands the room's force-sync — release the
+        // slot so a future controller's PREPARE can take over cleanly.
+        if (room.forceSyncInitiator === peerId) room.forceSyncInitiator = null;
         if (room.hostPeerId === peerId) {
             // Owner left → reassign owner + fall back to 'everyone' so the room is
             // never stuck locked, and reset the controller set to just the new owner.
@@ -410,7 +416,12 @@ io.on('connection', (socket) => {
                             controlMode: CONTROL_MODES.EVERYONE,
                             lastControlModeChangeAt: 0, // M-4: per-room debounce for control-mode toggles
                             // Co-Host: peers allowed to drive in 'host-only'. Always includes the owner.
-                            controllers: new Set([peerId])
+                            controllers: new Set([peerId]),
+                            // H-1: peerId of the in-flight force-sync initiator. Lets a demoted
+                            // controller's FORCE_SYNC_EXECUTE through the host-only gate — without
+                            // it, demoting a co-host mid-force-sync would drop their EXECUTE and
+                            // leave every peer stuck paused.
+                            forceSyncInitiator: null
                         };
                         rooms.set(roomId, room);
                         createdByMe = true;
@@ -544,11 +555,28 @@ io.on('connection', (socket) => {
                     // In 'host-only' mode, drop room-moving events from anyone who is not
                     // a controller (the owner + any promoted co-hosts). Robust chokepoint:
                     // independent of client behavior, kills spam. Heartbeats/ACKs pass.
-                    if (room.controlMode === CONTROL_MODES.HOST_ONLY &&
+                    //
+                    // H-1 exception: a demoted co-host's FORCE_SYNC_EXECUTE still has to
+                    // land — otherwise their already-relayed PREPARE would leave the whole
+                    // room stuck paused. Track the in-flight initiator on PREPARE and let
+                    // their matching EXECUTE through regardless of current controllers set.
+                    if (eventName === EVENTS.FORCE_SYNC_PREPARE &&
+                        room.controlMode === CONTROL_MODES.HOST_ONLY &&
+                        room.controllers && room.controllers.has(mapping.peerId)) {
+                        room.forceSyncInitiator = mapping.peerId;
+                    }
+                    const isOwnForceSyncExecute = eventName === EVENTS.FORCE_SYNC_EXECUTE &&
+                        room.forceSyncInitiator && mapping.peerId === room.forceSyncInitiator;
+                    if (!isOwnForceSyncExecute &&
+                        room.controlMode === CONTROL_MODES.HOST_ONLY &&
                         !(room.controllers && room.controllers.has(mapping.peerId)) &&
                         HOST_ONLY_GATED_EVENTS.has(eventName)) {
                         log('ROOM', `Dropped ${eventName} from guest ${mapping.peerId} in host-only room ${mapping.roomId.substring(0, 3)}***`);
                         return;
+                    }
+                    // Clear initiator tracking once the EXECUTE has been relayed.
+                    if (eventName === EVENTS.FORCE_SYNC_EXECUTE && room.forceSyncInitiator) {
+                        room.forceSyncInitiator = null;
                     }
 
                     // --- S-2 & S-3: Sanitize ALL relay fields (strings, numbers, booleans) ---

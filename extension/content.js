@@ -961,6 +961,15 @@
 
         // Episode Auto-Sync: Lobby notification from background
         if (message.type === 'EPISODE_LOBBY') {
+            // Host Control Mode: a desynced guest is watching on their own and must
+            // not join the lobby flow. Otherwise they'd pause on title match, report
+            // ready, but then ignore the host's FORCE_SYNC_* (hcmDesynced skip in
+            // SERVER_COMMAND) and end up frozen in pause. They also can't be counted
+            // toward lobby completion (background filters them out).
+            if (hcmDesynced) {
+                sendResponse({ status: 'ignored_desynced' });
+                return true;
+            }
             const expectedTitle = message.expectedTitle;
             if (expectedTitle) {
                 reportLog(`Episode lobby received: waiting for "${expectedTitle}"`, 'info');
@@ -1504,9 +1513,13 @@
     chrome.runtime.sendMessage({ type: 'GET_HCM_STRINGS' }, (res) => {
         if (chrome.runtime.lastError || !res) return;
         Object.keys(hcmStrings).forEach(k => { if (res[k]) hcmStrings[k] = res[k]; });
-        // If the badge is already showing (early desync), re-render it with the
-        // localized text now that we have it.
-        if (hcmBadgeHost) { hcmRemoveBadge(); hcmShowBadge(); }
+        // If the badge is already showing (early desync), refresh its text in place.
+        // Re-creating the host element nukes the click target mid-poll and can drop a
+        // click that landed between remove() and the re-create (L-4).
+        if (hcmBadgeHost) {
+            const span = hcmBadgeHost.shadowRoot && hcmBadgeHost.shadowRoot.querySelector('span');
+            if (span) span.textContent = '● ' + hcmStrings.badge;
+        }
     });
 
 })();

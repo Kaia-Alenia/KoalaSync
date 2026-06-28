@@ -1,4 +1,4 @@
-import { EVENTS, CONTROL_MODES, CAPABILITIES, PROTOCOL_VERSION, OFFICIAL_SERVER_URL, OFFICIAL_SERVER_TOKEN, EPISODE_LOBBY_TIMEOUT, FORCE_SYNC_TIMEOUT } from './shared/constants.js';
+import { EVENTS, CONTROL_MODES, CAPABILITIES, PROTOCOL_VERSION, OFFICIAL_SERVER_URL, OFFICIAL_SERVER_TOKEN, EPISODE_LOBBY_TIMEOUT, FORCE_SYNC_TIMEOUT, HEARTBEAT_INTERVAL } from './shared/constants.js';
 import { generateUsername } from './shared/names.js';
 import { loadLocale, getMessage, getSystemLanguage } from './i18n.js';
 import { sameEpisode } from './episode-utils.js';
@@ -93,14 +93,22 @@ const HOST_ONLY_GATED_ACTIONS = [
     EVENTS.EPISODE_LOBBY, EVENTS.EPISODE_LOBBY_CANCEL
 ];
 // Best-effort estimate of where the room (host) is right now, for guest snap-back.
-// Extrapolates from the host peer's last known state (±~1s). Used by content.js.
+// Extrapolates from the host peer's last known state. Used by content.js.
 function getHostSyncTarget() {
     if (!currentRoom || !Array.isArray(currentRoom.peers)) return null;
     const host = currentRoom.peers.find(p => (typeof p === 'object' ? p.peerId : p) === hostPeerId);
     if (!host || typeof host !== 'object') return null;
     let targetTime = typeof host.currentTime === 'number' ? host.currentTime : null;
     if (targetTime !== null && host.playbackState === 'playing' && host.lastHeartbeat) {
-        targetTime += Math.max(0, (Date.now() - host.lastHeartbeat) / 1000);
+        // M-4: clamp extrapolation. lastHeartbeat is the *arrival* time of the host's
+        // last heartbeat — beyond ~2 heartbeat intervals the host's true state is too
+        // stale (they may have paused without the next heartbeat landing yet) and the
+        // linear extrapolation would overshoot by tens of seconds. Cap it so the
+        // guest snaps to a position within plausibility; the next heartbeat corrects.
+        const elapsedSec = (Date.now() - host.lastHeartbeat) / 1000;
+        if (elapsedSec > 0 && elapsedSec <= 2 * HEARTBEAT_INTERVAL / 1000) {
+            targetTime += elapsedSec;
+        }
     }
     return { playbackState: host.playbackState || null, targetTime };
 }
@@ -167,6 +175,11 @@ function ensureState() {
                     serverCapabilities = Array.isArray(currentRoom.capabilities) ? currentRoom.capabilities : [];
                 }
                 if (data.hcmDesynced !== undefined) hcmDesynced = data.hcmDesynced;
+                // L-2: enforce the desync invariant on restore — a persisted hcmDesynced=true
+                // is stale if our restored role is no longer "gated guest" (e.g. we became
+                // the host, or the room is in 'everyone'). Without this, the first heartbeat
+                // after SW restart would broadcast a bogus Solo flag for up to 15s.
+                hcmEnforceDesyncInvariant();
                 if (data.lastActionState) lastActionState = data.lastActionState;
                 
                 if (data.eventQueue) eventQueue = [...eventQueue, ...data.eventQueue].slice(0, 50);
@@ -1482,8 +1495,12 @@ function executeEpisodeLobby() {
 
 function checkEpisodeLobbyCompletion() {
     if (!episodeLobby || !currentRoom) return;
-    const peerCount = currentRoom.peers ? currentRoom.peers.length : 1;
-    if (episodeLobby.readyPeers.length >= peerCount) {
+    const peers = Array.isArray(currentRoom.peers) ? currentRoom.peers : [];
+    // M-3: desynced peers (watching on their own) sit out the lobby — their content
+    // script ignores EPISODE_LOBBY and never reports ready. Don't let them block
+    // completion: count only peers who actually participate.
+    const participatingCount = peers.filter(p => !(typeof p === 'object' && p.desynced)).length;
+    if (episodeLobby.readyPeers.length >= participatingCount) {
         executeEpisodeLobby();
     }
 }
@@ -2174,9 +2191,11 @@ async function handleAsyncMessage(message, sender, sendResponse) {
         // Host Control Mode: a gated guest must NOT initiate an episode lobby — the
         // server drops the guest's EPISODE_LOBBY, so the lobby would never complete
         // and the guest would self-pause (PAUSE_FOR_LOBBY) into a 60s freeze. In
-        // host-only the host drives episode sync; the guest just follows / snaps back.
-        if (controlMode === CONTROL_MODES.HOST_ONLY && !amHost()) {
-            addLog(`Episode change ("${newTitle}") — host-only guest, not creating a lobby (host drives).`, 'info');
+        // host-only the controllers (owner + co-hosts) drive episode sync; a plain
+        // guest just follows / snaps back. Use amController() for parity with the
+        // CONTENT_EVENT gate and the server's controllers-based check.
+        if (controlMode === CONTROL_MODES.HOST_ONLY && !amController()) {
+            addLog(`Episode change ("${newTitle}") — host-only guest, not creating a lobby (controller drives).`, 'info');
             sendResponse({ status: 'host_only_guest_skip' });
             return;
         }

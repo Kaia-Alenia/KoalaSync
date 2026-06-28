@@ -1494,6 +1494,7 @@ elements.targetTab.addEventListener('change', () => {
 });
 
 elements.forceSyncBtn.addEventListener('click', async () => {
+    if (hcmGuestLocked) return; // guest in host-only room — backstop (M-2/L-3)
     if (elements.forceSyncBtn.disabled) return;
     
     const originalText = elements.forceSyncBtn.textContent;
@@ -1535,7 +1536,10 @@ elements.forceSyncBtn.addEventListener('click', async () => {
     const peerCount = (status.peers || []).filter(p => (typeof p === 'object' ? p.peerId : p) !== localPeerId).length;
     const syncTimeoutMs = peerCount === 0 ? 3000 : 12000;
     const forceSyncReset = () => {
-        if (!forceSyncDone) {
+        // Don't unlock a button that's locked because we became a guest mid-flight —
+        // hcmGuestLocked is the source of truth for the lock state, and the next
+        // CONTROL_MODE update restores the correct label.
+        if (!forceSyncDone && !hcmGuestLocked) {
             elements.forceSyncBtn.disabled = false;
             elements.forceSyncBtn.textContent = originalText;
         }
