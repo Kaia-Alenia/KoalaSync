@@ -64,6 +64,10 @@ if (!isAdminMetricsTokenStrong(ADMIN_METRICS_TOKEN)) {
     console.warn('[SECURITY] ADMIN_METRICS_TOKEN is set but shorter than 32 characters. Use a long random token.');
 }
 
+if (!process.env.SERVER_SALT) {
+    console.warn('[SECURITY] SERVER_SALT is not set — using the built-in default salt (public in the repo). Set a unique SERVER_SALT so room-password hashes are not computed with a known salt.');
+}
+
 export const app = express();
 app.set('trust proxy', 1); // For real client IP through reverse proxy
 
