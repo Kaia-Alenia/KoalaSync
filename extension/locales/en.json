@@ -48,6 +48,7 @@
   "LABEL_HOST_CONTROL_TOOLTIP": "Restrict who can control playback in this room",
   "LABEL_HOST_ONLY_TOGGLE": "Only I can control playback",
   "NOTICE_HOST_CONTROLS": "The host controls playback for everyone.",
+  "NOTICE_COHOST_HINT": "Tip: grant control to individual viewers in the participant list below.",
   "BADGE_HOST": "Host",
   "BADGE_GUEST": "Guest",
   "BADGE_CONTROLLER": "Controller",

@@ -48,6 +48,7 @@
   "LABEL_HOST_CONTROL_TOOLTIP": "Обмежити, хто може керувати відтворенням у цій кімнаті",
   "LABEL_HOST_ONLY_TOGGLE": "Лише я можу керувати відтворенням",
   "NOTICE_HOST_CONTROLS": "Ведучий керує відтворенням для всіх.",
+  "NOTICE_COHOST_HINT": "Порада: надайте керування окремим учасникам у списку нижче.",
   "BADGE_HOST": "Ведучий",
   "BADGE_GUEST": "Гість",
   "BADGE_CONTROLLER": "Керуючий",

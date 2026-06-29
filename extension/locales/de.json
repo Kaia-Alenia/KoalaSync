@@ -48,6 +48,7 @@
   "LABEL_HOST_CONTROL_TOOLTIP": "Festlegen, wer die Wiedergabe in diesem Raum steuern darf",
   "LABEL_HOST_ONLY_TOGGLE": "Nur ich darf die Wiedergabe steuern",
   "NOTICE_HOST_CONTROLS": "Der Host steuert die Wiedergabe für alle.",
+  "NOTICE_COHOST_HINT": "Tipp: Gib einzelnen Teilnehmern unten in der Teilnehmerliste die Steuerung.",
   "BADGE_HOST": "Host",
   "BADGE_GUEST": "Gast",
   "BADGE_CONTROLLER": "Controller",

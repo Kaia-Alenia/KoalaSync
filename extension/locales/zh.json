@@ -48,6 +48,7 @@
   "LABEL_HOST_CONTROL_TOOLTIP": "限制谁可以在此房间中控制播放",
   "LABEL_HOST_ONLY_TOGGLE": "仅我可以控制播放",
   "NOTICE_HOST_CONTROLS": "由主持人为所有人控制播放。",
+  "NOTICE_COHOST_HINT": "提示：在下方的参与者列表中将控制权授予单个参与者。",
   "BADGE_HOST": "主持人",
   "BADGE_GUEST": "访客",
   "BADGE_CONTROLLER": "控制者",

@@ -48,6 +48,7 @@
   "LABEL_HOST_CONTROL_TOOLTIP": "このルームで再生を操作できる人を制限します",
   "LABEL_HOST_ONLY_TOGGLE": "再生を操作できるのは自分だけ",
   "NOTICE_HOST_CONTROLS": "ホストが全員の再生を操作します。",
+  "NOTICE_COHOST_HINT": "ヒント: 下の参加者リストで個別の参加者に操作権限を付与できます。",
   "BADGE_HOST": "ホスト",
   "BADGE_GUEST": "ゲスト",
   "BADGE_CONTROLLER": "操作権あり",

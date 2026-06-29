@@ -48,6 +48,7 @@
   "LABEL_HOST_CONTROL_TOOLTIP": "Définir qui peut contrôler la lecture dans ce salon",
   "LABEL_HOST_ONLY_TOGGLE": "Moi seul peux contrôler la lecture",
   "NOTICE_HOST_CONTROLS": "L'hôte contrôle la lecture pour tout le monde.",
+  "NOTICE_COHOST_HINT": "Astuce : donnez le contrôle à des participants précis dans la liste ci-dessous.",
   "BADGE_HOST": "Hôte",
   "BADGE_GUEST": "Invité",
   "BADGE_CONTROLLER": "Contrôleur",

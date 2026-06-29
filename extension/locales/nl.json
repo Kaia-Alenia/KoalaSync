@@ -48,6 +48,7 @@
   "LABEL_HOST_CONTROL_TOOLTIP": "Bepaal wie de weergave in deze kamer mag bedienen",
   "LABEL_HOST_ONLY_TOGGLE": "Alleen ik mag de weergave bedienen",
   "NOTICE_HOST_CONTROLS": "De host bedient de weergave voor iedereen.",
+  "NOTICE_COHOST_HINT": "Tip: geef afzonderlijke deelnemers de besturing in de lijst hieronder.",
   "BADGE_HOST": "Host",
   "BADGE_GUEST": "Gast",
   "BADGE_CONTROLLER": "Bediener",

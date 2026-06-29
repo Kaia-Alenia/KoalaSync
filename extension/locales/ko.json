@@ -48,6 +48,7 @@
   "LABEL_HOST_CONTROL_TOOLTIP": "이 방에서 재생을 제어할 수 있는 사람 제한",
   "LABEL_HOST_ONLY_TOGGLE": "나만 재생을 제어할 수 있음",
   "NOTICE_HOST_CONTROLS": "호스트가 모두의 재생을 제어합니다.",
+  "NOTICE_COHOST_HINT": "팁: 아래 참가자 목록에서 개별 참가자에게 제어 권한을 부여하세요.",
   "BADGE_HOST": "호스트",
   "BADGE_GUEST": "게스트",
   "BADGE_CONTROLLER": "제어자",

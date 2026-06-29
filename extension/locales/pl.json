@@ -48,6 +48,7 @@
   "LABEL_HOST_CONTROL_TOOLTIP": "Określ, kto może sterować odtwarzaniem w tym pokoju",
   "LABEL_HOST_ONLY_TOGGLE": "Tylko ja mogę sterować odtwarzaniem",
   "NOTICE_HOST_CONTROLS": "Host steruje odtwarzaniem dla wszystkich.",
+  "NOTICE_COHOST_HINT": "Wskazówka: przyznaj sterowanie wybranym uczestnikom na liście poniżej.",
   "BADGE_HOST": "Host",
   "BADGE_GUEST": "Gość",
   "BADGE_CONTROLLER": "Sterujący",

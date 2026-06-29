@@ -48,6 +48,7 @@
   "LABEL_HOST_CONTROL_TOOLTIP": "Bu odada oynatmayı kimin kontrol edebileceğini belirleyin",
   "LABEL_HOST_ONLY_TOGGLE": "Oynatmayı yalnızca ben kontrol edebilirim",
   "NOTICE_HOST_CONTROLS": "Oynatmayı herkes için sunucu kontrol eder.",
+  "NOTICE_COHOST_HINT": "İpucu: aşağıdaki katılımcı listesinde tek tek katılımcılara kontrol verin.",
   "BADGE_HOST": "Sunucu",
   "BADGE_GUEST": "Misafir",
   "BADGE_CONTROLLER": "Kontrolcü",

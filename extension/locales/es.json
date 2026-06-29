@@ -48,6 +48,7 @@
   "LABEL_HOST_CONTROL_TOOLTIP": "Restringir quién puede controlar la reproducción en esta sala",
   "LABEL_HOST_ONLY_TOGGLE": "Solo yo puedo controlar la reproducción",
   "NOTICE_HOST_CONTROLS": "El anfitrión controla la reproducción para todos.",
+  "NOTICE_COHOST_HINT": "Consejo: concede el control a usuarios concretos en la lista de participantes de abajo.",
   "BADGE_HOST": "Anfitrión",
   "BADGE_GUEST": "Invitado",
   "BADGE_CONTROLLER": "Controlador",

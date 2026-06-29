@@ -46,6 +46,7 @@ const elements = {
     hostControlToggleRow: document.getElementById('hostControlToggleRow'),
     hostControlToggle: document.getElementById('hostControlToggle'),
     hostControlGuestNote: document.getElementById('hostControlGuestNote'),
+    hostControlCohostHint: document.getElementById('hostControlCohostHint'),
     activeRoomId: document.getElementById('activeRoomId'),
     activeServer: document.getElementById('activeServer'),
     peerListSync: document.getElementById('peerListSync'),
@@ -361,6 +362,11 @@ function updateHostControlUI(state) {
     if (elements.hostControlToggleRow) elements.hostControlToggleRow.style.display = amHost ? 'flex' : 'none';
     if (elements.hostControlToggle) elements.hostControlToggle.checked = hostOnly;
     if (elements.hostControlGuestNote) elements.hostControlGuestNote.style.display = (!amController && hostOnly) ? 'block' : 'none';
+    // Owner-only discoverability hint: co-hosting is granted down in the peer list,
+    // which isn't obvious from this card. Only show it when it's actionable — owner,
+    // relay supports co-host, and the room is locked to host-only (the buttons only
+    // render in that mode).
+    if (elements.hostControlCohostHint) elements.hostControlCohostHint.style.display = (amHost && !!s.coHostSupported && hostOnly) ? 'block' : 'none';
 
     // Only a non-controller is locked out of the remote controls.
     hcmGuestLocked = (!amController && hostOnly);
@@ -670,6 +676,11 @@ function updatePeerList(peers) {
 
             header.appendChild(nameSpan);
 
+            // Right-side badges + actions, kept in one group so they sit together
+            // on the right instead of being scattered by the header's space-between.
+            const rightGroup = document.createElement('div');
+            rightGroup.style.cssText = 'display:flex; align-items:center; gap:6px; flex-shrink:0;';
+
             // Volume Icon (Top Right)
             if (p.volume !== undefined && p.volume !== null) {
                 const volIcon = document.createElement('div');
@@ -683,7 +694,7 @@ function updatePeerList(peers) {
                 const you = document.createElement('span');
                 you.style.cssText = 'font-size:10px; color:var(--accent); font-weight:bold;';
                 you.textContent = getMessage('LABEL_YOU') || 'YOU';
-                header.appendChild(you);
+                rightGroup.appendChild(you);
             }
 
             // Host Control Mode: show "Solo" badge for peers watching on their own.
@@ -693,13 +704,14 @@ function updatePeerList(peers) {
                 const soloText = getMessage('BADGE_DESYNCED') || 'Solo';
                 solo.textContent = soloText;
                 solo.title = getMessage('TOOLTIP_PEER_DESYNCED') || soloText;
-                header.appendChild(solo);
+                rightGroup.appendChild(solo);
             }
 
-            // Co-Host: role badges + the owner's promote/demote control. Shown when the
-            // feature is active and either the room is host-only or we're the owner
-            // (so a guest in a normal room sees no role noise).
-            const showRoles = !!hcmOwnerPeerId && (hcmRoomIsHostOnly || hcmAmOwner);
+            // Co-Host: role badges + the owner's promote/demote control. Only meaningful
+            // once the room is locked to host-only — in 'everyone' mode anyone can already
+            // control, so roles are moot and we show nothing (no badge/button noise).
+            // The promote/demote button additionally requires owner privileges (below).
+            const showRoles = !!hcmOwnerPeerId && hcmRoomIsHostOnly;
             if (showRoles) {
                 const isOwner = pId === hcmOwnerPeerId;
                 const isController = !isOwner && hcmControllers.includes(pId);
@@ -707,19 +719,31 @@ function updatePeerList(peers) {
                     const roleBadge = document.createElement('span');
                     roleBadge.style.cssText = 'font-size:10px; color:#fff; background:var(--accent); padding:2px 6px; border-radius:6px; font-weight:600;';
                     roleBadge.textContent = isOwner ? (getMessage('BADGE_HOST') || 'Host') : (getMessage('BADGE_CONTROLLER') || 'Controller');
-                    header.appendChild(roleBadge);
+                    rightGroup.appendChild(roleBadge);
                 }
                 // Owner can promote/demote any non-owner peer.
                 if (hcmAmOwner && hcmCoHostSupported && !isOwner) {
                     const btn = document.createElement('button');
-                    btn.style.cssText = 'font-size:10px; padding:2px 8px; border-radius:6px; cursor:pointer; border:1px solid var(--accent); background:transparent; color:var(--accent); white-space:nowrap;';
-                    btn.textContent = isController ? (getMessage('BTN_REVOKE_CONTROL') || 'Revoke') : (getMessage('BTN_GIVE_CONTROL') || 'Give control');
+                    const revoke = isController;
+                    btn.style.cssText = `font-size:10px; padding:3px 9px; border-radius:6px; cursor:pointer; white-space:nowrap; font-weight:600; transition:background .15s,color .15s; border:1px solid ${revoke ? 'var(--text-muted)' : 'var(--accent)'}; background:transparent; color:${revoke ? 'var(--text-muted)' : 'var(--accent)'};`;
+                    btn.textContent = revoke ? (getMessage('BTN_REVOKE_CONTROL') || 'Revoke') : (getMessage('BTN_GIVE_CONTROL') || 'Give control');
+                    btn.title = revoke ? (getMessage('BTN_REVOKE_CONTROL') || 'Revoke') : (getMessage('BTN_GIVE_CONTROL') || 'Give control');
+                    btn.addEventListener('mouseenter', () => {
+                        btn.style.background = revoke ? 'var(--text-muted)' : 'var(--accent)';
+                        btn.style.color = '#fff';
+                    });
+                    btn.addEventListener('mouseleave', () => {
+                        btn.style.background = 'transparent';
+                        btn.style.color = revoke ? 'var(--text-muted)' : 'var(--accent)';
+                    });
                     btn.addEventListener('click', () => {
                         chrome.runtime.sendMessage({ type: 'SET_PEER_ROLE', peerId: pId, controller: !isController }, () => {});
                     });
-                    header.appendChild(btn);
+                    rightGroup.appendChild(btn);
                 }
             }
+
+            if (rightGroup.childNodes.length) header.appendChild(rightGroup);
 
             peerItem.appendChild(header);
 
@@ -1273,7 +1297,11 @@ if (elements.langSelector) {
 elements.serverUrl.addEventListener('change', () => {
     let url = elements.serverUrl.value.trim();
     if (url && !url.includes('://')) {
-        url = 'ws://' + url;
+        // Default to secure wss:// — plain ws:// is only valid for a local relay
+        // (and the background rejects/upgrades ws:// for any remote host anyway).
+        const host = url.split('/')[0].split(':')[0].toLowerCase();
+        const isLocal = host === 'localhost' || host === '127.0.0.1';
+        url = (isLocal ? 'ws://' : 'wss://') + url;
         elements.serverUrl.value = url;
         chrome.storage.local.set({ serverUrl: url });
     }
@@ -1390,7 +1418,7 @@ elements.joinBtn.addEventListener('click', async () => {
     }
     if (useCustom && serverUrl) {
         try {
-            const urlToCheck = serverUrl.includes('://') ? serverUrl : 'ws://' + serverUrl;
+            const urlToCheck = serverUrl.includes('://') ? serverUrl : 'wss://' + serverUrl;
             new URL(urlToCheck);
         } catch (_e) {
             showError(getMessage('ERR_INVALID_SERVER_URL'));
