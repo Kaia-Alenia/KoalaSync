@@ -402,14 +402,18 @@
             <details style="margin-bottom: 12px; background: var(--card); border: 1px solid #334155; border-radius: 8px; padding: 8px;">
                 <summary style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; cursor: pointer; outline: none;" data-i18n="MANUAL_CONNECT_HEADER">Manual Connect / Advanced</summary>
                 <div style="margin-top: 12px;">
-            <div class="form-group">
-                <label title="Select which KoalaSync server to use" data-i18n="LABEL_SERVER">Server</label>
-                <div style="display:flex; gap:4px; margin-bottom:8px;">
-                    <button id="serverOfficial" class="tab-btn active" style="flex:1; padding:6px; font-size:11px;" data-i18n="BTN_SERVER_OFFICIAL" data-i18n-title="BTN_SERVER_OFFICIAL_TOOLTIP" title="Use the official reliable server">Official</button>
-                    <button id="serverCustom" class="tab-btn" style="flex:1; padding:6px; font-size:11px;" data-i18n="BTN_SERVER_CUSTOM" data-i18n-title="BTN_SERVER_CUSTOM_TOOLTIP" title="Connect to your own self-hosted server">Custom</button>
+            <!-- Server selection — its own concern, kept visually separate from the room fields. -->
+            <div style="background: var(--bg); border: 1px solid #334155; border-radius: 8px; padding: 10px; margin-bottom: 14px;">
+                <div class="form-group" style="margin-bottom:0;">
+                    <label title="Select which KoalaSync server to use" data-i18n="LABEL_SERVER">Server</label>
+                    <div style="display:flex; gap:4px; margin-bottom:0;">
+                        <button id="serverOfficial" class="tab-btn active" style="flex:1; padding:6px; font-size:11px;" data-i18n="BTN_SERVER_OFFICIAL" data-i18n-title="BTN_SERVER_OFFICIAL_TOOLTIP" title="Use the official reliable server">Official</button>
+                        <button id="serverCustom" class="tab-btn" style="flex:1; padding:6px; font-size:11px;" data-i18n="BTN_SERVER_CUSTOM" data-i18n-title="BTN_SERVER_CUSTOM_TOOLTIP" title="Connect to your own self-hosted server">Custom</button>
+                    </div>
+                    <input type="text" id="serverUrl" data-i18n-placeholder="PLACEHOLDER_SERVER_URL" placeholder="wss://your-server:3000" style="display:none; margin-top:8px;">
                 </div>
-                <input type="text" id="serverUrl" data-i18n-placeholder="PLACEHOLDER_SERVER_URL" placeholder="wss://your-server:3000" style="display:none;">
             </div>
+            <!-- Room credentials — distinct group below the server picker. -->
             <div class="form-group">
                 <label title="The unique identifier for your sync room" data-i18n="LABEL_ROOM_ID" data-i18n-title="LABEL_ROOM_ID_TOOLTIP">Room ID</label>
                 <input type="text" id="roomId" data-i18n-placeholder="PLACEHOLDER_ROOM_ID" data-i18n-title="PLACEHOLDER_ROOM_ID_TOOLTIP" placeholder="Enter Room ID" title="The unique ID of the room you want to join">
@@ -448,6 +452,22 @@
                     <input type="text" id="inviteLink" readonly>
                     <button id="copyInvite" class="secondary">📋</button>
                 </div>
+            </div>
+
+            <div id="hostControlCard" class="info-card" style="margin-bottom: 20px; display:none;">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <label style="margin:0;" title="Restrict who can control playback in this room" data-i18n="LABEL_HOST_CONTROL" data-i18n-title="LABEL_HOST_CONTROL_TOOLTIP">Host Control</label>
+                    <span id="hostRoleBadge" style="font-size:10px; font-weight:700; text-transform:uppercase; padding:2px 8px; border-radius:8px; background:var(--accent); color:#fff;"></span>
+                </div>
+                <div id="hostControlToggleRow" style="display:none; align-items:center; justify-content:space-between; gap:12px; margin-top:12px;">
+                    <span style="font-size:12px; color:var(--text); line-height:1.3;" data-i18n="LABEL_HOST_ONLY_TOGGLE">Only I can control playback</span>
+                    <label class="toggle-switch" style="flex:none;">
+                        <input type="checkbox" id="hostControlToggle">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                <div id="hostControlCohostHint" style="display:none; margin-top:10px; padding-top:10px; border-top:1px solid #334155; font-size:11px; color:var(--text-muted); line-height:1.4;" data-i18n="NOTICE_COHOST_HINT">Tip: grant control to individual viewers in the participant list below.</div>
+                <div id="hostControlGuestNote" style="display:none; margin-top:10px; font-size:12px; color:var(--text-muted);" data-i18n="NOTICE_HOST_CONTROLS">The host controls playback for everyone.</div>
             </div>
 
             <div style="margin-bottom: 20px;">

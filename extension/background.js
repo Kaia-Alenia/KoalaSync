@@ -1,4 +1,4 @@
-import { EVENTS, PROTOCOL_VERSION, OFFICIAL_SERVER_URL, OFFICIAL_SERVER_TOKEN, EPISODE_LOBBY_TIMEOUT, FORCE_SYNC_TIMEOUT } from './shared/constants.js';
+import { EVENTS, CONTROL_MODES, CAPABILITIES, PROTOCOL_VERSION, OFFICIAL_SERVER_URL, OFFICIAL_SERVER_TOKEN, EPISODE_LOBBY_TIMEOUT, FORCE_SYNC_TIMEOUT, HEARTBEAT_INTERVAL } from './shared/constants.js';
 import { generateUsername } from './shared/names.js';
 import { loadLocale, getMessage, getSystemLanguage } from './i18n.js';
 import { sameEpisode } from './episode-utils.js';
@@ -70,6 +70,48 @@ let isNamespaceJoined = false;
 let lastActionState = { action: null, senderId: null, timestamp: 0, acks: [] };
 let localSeq = 0;                         // Monotonically increasing command sequence for this peer
 const lastSeqBySender = {};               // senderId → last received seq (stale command guard)
+
+// --- Host Control Mode ---
+let controlMode = CONTROL_MODES.EVERYONE;  // 'everyone' | 'host-only'
+let hostPeerId = null;                     // peerId of the room host (creator / fallback)
+// Features the connected relay advertises in ROOM_DATA. Empty against an older
+// relay (no capabilities field) → host-control UI/behavior stays unavailable.
+let serverCapabilities = [];
+function serverSupports(cap) { return Array.isArray(serverCapabilities) && serverCapabilities.includes(cap); }
+// Local peer's desync state (content.js reports it via HCM_DESYNC_STATE). Relayed
+// in heartbeats so the host's popup UI can show "Solo" instead of silently
+// appearing un-ACK'd.
+let hcmDesynced = false;
+// Co-Host: peerIds allowed to drive in host-only (always includes the owner).
+let controllers = [];
+function amHost() { return !!peerId && hostPeerId === peerId; }            // owner: can toggle mode / promote
+function amController() { return amHost() || (!!peerId && controllers.includes(peerId)); } // can drive the room
+// Room-moving actions a guest may not initiate while in host-only mode.
+const HOST_ONLY_GATED_ACTIONS = [
+    EVENTS.PLAY, EVENTS.PAUSE, EVENTS.SEEK,
+    EVENTS.FORCE_SYNC_PREPARE, EVENTS.FORCE_SYNC_EXECUTE,
+    EVENTS.EPISODE_LOBBY, EVENTS.EPISODE_LOBBY_CANCEL
+];
+// Best-effort estimate of where the room (host) is right now, for guest snap-back.
+// Extrapolates from the host peer's last known state. Used by content.js.
+function getHostSyncTarget() {
+    if (!currentRoom || !Array.isArray(currentRoom.peers)) return null;
+    const host = currentRoom.peers.find(p => (typeof p === 'object' ? p.peerId : p) === hostPeerId);
+    if (!host || typeof host !== 'object') return null;
+    let targetTime = typeof host.currentTime === 'number' ? host.currentTime : null;
+    if (targetTime !== null && host.playbackState === 'playing' && host.lastHeartbeat) {
+        // M-4: clamp extrapolation. lastHeartbeat is the *arrival* time of the host's
+        // last heartbeat — beyond ~2 heartbeat intervals the host's true state is too
+        // stale (they may have paused without the next heartbeat landing yet) and the
+        // linear extrapolation would overshoot by tens of seconds. Cap it so the
+        // guest snaps to a position within plausibility; the next heartbeat corrects.
+        const elapsedSec = (Date.now() - host.lastHeartbeat) / 1000;
+        if (elapsedSec > 0 && elapsedSec <= 2 * HEARTBEAT_INTERVAL / 1000) {
+            targetTime += elapsedSec;
+        }
+    }
+    return { playbackState: host.playbackState || null, targetTime };
+}
 const activePorts = new Set();            // New: track active content ports for keep-alive
 let expectedAcksCount = 0;                // Snapshot of peerCount when initiating Force Sync
 
@@ -90,8 +132,14 @@ chrome.runtime.onConnect.addListener((port) => {
     }
 });
 
+let _persistLastSeqTimer = null;
 function _persistLastSeq() {
-    if (storageInitialized) chrome.storage.session.set({ lastSeqBySender });
+    if (!storageInitialized) return;
+    if (_persistLastSeqTimer) clearTimeout(_persistLastSeqTimer);
+    _persistLastSeqTimer = setTimeout(() => {
+        _persistLastSeqTimer = null;
+        chrome.storage.session.set({ lastSeqBySender });
+    }, 500);
 }
 
 // --- Boot Sequence Lock ---
@@ -113,7 +161,8 @@ function ensureState() {
                 'logs', 'history', 'currentRoom', 'lastActionState', 
                 'eventQueue', 'isForceSyncInitiator', 'forceSyncAcks', 
                 'forceSyncDeadline', 'reconnectFailed', 'reconnectStartTime', 'reconnectAttempts', 'currentTabId', 'currentTabTitle',
-                'episodeLobby', 'localSeq', 'lastSeqBySender', 'expectedAcksCount', 'roomIdleSince', 'lastContentHeartbeatAt'
+                'episodeLobby', 'localSeq', 'lastSeqBySender', 'expectedAcksCount', 'roomIdleSince', 'lastContentHeartbeatAt',
+                'hcmDesynced'
             ], (data) => {
                 clearTimeout(storageTimeout);
                 if (data.expectedAcksCount !== undefined) expectedAcksCount = data.expectedAcksCount;
@@ -123,7 +172,20 @@ function ensureState() {
                 // New entries (added during boot) must stay at the top (index 0)
                 if (data.logs) logs = [...logs, ...data.logs].slice(0, 200);
                 if (data.history) history = [...history, ...data.history].slice(0, 20);
-                if (data.currentRoom) currentRoom = data.currentRoom;
+                if (data.currentRoom) {
+                    currentRoom = data.currentRoom;
+                    // Host Control Mode: restore role/mode/capabilities from persisted room.
+                    controlMode = currentRoom.controlMode || CONTROL_MODES.EVERYONE;
+                    hostPeerId = currentRoom.hostPeerId || null;
+                    controllers = Array.isArray(currentRoom.controllers) ? currentRoom.controllers : [];
+                    serverCapabilities = Array.isArray(currentRoom.capabilities) ? currentRoom.capabilities : [];
+                }
+                if (data.hcmDesynced !== undefined) hcmDesynced = data.hcmDesynced;
+                // L-2: enforce the desync invariant on restore — a persisted hcmDesynced=true
+                // is stale if our restored role is no longer "gated guest" (e.g. we became
+                // the host, or the room is in 'everyone'). Without this, the first heartbeat
+                // after SW restart would broadcast a bogus Solo flag for up to 15s.
+                hcmEnforceDesyncInvariant();
                 if (data.lastActionState) lastActionState = data.lastActionState;
                 
                 if (data.eventQueue) eventQueue = [...eventQueue, ...data.eventQueue].slice(0, 50);
@@ -253,6 +315,7 @@ function createPeerData(raw) {
         currentTime:   raw.currentTime   != null ? raw.currentTime : null,
         volume:        raw.volume        != null ? raw.volume       : null,
         muted:         raw.muted         != null ? raw.muted        : null,
+        desynced:      raw.desynced === true,   // HCM: peer is watching on their own
         lastHeartbeat: Date.now()
     };
 }
@@ -282,7 +345,14 @@ function updateLocalPeerState(targetPeerId, updates) {
 async function getPeerId() {
     const data = await chrome.storage.local.get(['peerId']);
     if (data.peerId) return data.peerId;
-    const newId = self.crypto.randomUUID().substring(0, 8);
+    // 16 hex chars = 64 bits. At a busy relay (25k concurrent peers) the 32-bit
+    // (8-hex) generation would hit ~7% collision probability per snapshot —
+    // and a same-room collision triggers our dedup path, kicking the older
+    // session with a confusing error. 16 hex chars drops the probability to
+    // ~1e-10 even at a million peers, and the server already clamps peerId to
+    // 16 chars (server/index.js JOIN_ROOM sanitizer). Existing persisted 8-char
+    // IDs continue to work — this only affects newly-generated IDs.
+    const newId = self.crypto.randomUUID().replace(/-/g, '').substring(0, 16);
     await chrome.storage.local.set({ peerId: newId });
     return newId;
 }
@@ -435,6 +505,14 @@ async function leaveRoomAfterIdleGrace(reason) {
     emit(EVENTS.LEAVE_ROOM, { peerId });
     forceDisconnect();
     currentRoom = null;
+    controlMode = CONTROL_MODES.EVERYONE;
+    hostPeerId = null;
+    controllers = [];
+    serverCapabilities = [];
+    hcmDesynced = false;
+    // Notify content.js/popup BEFORE currentTabId is cleared so they can reset
+    // any stale guest-side HCM state (dialog/badge/desync) — H-2.
+    broadcastControlMode();
     currentTabId = null;
     currentTabTitle = null;
     roomIdleSince = null;
@@ -446,7 +524,8 @@ async function leaveRoomAfterIdleGrace(reason) {
         currentTabTitle: null,
         roomIdleSince: null,
         lastContentHeartbeatAt: null,
-        episodeLobby: null
+        episodeLobby: null,
+        hcmDesynced: false
     }).catch(() => {});
     await chrome.storage.local.set({ roomId: '', password: '' }).catch(() => {});
     addLog(reason, 'info');
@@ -637,6 +716,29 @@ async function connect() {
     }
 }
 
+
+// Invariant: only a gated guest (host-only room AND not the host) can be
+// "desynced". Any role/mode change that makes us the host, or switches the room
+// to 'everyone', must clear the persisted flag — otherwise a stale value would
+// mislabel us as "Solo" to peers and (in content) keep us ignoring host commands
+// after the reason to is gone. Call after any controlMode/hostPeerId change.
+function hcmEnforceDesyncInvariant() {
+    if (hcmDesynced && !(controlMode === CONTROL_MODES.HOST_ONLY && !amController())) {
+        hcmDesynced = false;
+        if (storageInitialized) chrome.storage.session.set({ hcmDesynced: false });
+    }
+}
+
+function broadcastControlMode() {
+    // Notify popup (role badge / host toggle) and the active content tab
+    // (so it can enable/disable the host-only guest gate).
+    const payload = { type: 'CONTROL_MODE', controlMode, hostPeerId, controllers, amHost: amHost(), amController: amController(), hostControlSupported: serverSupports(CAPABILITIES.HOST_CONTROL), coHostSupported: serverSupports(CAPABILITIES.CO_HOST) };
+    chrome.runtime.sendMessage(payload).catch(() => {});
+    if (currentTabId) {
+        const tabId = parseInt(currentTabId);
+        if (!isNaN(tabId)) chrome.tabs.sendMessage(tabId, payload).catch(() => {});
+    }
+}
 
 function broadcastConnectionStatus(status) {
     // No room and no intent to connect → this isn't a failure, it's the normal
@@ -871,9 +973,29 @@ function handleServerEvent(event, data) {
         addLog(`Ignored server event ${event} due to empty payload`, 'warn');
         return;
     }
+    // Host Control Mode (receiver-side backstop): in host-only mode, ignore
+    // room-moving events from any non-controller. The server already drops these,
+    // so this covers old/buggy/modified clients that slipped through.
+    // Defensive: require a known hostPeerId — if the server ever sends host-only
+    // without a host (state inconsistency), gate-everyone would lock the owner
+    // out of their own room (L-6).
+    if (controlMode === CONTROL_MODES.HOST_ONLY &&
+        hostPeerId &&
+        HOST_ONLY_GATED_ACTIONS.includes(event) &&
+        data.senderId && data.senderId !== hostPeerId && !controllers.includes(data.senderId)) {
+        addLog(`Ignored ${event} from non-controller ${data.senderId} (host-only)`, 'warn');
+        return;
+    }
     switch (event) {
         case EVENTS.ROOM_DATA:
             currentRoom = data;
+            // Host Control Mode: adopt room role/mode on (re)join.
+            controlMode = data.controlMode || CONTROL_MODES.EVERYONE;
+            hostPeerId = data.hostPeerId || null;
+            controllers = Array.isArray(data.controllers) ? data.controllers : [];
+            serverCapabilities = Array.isArray(data.capabilities) ? data.capabilities : [];
+            hcmEnforceDesyncInvariant();
+            broadcastControlMode();
             markRoomPotentiallyIdle();
             if (currentRoom && Array.isArray(currentRoom.peers)) {
                 currentRoom.peers = currentRoom.peers.map(p => typeof p === 'object' ? createPeerData(p) : { peerId: p, username: null, tabTitle: null, mediaTitle: null, playbackState: null, currentTime: null, volume: null, muted: null, lastHeartbeat: Date.now() });
@@ -930,6 +1052,21 @@ function handleServerEvent(event, data) {
                     chrome.tabs.sendMessage(tab.id, joinStatusMsg).catch(() => {});
                 });
             });
+            break;
+        case EVENTS.CONTROL_MODE:
+            // Host Control Mode changed (toggle or host-leave fallback).
+            controlMode = data.controlMode || CONTROL_MODES.EVERYONE;
+            hostPeerId = data.hostPeerId || null;
+            controllers = Array.isArray(data.controllers) ? data.controllers : [];
+            hcmEnforceDesyncInvariant();
+            if (currentRoom) {
+                currentRoom.controlMode = controlMode;
+                currentRoom.hostPeerId = hostPeerId;
+                currentRoom.controllers = controllers;
+                if (storageInitialized) chrome.storage.session.set({ currentRoom });
+            }
+            addLog(`Control mode: ${controlMode}${amHost() ? ' (you are owner)' : (amController() ? ' (you are controller)' : '')}`, 'info');
+            broadcastControlMode();
             break;
         case EVENTS.ROOM_LIST:
             chrome.runtime.sendMessage({ type: 'ROOM_LIST', rooms: data.rooms }).catch(() => {});
@@ -1133,6 +1270,11 @@ function handleServerEvent(event, data) {
                             peer.mediaTitle = data.mediaTitle !== undefined ? data.mediaTitle : peer.mediaTitle;
                             peer.volume = data.volume !== undefined ? data.volume : peer.volume;
                             peer.muted = data.muted !== undefined ? data.muted : peer.muted;
+                            // Only update when present. Our own heartbeats now carry
+                            // 'desynced', but other PEER_STATUS variants (server join
+                            // broadcast, future/old clients) omit it — and clobbering it
+                            // to false there would flicker the host's "Solo" badge.
+                            if (data.desynced !== undefined) peer.desynced = data.desynced === true;
 
                             const timeSinceReactive = peer.lastReactiveUpdate ? (Date.now() - peer.lastReactiveUpdate) : Infinity;
                             const ignoreStatus = timeSinceReactive < 300;
@@ -1366,8 +1508,12 @@ function executeEpisodeLobby() {
 
 function checkEpisodeLobbyCompletion() {
     if (!episodeLobby || !currentRoom) return;
-    const peerCount = currentRoom.peers ? currentRoom.peers.length : 1;
-    if (episodeLobby.readyPeers.length >= peerCount) {
+    const peers = Array.isArray(currentRoom.peers) ? currentRoom.peers : [];
+    // M-3: desynced peers (watching on their own) sit out the lobby — their content
+    // script ignores EPISODE_LOBBY and never reports ready. Don't let them block
+    // completion: count only peers who actually participate.
+    const participatingCount = peers.filter(p => !(typeof p === 'object' && p.desynced)).length;
+    if (episodeLobby.readyPeers.length >= participatingCount) {
         executeEpisodeLobby();
     }
 }
@@ -1473,7 +1619,8 @@ chrome.alarms.onAlarm.addListener(async (alarm) => {
                     peerId,
                     status: 'heartbeat',
                     username: settings.username,
-                    tabTitle: currentTabTitle
+                    tabTitle: currentTabTitle,
+                    desynced: hcmDesynced
                 });
             }
         }
@@ -1485,7 +1632,15 @@ function leaveOldRoomIfSwitching(newRoomId) {
         addLog(`Switching rooms: leaving ${currentRoom.roomId} to join ${newRoomId}`, 'info');
         forceDisconnect();
         currentRoom = null;
-        if (storageInitialized) chrome.storage.session.set({ currentRoom: null });
+        controlMode = CONTROL_MODES.EVERYONE;
+        hostPeerId = null;
+        controllers = [];
+        serverCapabilities = [];
+        hcmDesynced = false;
+        // Notify content.js/popup so they drop any guest-side HCM state from the
+        // previous room (badge/dialog/desync) — H-2/H-3.
+        broadcastControlMode();
+        if (storageInitialized) chrome.storage.session.set({ currentRoom: null, hcmDesynced: false });
         chrome.runtime.sendMessage({ type: 'PEER_UPDATE', peers: [] }).catch(() => {});
 
         // Reset force sync states
@@ -1595,9 +1750,83 @@ async function handleAsyncMessage(message, sender, sendResponse) {
             serverUrl: currentServerUrl,
             version: chrome.runtime.getManifest().version,
             protocolVersion: PROTOCOL_VERSION,
-            roomPassword: currentRoom ? currentRoom.password : null,
-            ping: currentPingMs
+            ping: currentPingMs,
+            controlMode,
+            hostPeerId,
+            controllers,
+            amHost: amHost(),
+            amController: amController(),
+            hostControlSupported: serverSupports(CAPABILITIES.HOST_CONTROL),
+            coHostSupported: serverSupports(CAPABILITIES.CO_HOST)
         });
+    } else if (message.type === 'SET_CONTROL_MODE') {
+        // Popup (host) toggles the room control mode. Server validates host authority
+        // and broadcasts CONTROL_MODE back, which updates our local state + UI.
+        const mode = message.controlMode;
+        if (mode !== CONTROL_MODES.EVERYONE && mode !== CONTROL_MODES.HOST_ONLY) {
+            sendResponse({ status: 'invalid' });
+            return;
+        }
+        if (!amHost()) {
+            sendResponse({ status: 'not_host' });
+            return;
+        }
+        emit(EVENTS.SET_CONTROL_MODE, { controlMode: mode });
+        sendResponse({ status: 'ok' });
+    } else if (message.type === 'SET_PEER_ROLE') {
+        // Popup (owner) promotes/demotes a peer to/from controller. Server validates
+        // owner authority and broadcasts CONTROL_MODE back, refreshing all clients.
+        const targetPeerId = typeof message.peerId === 'string' ? message.peerId : null;
+        if (!targetPeerId) {
+            sendResponse({ status: 'invalid' });
+            return;
+        }
+        if (!amHost()) {
+            sendResponse({ status: 'not_owner' });
+            return;
+        }
+        emit(EVENTS.SET_PEER_ROLE, { peerId: targetPeerId, controller: message.controller === true });
+        sendResponse({ status: 'ok' });
+    } else if (message.type === 'GET_CONTROL_MODE') {
+        // content.js asks for current mode/role on (re)injection. Include the
+        // persisted desync state so a page reload re-adopts it — otherwise a fresh
+        // content script would start synced while background keeps relaying us as
+        // "Solo" to the host (stale-badge split-brain).
+        sendResponse({ controlMode, hostPeerId, controllers, amHost: amHost(), amController: amController(), desynced: hcmDesynced, hostControlSupported: serverSupports(CAPABILITIES.HOST_CONTROL), coHostSupported: serverSupports(CAPABILITIES.CO_HOST) });
+    } else if (message.type === 'REQUEST_HOST_SYNC') {
+        // content.js resync: hand back the host's extrapolated current position.
+        sendResponse({ target: getHostSyncTarget() });
+    } else if (message.type === 'GET_HCM_STRINGS') {
+        // Localized strings for the in-page host-control dialog/badge. content.js
+        // has no i18n loader of its own, so background resolves them here.
+        const settings = await chrome.storage.local.get(['locale']);
+        const lang = settings.locale || getSystemLanguage();
+        await loadLocale(lang);
+        // getMessage returns the key name itself if the dictionary failed to load.
+        // Return undefined in that case so content keeps its English fallback rather
+        // than rendering a raw key like "HCM_DIALOG_TITLE".
+        const m = (k) => { const v = getMessage(k); return v === k ? undefined : v; };
+        sendResponse({
+            title:  m('HCM_DIALOG_TITLE'),
+            body:   m('HCM_DIALOG_BODY'),
+            stay:   m('HCM_DIALOG_STAY'),
+            solo:   m('HCM_DIALOG_SOLO'),
+            badge:  m('HCM_BADGE_SOLO'),
+            resync: m('HCM_BADGE_RESYNC')
+        });
+    } else if (message.type === 'HCM_DESYNC_STATE') {
+        // content.js tells us whether the local user chose to watch on their own.
+        // Only accept from the currently selected tab.
+        if (sender.tab && currentTabId && currentTabId !== sender.tab.id) {
+            sendResponse({ status: 'ignored_unselected_tab' });
+            return;
+        }
+        // Mirrored into heartbeats so the host's UI can show "Solo" instead of
+        // silently waiting for ACKs that will never come. Persisted so the
+        // heartbeat survives SW restarts (idle timeout, crash).
+        hcmDesynced = !!message.desynced;
+        if (storageInitialized) chrome.storage.session.set({ hcmDesynced });
+        sendResponse({ status: 'ok' });
     } else if (message.type === 'LEAVE_ROOM') {
         connectIntent = false;
         reconnectFailed = false;
@@ -1606,6 +1835,14 @@ async function handleAsyncMessage(message, sender, sendResponse) {
         resetAudioProcessingInTab(currentTabId);
         emit(EVENTS.LEAVE_ROOM, { peerId });
         currentRoom = null;
+        controlMode = CONTROL_MODES.EVERYONE;
+        hostPeerId = null;
+        controllers = [];
+        serverCapabilities = [];
+        hcmDesynced = false;
+        // Notify content.js/popup BEFORE currentTabId is cleared so they drop any
+        // stale guest-side HCM state (dialog/badge/desync) — H-2/H-3.
+        broadcastControlMode();
         currentTabId = null;
         currentTabTitle = null;
         roomIdleSince = null;
@@ -1631,7 +1868,8 @@ async function handleAsyncMessage(message, sender, sendResponse) {
             forceSyncAcks: [],
             forceSyncDeadline: null,
             episodeLobby: null,
-            expectedAcksCount: 0
+            expectedAcksCount: 0,
+            hcmDesynced: false
         });
         chrome.storage.local.set({ roomId: '', password: '' }).catch(() => {});
         addLog('Left Room', 'info');
@@ -1704,7 +1942,8 @@ async function handleAsyncMessage(message, sender, sendResponse) {
             sendResponse({ status: 'ok' });
         });
     } else if (message.type === 'REGENERATE_ID') {
-        const newId = self.crypto.randomUUID().substring(0, 8);
+        // Match getPeerId()'s 16-hex-char generation — see comment there.
+        const newId = self.crypto.randomUUID().replace(/-/g, '').substring(0, 16);
         chrome.storage.local.set({ peerId: newId }, () => {
             peerId = newId;
             addLog(`Identity regenerated: ${newId}`, 'success');
@@ -1726,6 +1965,25 @@ async function handleAsyncMessage(message, sender, sendResponse) {
         });
     } else if (message.type === 'CONTENT_EVENT') {
         const processEvent = () => {
+            // Host Control Mode (sender-side): a non-controller in host-only mode must
+            // not drive the room. Don't broadcast; hand the action back to content.js so
+            // it can snap the local player back / offer desync.
+            // Defensive: require a known hostPeerId (L-6) — otherwise the actual
+            // owner would gate themselves if state ever becomes inconsistent.
+            if (controlMode === CONTROL_MODES.HOST_ONLY && hostPeerId && !amController() &&
+                HOST_ONLY_GATED_ACTIONS.includes(message.action)) {
+                addLog(`Host-only: blocked local ${message.action} (you are a guest)`, 'warn');
+                if (sender.tab && sender.tab.id) {
+                    chrome.tabs.sendMessage(sender.tab.id, {
+                        type: 'HOST_BLOCKED',
+                        action: message.action,
+                        target: getHostSyncTarget()
+                    }).catch(() => {});
+                }
+                sendResponse({ status: 'blocked_host_only' });
+                return;
+            }
+
             // Live solo check — recomputed from the current peer list on every
             // event (the list is updated synchronously on PEER_STATUS join/leave),
             // never cached, so the instant a peer joins we resume sending.
@@ -1864,7 +2122,7 @@ async function handleAsyncMessage(message, sender, sendResponse) {
 
         markRoomUseful();
         getSettings().then(settings => {
-            const statusPayload = { ...message.payload, peerId, username: settings.username, tabTitle: currentTabTitle };
+            const statusPayload = { ...message.payload, peerId, username: settings.username, tabTitle: currentTabTitle, desynced: hcmDesynced };
             const otherCount = currentRoom && Array.isArray(currentRoom.peers) ? currentRoom.peers.filter(p => (typeof p === 'object' ? p.peerId : p) !== peerId).length : 0;
             if (otherCount > 0) emit(EVENTS.PEER_STATUS, statusPayload);
 
@@ -1940,6 +2198,18 @@ async function handleAsyncMessage(message, sender, sendResponse) {
         if (epSettings.autoSyncNextEpisode === false) {
             addLog(`Episode change detected ("${newTitle}") but Auto-Sync is disabled.`, 'info');
             sendResponse({ status: 'disabled' });
+            return;
+        }
+
+        // Host Control Mode: a gated guest must NOT initiate an episode lobby — the
+        // server drops the guest's EPISODE_LOBBY, so the lobby would never complete
+        // and the guest would self-pause (PAUSE_FOR_LOBBY) into a 60s freeze. In
+        // host-only the controllers (owner + co-hosts) drive episode sync; a plain
+        // guest just follows / snaps back. Use amController() for parity with the
+        // CONTENT_EVENT gate and the server's controllers-based check.
+        if (controlMode === CONTROL_MODES.HOST_ONLY && !amController()) {
+            addLog(`Episode change ("${newTitle}") — host-only guest, not creating a lobby (controller drives).`, 'info');
+            sendResponse({ status: 'host_only_guest_skip' });
             return;
         }
 

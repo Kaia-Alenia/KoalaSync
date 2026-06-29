@@ -102,6 +102,306 @@
         }
     });
 
+    // --- Host Control Mode (guest-side) ---
+    // When a room is in 'host-only' mode and we're a guest, a deliberate local
+    // pause/seek must not drive the room (background/server already drop it). Here
+    // we handle the *local* UX: snap back to the host's position, or — if the user
+    // really wants to — let them go solo (desync) with a resync escape hatch.
+    let hcmControlMode = 'everyone';   // mirror of room control mode
+    let hcmAmController = false;        // are we allowed to drive (owner or co-host)?
+    let hcmHostPeerId = null;          // last known host peerId (room/host identity)
+    let hcmDesynced = false;           // user chose to go solo
+    let hcmSnapBackCooldownUntil = 0;  // suppress re-trigger right after a snap-back
+    let hcmDeferredSnapPending = false; // a buffer-aware snap-back is waiting for readiness
+    let hcmLastUserGestureAt = 0;      // for deliberate-vs-involuntary classification
+    let hcmBufferingUntil = 0;         // set on 'waiting' — buffering grace window
+    let hcmDialogTimer = null;         // 8s auto-stay timer — cleared on dialog replace (H-4)
+    // Localized strings for the in-page dialog/badge (content has no i18n loader;
+    // background resolves them via GET_HCM_STRINGS on init). English fallbacks here.
+    const hcmStrings = {
+        title:  'KoalaSync · Host controls this room',
+        body:   'Only the host can control playback in this room. Keep watching together, or watch on your own?',
+        stay:   'Stay in sync',
+        solo:   'Watch on my own',
+        badge:  'Watching on your own',
+        resync: 'Resync'
+    };
+    const HCM_USER_GESTURE_MS = 1000;
+    const HCM_BUFFERING_GRACE_MS = 1500;
+    const HCM_SNAP_BACK_COOLDOWN_MS = 1000;
+    const HCM_BUFFER_WAIT_MS = 8000;   // cap on waiting for a buffering player before snapping anyway
+
+    // Track genuine user input so we can tell a deliberate pause/seek from a
+    // player-/browser-initiated one. Capturing + passive so we never interfere.
+    const _hcmGesture = () => { hcmLastUserGestureAt = Date.now(); };
+    document.addEventListener('keydown', _hcmGesture, { capture: true, passive: true });
+    document.addEventListener('pointerdown', _hcmGesture, { capture: true, passive: true });
+
+    function hcmIsGuestGated() {
+        return hcmControlMode === 'host-only' && !hcmAmController;
+    }
+
+    // EC-9 intent classifier: only a *clearly deliberate* guest action triggers the
+    // dialog/snap-back. Anything that smells involuntary (buffering, seeking, tab
+    // refocus, no recent gesture) is treated as involuntary. Bias intentional —
+    // in host-only the guest never broadcasts anyway, so this only tunes UX.
+    function hcmClassifyIntent() {
+        const video = findVideo();
+        if (!video) return 'involuntary';
+        if (hcmIsLive(video)) return 'live';                   // EC-15: degrade, don't gate
+        if (video.readyState < 3) return 'involuntary';        // buffering / not enough data
+        if (video.seeking) return 'involuntary';
+        if (Date.now() < hcmBufferingUntil) return 'involuntary';
+        if (Date.now() < visibilityGraceUntil) return 'involuntary';
+        if (Date.now() - hcmLastUserGestureAt > HCM_USER_GESTURE_MS) return 'involuntary';
+        return 'deliberate';
+    }
+
+    // Live detection (EC-15 + DVR). Pure live reports duration Infinity/NaN. Live-DVR
+    // (Twitch/YouTube-live with rewind) reports a *finite, sliding* duration — its
+    // seekable window doesn't start at 0, which we use as the DVR signal.
+    function hcmIsLive(video) {
+        // Don't trust duration before metadata has loaded (readyState >= 1) —
+        // otherwise pre-loaded videos report NaN and get misclassified as live,
+        // which suppresses the desync dialog (L-2).
+        if (video.readyState < 1) return false;
+        if (!Number.isFinite(video.duration)) return true;
+        try {
+            const s = video.seekable;
+            if (s && s.length > 0 && s.start(0) > 1) return true; // sliding DVR window
+        } catch (_e) { /* seekable may throw if empty */ }
+        return false;
+    }
+
+    // Snap the local player back to the host's current position/state.
+    function hcmSnapBackToHost(target) {
+        if (hcmDesynced) return; // user opted out — never yank them back automatically
+        hcmSnapBackCooldownUntil = Date.now() + HCM_SNAP_BACK_COOLDOWN_MS;
+        const video = findVideo();
+        if (!video) return;
+        if (target && Number.isFinite(target.targetTime)) {
+            tryMediaAction(EVENTS.SEEK, { targetTime: target.targetTime });
+        }
+        // Adopt the host's play/pause state — but ONLY if we actually know it.
+        // Defaulting to PLAY when the state is unknown would auto-resume a paused
+        // video against the host's real state (H-1).
+        if (target && target.playbackState === 'paused') {
+            tryMediaAction(EVENTS.PAUSE);
+        } else if (target && target.playbackState === 'playing') {
+            tryMediaAction(EVENTS.PLAY);
+        }
+        reportLog('Host-only: snapped back to host position', 'info');
+    }
+
+    // Resync to the host's current position, retrying briefly if the host's state
+    // isn't known yet (e.g. they just paused and no heartbeat has propagated) —
+    // otherwise the request is a silent no-op and the user thinks they're synced
+    // when they aren't. Shared by the dialog's "Stay in sync" and the Resync badge.
+    function hcmRequestHostSyncWithRetry() {
+        let attempts = 0;
+        const tryOnce = () => {
+            chrome.runtime.sendMessage({ type: 'REQUEST_HOST_SYNC' }, (res) => {
+                if (chrome.runtime.lastError || !res || !res.target) {
+                    if (++attempts < 5) setTimeout(tryOnce, 250);
+                    else reportLog('Host-only: resync requested but host state unavailable', 'warn');
+                    return;
+                }
+                hcmSnapBackToHost(res.target);
+            });
+        };
+        tryOnce();
+    }
+
+    // Buffer-aware snap-back (#3). An involuntary pause/seek often coincides with the
+    // player buffering — and a player can't actually play while it's stalled. Snapping
+    // immediately just fights the buffer (seek → re-buffer → another pause → …), which
+    // looks like stutter. Instead: if the player isn't ready, wait until it can play
+    // (readyState>=3, not seeking), then snap ONCE to the host's *current* position
+    // (re-queried, since the captured target may be stale by the time buffering ends).
+    // Player-agnostic on purpose — we can't enumerate every site, so this must be safe
+    // regardless of whether a given player fires 'pause' or only 'waiting'.
+    function hcmDeferredSnapBack() {
+        if (hcmDeferredSnapPending) return; // already waiting — don't stack polls
+        hcmDeferredSnapPending = true;
+        const deadline = Date.now() + HCM_BUFFER_WAIT_MS;
+        const poll = () => {
+            // Abort if the reason to snap is gone: user went solo, we're no longer a
+            // gated guest, or the video vanished.
+            if (hcmDesynced || !hcmIsGuestGated()) { hcmDeferredSnapPending = false; return; }
+            const video = findVideo();
+            const ready = video && video.readyState >= 3 && !video.seeking;
+            if (ready || Date.now() >= deadline) {
+                hcmDeferredSnapPending = false;
+                hcmRequestHostSyncWithRetry(); // fresh host position + snap once
+                return;
+            }
+            setTimeout(poll, 300);
+        };
+        poll();
+    }
+
+    // Entry point: background told us our local action was blocked in host-only.
+    function hcmHandleBlocked(action, target) {
+        // HOST_BLOCKED is only ever sent to a gated guest (background verifies
+        // host-only + !host before sending), so it's authoritative. Adopt the
+        // role/mode from it in case our CONTROL_MODE broadcast hasn't landed yet
+        // (join race, EC-5) — otherwise we'd miss the dialog/snap-back.
+        hcmControlMode = 'host-only';
+        hcmAmController = false;
+        if (hcmDesynced) return; // already solo, nothing to do
+
+        const intent = hcmClassifyIntent();
+        if (intent === 'live') return;          // EC-15: leave the guest alone on live
+        if (intent === 'involuntary') {
+            // EC-4 loop guard: only the silent auto snap-back is suppressed by the
+            // cooldown — the deliberate dialog path below must still go through,
+            // otherwise a second deliberate pause inside the cooldown window leaves
+            // the user stuck paused with no UI (M-3).
+            if (Date.now() < hcmSnapBackCooldownUntil || hcmDeferredSnapPending) return;
+            // Buffering/ads/throttle — silently re-sync, no dialog spam.
+            const video = findVideo();
+            if (video && video.readyState >= 3 && !video.seeking) {
+                // Ready now → snap immediately. Use the captured target if it's
+                // usable, otherwise re-query+retry (host state may not be known yet)
+                // so we never leave the guest silently stuck (consistent with the
+                // deferred and "Stay in sync" paths).
+                if (target && Number.isFinite(target.targetTime)) hcmSnapBackToHost(target);
+                else hcmRequestHostSyncWithRetry();
+            } else {
+                hcmDeferredSnapBack();             // buffering → wait for ready, then snap once (#3)
+            }
+            return;
+        }
+        // Deliberate: offer the choice (Teleparty-style), default = snap back.
+        hcmShowDesyncDialog(action, target);
+    }
+
+    // --- In-page UI (dialog + persistent desync badge) ---
+    // Built with the DOM API (CSSOM .style is CSP-safe; inline style="" in innerHTML
+    // is stripped by strict style-src on Netflix/YouTube/Disney+). Hosted in a
+    // Shadow DOM so the page's CSS can't restyle or hide our controls.
+    let hcmDialogHost = null;  // shadow host element for the dialog
+    let hcmBadgeHost = null;   // shadow host element for the persistent badge
+    let hcmBadgePending = false;  // retry flag for early-injection badge creation (L-4)
+
+    function hcmEl(tag, css, text) {
+        const el = document.createElement(tag);
+        if (css) el.style.cssText = css;        // CSSOM assignment — not gated by CSP
+        if (text != null) el.textContent = text;
+        return el;
+    }
+
+    function hcmRemoveDialog() {
+        // Cancel any pending auto-stay timer so a replaced dialog's stale closure
+        // can't later remove its successor / snap to an outdated target (H-4).
+        if (hcmDialogTimer) { clearTimeout(hcmDialogTimer); hcmDialogTimer = null; }
+        if (hcmDialogHost) { hcmDialogHost.remove(); hcmDialogHost = null; }
+    }
+
+    function hcmShowDesyncDialog(action, target) {
+        if (!document.body) { hcmSnapBackToHost(target); return; }
+        hcmRemoveDialog();
+        const host = hcmEl('div', 'all:initial');
+        const root = host.attachShadow({ mode: 'open' });
+
+        const wrap = hcmEl('div', 'position:fixed;z-index:2147483647;left:50%;bottom:32px;transform:translateX(-50%);background:#1f2937;color:#f9fafb;font:14px/1.4 system-ui,sans-serif;padding:16px 18px;border-radius:12px;box-shadow:0 8px 30px rgba(0,0,0,.45);max-width:360px;border:1px solid #374151');
+        wrap.setAttribute('role', 'dialog');
+        const title = hcmEl('div', 'font-weight:600;margin-bottom:6px', hcmStrings.title);
+        const body = hcmEl('div', 'margin-bottom:12px;color:#d1d5db', hcmStrings.body);
+        const btnRow = hcmEl('div', 'display:flex;gap:8px;justify-content:flex-end');
+        const soloBtn = hcmEl('button', 'background:#374151;color:#f9fafb;border:0;padding:8px 12px;border-radius:8px;cursor:pointer', hcmStrings.solo);
+        const stayBtn = hcmEl('button', 'background:#10b981;color:#062a20;border:0;padding:8px 12px;border-radius:8px;cursor:pointer;font-weight:600', hcmStrings.stay);
+        btnRow.append(soloBtn, stayBtn);
+        wrap.append(title, body, btnRow);
+        root.appendChild(wrap);
+        document.body.appendChild(host);
+        hcmDialogHost = host;
+
+        let settled = false;
+        // Re-query the host's current position on click instead of using the
+        // potentially stale target captured at HOST_BLOCKED time (M-1).
+        const stay = () => {
+            if (settled) return; settled = true; hcmRemoveDialog();
+            hcmRequestHostSyncWithRetry();
+        };
+        const solo = () => { if (settled) return; settled = true; hcmRemoveDialog(); hcmEnterDesync(); };
+        stayBtn.addEventListener('click', stay);
+        soloBtn.addEventListener('click', solo);
+        // EC-18: if the user ignores the prompt, default to staying in sync.
+        hcmDialogTimer = setTimeout(() => { if (!settled) stay(); }, 8000);
+    }
+
+    function hcmEnterDesync() {
+        hcmDesynced = true;
+        reportLog('Host-only: you chose to watch on your own (desynced)', 'warn');
+        // Notify background so it can relay our desynced state to the host via
+        // heartbeats — the host's UI then knows we're not following commands
+        // instead of appearing silently un-ACK'd.
+        chrome.runtime.sendMessage({ type: 'HCM_DESYNC_STATE', desynced: true }).catch(() => {});
+        hcmShowBadge();
+    }
+
+    function hcmExitDesync() {
+        const wasDesynced = hcmDesynced;
+        hcmDesynced = false;
+        hcmRemoveBadge();
+        if (wasDesynced) {
+            chrome.runtime.sendMessage({ type: 'HCM_DESYNC_STATE', desynced: false }).catch(() => {});
+        }
+        // Resync to the host's current position (retries if host state not yet known).
+        hcmRequestHostSyncWithRetry();
+        reportLog('Host-only: resynced with the host', 'info');
+    }
+
+    function hcmShowBadge() {
+        if (hcmBadgeHost) return;
+        if (!document.body) {
+            // Body not ready yet (very early injection). Defer until DOMReady,
+            // otherwise the desynced user silently never sees the badge (L-4).
+            if (!hcmBadgePending) {
+                hcmBadgePending = true;
+                const retry = () => {
+                    hcmBadgePending = false;
+                    if (hcmDesynced && !hcmBadgeHost) hcmShowBadge();
+                };
+                if (document.readyState === 'loading') {
+                    document.addEventListener('DOMContentLoaded', retry, { once: true });
+                } else {
+                    setTimeout(retry, 50);
+                }
+            }
+            return;
+        }
+        const host = hcmEl('div', 'all:initial');
+        const root = host.attachShadow({ mode: 'open' });
+        const b = hcmEl('div', 'position:fixed;z-index:2147483646;right:16px;bottom:16px;background:#b45309;color:#fff;font:13px/1.3 system-ui,sans-serif;padding:8px 12px;border-radius:10px;box-shadow:0 6px 20px rgba(0,0,0,.4);cursor:pointer;display:flex;align-items:center;gap:8px');
+        b.append(hcmEl('span', null, '● ' + hcmStrings.badge), hcmEl('span', 'text-decoration:underline', hcmStrings.resync));
+        b.addEventListener('click', hcmExitDesync);
+        root.appendChild(b);
+        document.body.appendChild(host);
+        hcmBadgeHost = host;
+    }
+
+    function hcmRemoveBadge() {
+        if (hcmBadgeHost) { hcmBadgeHost.remove(); hcmBadgeHost = null; }
+    }
+
+    function hcmReset() {
+        const wasDesynced = hcmDesynced;
+        hcmDesynced = false;
+        hcmDeferredSnapPending = false;
+        hcmSnapBackCooldownUntil = 0; // don't let a stale cooldown swallow the next snap-back
+        hcmBufferingUntil = 0;
+        hcmRemoveDialog();
+        hcmRemoveBadge();
+        // If we were desynced, notify background so it stops reporting us as
+        // desynced in heartbeats (otherwise the host's UI keeps showing the
+        // stale Solo badge until the next state change).
+        if (wasDesynced) {
+            chrome.runtime.sendMessage({ type: 'HCM_DESYNC_STATE', desynced: false }).catch(() => {});
+        }
+    }
+
     function reportLog(message, level = 'info') {
         chrome.runtime.sendMessage({ type: 'LOG', message, level }).catch(() => {});
     }
@@ -356,6 +656,10 @@
 
         reportLog(`Episode transition detected: "${newTitle}"`, 'info');
 
+        // EC-12: a new episode dissolves any solo/desync state — the guest rejoins
+        // the room for the fresh content rather than staying stuck on the old one.
+        if (hcmDesynced) hcmReset();
+
         // Do NOT pause here. We notify background.js first.
         // Background checks the setting; if enabled it creates a lobby
         // and sends back PAUSE_FOR_LOBBY so we only freeze if the feature is on.
@@ -538,6 +842,29 @@
             return true;
         }
 
+        // Host Control Mode: room mode/role changed.
+        if (message.type === 'CONTROL_MODE') {
+            const wasGated = hcmIsGuestGated();
+            const prevHostPeerId = hcmHostPeerId;
+            hcmControlMode = message.controlMode || 'everyone';
+            hcmAmController = !!message.amController;
+            hcmHostPeerId = message.hostPeerId || null;
+            // Reset guest-side state when leaving the gated state, OR when the
+            // host identity changes (room switch, host-leave fallback, missed
+            // teardown broadcast) — clears stale desync so a rejoin starts clean (H-3).
+            const hostChanged = prevHostPeerId !== null && hcmHostPeerId !== prevHostPeerId;
+            if ((wasGated && !hcmIsGuestGated()) || hostChanged) hcmReset();
+            sendResponse({ ok: true });
+            return true;
+        }
+
+        // Host Control Mode: background blocked our local action — handle UX locally.
+        if (message.type === 'HOST_BLOCKED') {
+            hcmHandleBlocked(message.action, message.target || null);
+            sendResponse({ ok: true });
+            return true;
+        }
+
         // Background asks for an immediate state push (e.g. the first peer just
         // joined while we were solo) so the newcomer syncs without waiting.
         if (message.type === 'REQUEST_HEARTBEAT') {
@@ -549,6 +876,21 @@
         if (message.type === 'SERVER_COMMAND') {
             const { action, payload } = message;
             let actionCompleted = false;
+
+            // Host Control Mode: while watching on our own (desynced), don't apply
+            // host commands. Only ACK FORCE_SYNC_PREPARE — that's the one the host's
+            // force-sync flow actually waits on. Skipping CMD_ACKs for PLAY/PAUSE/SEEK
+            // is intentional so the host's UI honestly reflects that we didn't apply
+            // the command (M-2); sending them would make the host think we're synced.
+            if (hcmDesynced) {
+                const soloIgnored = [EVENTS.PLAY, EVENTS.PAUSE, EVENTS.SEEK, EVENTS.FORCE_SYNC_PREPARE, EVENTS.FORCE_SYNC_EXECUTE];
+                if (soloIgnored.includes(action)) {
+                    if (action === EVENTS.FORCE_SYNC_PREPARE) {
+                        chrome.runtime.sendMessage({ type: 'FORCE_SYNC_ACK' }).catch(() => {});
+                    }
+                    return;
+                }
+            }
 
             // Guard: Don't execute sync commands if peers are on different episodes.
             // Only active when autoSyncNextEpisode setting is enabled (default: on).
@@ -619,6 +961,15 @@
 
         // Episode Auto-Sync: Lobby notification from background
         if (message.type === 'EPISODE_LOBBY') {
+            // Host Control Mode: a desynced guest is watching on their own and must
+            // not join the lobby flow. Otherwise they'd pause on title match, report
+            // ready, but then ignore the host's FORCE_SYNC_* (hcmDesynced skip in
+            // SERVER_COMMAND) and end up frozen in pause. They also can't be counted
+            // toward lobby completion (background filters them out).
+            if (hcmDesynced) {
+                sendResponse({ status: 'ignored_desynced' });
+                return true;
+            }
             const expectedTitle = message.expectedTitle;
             if (expectedTitle) {
                 reportLog(`Episode lobby received: waiting for "${expectedTitle}"`, 'info');
@@ -924,6 +1275,9 @@
 
     const handlePlay = () => reportEvent(EVENTS.PLAY);
     const handlePause = () => reportEvent(EVENTS.PAUSE);
+    // Host Control Mode: a 'waiting' (buffering) event opens a grace window so the
+    // pause it may trigger isn't misread as a deliberate guest action (EC-1).
+    const handleWaiting = () => { hcmBufferingUntil = Date.now() + HCM_BUFFERING_GRACE_MS; };
 
     // Seek filtering: ignore HLS/DASH buffering micro-seeks.
     // Only relay if delta >= MIN_SEEK_DELTA AND not already debouncing.
@@ -994,13 +1348,15 @@
                 video.removeEventListener('pause', existing.pause);
                 video.removeEventListener('seeked', existing.seeked);
                 video.removeEventListener('loadeddata', existing.loadeddata);
+                if (existing.waiting) video.removeEventListener('waiting', existing.waiting);
             }
-            video._koalaHandlers = { play: handlePlay, pause: handlePause, seeked: handleSeeked, loadeddata: handleLoadedData };
+            video._koalaHandlers = { play: handlePlay, pause: handlePause, seeked: handleSeeked, loadeddata: handleLoadedData, waiting: handleWaiting };
 
             video.addEventListener('play', handlePlay);
             video.addEventListener('pause', handlePause);
             video.addEventListener('seeked', handleSeeked);
             video.addEventListener('loadeddata', handleLoadedData);
+            video.addEventListener('waiting', handleWaiting);
             video.dataset.koalaAttached = 'true';
             lastVideoSrc = video.currentSrc || video.src || null;
 
@@ -1133,6 +1489,36 @@
         if (res && res.lobbyActive && res.expectedTitle) {
             reportLog(`Boot: Active lobby detected for "${res.expectedTitle}"`, 'info');
             startLobbyPoll(res.expectedTitle);
+        }
+    });
+
+    // Host Control Mode: fetch current room mode/role on injection (we may have
+    // been injected after ROOM_DATA already arrived, missing the broadcast).
+    chrome.runtime.sendMessage({ type: 'GET_CONTROL_MODE' }, (res) => {
+        if (chrome.runtime.lastError || !res) return;
+        hcmControlMode = res.controlMode || 'everyone';
+        hcmAmController = !!res.amController;
+        hcmHostPeerId = res.hostPeerId || null;
+        // Re-adopt persisted desync after a page reload so we don't start synced
+        // while background still relays us as "Solo" to the host (split-brain).
+        // Only when we're actually a gated guest — never adopt a stale flag as a
+        // controller or in 'everyone' mode (would self-label "Solo" / ignore commands).
+        if (res.desynced && res.controlMode === 'host-only' && !res.amController && !hcmDesynced) {
+            hcmDesynced = true;
+            hcmShowBadge();
+        }
+    });
+
+    // Pull localized strings for the in-page dialog/badge (English fallback above).
+    chrome.runtime.sendMessage({ type: 'GET_HCM_STRINGS' }, (res) => {
+        if (chrome.runtime.lastError || !res) return;
+        Object.keys(hcmStrings).forEach(k => { if (res[k]) hcmStrings[k] = res[k]; });
+        // If the badge is already showing (early desync), refresh its text in place.
+        // Re-creating the host element nukes the click target mid-poll and can drop a
+        // click that landed between remove() and the re-create (L-4).
+        if (hcmBadgeHost) {
+            const span = hcmBadgeHost.shadowRoot && hcmBadgeHost.shadowRoot.querySelector('span');
+            if (span) span.textContent = '● ' + hcmStrings.badge;
         }
     });
 

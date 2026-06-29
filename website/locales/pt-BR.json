@@ -117,6 +117,8 @@
   "FAQ_SUBTITLE": "Tudo o que você precisa saber.",
   "FAQ_Q1": "Posso assistir Netflix ou YouTube em sincronia com meus amigos?",
   "FAQ_A1": "Sim! O KoalaSync funciona no Netflix, YouTube, Twitch e qualquer site com vídeo HTML5. Instale a extensão, compartilhe o link e pronto.",
+  "FAQ_Q_VIDEO_ACCESS": "O KoalaSync transmite o vídeo para meus amigos?",
+  "FAQ_A_VIDEO_ACCESS": "Não. O KoalaSync não transmite, hospeda, compartilha nem contorna o acesso a conteúdos de vídeo. Cada pessoa assiste ao vídeo localmente no próprio navegador e precisa ter seu próprio acesso ao site ou serviço de streaming, como sua própria conta da Netflix. O KoalaSync sincroniza apenas ações de reprodução, como reproduzir, pausar e avançar ou voltar.",
   "FAQ_Q2": "É gratuito?",
   "FAQ_A2": "Sim, é 100% gratuito e open source. Sem recursos pagos e sem anúncios.",
   "FAQ_Q3": "Funciona com Emby ou Jellyfin?",

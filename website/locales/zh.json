@@ -117,6 +117,8 @@
   "FAQ_SUBTITLE": "关于完美同步地一起观看视频所需了解的一切。",
   "FAQ_Q1": "我可以与朋友同步观看 Netflix、Emby 或 Jellyfin 吗？",
   "FAQ_A1": "是的！ KoalaSync 适用于 Netflix、YouTube、Twitch 以及任何具有 HTML5 视频播放器的网站 - 包括 Emby、Jellyfin 和自托管媒体服务器。安装扩展程序、创建房间、共享邀请链接，每个人都可以完美同步观看。",
+  "FAQ_Q_VIDEO_ACCESS": "KoalaSync 会把视频串流给我的朋友吗？",
+  "FAQ_A_VIDEO_ACCESS": "不会。KoalaSync 不会串流、托管、共享视频内容，也不会绕过任何访问权限。每个人都在自己的浏览器中本地观看视频，并且需要自己拥有该网站或流媒体服务的访问权限，例如自己的 Netflix 账号。KoalaSync 只同步播放、暂停和拖动进度等播放操作。",
   "FAQ_Q2": "KoalaSync 是 Teleparty 的免费替代品吗？",
   "FAQ_A2": "在 MIT 许可证下 100% 免费和开源。没有高级套餐、没有锁定功能、没有广告——一切都包含在内。与 Teleparty 不同，KoalaSync 的中继服务器仅是 RAM，需要零数据收集或用户帐户。",
   "FAQ_Q3": "KoalaSync 是否可以与 Emby、Jellyfin 和自托管媒体服务器配合使用？",

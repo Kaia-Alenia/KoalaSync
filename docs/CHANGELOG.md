@@ -4,6 +4,19 @@ All notable changes to the KoalaSync browser extension and relay server.
 
 ---
 
+## [v2.5.0] — 2026-06-29
+
+### Added
+- **Extension + Relay: Host Control Mode** — Room owners can now switch a room between open playback control and host-controlled playback. In host-only mode, guests stay synchronized but their local play, pause, and seek actions are not rebroadcast to the room.
+- **Backward-compatible Host Control rollout** — The extension only shows Host Control when the connected relay supports it, so users on older self-hosted servers do not see controls that cannot work yet.
+- **Extension: Clear host and guest states** — The popup shows the current control mode, host status, peer roles, and localized guest guidance so participants understand when playback is controlled by the host.
+- **Website: FAQ clarification for streaming access** — The landing page and FAQ structured data now state clearly that KoalaSync does not stream, host, share, or bypass access to video content. Every participant watches locally and needs their own access to services such as Netflix.
+
+### Changed
+- **Playback sync now follows the room's control setting** — When Host Control is enabled, only the host can drive room-wide playback changes; guests can still watch in sync without accidentally changing playback for everyone.
+
+---
+
 ## [v2.4.6] — 2026-06-23
 
 ### Fixed

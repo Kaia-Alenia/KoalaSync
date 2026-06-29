@@ -33,6 +33,11 @@ export const EVENTS = {
     ROOM_DATA: "room_data", // Server -> Client: current room state
     ERROR: "error",
 
+    // Host Control Mode
+    SET_CONTROL_MODE: "set_control_mode", // Client -> Server: host sets room control mode ('everyone' | 'host-only')
+    CONTROL_MODE: "control_mode",          // Server -> Client: control mode/role changed { controlMode, hostPeerId, controllers }
+    SET_PEER_ROLE: "set_peer_role",        // Client -> Server: owner promotes/demotes a peer { peerId, controller }
+
     // Media Control
     PLAY: "play",
     PAUSE: "pause",
@@ -55,6 +60,24 @@ export const EVENTS = {
     // Ping / Latency
     PING: "ping",  // { t: timestamp, target?: peerId } — empty target = server echo
     PONG: "pong"   // server responds with same { t } for client RTT calculation
+};
+
+// Room control modes (Host Control Mode feature).
+// NOTE: content.js does not import this module — it uses the string literals
+// 'everyone' / 'host-only' directly. Keep these values in sync there.
+export const CONTROL_MODES = {
+    EVERYONE: 'everyone',   // default: anyone can play/pause/seek for the room
+    HOST_ONLY: 'host-only'  // only the host drives the room
+};
+
+// Server feature capabilities, advertised to clients in ROOM_DATA. Lets a client
+// detect what the relay actually supports instead of inferring it from the
+// presence of a data field — so new server features degrade cleanly on older
+// relays (unknown/absent list → feature treated as unavailable) and old clients
+// simply ignore the field. Add a flag here as each server-gated feature lands.
+export const CAPABILITIES = {
+    HOST_CONTROL: 'host-control',
+    CO_HOST: 'co-host'  // owner promotes guests to additional controllers
 };
 
 export const HEARTBEAT_INTERVAL = 15000; // 15s

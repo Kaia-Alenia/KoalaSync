@@ -41,6 +41,12 @@ const elements = {
     retryBtn: document.getElementById('retryBtn'),
     sectionJoin: document.getElementById('section-join'),
     sectionActive: document.getElementById('section-active'),
+    hostControlCard: document.getElementById('hostControlCard'),
+    hostRoleBadge: document.getElementById('hostRoleBadge'),
+    hostControlToggleRow: document.getElementById('hostControlToggleRow'),
+    hostControlToggle: document.getElementById('hostControlToggle'),
+    hostControlGuestNote: document.getElementById('hostControlGuestNote'),
+    hostControlCohostHint: document.getElementById('hostControlCohostHint'),
     activeRoomId: document.getElementById('activeRoomId'),
     activeServer: document.getElementById('activeServer'),
     peerListSync: document.getElementById('peerListSync'),
@@ -244,6 +250,7 @@ async function init() {
             updatePingDisplay(res.ping);
             updatePeerList(res.peers);
             lastKnownPeers = res.peers || [];
+            updateHostControlUI({ controlMode: res.controlMode, amHost: res.amHost, amController: res.amController, controllers: res.controllers, hostPeerId: res.hostPeerId, hostControlSupported: res.hostControlSupported, coHostSupported: res.coHostSupported, inRoom: res.status === 'connected' });
             if (res.lastActionState) updateLastActionUI(res.lastActionState, res.peers);
 
             // If user has a room configured but background is not connected (disconnected or idle),
@@ -301,6 +308,98 @@ function toggleUIState(inRoom) {
     const syncInactive = document.getElementById('sync-inactive');
     if (syncActive) syncActive.style.display = inRoom ? 'block' : 'none';
     if (syncInactive) syncInactive.style.display = inRoom ? 'none' : 'block';
+}
+
+// --- Host Control Mode UI ---
+// True when we're a guest in a host-only room → remote-control buttons are locked.
+let hcmGuestLocked = false;
+
+// Co-Host state mirrored for the peer-list renderer (promote/demote + role badges).
+let hcmAmOwner = false;
+let hcmControllers = [];
+let hcmCoHostSupported = false;
+let hcmOwnerPeerId = null;
+let hcmRoomIsHostOnly = false;
+
+function updateHostControlUI(state) {
+    const s = state || {};
+    const controlMode = s.controlMode;
+    const amHost = !!s.amHost;
+    const amController = !!s.amController;
+    const hostOnly = controlMode === 'host-only';
+
+    // Stash for the peer-list renderer, then force it to re-render with new roles.
+    hcmAmOwner = amHost;
+    hcmControllers = Array.isArray(s.controllers) ? s.controllers : [];
+    hcmCoHostSupported = !!s.coHostSupported;
+    hcmOwnerPeerId = s.hostPeerId || null;
+    hcmRoomIsHostOnly = hostOnly;
+    lastPeersJson = '';
+    if (activePeers) updatePeerList(activePeers);
+
+    const card = elements.hostControlCard;
+    if (!card) return;
+    // Explicit capability advertised by the relay. Against an older relay it's
+    // false/absent → feature unavailable, so hide the card instead of misleading UI.
+    const serverSupportsHostControl = !!s.hostControlSupported;
+    // Show the card only when meaningful: owner always (to manage); a non-controller
+    // guest only while host-only is active. A guest in a normal room sees nothing.
+    const show = s.inRoom && serverSupportsHostControl && (amHost || hostOnly);
+    if (!show) {
+        card.style.display = 'none';
+        hcmGuestLocked = false;
+        setRemoteControlsLocked(false);
+        return;
+    }
+    card.style.display = 'block';
+    if (elements.hostRoleBadge) {
+        const role = amHost ? (getMessage('BADGE_HOST') || 'Host')
+                   : amController ? (getMessage('BADGE_CONTROLLER') || 'Controller')
+                   : (getMessage('BADGE_GUEST') || 'Guest');
+        elements.hostRoleBadge.textContent = role;
+        elements.hostRoleBadge.style.background = (amHost || amController) ? 'var(--accent)' : 'var(--text-muted)';
+    }
+    if (elements.hostControlToggleRow) elements.hostControlToggleRow.style.display = amHost ? 'flex' : 'none';
+    if (elements.hostControlToggle) elements.hostControlToggle.checked = hostOnly;
+    if (elements.hostControlGuestNote) elements.hostControlGuestNote.style.display = (!amController && hostOnly) ? 'block' : 'none';
+    // Owner-only discoverability hint: co-hosting is granted down in the peer list,
+    // which isn't obvious from this card. Only show it when it's actionable — owner,
+    // relay supports co-host, and the room is locked to host-only (the buttons only
+    // render in that mode).
+    if (elements.hostControlCohostHint) elements.hostControlCohostHint.style.display = (amHost && !!s.coHostSupported && hostOnly) ? 'block' : 'none';
+
+    // Only a non-controller is locked out of the remote controls.
+    hcmGuestLocked = (!amController && hostOnly);
+    setRemoteControlsLocked(hcmGuestLocked);
+}
+
+function setRemoteControlsLocked(locked) {
+    [elements.playBtn, elements.pauseBtn, elements.forceSyncBtn].forEach(btn => {
+        if (!btn) return;
+        btn.disabled = locked;
+        btn.style.opacity = locked ? '0.5' : '';
+        btn.style.cursor = locked ? 'not-allowed' : '';
+        btn.title = locked ? (getMessage('NOTICE_HOST_CONTROLS') || 'The host controls playback for everyone.') : '';
+    });
+    // Always restore the default labels. The action handlers leave the text in a
+    // transitional state ("Playing..." / "Pausing...") and the 2.5s safety reset
+    // skips the refresh while guest-locked — so reset on BOTH transitions: on lock
+    // (host enabled host-only just as the guest clicked → don't freeze "Playing...")
+    // and on unlock (L-1).
+    if (elements.playBtn) elements.playBtn.textContent = getMessage('BTN_PLAY') || 'Play';
+    if (elements.pauseBtn) elements.pauseBtn.textContent = getMessage('BTN_PAUSE') || 'Pause';
+}
+
+if (elements.hostControlToggle) {
+    elements.hostControlToggle.addEventListener('change', () => {
+        const mode = elements.hostControlToggle.checked ? 'host-only' : 'everyone';
+        chrome.runtime.sendMessage({ type: 'SET_CONTROL_MODE', controlMode: mode }, (res) => {
+            // Server broadcasts CONTROL_MODE back to refresh the UI; revert on failure.
+            if (chrome.runtime.lastError || !res || res.status !== 'ok') {
+                elements.hostControlToggle.checked = (mode === 'everyone');
+            }
+        });
+    });
 }
 
 function updateUI(roomId, password, useCustomServer = false, serverUrl = '') {
@@ -577,6 +676,11 @@ function updatePeerList(peers) {
 
             header.appendChild(nameSpan);
 
+            // Right-side badges + actions, kept in one group so they sit together
+            // on the right instead of being scattered by the header's space-between.
+            const rightGroup = document.createElement('div');
+            rightGroup.style.cssText = 'display:flex; align-items:center; gap:6px; flex-shrink:0;';
+
             // Volume Icon (Top Right)
             if (p.volume !== undefined && p.volume !== null) {
                 const volIcon = document.createElement('div');
@@ -590,8 +694,56 @@ function updatePeerList(peers) {
                 const you = document.createElement('span');
                 you.style.cssText = 'font-size:10px; color:var(--accent); font-weight:bold;';
                 you.textContent = getMessage('LABEL_YOU') || 'YOU';
-                header.appendChild(you);
+                rightGroup.appendChild(you);
             }
+
+            // Host Control Mode: show "Solo" badge for peers watching on their own.
+            if (typeof p === 'object' && p.desynced) {
+                const solo = document.createElement('span');
+                solo.style.cssText = 'font-size:10px; color:#fff; background:#b45309; padding:2px 6px; border-radius:6px; font-weight:600;';
+                const soloText = getMessage('BADGE_DESYNCED') || 'Solo';
+                solo.textContent = soloText;
+                solo.title = getMessage('TOOLTIP_PEER_DESYNCED') || soloText;
+                rightGroup.appendChild(solo);
+            }
+
+            // Co-Host: role badges + the owner's promote/demote control. Only meaningful
+            // once the room is locked to host-only — in 'everyone' mode anyone can already
+            // control, so roles are moot and we show nothing (no badge/button noise).
+            // The promote/demote button additionally requires owner privileges (below).
+            const showRoles = !!hcmOwnerPeerId && hcmRoomIsHostOnly;
+            if (showRoles) {
+                const isOwner = pId === hcmOwnerPeerId;
+                const isController = !isOwner && hcmControllers.includes(pId);
+                if (isOwner || isController) {
+                    const roleBadge = document.createElement('span');
+                    roleBadge.style.cssText = 'font-size:10px; color:#fff; background:var(--accent); padding:2px 6px; border-radius:6px; font-weight:600;';
+                    roleBadge.textContent = isOwner ? (getMessage('BADGE_HOST') || 'Host') : (getMessage('BADGE_CONTROLLER') || 'Controller');
+                    rightGroup.appendChild(roleBadge);
+                }
+                // Owner can promote/demote any non-owner peer.
+                if (hcmAmOwner && hcmCoHostSupported && !isOwner) {
+                    const btn = document.createElement('button');
+                    const revoke = isController;
+                    btn.style.cssText = `font-size:10px; padding:3px 9px; border-radius:6px; cursor:pointer; white-space:nowrap; font-weight:600; transition:background .15s,color .15s; border:1px solid ${revoke ? 'var(--text-muted)' : 'var(--accent)'}; background:transparent; color:${revoke ? 'var(--text-muted)' : 'var(--accent)'};`;
+                    btn.textContent = revoke ? (getMessage('BTN_REVOKE_CONTROL') || 'Revoke') : (getMessage('BTN_GIVE_CONTROL') || 'Give control');
+                    btn.title = revoke ? (getMessage('BTN_REVOKE_CONTROL') || 'Revoke') : (getMessage('BTN_GIVE_CONTROL') || 'Give control');
+                    btn.addEventListener('mouseenter', () => {
+                        btn.style.background = revoke ? 'var(--text-muted)' : 'var(--accent)';
+                        btn.style.color = '#fff';
+                    });
+                    btn.addEventListener('mouseleave', () => {
+                        btn.style.background = 'transparent';
+                        btn.style.color = revoke ? 'var(--text-muted)' : 'var(--accent)';
+                    });
+                    btn.addEventListener('click', () => {
+                        chrome.runtime.sendMessage({ type: 'SET_PEER_ROLE', peerId: pId, controller: !isController }, () => {});
+                    });
+                    rightGroup.appendChild(btn);
+                }
+            }
+
+            if (rightGroup.childNodes.length) header.appendChild(rightGroup);
 
             peerItem.appendChild(header);
 
@@ -1145,7 +1297,11 @@ if (elements.langSelector) {
 elements.serverUrl.addEventListener('change', () => {
     let url = elements.serverUrl.value.trim();
     if (url && !url.includes('://')) {
-        url = 'ws://' + url;
+        // Default to secure wss:// — plain ws:// is only valid for a local relay
+        // (and the background rejects/upgrades ws:// for any remote host anyway).
+        const host = url.split('/')[0].split(':')[0].toLowerCase();
+        const isLocal = host === 'localhost' || host === '127.0.0.1';
+        url = (isLocal ? 'ws://' : 'wss://') + url;
         elements.serverUrl.value = url;
         chrome.storage.local.set({ serverUrl: url });
     }
@@ -1262,7 +1418,7 @@ elements.joinBtn.addEventListener('click', async () => {
     }
     if (useCustom && serverUrl) {
         try {
-            const urlToCheck = serverUrl.includes('://') ? serverUrl : 'ws://' + serverUrl;
+            const urlToCheck = serverUrl.includes('://') ? serverUrl : 'wss://' + serverUrl;
             new URL(urlToCheck);
         } catch (_e) {
             showError(getMessage('ERR_INVALID_SERVER_URL'));
@@ -1366,6 +1522,7 @@ elements.targetTab.addEventListener('change', () => {
 });
 
 elements.forceSyncBtn.addEventListener('click', async () => {
+    if (hcmGuestLocked) return; // guest in host-only room — backstop (M-2/L-3)
     if (elements.forceSyncBtn.disabled) return;
     
     const originalText = elements.forceSyncBtn.textContent;
@@ -1407,7 +1564,10 @@ elements.forceSyncBtn.addEventListener('click', async () => {
     const peerCount = (status.peers || []).filter(p => (typeof p === 'object' ? p.peerId : p) !== localPeerId).length;
     const syncTimeoutMs = peerCount === 0 ? 3000 : 12000;
     const forceSyncReset = () => {
-        if (!forceSyncDone) {
+        // Don't unlock a button that's locked because we became a guest mid-flight —
+        // hcmGuestLocked is the source of truth for the lock state, and the next
+        // CONTROL_MODE update restores the correct label.
+        if (!forceSyncDone && !hcmGuestLocked) {
             elements.forceSyncBtn.disabled = false;
             elements.forceSyncBtn.textContent = originalText;
         }
@@ -1454,6 +1614,7 @@ elements.forceSyncBtn.addEventListener('click', async () => {
 });
 
 elements.playBtn.addEventListener('click', () => {
+    if (hcmGuestLocked) return; // guest in host-only room — backstop
     if (!elements.targetTab.value) {
         showToast(getMessage('ERR_SELECT_VIDEO'), 'warning');
         return;
@@ -1472,7 +1633,7 @@ elements.playBtn.addEventListener('click', () => {
     });
     // Safety reset: restore button after 2.5s in case no peers respond
     setTimeout(() => {
-        if (elements.playBtn.disabled) {
+        if (elements.playBtn.disabled && !hcmGuestLocked) {
             elements.playBtn.textContent = getMessage('BTN_PLAY');
             elements.playBtn.disabled = false;
         }
@@ -1480,6 +1641,7 @@ elements.playBtn.addEventListener('click', () => {
 });
 
 elements.pauseBtn.addEventListener('click', () => {
+    if (hcmGuestLocked) return; // guest in host-only room — backstop
     if (!elements.targetTab.value) {
         showToast(getMessage('ERR_SELECT_VIDEO'), 'warning');
         return;
@@ -1498,7 +1660,7 @@ elements.pauseBtn.addEventListener('click', () => {
     });
     // Safety reset: restore button after 2.5s in case no peers respond
     setTimeout(() => {
-        if (elements.pauseBtn.disabled) {
+        if (elements.pauseBtn.disabled && !hcmGuestLocked) {
             elements.pauseBtn.textContent = getMessage('BTN_PAUSE');
             elements.pauseBtn.disabled = false;
         }
@@ -1510,6 +1672,20 @@ elements.clearLogs.addEventListener('click', () => {
         elements.logList.innerHTML = '';
     });
 });
+
+if (elements.regenId) {
+    elements.regenId.addEventListener('click', () => {
+        elements.regenId.disabled = true;
+        chrome.runtime.sendMessage({ type: 'REGENERATE_ID' }, (res) => {
+            elements.regenId.disabled = false;
+            if (chrome.runtime.lastError || !res || !res.peerId) {
+                showToast(getMessage('TOAST_ID_REGENERATED') || 'Failed to regenerate identity', 'error');
+                return;
+            }
+            showToast(getMessage('TOAST_ID_REGENERATED') || 'Identity regenerated — reconnecting…', 'success', 3000);
+        });
+    });
+}
 
 elements.copyInvite.addEventListener('click', () => {
     navigator.clipboard.writeText(elements.inviteLink.value).then(() => {
@@ -1656,6 +1832,9 @@ chrome.runtime.onMessage.addListener((msg) => {
     } else if (msg.type === 'PEER_UPDATE') {
         updatePeerList(msg.peers);
         if (msg.peers) detectPeerChanges(msg.peers);
+    } else if (msg.type === 'CONTROL_MODE') {
+        const inRoom = elements.sectionActive && elements.sectionActive.style.display === 'block';
+        updateHostControlUI({ controlMode: msg.controlMode, amHost: msg.amHost, amController: msg.amController, controllers: msg.controllers, hostPeerId: msg.hostPeerId, hostControlSupported: msg.hostControlSupported, coHostSupported: msg.coHostSupported, inRoom });
     } else if (msg.type === 'CONNECTION_STATUS') {
         if (msg.status === 'connected' || msg.status === 'disconnected') {
             if (joinBtnTimeout) { clearTimeout(joinBtnTimeout); joinBtnTimeout = null; }
@@ -1673,6 +1852,7 @@ chrome.runtime.onMessage.addListener((msg) => {
                 if (res.peers) updatePeerList(res.peers);
                 if (res.lastActionState) updateLastActionUI(res.lastActionState, res.peers);
                 updatePingDisplay(res.ping);
+                updateHostControlUI({ controlMode: res.controlMode, amHost: res.amHost, amController: res.amController, controllers: res.controllers, hostPeerId: res.hostPeerId, hostControlSupported: res.hostControlSupported, coHostSupported: res.coHostSupported, inRoom: true });
             });
         }
         if (msg.status === 'disconnected') {
