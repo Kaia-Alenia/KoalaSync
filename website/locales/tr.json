@@ -117,6 +117,8 @@
   "FAQ_SUBTITLE": "Videoları mükemmel bir uyum içinde birlikte izleme hakkında bilmeniz gereken her şey.",
   "FAQ_Q1": "Arkadaşlarımla Netflix, Emby veya Jellyfin'i eş zamanlı olarak izleyebilir miyim?",
   "FAQ_A1": "Evet! KoalaSync; Netflix, YouTube, Twitch ve HTML5 video oynatıcısı olan tüm web sitelerinde (Emby, Jellyfin ve kendi barındırdığınız medya sunucuları dahil) çalışır. Eklentiyi kurun, bir oda oluşturun, davet bağlantısını paylaşın; herkes mükemmel bir uyum içinde izlesin.",
+  "FAQ_Q_VIDEO_ACCESS": "KoalaSync videoyu arkadaşlarıma aktarır mı?",
+  "FAQ_A_VIDEO_ACCESS": "Hayır. KoalaSync video içeriğini yayınlamaz, barındırmaz, paylaşmaz veya erişim kısıtlamalarını aşmaz. Herkes videoyu kendi tarayıcısında yerel olarak izler ve ilgili web sitesine ya da yayın hizmetine kendi erişimine, örneğin kendi Netflix hesabına, ihtiyaç duyar. KoalaSync yalnızca oynat, duraklat ve ileri geri sarma gibi oynatma eylemlerini senkronize eder.",
   "FAQ_Q2": "KoalaSync, Teleparty'ye ücretsiz bir alternatif mi?",
   "FAQ_A2": "MIT Lisansı kapsamında %100 ücretsiz ve açık kaynaklıdır. Premium katmanlar yok, kilitli özellikler yok, reklam yok — her şey dahil. Teleparty'nin aksine, KoalaSync'in aktarım sunucusu yalnızca RAM üzerindedir; sıfır veri toplama ve kullanıcı hesabı gereksinimi vardır.",
   "FAQ_Q3": "KoalaSync; Emby, Jellyfin ve kendi barındırdığınız medya sunucularıyla çalışır mı?",

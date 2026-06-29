@@ -117,6 +117,8 @@
   "FAQ_SUBTITLE": "Alles, was du über synchrones Videoschauen mit Freunden wissen musst.",
   "FAQ_Q1": "Kann ich Netflix, Emby oder Jellyfin synchron mit Freunden schauen?",
   "FAQ_A1": "Ja! KoalaSync funktioniert mit Netflix, YouTube, Twitch und jeder Website mit einem HTML5-Videoplayer — einschließlich Emby, Jellyfin und eigenen Medienservern. Installiere die Erweiterung, erstelle einen Raum, teile den Einladungslink und alle schauen perfekt synchron.",
+  "FAQ_Q_VIDEO_ACCESS": "Streamt KoalaSync das Video an meine Freunde?",
+  "FAQ_A_VIDEO_ACCESS": "Nein. KoalaSync streamt, hostet oder teilt keine Videoinhalte und umgeht keinen Zugang. Jede Person schaut das Video lokal im eigenen Browser und braucht selbst Zugriff auf die jeweilige Website oder den Streamingdienst, zum Beispiel ein eigenes Netflix-Konto. KoalaSync synchronisiert nur Aktionen wie Play, Pause und Spulen.",
   "FAQ_Q2": "Ist KoalaSync eine kostenlose Alternative zu Teleparty?",
   "FAQ_A2": "100 % kostenlos und Open Source unter der MIT-Lizenz. Keine Premium-Stufen, keine gesperrten Funktionen, keine Werbung. Anders als Teleparty läuft KoalaSyncs Relay-Server ausschließlich im RAM — ohne Datensammlung und ohne Benutzerkonten.",
   "FAQ_Q3": "Funktioniert KoalaSync mit Emby, Jellyfin und eigenen Medienservern?",
