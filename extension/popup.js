@@ -54,6 +54,7 @@ const elements = {
     playBtn: document.getElementById('playBtn'),
     pauseBtn: document.getElementById('pauseBtn'),
     autoSyncNextEpisode: document.getElementById('autoSyncNextEpisode'),
+    titlePrivacyMode: document.getElementById('titlePrivacyMode'),
     episodeLobbyCard: document.getElementById('episodeLobbyCard'),
     lobbyTitle: document.getElementById('lobbyTitle'),
     lobbyPeerStatus: document.getElementById('lobbyPeerStatus'),
@@ -184,7 +185,7 @@ function setRoomRefreshCooldown() {
 async function init() {
     // Local-only by design — settings and room credentials never come from
     // storage.sync (only onboardingComplete + dismissedHints live there).
-    const localData = await chrome.storage.local.get(['serverUrl', 'useCustomServer', 'roomId', 'password', 'username', 'filterNoise', 'autoSyncNextEpisode', 'forceSyncMode', 'browserNotifications', 'autoCopyInvite', 'locale', 'audioSettings', 'activeTab']);
+    const localData = await chrome.storage.local.get(['serverUrl', 'useCustomServer', 'roomId', 'password', 'username', 'filterNoise', 'autoSyncNextEpisode', 'titlePrivacyMode', 'forceSyncMode', 'browserNotifications', 'autoCopyInvite', 'locale', 'audioSettings', 'activeTab']);
 
     let activeLang = localData.locale;
     if (!activeLang) {
@@ -209,6 +210,7 @@ async function init() {
     elements.username.value = username;
     if (elements.filterNoise) elements.filterNoise.checked = localData.filterNoise !== false;
     if (elements.autoSyncNextEpisode) elements.autoSyncNextEpisode.checked = localData.autoSyncNextEpisode !== false;
+    if (elements.titlePrivacyMode) elements.titlePrivacyMode.value = localData.titlePrivacyMode || 'full';
     if (elements.forceSyncMode) elements.forceSyncMode.value = localData.forceSyncMode || 'jump-to-others';
     if (elements.browserNotifications) elements.browserNotifications.checked = localData.browserNotifications === true;
     if (elements.autoCopyInvite) elements.autoCopyInvite.checked = localData.autoCopyInvite !== false;
@@ -1221,6 +1223,14 @@ elements.filterNoise.addEventListener('change', () => {
 elements.autoSyncNextEpisode.addEventListener('change', () => {
     chrome.storage.local.set({ autoSyncNextEpisode: elements.autoSyncNextEpisode.checked });
 });
+
+if (elements.titlePrivacyMode) {
+    elements.titlePrivacyMode.addEventListener('change', () => {
+        chrome.storage.local.set({ titlePrivacyMode: elements.titlePrivacyMode.value }, () => {
+            chrome.runtime.sendMessage({ type: 'TITLE_PRIVACY_CHANGED' }).catch(() => {});
+        });
+    });
+}
 
 elements.browserNotifications.addEventListener('change', () => {
     chrome.storage.local.set({ browserNotifications: elements.browserNotifications.checked });

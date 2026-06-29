@@ -4,6 +4,13 @@ All notable changes to the KoalaSync browser extension and relay server.
 
 ---
 
+## Unreleased
+
+### Added
+- **Extension: Shared title privacy setting** - Advanced users can now choose whether KoalaSync shares full tab/media titles, only detected episode identifiers such as `S01E04`, or no shared titles at all. The default remains full titles for backwards compatibility.
+
+---
+
 ## [v2.5.0] — 2026-06-29
 
 ### Added

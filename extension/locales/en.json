@@ -229,5 +229,10 @@
   "AUDIO_COMING_SOON": "Coming soon",
   "BTN_RESTART_TOUR": "Restart Tutorial",
   "BTN_RESTART_TOUR_TOOLTIP": "Restart the onboarding tutorial",
-  "HINT_SELECT_VIDEO": "Select your video here!"
+  "HINT_SELECT_VIDEO": "Select your video here!",
+  "LABEL_TITLE_PRIVACY": "Shared Titles",
+  "LABEL_TITLE_PRIVACY_TOOLTIP": "Choose how tab and media titles are shared with the room. Hidden mode clears titles on the server and disables creating episode lobbies from your client.",
+  "OPTION_TITLE_PRIVACY_FULL": "Full titles",
+  "OPTION_TITLE_PRIVACY_EPISODE": "Episode only",
+  "OPTION_TITLE_PRIVACY_HIDDEN": "Hidden"
 }

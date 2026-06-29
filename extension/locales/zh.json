@@ -229,5 +229,10 @@
   "AUDIO_COMING_SOON": "即将推出",
   "BTN_RESTART_TOUR": "重启教程",
   "BTN_RESTART_TOUR_TOOLTIP": "重新启动入门教程",
-  "HINT_SELECT_VIDEO": "在这里选择您的视频！"
+  "HINT_SELECT_VIDEO": "在这里选择您的视频！",
+  "LABEL_TITLE_PRIVACY": "Shared Titles",
+  "LABEL_TITLE_PRIVACY_TOOLTIP": "Choose how tab and media titles are shared with the room. Hidden mode clears titles on the server and disables creating episode lobbies from your client.",
+  "OPTION_TITLE_PRIVACY_FULL": "Full titles",
+  "OPTION_TITLE_PRIVACY_EPISODE": "Episode only",
+  "OPTION_TITLE_PRIVACY_HIDDEN": "Hidden"
 }

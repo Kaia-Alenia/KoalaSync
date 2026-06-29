@@ -229,5 +229,10 @@
   "AUDIO_COMING_SOON": "Скоро",
   "BTN_RESTART_TOUR": "Перезапустить обучение",
   "BTN_RESTART_TOUR_TOOLTIP": "Запустить приветственное руководство заново",
-  "HINT_SELECT_VIDEO": "Выберите ваше видео здесь!"
+  "HINT_SELECT_VIDEO": "Выберите ваше видео здесь!",
+  "LABEL_TITLE_PRIVACY": "Shared Titles",
+  "LABEL_TITLE_PRIVACY_TOOLTIP": "Choose how tab and media titles are shared with the room. Hidden mode clears titles on the server and disables creating episode lobbies from your client.",
+  "OPTION_TITLE_PRIVACY_FULL": "Full titles",
+  "OPTION_TITLE_PRIVACY_EPISODE": "Episode only",
+  "OPTION_TITLE_PRIVACY_HIDDEN": "Hidden"
 }

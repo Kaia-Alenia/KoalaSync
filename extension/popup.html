@@ -566,6 +566,15 @@
             </label>
         </div>
 
+        <div class="form-group" style="display: flex; align-items: center; justify-content: space-between; gap: 12px; background: var(--card); padding: 10px; border-radius: 8px; margin-bottom: 12px; border: 1px solid #334155;">
+            <label style="margin-bottom: 0; cursor: help;" title="Choose how tab and media titles are shared with the room." data-i18n="LABEL_TITLE_PRIVACY" data-i18n-title="LABEL_TITLE_PRIVACY_TOOLTIP">Shared Titles</label>
+            <select id="titlePrivacyMode" style="width: 165px; background: var(--bg); border: 1px solid #334155; color: white; padding: 6px 10px; border-radius: 8px; font-size: 12px; cursor: pointer; outline: none; font-family: inherit;">
+                <option value="full" data-i18n="OPTION_TITLE_PRIVACY_FULL">Full titles</option>
+                <option value="episode" data-i18n="OPTION_TITLE_PRIVACY_EPISODE">Episode only</option>
+                <option value="hidden" data-i18n="OPTION_TITLE_PRIVACY_HIDDEN">Hidden</option>
+            </select>
+        </div>
+
         <div class="form-group" style="display: flex; align-items: center; justify-content: space-between; background: var(--card); padding: 10px; border-radius: 8px; margin-bottom: 12px; border: 1px solid #334155;">
             <label style="margin-bottom: 0; cursor: help;" title="Automatically copies the invite link to your clipboard when creating a new room." data-i18n="LABEL_AUTO_COPY_INVITE" data-i18n-title="LABEL_AUTO_COPY_INVITE_TOOLTIP">Auto-Copy Invite Link</label>
             <label class="toggle-switch">

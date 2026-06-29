@@ -13,6 +13,7 @@ const checks = [
   }],
   ['rate-limiter unit tests', 'node', ['scripts/test-rate-limiter.mjs']],
   ['episode-utils unit tests', 'node', ['scripts/test-episode-utils.mjs']],
+  ['title privacy unit tests', 'node', ['scripts/test-title-privacy.mjs']],
   ['server WebSocket integration', 'node', ['scripts/test-server-ws.mjs']],
   ['names generator', 'node', ['scripts/test-names.mjs']],
   ['content video finder', 'node', ['scripts/test-content-video-finder.cjs']],

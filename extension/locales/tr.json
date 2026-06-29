@@ -229,5 +229,10 @@
   "AUDIO_COMING_SOON": "Çok yakında",
   "BTN_RESTART_TOUR": "Eğitimi Yeniden Başlat",
   "BTN_RESTART_TOUR_TOOLTIP": "Tanıtım eğitimini yeniden başlat",
-  "HINT_SELECT_VIDEO": "Videonuzu buradan seçin!"
+  "HINT_SELECT_VIDEO": "Videonuzu buradan seçin!",
+  "LABEL_TITLE_PRIVACY": "Shared Titles",
+  "LABEL_TITLE_PRIVACY_TOOLTIP": "Choose how tab and media titles are shared with the room. Hidden mode clears titles on the server and disables creating episode lobbies from your client.",
+  "OPTION_TITLE_PRIVACY_FULL": "Full titles",
+  "OPTION_TITLE_PRIVACY_EPISODE": "Episode only",
+  "OPTION_TITLE_PRIVACY_HIDDEN": "Hidden"
 }
