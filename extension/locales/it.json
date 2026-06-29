@@ -230,9 +230,9 @@
   "BTN_RESTART_TOUR": "Riavvia Tutorial",
   "BTN_RESTART_TOUR_TOOLTIP": "Riavvia il tutorial introduttivo",
   "HINT_SELECT_VIDEO": "Scegli il tuo video qui!",
-  "LABEL_TITLE_PRIVACY": "Shared Titles",
-  "LABEL_TITLE_PRIVACY_TOOLTIP": "Choose how tab and media titles are shared with the room. Hidden mode clears titles on the server and disables creating episode lobbies from your client.",
-  "OPTION_TITLE_PRIVACY_FULL": "Full titles",
-  "OPTION_TITLE_PRIVACY_EPISODE": "Episode only",
-  "OPTION_TITLE_PRIVACY_HIDDEN": "Hidden"
+  "LABEL_TITLE_PRIVACY": "Titoli condivisi",
+  "LABEL_TITLE_PRIVACY_TOOLTIP": "Scegli come condividere con la stanza i titoli delle schede e dei contenuti multimediali. La modalit? nascosta cancella i titoli sul server e disattiva la creazione di lobby episodio dal tuo client.",
+  "OPTION_TITLE_PRIVACY_FULL": "Titoli completi",
+  "OPTION_TITLE_PRIVACY_EPISODE": "Solo episodio",
+  "OPTION_TITLE_PRIVACY_HIDDEN": "Nascosti"
 }

@@ -36,6 +36,18 @@ assert.deepEqual(
 
 assert.deepEqual(
     applyTitlePrivacyToPayload({
+        tabTitle: 'Private Jellyfin - S01E04',
+        status: 'heartbeat'
+    }, 'episode'),
+    {
+        tabTitle: 'S01E04',
+        status: 'heartbeat'
+    },
+    'privacy filtering must not add absent title keys'
+);
+
+assert.deepEqual(
+    applyTitlePrivacyToPayload({
         tabTitle: 'Private Tab',
         mediaTitle: 'Private Media',
         expectedTitle: 'S01E04',

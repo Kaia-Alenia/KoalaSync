@@ -89,6 +89,7 @@ let pendingConnectionErrorMsg = null;
 let roomListRefreshTimer = null;
 let roomListRefreshInterval = null;
 const ROOM_LIST_REFRESH_COOLDOWN_MS = 11000;
+const TITLE_PRIVACY_MODES = ['full', 'episode', 'hidden'];
 const FEATURE_HINTS = [
     {
         key: 'audio_processing',
@@ -210,7 +211,7 @@ async function init() {
     elements.username.value = username;
     if (elements.filterNoise) elements.filterNoise.checked = localData.filterNoise !== false;
     if (elements.autoSyncNextEpisode) elements.autoSyncNextEpisode.checked = localData.autoSyncNextEpisode !== false;
-    if (elements.titlePrivacyMode) elements.titlePrivacyMode.value = localData.titlePrivacyMode || 'full';
+    if (elements.titlePrivacyMode) elements.titlePrivacyMode.value = TITLE_PRIVACY_MODES.includes(localData.titlePrivacyMode) ? localData.titlePrivacyMode : 'full';
     if (elements.forceSyncMode) elements.forceSyncMode.value = localData.forceSyncMode || 'jump-to-others';
     if (elements.browserNotifications) elements.browserNotifications.checked = localData.browserNotifications === true;
     if (elements.autoCopyInvite) elements.autoCopyInvite.checked = localData.autoCopyInvite !== false;

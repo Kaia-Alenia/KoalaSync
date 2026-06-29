@@ -230,9 +230,9 @@
   "BTN_RESTART_TOUR": "Redémarrer le tutoriel",
   "BTN_RESTART_TOUR_TOOLTIP": "Recommencer le tutoriel d'intégration",
   "HINT_SELECT_VIDEO": "Sélectionnez votre vidéo ici !",
-  "LABEL_TITLE_PRIVACY": "Shared Titles",
-  "LABEL_TITLE_PRIVACY_TOOLTIP": "Choose how tab and media titles are shared with the room. Hidden mode clears titles on the server and disables creating episode lobbies from your client.",
-  "OPTION_TITLE_PRIVACY_FULL": "Full titles",
-  "OPTION_TITLE_PRIVACY_EPISODE": "Episode only",
-  "OPTION_TITLE_PRIVACY_HIDDEN": "Hidden"
+  "LABEL_TITLE_PRIVACY": "Titres partag?s",
+  "LABEL_TITLE_PRIVACY_TOOLTIP": "Choisissez comment les titres des onglets et des m?dias sont partag?s avec le salon. Le mode masqu? efface les titres du serveur et d?sactive la cr?ation de salons d??pisode depuis votre client.",
+  "OPTION_TITLE_PRIVACY_FULL": "Titres complets",
+  "OPTION_TITLE_PRIVACY_EPISODE": "?pisode seulement",
+  "OPTION_TITLE_PRIVACY_HIDDEN": "Masqu?s"
 }

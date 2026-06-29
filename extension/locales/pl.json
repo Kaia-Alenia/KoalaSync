@@ -230,9 +230,9 @@
   "BTN_RESTART_TOUR": "Uruchom samouczek ponownie",
   "BTN_RESTART_TOUR_TOOLTIP": "Uruchom ponownie samouczek powitalny",
   "HINT_SELECT_VIDEO": "Wybierz swoje wideo tutaj!",
-  "LABEL_TITLE_PRIVACY": "Shared Titles",
-  "LABEL_TITLE_PRIVACY_TOOLTIP": "Choose how tab and media titles are shared with the room. Hidden mode clears titles on the server and disables creating episode lobbies from your client.",
-  "OPTION_TITLE_PRIVACY_FULL": "Full titles",
-  "OPTION_TITLE_PRIVACY_EPISODE": "Episode only",
-  "OPTION_TITLE_PRIVACY_HIDDEN": "Hidden"
+  "LABEL_TITLE_PRIVACY": "Udost?pniane tytu?y",
+  "LABEL_TITLE_PRIVACY_TOOLTIP": "Wybierz, jak tytu?y kart i multimedi?w s? udost?pniane w pokoju. Tryb ukryty czy?ci tytu?y na serwerze i wy??cza tworzenie poczekalni odcinka z tego klienta.",
+  "OPTION_TITLE_PRIVACY_FULL": "Pe?ne tytu?y",
+  "OPTION_TITLE_PRIVACY_EPISODE": "Tylko odcinek",
+  "OPTION_TITLE_PRIVACY_HIDDEN": "Ukryte"
 }

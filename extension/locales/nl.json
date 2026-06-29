@@ -230,9 +230,9 @@
   "BTN_RESTART_TOUR": "Tutorial opnieuw starten",
   "BTN_RESTART_TOUR_TOOLTIP": "Start de introductie-tutorial opnieuw",
   "HINT_SELECT_VIDEO": "Selecteer hier je video!",
-  "LABEL_TITLE_PRIVACY": "Shared Titles",
-  "LABEL_TITLE_PRIVACY_TOOLTIP": "Choose how tab and media titles are shared with the room. Hidden mode clears titles on the server and disables creating episode lobbies from your client.",
-  "OPTION_TITLE_PRIVACY_FULL": "Full titles",
-  "OPTION_TITLE_PRIVACY_EPISODE": "Episode only",
-  "OPTION_TITLE_PRIVACY_HIDDEN": "Hidden"
+  "LABEL_TITLE_PRIVACY": "Gedeelde titels",
+  "LABEL_TITLE_PRIVACY_TOOLTIP": "Kies hoe tab- en mediatitels met de kamer worden gedeeld. Verborgen modus wist titels op de server en schakelt het maken van afleveringslobby?s vanaf jouw client uit.",
+  "OPTION_TITLE_PRIVACY_FULL": "Volledige titels",
+  "OPTION_TITLE_PRIVACY_EPISODE": "Alleen aflevering",
+  "OPTION_TITLE_PRIVACY_HIDDEN": "Verborgen"
 }

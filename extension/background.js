@@ -391,6 +391,19 @@ function withTitlePrivacy(payload, settings, keys) {
     return applyTitlePrivacyToPayload(payload, settings?.titlePrivacyMode, keys);
 }
 
+function emitEpisodeLobbyForCurrentPrivacy() {
+    if (!episodeLobby || episodeLobby.initiatorPeerId !== peerId) return;
+    getSettings().then(settings => {
+        if (!episodeLobby || episodeLobby.initiatorPeerId !== peerId) return;
+        const expectedTitle = sanitizeSharedTitle(episodeLobby.expectedTitle, settings.titlePrivacyMode);
+        if (expectedTitle) {
+            emit(EVENTS.EPISODE_LOBBY, { peerId, expectedTitle });
+        }
+    }).catch(err => {
+        addLog('Episode lobby privacy error: ' + err.message, 'error');
+    });
+}
+
 // Privacy + correctness: only onboardingComplete and dismissedHints belong in
 // storage.sync. Everything else is per-device local storage. This actively
 // removes legacy keys that older versions wrote to sync (and that would
@@ -1256,7 +1269,7 @@ function handleServerEvent(event, data) {
                         }
 
                         if (episodeLobby && episodeLobby.initiatorPeerId === peerId) {
-                            emit(EVENTS.EPISODE_LOBBY, { peerId, expectedTitle: episodeLobby.expectedTitle });
+                            emitEpisodeLobbyForCurrentPrivacy();
                         }
                     }
                 } else if (data.status === 'left') {
@@ -1637,7 +1650,6 @@ chrome.alarms.onAlarm.addListener(async (alarm) => {
                     status: 'heartbeat',
                     username: settings.username,
                     tabTitle: sharedTitles.tabTitle,
-                    mediaTitle: sharedTitles.mediaTitle,
                     desynced: hcmDesynced
                 });
             }
@@ -2330,6 +2342,12 @@ async function handleAsyncMessage(message, sender, sendResponse) {
         sendResponse({ status: 'ok' });
     } else if (message.type === 'TITLE_PRIVACY_CHANGED') {
         const settings = await getSettings();
+        if (episodeLobby && episodeLobby.initiatorPeerId === peerId) {
+            const nextLobbyTitle = sanitizeSharedTitle(episodeLobby.expectedTitle, settings.titlePrivacyMode);
+            if (!nextLobbyTitle || nextLobbyTitle !== episodeLobby.expectedTitle) {
+                cancelEpisodeLobby('Title privacy changed');
+            }
+        }
         if (currentRoom && settings.titlePrivacyMode === 'hidden') {
             const sharedTitles = getSharedTitleFields(settings);
             emit(EVENTS.PEER_STATUS, {
