@@ -1,286 +1,151 @@
 # Host Control Mode
 
-## Overview
-
-Host Control Mode allows the room host to control playback for all participants. Guests can attempt to play/pause/seek, but their actions are not broadcast to the room unless they explicitly choose to desync and watch on their own.
+This document describes the Host Control Mode implementation in the relay and
+extension. It only covers behavior implemented in the current codebase.
 
 ## Modes
 
-### `everyone` (Default)
-- Anyone in the room can control playback
-- All play/pause/seek actions are broadcast to all peers
-- Traditional KoalaSync behavior
+### `everyone`
+
+- Default room mode.
+- Any peer may send room-moving playback events.
 
 ### `host-only`
-- Only the host (and promoted controllers) can control the room
-- Guest actions are blocked and they are snapped back to the host's position
-- Guests can choose to desync and watch independently
 
-## Protocol Events
+- Only controllers may send room-moving playback events.
+- The host is always a controller.
+- The host can promote additional peers to controllers.
+- Guests can keep watching locally in solo/desynced mode, but their local actions
+  still do not drive the shared room.
 
-### `SET_CONTROL_MODE` (Client → Server)
+Room-moving events are:
 
-Sent by the host to change the room's control mode.
+- `play`
+- `pause`
+- `seek`
+- `force_sync_prepare`
+- `force_sync_execute`
+- `episode_lobby`
+- `episode_lobby_cancel`
 
-**Payload:**
-```json
+Heartbeats, force-sync ACKs, episode-ready events, ping/pong, and command ACKs
+remain allowed for guests.
+
+## Server State
+
+Rooms store Host Control state in memory:
+
+```js
 {
-  "controlMode": "everyone" | "host-only"
+  hostPeerId,
+  controlMode,
+  controllers,
+  lastControlModeChangeAt,
+  lastRoleChangeAt,
+  forceSyncInitiator
 }
 ```
 
-**Authorization:** Only the host (room.hostPeerId) can send this event.
+`controllers` is a `Set` on the server and is serialized as an array in
+`room_data` and `control_mode`.
 
-**Server Response:** Broadcasts `CONTROL_MODE` to all peers in the room.
+State is not persisted across relay restarts.
 
-### `CONTROL_MODE` (Server → Client)
+## Authority Rules
 
-Broadcast when the control mode changes or when a peer joins a room.
+### Changing mode
 
-**Payload:**
-```json
-{
-  "controlMode": "everyone" | "host-only",
-  "hostPeerId": "string",
-  "controllers": ["string"]
-}
-```
+Only `hostPeerId` may send `set_control_mode`.
 
-**Triggered by:**
-- Host changing the control mode
-- Host leaving the room (fallback to 'everyone')
-- Controller promotion/demotion
+Valid values:
 
-### `SET_PEER_ROLE` (Client → Server)
+- `everyone`
+- `host-only`
 
-Sent by the host to promote or demote a peer to/from controller status.
+Invalid values are ignored. Non-host attempts are ignored and the sender receives
+the current `control_mode` snapshot so optimistic UI can revert.
 
-**Payload:**
-```json
-{
-  "peerId": "string",
-  "controller": "boolean"
-}
-```
+Mode changes are debounced per room for 500 ms.
 
-**Authorization:** Only the host (room.hostPeerId) can send this event.
+### Promoting and demoting controllers
 
-**Server Response:** Broadcasts `CONTROL_MODE` to all peers in the room.
+Only `hostPeerId` may send `set_peer_role`.
 
-## Server-Side Implementation
+The host cannot demote themself. No-op role changes are ignored. Role changes are
+debounced per room for 500 ms.
 
-### Room Object
+### Host leaving
 
-```javascript
-room = {
-  hostPeerId: "peer-id",        // First peer to join the room
-  controlMode: "everyone",      // 'everyone' | 'host-only'
-  controllers: ["peer-id"],     // Peers allowed to control in host-only mode
-  lastControlModeChangeAt: 0,   // Timestamp for rate limiting
-  lastRoleChangeAt: 0           // Timestamp for rate limiting
-}
-```
+When the host leaves and peers remain:
 
-### Key Behaviors
+- the next peer becomes `hostPeerId`;
+- `controlMode` falls back to `everyone`;
+- `controllers` is reset to the new host;
+- the relay broadcasts `control_mode`.
 
-1. **Host Migration:** When the host leaves, the room falls back to 'everyone' mode
-2. **Controller Set:** Always includes the host, plus any promoted peers
-3. **Rate Limiting:** Control mode changes are debounced to 500ms per room
+When a non-host controller leaves, the relay removes that peer from
+`controllers` and broadcasts `control_mode`.
 
-## Client-Side Implementation
+## Enforcement
 
-### State Management (background.js)
+The implementation has two enforcement points:
 
-```javascript
-let controlMode = CONTROL_MODES.EVERYONE;
-let hostPeerId = null;
-let controllers = [];
+- The extension background script blocks local guest attempts in `host-only` and
+  sends `HOST_BLOCKED` to the content script for local UX.
+- The relay drops room-moving events from non-controllers in `host-only`, so old
+  or modified clients cannot drive the room.
 
-function amHost() { return hostPeerId === peerId; }
-function amController() { return amHost() || controllers.includes(peerId); }
-```
+The relay is the authority for room-wide effects.
 
-### Event Gating
+## Guest UX
 
-**Sender-side gate (background.js):**
-- Blocks `PLAY`, `PAUSE`, `SEEK`, `FORCE_SYNC_*`, `EPISODE_LOBBY_*` from non-controllers
-- Sends `HOST_BLOCKED` message to content script instead
+When a guest action is blocked locally, the content script classifies it:
 
-**Receiver-side gate (background.js):**
-- Ignores gated events from non-controllers in host-only mode
-- Prevents malicious or outdated clients from bypassing controls
+- deliberate user action: show the host-control dialog;
+- likely involuntary player action (buffering, tab refocus, no recent gesture):
+  silently snap back when safe;
+- live/DVR stream: degrade without forcing snap-back.
 
-### Snap-Back Logic (content.js)
+The dialog offers:
 
-When a guest's action is blocked:
-1. Show dialog: "Stay in sync" (default) or "Watch on my own"
-2. If "Stay in sync": snap player back to host's position
-3. If "Watch on my own": set `hcmDesynced = true`, show resync button
+- stay in sync: resync to the host;
+- watch on my own: enter solo/desynced mode.
 
-### Host Sync Target Calculation
+In solo/desynced mode:
 
-```javascript
-function getHostSyncTarget() {
-  const host = currentRoom.peers.find(p => p.peerId === hostPeerId);
-  if (!host) return null;
+- the guest can control their local video;
+- host room commands are ignored locally, except force-sync preparation is ACKed
+  so the host's flow can continue;
+- the guest can resync to the host.
 
-  let targetTime = host.currentTime;
+The extension reports `desynced` in peer status so the host UI can show that a
+guest is watching solo.
 
-  // Extrapolate if host is playing
-  if (host.playbackState === 'playing' && host.lastHeartbeat) {
-    const elapsedSec = (Date.now() - host.lastHeartbeat) / 1000;
-    if (elapsedSec > 0 && elapsedSec <= 30) { // Max 30s extrapolation
-      targetTime += elapsedSec;
-    }
-  }
+## Force Sync Edge Case
 
-  return { playbackState: host.playbackState, targetTime };
-}
-```
+The relay tracks `forceSyncInitiator` after a controller sends
+`force_sync_prepare`.
 
-## Edge Cases
+This allows that same initiator's `force_sync_execute` through even if their
+controller role changes before execute arrives. Without this, a demotion in the
+middle of a force-sync flow could leave peers waiting after prepare.
 
-### 1. Host Leaves Room
-- **Behavior:** Room falls back to 'everyone' mode
-- **Implementation:** `removePeerFromRoom` checks if leaving peer is host
-- **Broadcast:** `CONTROL_MODE` event sent to all remaining peers
+The relay clears `forceSyncInitiator` after execute or when the initiator leaves.
 
-### 2. Controller Promoted During Force Sync
-- **Problem:** Controller's `FORCE_SYNC_EXECUTE` would be blocked
-- **Solution:** `forceSyncInitiator` field tracks who started the sync
-- **Behavior:** Initiator's EXECUTE is allowed even if demoted mid-sync
+## Capabilities
 
-### 3. Guest Seek Spam
-- **Problem:** Guest could spam seeks to disrupt
-- **Solution:** Cooldown period after snap-back (1000ms)
-- **Behavior:** Subsequent actions within cooldown are ignored
+The relay advertises Host Control support in `room_data.capabilities`:
 
-### 4. Host State Stale
-- **Problem:** Host heartbeat hasn't arrived recently
-- **Solution:** Max 30s extrapolation, then use last known position
-- **Behavior:** Prevents overshooting if host paused but heartbeat delayed
+- `host-control`
+- `co-host`
 
-### 5. Old Client Without Feature
-- **Problem:** Client doesn't know about host-only mode
-- **Solution:** Receiver-side gate in all clients
-- **Behavior:** Modern clients ignore events from non-controllers
+The extension hides or disables matching UI when capabilities are missing.
 
-## User Experience
+## Related Events
 
-### Host UI
-- Toggle: "Only I can control" (visible only to host)
-- Role badges: "Host", "Controller", or "Guest"
-- Guest notice: "The host controls playback" (when host-only active)
-- Controller management: Promote/demote peers in participant list
+See [PROTOCOL.md](PROTOCOL.md) for payloads and relay behavior for:
 
-### Guest UI
-- **Blocked Action:** Dialog with choices:
-  - "Stay in sync" (default, auto-closes after 8s)
-  - "Watch on my own" (enters desync mode)
-- **Desync Mode:** "Solo" badge with "Resync" button
-- **Resync:** Returns to synchronized state with host
-
-### Co-Host UI
-- Same controls as host (can play/pause/seek/force-sync)
-- "Controller" badge instead of "Host"
-- Cannot promote/demote other controllers
-
-## Testing Checklist
-
-### Basic Functionality
-1. ✅ Host can toggle between 'everyone' and 'host-only'
-2. ✅ Guests see "host controls playback" notice in host-only
-3. ✅ Guest play/pause/seek blocked in host-only
-4. ✅ Guest snapped back to host position when blocked
-5. ✅ Guest can choose "watch on my own" and desync
-6. ✅ Desynced guest can resync with host
-
-### Edge Cases
-7. ✅ Host leaving room falls back to 'everyone'
-8. ✅ Multiple rapid guest actions don't cause loop
-9. ✅ Guest can desync during buffering/throttling
-10. ✅ Old client events ignored by modern clients
-11. ✅ Force sync initiated by controller works
-12. ✅ Episode lobby initiated by controller works
-
-### UI/UX
-13. ✅ Host toggle only visible to host
-14. ✅ Role badges show correct roles
-15. ✅ Desync dialog auto-closes after timeout
-16. ✅ Resync button visible when desynced
-17. ✅ Controller promotion UI visible to host
-
-## Architecture Decisions
-
-### Why Double Gating?
-**Sender-side + Receiver-side gates provide defense in depth:**
-- Sender-side: Clean UX with dialog for guests
-- Receiver-side: Protects against old/buggy/malicious clients
-- Server-side: Central enforcement point (optional but recommended)
-
-### Why Extrapolation?
-**Linear extrapolation from last heartbeat provides ~±1s accuracy:**
-- Better than freezing at last known position
-- Handles minor network jitter gracefully
-- Capped at 30s to avoid overshooting on stale data
-
-### Why Cooldown?
-**600-1000ms cooldown prevents control loops:**
-- Guest pause → snap-back → pause → snap-back...
-- Allows legitimate desync after cooldown expires
-- Doesn't block deliberate user actions
-
-## Migration Path
-
-### From 'everyone' to 'host-only'
-1. Host toggles mode to 'host-only'
-2. Server validates host authority
-3. Server broadcasts `CONTROL_MODE` to all peers
-4. All clients update local state
-5. Existing playback continues uninterrupted
-6. Future guest actions are gated
-
-### From 'host-only' to 'everyone'
-1. Host toggles mode to 'everyone'
-2. Server validates host authority
-3. Server broadcasts `CONTROL_MODE` to all peers
-4. All clients update local state
-5. All peers regain control immediately
-
-## Performance Considerations
-
-- **Memory:** Minimal overhead (~100 bytes per room for HCM state)
-- **CPU:** Snap-back calculation is O(1), negligible impact
-- **Network:** No additional traffic beyond existing heartbeats
-- **Storage:** Control mode persisted in room state, no additional storage
-
-## Security Considerations
-
-- **No Authentication:** Trust model is client-enforced (no tokens)
-- **No Encryption:** Feature doesn't handle sensitive data
-- **Rate Limiting:** Control mode changes debounced to prevent spam
-- **Validation:** All mode changes validated server-side
-
-## Future Enhancements
-
-### Planned
-- Host transfer button (manual host migration)
-- Temporary controller promotion (time-limited)
-- Guest request control (notification to host)
-
-### Considered but Rejected
-- Password-protected host transfer (too complex)
-- Vote-based control mode (social complexity)
-- Per-action permissions (UI overload)
-
-## Changelog
-
-- **2.5.0**: Initial implementation (July 2026)
-- **2.5.1**: Added co-host support and controller promotion
-- **2.5.2**: Improved desync UI with resync button
-- **2.6.0**: Added server-side rate limiting for mode changes
-
-## See Also
-
-- [Protocol Specification](PROTOCOL.md) — Technical event details
-- [Architecture](ARCHITECTURE.md) — System overview
+- `set_control_mode`
+- `control_mode`
+- `set_peer_role`
+- host-only gated relay events

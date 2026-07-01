@@ -1,495 +1,370 @@
-# WebSocket Protocol Specification
+# WebSocket Protocol Reference
 
-## Overview
+This document describes the relay behavior implemented by `server/index.js` and
+the event names defined in `shared/constants.js`.
 
-KoalaSync uses WebSocket for real-time communication between clients and the relay server. The protocol is based on Socket.IO events with a custom message format.
+## Transport
 
-- **Transport**: WebSocket only (no long-polling fallback)
-- **Server URL**: `wss://syncserver.koalastuff.net` (official) or custom server
-- **Protocol Version**: `1.0.0` (current), `MIN_VERSION` not enforced (backward compatible)
-- **Authentication**: Optional server token for custom relays
+- The relay uses Socket.IO v4 events over WebSocket.
+- Long-polling is disabled (`transports: ['websocket']`, `allowUpgrades: false`).
+- Messages are Socket.IO event packets whose payload is an event name plus an
+  object payload.
+- The relay caps incoming Socket.IO message size at 4 KB.
 
-## Protocol Basics
+## Connection Handshake
 
-### Message Format
+The Socket.IO handshake must include:
 
-All messages follow the Socket.IO v4 protocol format:
-- Engine.IO packet type `42` (WEBSOCKET_MESSAGE)
-- JSON-encoded array: `[eventName, payload]`
+- `token`: must match `OFFICIAL_SERVER_TOKEN`.
+- `version`: optional app version. If present, it must be a valid semver-like
+  string and not older than `MIN_VERSION` (default `1.0.0`).
 
-Example: `42["play",{"currentTime":123.45}]`
+If the token is invalid, the relay emits `error` and disconnects the socket.
+If `version` is invalid or too old, the relay emits `error` and disconnects the
+socket.
 
-### Event Flow
+After the socket is connected, `join_room` must include `protocolVersion`.
+It must equal `PROTOCOL_VERSION` exactly. A mismatch emits `error` and rejects
+the join attempt; it does not currently disconnect the socket.
 
-```
-Client → Server: JOIN_ROOM, PLAY, PAUSE, SEEK, etc.
-Server → Client: ROOM_DATA, PEER_STATUS, CONTROL_MODE, etc.
-Client ↔ Server: PING/PONG (latency measurement)
-```
+## Room Join
 
-## Events Reference
+### `join_room` (client -> server)
 
-### Connection & Room Management
+Payload:
 
-#### JOIN_ROOM (Client → Server)
-
-Join an existing room or create a new one.
-
-**Payload:**
 ```json
 {
-  "roomId": "string (alphanum + hyphens, 64 max)",
-  "peerId": "string (16 chars max)",
-  "username": "string (30 chars max)",
-  "password": "string (128 chars max, optional)",
-  "tabTitle": "string (100 chars max, optional)",
-  "mediaTitle": "string (100 chars max, optional)",
-  "protocolVersion": "string (16 chars max)"
+  "roomId": "string, sanitized to [A-Za-z0-9-], max 64",
+  "peerId": "string, max 16",
+  "username": "string, max 30",
+  "password": "string, max 128, optional",
+  "tabTitle": "string, max 100, optional",
+  "mediaTitle": "string, max 100, optional",
+  "protocolVersion": "string, max 16"
 }
 ```
 
-**Server Response:**
-- Success: `ROOM_DATA` event with room state
-- Error: `ERROR` event with message
+Behavior:
 
-**Rate Limit:** 10 attempts per IP per minute
+- Creates the room if it does not exist and capacity allows it.
+- The first peer becomes `hostPeerId`.
+- Rooms may have an optional password hash.
+- Joining with a duplicate `peerId` disconnects the previous socket for that peer.
+- Joining the same room with the same socket and peer is ignored as a no-op.
+- Switching rooms removes the socket from the old room first.
 
-**Edge Cases:**
-- Room ID sanitization (alphanumeric + hyphens only)
-- Peer ID deduplication (kicks old socket for same peerId)
-- Protocol version mismatch → disconnect
+On success, the joining socket receives `room_data`.
+Other room members receive `peer_status` with `status: "joined"`.
 
-#### LEAVE_ROOM (Client → Server)
+### `room_data` (server -> client)
 
-Leave the current room.
+Payload:
 
-**Payload:** None
-
-**Server Action:**
-- Removes peer from room
-- Broadcasts `PEER_STATUS` with `status: 'left'` to remaining peers
-- If room becomes empty, deletes room
-
-**Rate Limit:** 10 requests per socket per minute
-
-**Edge Cases:**
-- Host leaving → controlMode falls back to 'everyone'
-- Last peer leaving → room deletion
-
-#### ROOM_DATA (Server → Client)
-
-Current room state snapshot sent on join or when room changes.
-
-**Payload:**
 ```json
 {
   "roomId": "string",
-  "peers": [
-    {
-      "peerId": "string",
-      "username": "string",
-      "tabTitle": "string",
-      "mediaTitle": "string",
-      "playbackState": "playing" | "paused",
-      "currentTime": "number",
-      "volume": "number",
-      "muted": "boolean",
-      "lastHeartbeat": "timestamp"
-    }
-  ],
-  "activeLobby": "object | null",
-  "hostPeerId": "string | null",
-  "controlMode": "everyone" | "host-only",
-  "controllers": ["string"],
-  "capabilities": ["string"]
+  "peers": ["peer state objects"],
+  "activeLobby": "object or null",
+  "hostPeerId": "string or null",
+  "controlMode": "everyone | host-only",
+  "controllers": ["peerId"],
+  "capabilities": ["host-control", "co-host"]
 }
 ```
 
-**Triggered by:**
-- Successful JOIN_ROOM
-- Room state changes (peer join/leave, mode change)
+`room_data` is sent to the joining socket. It is not the general broadcast used
+for every later room update.
 
-#### ERROR (Server → Client)
+## Room Leave
 
-Error notification.
+### `leave_room` (client -> server)
 
-**Payload:**
+Payload: none.
+
+Behavior:
+
+- Rate-limited to 10 events per socket per minute.
+- If the socket is mapped to a room, the relay removes it from that room.
+- Remaining room members receive `peer_status` with `status: "left"` when the
+  peer is no longer represented by another socket.
+- Empty rooms are deleted.
+- If the host leaves and peers remain, the relay assigns the next peer as host,
+  falls back to `controlMode: "everyone"`, resets controllers to the new host,
+  and broadcasts `control_mode`.
+
+Exceeding the `leave_room` limit is logged and ignored; the socket is not
+disconnected for this specific limit.
+
+## Relayed Room Events
+
+The relay accepts and sanitizes these events, then emits the same event to other
+peers in the room:
+
+- `play`
+- `pause`
+- `seek`
+- `peer_status`
+- `force_sync_prepare`
+- `force_sync_ack`
+- `force_sync_execute`
+- `episode_lobby`
+- `episode_ready`
+- `episode_lobby_cancel`
+
+Relayed payload fields are sanitized and may include:
+
 ```json
 {
-  "message": "string"
-}
-```
-
-**Common Errors:**
-- "Incompatible protocol version"
-- "Invalid password"
-- "Room full"
-- "Server capacity reached"
-
-### Media Control Events
-
-#### PLAY (Client → Server → Client)
-
-Resume playback for all peers in the room.
-
-**Payload:**
-```json
-{
-  "currentTime": "number (seconds)"
-}
-```
-
-**Broadcast:** Relayed to all peers in room
-
-**Gated in host-only mode:** Only controllers can initiate
-
-#### PAUSE (Client → Server → Client)
-
-Pause playback for all peers in the room.
-
-**Payload:**
-```json
-{
-  "currentTime": "number (seconds)"
-}
-```
-
-**Broadcast:** Relayed to all peers in room
-
-**Gated in host-only mode:** Only controllers can initiate
-
-#### SEEK (Client → Server → Client)
-
-Seek to specific time in the media.
-
-**Payload:**
-```json
-{
-  "targetTime": "number (seconds)"
-}
-```
-
-**Broadcast:** Relayed to all peers in room
-
-**Gated in host-only mode:** Only controllers can initiate
-
-**Edge Cases:**
-- Minimum seek delta (0.5s) to avoid spam
-- Coalesced with subsequent seeks within 200ms
-
-### Sync Coordination
-
-#### PEER_STATUS (Client → Server → Client)
-
-Heartbeat with current peer state.
-
-**Payload:**
-```json
-{
-  "peerId": "string",
-  "username": "string",
-  "tabTitle": "string",
-  "mediaTitle": "string",
-  "playbackState": "playing" | "paused",
-  "currentTime": "number",
-  "volume": "number",
+  "senderId": "peerId of sender",
+  "seq": "number",
+  "currentTime": "number 0..86400 or null",
+  "targetTime": "number 0..86400",
+  "playbackState": "playing | paused",
+  "username": "string, max 30",
+  "tabTitle": "string, max 100 or null",
+  "mediaTitle": "string, max 100 or null",
+  "volume": "number 0..1",
   "muted": "boolean",
-  "status": "joined" | "left" | "heartbeat"
+  "desynced": "boolean",
+  "peerId": "sender peerId",
+  "status": "string, max 16",
+  "expectedTitle": "string, max 100",
+  "title": "string, max 100",
+  "actionTimestamp": "number"
 }
 ```
 
-**Frequency:** Every 15 seconds (HEARTBEAT_INTERVAL)
+Undefined fields are removed before relay. Raw client payloads are not forwarded.
 
-**Purpose:**
-- Keep-alive
-- State synchronization
-- Peer presence tracking
+## Media Control
 
-#### FORCE_SYNC_PREPARE (Client → Server → Client)
+### `play`, `pause`, `seek`
 
-Initiate force sync sequence.
+These are room-moving actions. In `host-only` mode, the relay drops them unless
+the sender is a controller.
 
-**Payload:**
+Common payload fields:
+
+- `currentTime` for `play`/`pause`.
+- `targetTime` for `seek`.
+- `seq` and `actionTimestamp` when the extension needs stale-command or ACK
+  handling.
+
+The content script applies additional client-side filtering for noisy native
+player events before it sends these events.
+
+## Peer Status
+
+### `peer_status`
+
+Used for heartbeats and peer state updates. The extension sends it every
+`HEARTBEAT_INTERVAL` while syncing is active.
+
+Typical fields:
+
+- `peerId`
+- `username`
+- `tabTitle`
+- `mediaTitle`
+- `playbackState`
+- `currentTime`
+- `volume`
+- `muted`
+- `desynced`
+- `status`
+
+The relay stores sanitized peer state and relays the sanitized update to other
+peers.
+
+## Force Sync
+
+Force sync coordination is implemented primarily in the extension. The relay
+sanitizes and relays the events.
+
+### `force_sync_prepare`
+
+Payload includes `targetTime`. The initiator waits for ACKs or for
+`FORCE_SYNC_TIMEOUT` before sending `force_sync_execute`.
+
+In `host-only` mode, only controllers may initiate it.
+
+### `force_sync_ack`
+
+The extension sends ACKs with peer identity and sequence data. The relay relays
+them with the same sanitized relay envelope as other room events, including
+`senderId`.
+
+### `force_sync_execute`
+
+Payload includes `targetTime`. In `host-only` mode, only controllers may send it.
+The relay also allows a matching initiator's execute event after that initiator
+started the prepare step, even if their controller state changed before execute.
+
+## Episode Lobby
+
+Episode lobby coordination is implemented primarily in the extension. The relay
+tracks enough state to include `activeLobby` in `room_data` for later joiners.
+
+### `episode_lobby`
+
+Payload uses `expectedTitle`. The relay creates `activeLobby` when this field is
+present and no lobby is already active.
+
+In `host-only` mode, only controllers may initiate it.
+
+### `episode_ready`
+
+Payload may include `title`. The relay adds the sender to the active lobby's
+ready list when a lobby exists.
+
+### `episode_lobby_cancel`
+
+Clears the active lobby and is relayed to peers. In `host-only` mode, only
+controllers may initiate it.
+
+## Host Control Mode
+
+### `set_control_mode` (client -> server)
+
+Payload:
+
 ```json
 {
-  "targetTime": "number (seconds)"
+  "controlMode": "everyone | host-only"
 }
 ```
 
-**Sequence:**
-1. Initiator sends PREPARE
-2. Server broadcasts PREPARE to all peers
-3. Peers respond with FORCE_SYNC_ACK
-4. Initiator sends FORCE_SYNC_EXECUTE after timeout or when all ACKs received
-5. Server broadcasts EXECUTE to all peers
+Only the room host may change the mode. Non-host attempts are ignored and the
+sender receives the current `control_mode` snapshot.
 
-**Timeout:** 8.5 seconds (FORCE_SYNC_TIMEOUT)
+Mode changes are debounced per room with `CONTROL_MODE_MIN_INTERVAL_MS` (500 ms).
 
-**Gated in host-only mode:** Only controllers can initiate
+### `set_peer_role` (client -> server)
 
-#### FORCE_SYNC_ACK (Client → Server)
+Payload:
 
-Acknowledgment of force sync preparation.
-
-**Payload:** None
-
-**Purpose:** Let initiator know peer is ready
-
-#### FORCE_SYNC_EXECUTE (Client → Server → Client)
-
-Execute the force sync (seek + play).
-
-**Payload:**
 ```json
 {
-  "targetTime": "number (seconds)"
-}
-```
-
-**Broadcast:** Relayed to all peers
-
-**Effect:** All peers seek to targetTime and play
-
-### Episode Auto-Sync
-
-#### EPISODE_LOBBY (Client → Server → Client)
-
-Wait for all peers to load the next episode.
-
-**Payload:**
-```json
-{
-  "episodeId": "string",
-  "targetTime": "number (seconds, usually 0)"
-}
-```
-
-**Sequence:**
-1. Initiator sends EPISODE_LOBBY
-2. Server broadcasts to all peers
-3. Peers load episode and send EPISODE_READY when paused at targetTime
-4. When all peers ready or timeout, initiator sends EPISODE_LOBBY_CANCEL or room resumes
-
-**Timeout:** 60 seconds (EPISODE_LOBBY_TIMEOUT)
-
-**Gated in host-only mode:** Only controllers can initiate
-
-#### EPISODE_READY (Client → Server)
-
-Peer is ready for episode sync.
-
-**Payload:**
-```json
-{
-  "episodeId": "string"
-}
-```
-
-#### EPISODE_LOBBY_CANCEL (Client → Server → Client)
-
-Cancel active episode lobby and resume playback.
-
-**Payload:** None
-
-### Host Control Mode
-
-#### SET_CONTROL_MODE (Client → Server)
-
-Host changes room control mode.
-
-**Payload:**
-```json
-{
-  "controlMode": "everyone" | "host-only"
-}
-```
-
-**Authorization:** Only host (room.hostPeerId) can send
-
-**Server Action:**
-- Validates sender is host
-- Updates room.controlMode
-- Broadcasts CONTROL_MODE to all peers
-
-**Rate Limit:** 500ms debounce per room
-
-#### CONTROL_MODE (Server → Client)
-
-Control mode or role changed.
-
-**Payload:**
-```json
-{
-  "controlMode": "everyone" | "host-only",
-  "hostPeerId": "string",
-  "controllers": ["string"]
-}
-```
-
-**Triggered by:**
-- SET_CONTROL_MODE from host
-- Host leaving room (fallback to 'everyone')
-- Controller promotion/demotion
-
-#### SET_PEER_ROLE (Client → Server)
-
-Owner promotes/demotes a peer to/from controller.
-
-**Payload:**
-```json
-{
-  "peerId": "string",
+  "peerId": "string, max 16",
   "controller": "boolean"
 }
 ```
 
-**Authorization:** Only owner (room.hostPeerId) can send
+Only the room host may promote or demote controllers. The host cannot demote
+themself. Role changes use the same 500 ms per-room debounce as mode changes.
 
-**Server Action:**
-- Updates room.controllers set
-- Broadcasts CONTROL_MODE to all peers
+### `control_mode` (server -> client)
 
-**Rate Limit:** 500ms debounce per room
+Payload:
 
-### Ping / Latency Measurement
-
-#### PING (Client → Server → Client)
-
-Measure round-trip time.
-
-**Payload:**
 ```json
 {
-  "t": "timestamp (Date.now())",
-  "target": "peerId (optional, empty = server echo)"
+  "controlMode": "everyone | host-only",
+  "hostPeerId": "string or null",
+  "controllers": ["peerId"]
 }
 ```
 
-**Server Response:** PONG with same timestamp
+Sent when mode or controller state changes, when host migration changes room
+authority, and when unauthorized role/mode attempts need to resync the sender.
 
-**Frequency:** Every 30 seconds
+## Room List
 
-#### PONG (Server → Client)
+### `get_rooms` (client -> server)
 
-Response to PING.
+Payload: none.
 
-**Payload:**
-```json
-{
-  "t": "timestamp (from PING)"
-}
-```
+No admin token is required for this Socket.IO event.
 
-### Administrative Events
+Limits:
 
-#### GET_ROOMS (Client → Server)
+- Counts against the per-socket event limit.
+- Also has a 10 second per-socket cooldown.
 
-Request list of active rooms (admin only).
+### `room_list` (server -> client)
 
-**Payload:** None
+Payload:
 
-**Authorization:** Requires admin token
-
-**Rate Limit:** 10 requests per IP per minute
-
-**Server Response:** ROOM_LIST event
-
-#### ROOM_LIST (Server → Client)
-
-List of active rooms.
-
-**Payload:**
 ```json
 {
   "rooms": [
     {
-      "roomId": "string",
-      "peerCount": "number",
-      "createdAt": "timestamp",
-      "lastActivity": "timestamp"
+      "id": "room id",
+      "peerCount": 2,
+      "hasPassword": false
     }
   ]
 }
 ```
 
+## Ping, Pong, and ACK
+
+### `ping`
+
+Payload:
+
+```json
+{
+  "t": 1234567890,
+  "target": "peerId, optional"
+}
+```
+
+If `target` is omitted, the relay responds to the sender with `pong`.
+If `target` is another peer in the same room, the relay sends `ping` to that peer
+with `{ "t": ..., "sender": "senderPeerId" }`.
+
+### `pong`
+
+Payload:
+
+```json
+{
+  "t": 1234567890,
+  "target": "peerId, optional"
+}
+```
+
+If `target` is a peer in the same room, the relay sends `pong` to that peer with
+`{ "t": ... }`.
+
+### `event_ack`
+
+Client payload:
+
+```json
+{
+  "targetId": "peerId",
+  "actionTimestamp": 1234567890
+}
+```
+
+If sender and target are still in the same room, the relay emits:
+
+```json
+{
+  "senderId": "sender peerId",
+  "actionTimestamp": 1234567890
+}
+```
+
 ## Rate Limits
 
-### Connection Rate Limits
+- Connections: 10 per IP per minute; excess connections are disconnected.
+- Relayed/events: 50 per socket per 10 seconds; excess disconnects the socket.
+- `get_rooms`: 10 second cooldown per socket plus the event limit.
+- `leave_room`: 10 per socket per minute; excess is ignored.
+- Invalid room passwords: tracked per IP and room. Five recent failures block
+  more password attempts for that room until the failure window ages out.
+- HTTP health and admin-metrics endpoints have their own rate limits outside this
+  Socket.IO protocol.
 
-- **Connections:** 10 per IP per minute
-- **Authentication Attempts:** 5 per IP per room per minute
-- **Event Rate:** 50 events per 10 seconds per socket
+## Capabilities
 
-### Specific Event Rate Limits
+`room_data.capabilities` advertises server-backed features:
 
-- **Health Checks:** 10 per IP per minute
-- **Admin Metrics Auth:** 5 per IP per minute
-- **Room List:** 10 per IP per minute (cooldown)
-- **LEAVE_ROOM:** 10 per socket per minute
+- `host-control`
+- `co-host`
 
-### Debounce Intervals
-
-- **Control Mode Changes:** 500ms per room
-- **Role Changes:** 500ms per room
-
-## Server Capabilities
-
-The server advertises supported features in ROOM_DATA.capabilities:
-
-- `host-control`: Host Control Mode feature
-- `co-host`: Co-host/promotion feature
-
-Clients should check capabilities before using features.
-
-## Protocol Versioning
-
-- **PROTOCOL_VERSION**: "1.0.0" (current)
-- **Backward Compatibility**: Older clients can connect but may not support all features
-- **Version Check**: Server validates protocolVersion on JOIN_ROOM
-
-## Edge Cases & Error Handling
-
-### Connection Issues
-
-- **Protocol Mismatch**: Client disconnected with ERROR message
-- **Rate Limit Exceeded**: Socket disconnected immediately
-- **Server Restart**: Clients auto-reconnect with exponential backoff
-
-### Room Management
-
-- **Host Leaves**: controlMode falls back to 'everyone'
-- **Room Full**: Error response on JOIN_ROOM
-- **Duplicate PeerId**: Old socket kicked on new join
-
-### Media Sync
-
-- **Seek Spam**: Coalesced within 200ms window
-- **Force Sync Timeout**: Auto-executes after 8.5s if not all peers ACK
-- **Episode Lobby Timeout**: Auto-cancels after 60s
-
-### Host Control Mode
-
-- **Non-host Attempts**: Event ignored, CONTROL_MODE sent to sync UI
-- **Host-only Gating**: play/pause/seek/forceSync/episodeLobby blocked for guests
-- **Desync Handling**: Guests can opt-out via dialog, resync button available
-
-## Security Considerations
-
-- **No Authentication**: Trust model is client-enforced (no tokens)
-- **Rate Limiting**: Prevents abuse and DoS
-- **Input Sanitization**: All strings truncated and validated
-- **No Sensitive Data**: Only public room/peer metadata transmitted
-
-## Testing Recommendations
-
-1. **Connection Flow**: Join, leave, reconnect, room creation
-2. **Media Sync**: Play/pause/seek propagation, force sync sequence
-3. **Host Control**: Mode toggle, guest blocking, desync/resync
-4. **Rate Limits**: Verify limits enforced, errors logged
-5. **Edge Cases**: Host leave, network blips, seek spam
-
-## Changelog
-
-- **1.0.0**: Initial protocol specification (2026)
-- Documented all events from shared/constants.js
-- Added rate limit details and edge cases
+Clients should treat a missing or unknown capabilities list as unsupported.
