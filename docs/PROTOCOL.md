@@ -93,8 +93,7 @@ Behavior:
   falls back to `controlMode: "everyone"`, resets controllers to the new host,
   and broadcasts `control_mode`.
 
-Exceeding the `leave_room` limit is logged and ignored; the socket is not
-disconnected for this specific limit.
+Exceeding the `leave_room` limit is logged and the socket is disconnected.
 
 ## Relayed Room Events
 
@@ -354,7 +353,7 @@ If sender and target are still in the same room, the relay emits:
 - Connections: 10 per IP per minute; excess connections are disconnected.
 - Relayed/events: 50 per socket per 10 seconds; excess disconnects the socket.
 - `get_rooms`: 10 second cooldown per socket plus the event limit.
-- `leave_room`: 10 per socket per minute; excess is ignored.
+- `leave_room`: 10 per socket per minute; excess disconnects the socket.
 - Invalid room passwords: tracked per IP and room. Five recent failures block
   more password attempts for that room until the failure window ages out.
 - HTTP health and admin-metrics endpoints have their own rate limits outside this

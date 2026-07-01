@@ -7,6 +7,7 @@ import path from 'node:path';
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
 const checks = [
+  ['vitest unit tests', 'npm', ['run', 'test:unit']],
   ['server ops', 'node', ['scripts/test-server-ops.mjs']],
   ['server routes', 'node', ['scripts/test-server-routes.mjs'], {
     env: { ADMIN_METRICS_TOKEN: 'verify-admin-token-with-more-than-32-chars' }

@@ -4,21 +4,20 @@ import {
     LEAVE_ROOM_RATE_LIMIT,
     LEAVE_ROOM_RATE_WINDOW_MS,
     rateLimitDenied,
-    leaveRoomCounts
+    leaveRoomCounts,
+    clearRateLimitMaps
 } from './rate-limiter.js';
 
 describe('LEAVE_ROOM Rate Limiter', () => {
     const testSocketId = 'test-socket-123';
 
     beforeEach(() => {
-        // Reset state before each test
-        leaveRoomCounts.clear();
+        clearRateLimitMaps();
         rateLimitDenied.leaveRoom = 0;
     });
 
     afterEach(() => {
-        // Clean up after each test
-        leaveRoomCounts.clear();
+        clearRateLimitMaps();
     });
 
     it('should allow LEAVE_ROOM within limit', () => {
@@ -80,18 +79,23 @@ describe('LEAVE_ROOM Rate Limiter', () => {
     });
 
     it('should increment rateLimitDenied counter on block', () => {
-        // Fill up to the limit
         for (let i = 0; i < LEAVE_ROOM_RATE_LIMIT; i++) {
             checkLeaveRoomRate(testSocketId);
         }
 
-        // First block
         checkLeaveRoomRate(testSocketId);
         expect(rateLimitDenied.leaveRoom).toBe(1);
 
-        // Second block
         checkLeaveRoomRate(testSocketId);
         expect(rateLimitDenied.leaveRoom).toBe(2);
+    });
+
+    it('should be cleared by the shared reset helper', () => {
+        checkLeaveRoomRate(testSocketId);
+        expect(leaveRoomCounts.size).toBe(1);
+
+        clearRateLimitMaps();
+        expect(leaveRoomCounts.size).toBe(0);
     });
 });
 

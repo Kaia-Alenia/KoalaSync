@@ -164,7 +164,7 @@ export function startRateLimitCleanup(io) {
             }
         }
         for (const [socketId, entry] of leaveRoomCounts.entries()) {
-            if (now > entry.resetTime) {
+            if (now > entry.resetTime || !io.sockets.sockets.has(socketId)) {
                 leaveRoomCounts.delete(socketId);
             }
         }

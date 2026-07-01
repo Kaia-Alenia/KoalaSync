@@ -22,6 +22,7 @@ import {
     healthCounts,
     adminMetricsAuthCounts,
     roomListCooldowns,
+    leaveRoomCounts,
     rateLimitDenied,
     checkAuthRate,
     recordAuthFailure,
@@ -115,7 +116,8 @@ app.get('/health', (req, res) => {
                 health: healthCounts.size,
                 adminMetricsAuth: adminMetricsAuthCounts.size,
                 authFailures: failedAuthAttempts.size,
-                roomList: roomListCooldowns.size
+                roomList: roomListCooldowns.size,
+                leaveRoom: leaveRoomCounts.size
             },
             rateLimitDenied
         })
@@ -664,6 +666,7 @@ io.on('connection', (socket) => {
     socket.on(EVENTS.LEAVE_ROOM, () => {
         if (!checkLeaveRoomRate(socket.id)) {
             log('SECURITY', `LEAVE_ROOM rate limit exceeded for socket: ${socket.id}`);
+            socket.disconnect(true);
             return;
         }
         try {
@@ -844,6 +847,7 @@ io.on('connection', (socket) => {
     socket.on('disconnect', () => {
         eventCounts.delete(socket.id);
         roomListCooldowns.delete(socket.id);
+        leaveRoomCounts.delete(socket.id);
         const mapping = socketToRoom.get(socket.id);
         if (mapping) {
             try {
