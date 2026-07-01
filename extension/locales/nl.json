@@ -230,9 +230,13 @@
   "BTN_RESTART_TOUR": "Tutorial opnieuw starten",
   "BTN_RESTART_TOUR_TOOLTIP": "Start de introductie-tutorial opnieuw",
   "HINT_SELECT_VIDEO": "Selecteer hier je video!",
-  "LABEL_TITLE_PRIVACY": "Gedeelde titels",
-  "LABEL_TITLE_PRIVACY_TOOLTIP": "Kies hoe tab- en mediatitels met de kamer worden gedeeld. Verborgen modus wist titels op de server en schakelt het maken van afleveringslobby?s vanaf jouw client uit.",
-  "OPTION_TITLE_PRIVACY_FULL": "Volledige titels",
-  "OPTION_TITLE_PRIVACY_EPISODE": "Alleen aflevering",
-  "OPTION_TITLE_PRIVACY_HIDDEN": "Verborgen"
+  "OPTION_TITLE_PRIVACY_FULL": "Volledige titel verzenden",
+  "OPTION_TITLE_PRIVACY_EPISODE": "Afleverings-ID verzenden",
+  "OPTION_TITLE_PRIVACY_HIDDEN": "Niet verzenden",
+  "LABEL_PRIVACY_SETTINGS": "Privacy-instellingen",
+  "LABEL_PRIVACY_SETTINGS_TOOLTIP": "Kies welke tab- en mediatitels naar de kamer worden gestuurd.",
+  "LABEL_SEND_TAB_TITLE": "Tabtitel verzenden",
+  "LABEL_SEND_TAB_TITLE_TOOLTIP": "Stuurt de titel van het geselecteerde browsertabblad naar de kamer.",
+  "LABEL_MEDIA_TITLE_PRIVACY": "Mediatitel",
+  "LABEL_MEDIA_TITLE_PRIVACY_TOOLTIP": "Kies hoe mediatitels naar de kamer worden gestuurd."
 }

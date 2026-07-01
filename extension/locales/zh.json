@@ -230,9 +230,13 @@
   "BTN_RESTART_TOUR": "重启教程",
   "BTN_RESTART_TOUR_TOOLTIP": "重新启动入门教程",
   "HINT_SELECT_VIDEO": "在这里选择您的视频！",
-  "LABEL_TITLE_PRIVACY": "????",
-  "LABEL_TITLE_PRIVACY_TOOLTIP": "??????????????????????????????????????????????????",
-  "OPTION_TITLE_PRIVACY_FULL": "????",
-  "OPTION_TITLE_PRIVACY_EPISODE": "???",
-  "OPTION_TITLE_PRIVACY_HIDDEN": "??"
+  "OPTION_TITLE_PRIVACY_FULL": "发送完整标题",
+  "OPTION_TITLE_PRIVACY_EPISODE": "发送剧集 ID",
+  "OPTION_TITLE_PRIVACY_HIDDEN": "不发送",
+  "LABEL_PRIVACY_SETTINGS": "隐私设置",
+  "LABEL_PRIVACY_SETTINGS_TOOLTIP": "选择要发送到房间的标签页标题和媒体标题。",
+  "LABEL_SEND_TAB_TITLE": "发送标签页标题",
+  "LABEL_SEND_TAB_TITLE_TOOLTIP": "将所选浏览器标签页的标题发送到房间。",
+  "LABEL_MEDIA_TITLE_PRIVACY": "媒体标题",
+  "LABEL_MEDIA_TITLE_PRIVACY_TOOLTIP": "选择媒体标题发送到房间的方式。"
 }

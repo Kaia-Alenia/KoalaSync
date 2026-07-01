@@ -230,9 +230,13 @@
   "BTN_RESTART_TOUR": "Restart Tutorial",
   "BTN_RESTART_TOUR_TOOLTIP": "Restart the onboarding tutorial",
   "HINT_SELECT_VIDEO": "Select your video here!",
-  "LABEL_TITLE_PRIVACY": "Tab/Media Titles",
-  "LABEL_TITLE_PRIVACY_TOOLTIP": "Choose whether tab and media titles are sent to the room. Do not send clears both titles on the server and disables episode lobbies from your client.",
-  "OPTION_TITLE_PRIVACY_FULL": "Send full titles",
-  "OPTION_TITLE_PRIVACY_EPISODE": "Send episode IDs",
-  "OPTION_TITLE_PRIVACY_HIDDEN": "Do not send"
+  "OPTION_TITLE_PRIVACY_FULL": "Send full title",
+  "OPTION_TITLE_PRIVACY_EPISODE": "Send episode ID",
+  "OPTION_TITLE_PRIVACY_HIDDEN": "Do not send",
+  "LABEL_PRIVACY_SETTINGS": "Privacy Settings",
+  "LABEL_PRIVACY_SETTINGS_TOOLTIP": "Choose which tab and media titles are sent to the room.",
+  "LABEL_SEND_TAB_TITLE": "Send tab title",
+  "LABEL_SEND_TAB_TITLE_TOOLTIP": "Send the selected browser tab title to the room.",
+  "LABEL_MEDIA_TITLE_PRIVACY": "Media title",
+  "LABEL_MEDIA_TITLE_PRIVACY_TOOLTIP": "Choose how media titles are sent to the room."
 }

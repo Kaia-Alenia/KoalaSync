@@ -2,7 +2,7 @@ import { EVENTS, CONTROL_MODES, CAPABILITIES, PROTOCOL_VERSION, OFFICIAL_SERVER_
 import { generateUsername } from './shared/names.js';
 import { loadLocale, getMessage, getSystemLanguage } from './i18n.js';
 import { sameEpisode } from './episode-utils.js';
-import { applyTitlePrivacyToPayload, sanitizeSharedTitle, normalizeTitlePrivacyMode } from './title-privacy.js';
+import { applyTitlePrivacyToPayload, sanitizeSharedTitle, sanitizeTabTitle, normalizeSendTabTitle, normalizeTitlePrivacyMode } from './title-privacy.js';
 import { initTabManager } from './modules/tab-manager.js';
 
 // --- Uninstall URL Initialization ---
@@ -363,39 +363,41 @@ async function getSettings() {
     // (username) must NEVER come from storage.sync — syncing them across devices
     // both leaks them and resurrects dead rooms on reinstall (a fresh install
     // has empty local storage but sync survives in the user's Google account).
-    const data = await chrome.storage.local.get(['serverUrl', 'useCustomServer', 'roomId', 'password', 'username', 'titlePrivacyMode']);
+    const data = await chrome.storage.local.get(['serverUrl', 'useCustomServer', 'roomId', 'password', 'username', 'sendTabTitle', 'mediaTitlePrivacyMode', 'titlePrivacyMode']);
     let username = data.username;
     if (!username) {
         username = generateUsername();
         await chrome.storage.local.set({ username });
     }
+    const legacyTitlePrivacyMode = normalizeTitlePrivacyMode(data.titlePrivacyMode);
+    const mediaTitlePrivacyMode = normalizeTitlePrivacyMode(data.mediaTitlePrivacyMode || legacyTitlePrivacyMode);
     return {
         serverUrl: data.serverUrl || '',
         useCustomServer: data.useCustomServer || false,
         roomId: data.roomId || '',
         password: data.password || '',
         username,
-        titlePrivacyMode: normalizeTitlePrivacyMode(data.titlePrivacyMode)
+        sendTabTitle: normalizeSendTabTitle(data.sendTabTitle, legacyTitlePrivacyMode),
+        mediaTitlePrivacyMode
     };
 }
 
 function getSharedTitleFields(settings, mediaTitle = null) {
-    const mode = settings?.titlePrivacyMode;
     return {
-        tabTitle: sanitizeSharedTitle(currentTabTitle, mode),
-        mediaTitle: sanitizeSharedTitle(mediaTitle, mode)
+        tabTitle: sanitizeTabTitle(currentTabTitle, settings?.sendTabTitle),
+        mediaTitle: sanitizeSharedTitle(mediaTitle, settings?.mediaTitlePrivacyMode)
     };
 }
 
 function withTitlePrivacy(payload, settings, keys) {
-    return applyTitlePrivacyToPayload(payload, settings?.titlePrivacyMode, keys);
+    return applyTitlePrivacyToPayload(payload, settings?.mediaTitlePrivacyMode, keys);
 }
 
 function emitEpisodeLobbyForCurrentPrivacy() {
     if (!episodeLobby || episodeLobby.initiatorPeerId !== peerId) return;
     getSettings().then(settings => {
         if (!episodeLobby || episodeLobby.initiatorPeerId !== peerId) return;
-        const expectedTitle = sanitizeSharedTitle(episodeLobby.expectedTitle, settings.titlePrivacyMode);
+        const expectedTitle = sanitizeSharedTitle(episodeLobby.expectedTitle, settings.mediaTitlePrivacyMode);
         if (expectedTitle) {
             emit(EVENTS.EPISODE_LOBBY, { peerId, expectedTitle });
         }
@@ -412,7 +414,7 @@ const LEGACY_SYNC_KEYS = [
     'serverUrl', 'useCustomServer', 'roomId', 'password', 'username',
     'filterNoise', 'autoSyncNextEpisode', 'forceSyncMode',
     'browserNotifications', 'autoCopyInvite', 'locale', 'audioSettings',
-    'titlePrivacyMode'
+    'titlePrivacyMode', 'sendTabTitle', 'mediaTitlePrivacyMode'
 ];
 function purgeLegacySyncKeys() {
     chrome.storage.sync.remove(LEGACY_SYNC_KEYS).catch(() => {});
@@ -2242,9 +2244,9 @@ async function handleAsyncMessage(message, sender, sendResponse) {
         }
 
         const settings = await getSettings();
-        const lobbyTitle = sanitizeSharedTitle(newTitle, settings.titlePrivacyMode);
+        const lobbyTitle = sanitizeSharedTitle(newTitle, settings.mediaTitlePrivacyMode);
         if (!lobbyTitle) {
-            addLog(`Episode change detected but title sharing is ${settings.titlePrivacyMode}; not creating a lobby.`, 'info');
+            addLog(`Episode change detected but media title sharing is ${settings.mediaTitlePrivacyMode}; not creating a lobby.`, 'info');
             sendResponse({ status: 'title_privacy_no_lobby' });
             return;
         }
@@ -2330,7 +2332,7 @@ async function handleAsyncMessage(message, sender, sendResponse) {
         if (episodeLobby && message.payload && sameEpisode(message.payload.title, episodeLobby.expectedTitle)) {
             if (!episodeLobby.readyPeers.includes(peerId)) {
                 const settings = await getSettings();
-                const readyTitle = sanitizeSharedTitle(message.payload.title, settings.titlePrivacyMode);
+                const readyTitle = sanitizeSharedTitle(message.payload.title, settings.mediaTitlePrivacyMode);
                 episodeLobby.readyPeers.push(peerId);
                 persistEpisodeLobby();
                 broadcastLobbyUpdate();
@@ -2343,12 +2345,12 @@ async function handleAsyncMessage(message, sender, sendResponse) {
     } else if (message.type === 'TITLE_PRIVACY_CHANGED') {
         const settings = await getSettings();
         if (episodeLobby && episodeLobby.initiatorPeerId === peerId) {
-            const nextLobbyTitle = sanitizeSharedTitle(episodeLobby.expectedTitle, settings.titlePrivacyMode);
+            const nextLobbyTitle = sanitizeSharedTitle(episodeLobby.expectedTitle, settings.mediaTitlePrivacyMode);
             if (!nextLobbyTitle || nextLobbyTitle !== episodeLobby.expectedTitle) {
                 cancelEpisodeLobby('Title privacy changed');
             }
         }
-        if (currentRoom && settings.titlePrivacyMode === 'hidden') {
+        if (currentRoom) {
             const sharedTitles = getSharedTitleFields(settings);
             emit(EVENTS.PEER_STATUS, {
                 peerId,
@@ -2361,16 +2363,6 @@ async function handleAsyncMessage(message, sender, sendResponse) {
         }
         if (currentRoom && currentTabId) {
             chrome.tabs.sendMessage(currentTabId, { type: 'REQUEST_HEARTBEAT' }).catch(() => {});
-        } else if (currentRoom && settings.titlePrivacyMode !== 'hidden') {
-            const sharedTitles = getSharedTitleFields(settings);
-            emit(EVENTS.PEER_STATUS, {
-                peerId,
-                status: 'heartbeat',
-                username: settings.username,
-                tabTitle: sharedTitles.tabTitle,
-                mediaTitle: sharedTitles.mediaTitle,
-                desynced: hcmDesynced
-            });
         }
         sendResponse({ status: 'ok' });
     } else if (message.type === 'CONTENT_BOOT') {

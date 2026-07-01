@@ -230,9 +230,13 @@
   "BTN_RESTART_TOUR": "Riavvia Tutorial",
   "BTN_RESTART_TOUR_TOOLTIP": "Riavvia il tutorial introduttivo",
   "HINT_SELECT_VIDEO": "Scegli il tuo video qui!",
-  "LABEL_TITLE_PRIVACY": "Titoli condivisi",
-  "LABEL_TITLE_PRIVACY_TOOLTIP": "Scegli come condividere con la stanza i titoli delle schede e dei contenuti multimediali. La modalit? nascosta cancella i titoli sul server e disattiva la creazione di lobby episodio dal tuo client.",
-  "OPTION_TITLE_PRIVACY_FULL": "Titoli completi",
-  "OPTION_TITLE_PRIVACY_EPISODE": "Solo episodio",
-  "OPTION_TITLE_PRIVACY_HIDDEN": "Nascosti"
+  "OPTION_TITLE_PRIVACY_FULL": "Invia titolo completo",
+  "OPTION_TITLE_PRIVACY_EPISODE": "Invia ID episodio",
+  "OPTION_TITLE_PRIVACY_HIDDEN": "Non inviare",
+  "LABEL_PRIVACY_SETTINGS": "Impostazioni privacy",
+  "LABEL_PRIVACY_SETTINGS_TOOLTIP": "Scegli quali titoli di scheda e contenuto multimediale vengono inviati alla stanza.",
+  "LABEL_SEND_TAB_TITLE": "Invia titolo scheda",
+  "LABEL_SEND_TAB_TITLE_TOOLTIP": "Invia alla stanza il titolo della scheda del browser selezionata.",
+  "LABEL_MEDIA_TITLE_PRIVACY": "Titolo multimediale",
+  "LABEL_MEDIA_TITLE_PRIVACY_TOOLTIP": "Scegli come inviare alla stanza i titoli multimediali."
 }

@@ -2,13 +2,23 @@ import assert from 'node:assert/strict';
 import {
     TITLE_PRIVACY_MODES,
     applyTitlePrivacyToPayload,
+    normalizeSendTabTitle,
     normalizeTitlePrivacyMode,
-    sanitizeSharedTitle
+    sanitizeSharedTitle,
+    sanitizeTabTitle
 } from '../extension/title-privacy.js';
 
 assert.equal(normalizeTitlePrivacyMode(undefined), TITLE_PRIVACY_MODES.FULL);
 assert.equal(normalizeTitlePrivacyMode('unknown'), TITLE_PRIVACY_MODES.FULL);
 assert.equal(normalizeTitlePrivacyMode(TITLE_PRIVACY_MODES.HIDDEN), TITLE_PRIVACY_MODES.HIDDEN);
+assert.equal(normalizeSendTabTitle(undefined, TITLE_PRIVACY_MODES.FULL), true);
+assert.equal(normalizeSendTabTitle(undefined, TITLE_PRIVACY_MODES.EPISODE), false);
+assert.equal(normalizeSendTabTitle(true, TITLE_PRIVACY_MODES.HIDDEN), true);
+assert.equal(normalizeSendTabTitle(false, TITLE_PRIVACY_MODES.FULL), false);
+
+assert.equal(sanitizeTabTitle('Private Tab', true), 'Private Tab');
+assert.equal(sanitizeTabTitle('Private Tab', false), null);
+assert.equal(sanitizeTabTitle('', true), null);
 
 assert.equal(sanitizeSharedTitle('Example Movie', 'full'), 'Example Movie');
 assert.equal(sanitizeSharedTitle('', 'full'), null);
@@ -28,10 +38,11 @@ assert.deepEqual(
         currentTime: 42
     }, 'episode'),
     {
-        tabTitle: 'S01E04',
+        tabTitle: 'Private Jellyfin - S01E04',
         mediaTitle: 'S01E04',
         currentTime: 42
-    }
+    },
+    'media privacy must not rewrite tabTitle'
 );
 
 assert.deepEqual(
@@ -40,10 +51,10 @@ assert.deepEqual(
         status: 'heartbeat'
     }, 'episode'),
     {
-        tabTitle: 'S01E04',
+        tabTitle: 'Private Jellyfin - S01E04',
         status: 'heartbeat'
     },
-    'privacy filtering must not add absent title keys'
+    'media privacy must not rewrite tabTitle or add absent media keys'
 );
 
 assert.deepEqual(
@@ -54,11 +65,12 @@ assert.deepEqual(
         title: 'S01E04'
     }, 'hidden'),
     {
-        tabTitle: null,
+        tabTitle: 'Private Tab',
         mediaTitle: null,
         expectedTitle: null,
         title: null
-    }
+    },
+    'hidden media privacy must not clear tabTitle'
 );
 
 console.log('title-privacy tests passed');

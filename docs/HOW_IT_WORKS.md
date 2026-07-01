@@ -184,7 +184,7 @@ When a user clicks **"Leave"** or closes their browser:
 When watching a series and an episode ends:
 
 1. `content.js` monitors the [Media Session API](https://developer.mozilla.org/en-US/docs/Web/API/Media_Session_API) for title changes.
-2. When a new title is detected, the peer broadcasts `EPISODE_LOBBY` with the expected title after applying the local Shared Titles privacy setting. In episode-only mode this is an identifier such as `S01E04`; in hidden mode the client does not create a new episode lobby.
+2. When a new title is detected, the peer broadcasts `EPISODE_LOBBY` with the expected title after applying the local media title privacy setting. In episode-only mode this is an identifier such as `S01E04`; when media titles are not sent, the client does not create a new episode lobby.
 3. All peers' videos freeze. The UI shows an "Episode Lobby" card with peer readiness status.
 4. Each peer's `content.js` polls for the new title to appear in the `<video>` element's metadata.
 5. Once a peer detects the matching title, they send `EPISODE_READY`.

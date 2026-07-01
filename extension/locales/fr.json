@@ -230,9 +230,13 @@
   "BTN_RESTART_TOUR": "Redémarrer le tutoriel",
   "BTN_RESTART_TOUR_TOOLTIP": "Recommencer le tutoriel d'intégration",
   "HINT_SELECT_VIDEO": "Sélectionnez votre vidéo ici !",
-  "LABEL_TITLE_PRIVACY": "Titres partag?s",
-  "LABEL_TITLE_PRIVACY_TOOLTIP": "Choisissez comment les titres des onglets et des m?dias sont partag?s avec le salon. Le mode masqu? efface les titres du serveur et d?sactive la cr?ation de salons d??pisode depuis votre client.",
-  "OPTION_TITLE_PRIVACY_FULL": "Titres complets",
-  "OPTION_TITLE_PRIVACY_EPISODE": "?pisode seulement",
-  "OPTION_TITLE_PRIVACY_HIDDEN": "Masqu?s"
+  "OPTION_TITLE_PRIVACY_FULL": "Envoyer le titre complet",
+  "OPTION_TITLE_PRIVACY_EPISODE": "Envoyer l’identifiant d’épisode",
+  "OPTION_TITLE_PRIVACY_HIDDEN": "Ne pas envoyer",
+  "LABEL_PRIVACY_SETTINGS": "Paramètres de confidentialité",
+  "LABEL_PRIVACY_SETTINGS_TOOLTIP": "Choisissez quels titres d’onglet et de média sont envoyés au salon.",
+  "LABEL_SEND_TAB_TITLE": "Envoyer le titre de l’onglet",
+  "LABEL_SEND_TAB_TITLE_TOOLTIP": "Envoie au salon le titre de l’onglet de navigateur sélectionné.",
+  "LABEL_MEDIA_TITLE_PRIVACY": "Titre du média",
+  "LABEL_MEDIA_TITLE_PRIVACY_TOOLTIP": "Choisissez comment les titres des médias sont envoyés au salon."
 }

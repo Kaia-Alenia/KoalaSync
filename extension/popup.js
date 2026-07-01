@@ -2,7 +2,7 @@ import { EVENTS, OFFICIAL_LANDING_PAGE_URL, SUPPORT_URL, getReviewUrl } from './
 import { BLACKLIST_DOMAINS } from './shared/blacklist.js';
 import { getAvatarForName, generateUsername, USERNAME_ADJECTIVES, USERNAME_NOUNS } from './shared/names.js';
 import { loadLocale, translateDOM, getMessage, getSystemLanguage } from './i18n.js';
-import { TITLE_PRIVACY_MODES } from './title-privacy.js';
+import { TITLE_PRIVACY_MODES, normalizeSendTabTitle } from './title-privacy.js';
 
 
 const elements = {
@@ -55,7 +55,8 @@ const elements = {
     playBtn: document.getElementById('playBtn'),
     pauseBtn: document.getElementById('pauseBtn'),
     autoSyncNextEpisode: document.getElementById('autoSyncNextEpisode'),
-    titlePrivacyMode: document.getElementById('titlePrivacyMode'),
+    sendTabTitle: document.getElementById('sendTabTitle'),
+    mediaTitlePrivacyMode: document.getElementById('mediaTitlePrivacyMode'),
     episodeLobbyCard: document.getElementById('episodeLobbyCard'),
     lobbyTitle: document.getElementById('lobbyTitle'),
     lobbyPeerStatus: document.getElementById('lobbyPeerStatus'),
@@ -186,7 +187,7 @@ function setRoomRefreshCooldown() {
 async function init() {
     // Local-only by design — settings and room credentials never come from
     // storage.sync (only onboardingComplete + dismissedHints live there).
-    const localData = await chrome.storage.local.get(['serverUrl', 'useCustomServer', 'roomId', 'password', 'username', 'filterNoise', 'autoSyncNextEpisode', 'titlePrivacyMode', 'forceSyncMode', 'browserNotifications', 'autoCopyInvite', 'locale', 'audioSettings', 'activeTab']);
+    const localData = await chrome.storage.local.get(['serverUrl', 'useCustomServer', 'roomId', 'password', 'username', 'filterNoise', 'autoSyncNextEpisode', 'sendTabTitle', 'mediaTitlePrivacyMode', 'titlePrivacyMode', 'forceSyncMode', 'browserNotifications', 'autoCopyInvite', 'locale', 'audioSettings', 'activeTab']);
 
     let activeLang = localData.locale;
     if (!activeLang) {
@@ -211,7 +212,10 @@ async function init() {
     elements.username.value = username;
     if (elements.filterNoise) elements.filterNoise.checked = localData.filterNoise !== false;
     if (elements.autoSyncNextEpisode) elements.autoSyncNextEpisode.checked = localData.autoSyncNextEpisode !== false;
-    if (elements.titlePrivacyMode) elements.titlePrivacyMode.value = Object.values(TITLE_PRIVACY_MODES).includes(localData.titlePrivacyMode) ? localData.titlePrivacyMode : 'full';
+    const legacyTitlePrivacyMode = Object.values(TITLE_PRIVACY_MODES).includes(localData.titlePrivacyMode) ? localData.titlePrivacyMode : TITLE_PRIVACY_MODES.FULL;
+    const mediaTitlePrivacyMode = Object.values(TITLE_PRIVACY_MODES).includes(localData.mediaTitlePrivacyMode) ? localData.mediaTitlePrivacyMode : legacyTitlePrivacyMode;
+    if (elements.sendTabTitle) elements.sendTabTitle.checked = normalizeSendTabTitle(localData.sendTabTitle, legacyTitlePrivacyMode);
+    if (elements.mediaTitlePrivacyMode) elements.mediaTitlePrivacyMode.value = mediaTitlePrivacyMode;
     if (elements.forceSyncMode) elements.forceSyncMode.value = localData.forceSyncMode || 'jump-to-others';
     if (elements.browserNotifications) elements.browserNotifications.checked = localData.browserNotifications === true;
     if (elements.autoCopyInvite) elements.autoCopyInvite.checked = localData.autoCopyInvite !== false;
@@ -1225,9 +1229,17 @@ elements.autoSyncNextEpisode.addEventListener('change', () => {
     chrome.storage.local.set({ autoSyncNextEpisode: elements.autoSyncNextEpisode.checked });
 });
 
-if (elements.titlePrivacyMode) {
-    elements.titlePrivacyMode.addEventListener('change', () => {
-        chrome.storage.local.set({ titlePrivacyMode: elements.titlePrivacyMode.value }, () => {
+if (elements.sendTabTitle) {
+    elements.sendTabTitle.addEventListener('change', () => {
+        chrome.storage.local.set({ sendTabTitle: elements.sendTabTitle.checked }, () => {
+            chrome.runtime.sendMessage({ type: 'TITLE_PRIVACY_CHANGED' }).catch(() => {});
+        });
+    });
+}
+
+if (elements.mediaTitlePrivacyMode) {
+    elements.mediaTitlePrivacyMode.addEventListener('change', () => {
+        chrome.storage.local.set({ mediaTitlePrivacyMode: elements.mediaTitlePrivacyMode.value }, () => {
             chrome.runtime.sendMessage({ type: 'TITLE_PRIVACY_CHANGED' }).catch(() => {});
         });
     });

@@ -230,9 +230,13 @@
   "BTN_RESTART_TOUR": "Eğitimi Yeniden Başlat",
   "BTN_RESTART_TOUR_TOOLTIP": "Tanıtım eğitimini yeniden başlat",
   "HINT_SELECT_VIDEO": "Videonuzu buradan seçin!",
-  "LABEL_TITLE_PRIVACY": "Payla??lan ba?l?klar",
-  "LABEL_TITLE_PRIVACY_TOOLTIP": "Sekme ve medya ba?l?klar?n?n odayla nas?l payla??laca??n? se?in. Gizli mod sunucudaki ba?l?klar? temizler ve istemcinizden b?l?m lobisi olu?turmay? devre d??? b?rak?r.",
-  "OPTION_TITLE_PRIVACY_FULL": "Tam ba?l?klar",
-  "OPTION_TITLE_PRIVACY_EPISODE": "Sadece b?l?m",
-  "OPTION_TITLE_PRIVACY_HIDDEN": "Gizli"
+  "OPTION_TITLE_PRIVACY_FULL": "Tam başlığı gönder",
+  "OPTION_TITLE_PRIVACY_EPISODE": "Bölüm ID’sini gönder",
+  "OPTION_TITLE_PRIVACY_HIDDEN": "Gönderme",
+  "LABEL_PRIVACY_SETTINGS": "Gizlilik ayarları",
+  "LABEL_PRIVACY_SETTINGS_TOOLTIP": "Odaya hangi sekme ve medya başlıklarının gönderileceğini seçin.",
+  "LABEL_SEND_TAB_TITLE": "Sekme başlığını gönder",
+  "LABEL_SEND_TAB_TITLE_TOOLTIP": "Seçili tarayıcı sekmesinin başlığını odaya gönderir.",
+  "LABEL_MEDIA_TITLE_PRIVACY": "Medya başlığı",
+  "LABEL_MEDIA_TITLE_PRIVACY_TOOLTIP": "Medya başlıklarının odaya nasıl gönderileceğini seçin."
 }

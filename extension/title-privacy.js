@@ -12,6 +12,16 @@ export function normalizeTitlePrivacyMode(mode) {
         : TITLE_PRIVACY_MODES.FULL;
 }
 
+export function normalizeSendTabTitle(sendTabTitle, legacyMode = TITLE_PRIVACY_MODES.FULL) {
+    if (typeof sendTabTitle === 'boolean') return sendTabTitle;
+    return normalizeTitlePrivacyMode(legacyMode) === TITLE_PRIVACY_MODES.FULL;
+}
+
+export function sanitizeTabTitle(title, sendTabTitle) {
+    if (!sendTabTitle) return null;
+    return typeof title === 'string' && title.length > 0 ? title : null;
+}
+
 export function sanitizeSharedTitle(title, mode) {
     const normalizedMode = normalizeTitlePrivacyMode(mode);
     if (normalizedMode === TITLE_PRIVACY_MODES.HIDDEN) return null;
@@ -23,7 +33,7 @@ export function sanitizeSharedTitle(title, mode) {
     return title;
 }
 
-export function applyTitlePrivacyToPayload(payload, mode, keys = ['tabTitle', 'mediaTitle', 'expectedTitle', 'title']) {
+export function applyTitlePrivacyToPayload(payload, mode, keys = ['mediaTitle', 'expectedTitle', 'title']) {
     const source = payload && typeof payload === 'object' ? payload : {};
     const next = { ...source };
     keys.forEach(key => {

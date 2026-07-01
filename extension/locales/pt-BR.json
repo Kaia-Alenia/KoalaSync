@@ -230,9 +230,13 @@
   "BTN_RESTART_TOUR": "Reiniciar tutorial",
   "BTN_RESTART_TOUR_TOOLTIP": "Reiniciar o tutorial de introdução",
   "HINT_SELECT_VIDEO": "Selecione seu vídeo aqui!",
-  "LABEL_TITLE_PRIVACY": "T?tulos compartilhados",
-  "LABEL_TITLE_PRIVACY_TOOLTIP": "Escolha como os t?tulos da aba e da m?dia s?o compartilhados com a sala. O modo oculto limpa os t?tulos no servidor e desativa a cria??o de lobby de epis?dio pelo seu cliente.",
-  "OPTION_TITLE_PRIVACY_FULL": "T?tulos completos",
-  "OPTION_TITLE_PRIVACY_EPISODE": "S? epis?dio",
-  "OPTION_TITLE_PRIVACY_HIDDEN": "Ocultos"
+  "OPTION_TITLE_PRIVACY_FULL": "Enviar título completo",
+  "OPTION_TITLE_PRIVACY_EPISODE": "Enviar ID do episódio",
+  "OPTION_TITLE_PRIVACY_HIDDEN": "Não enviar",
+  "LABEL_PRIVACY_SETTINGS": "Configurações de privacidade",
+  "LABEL_PRIVACY_SETTINGS_TOOLTIP": "Escolha quais títulos de aba e mídia são enviados para a sala.",
+  "LABEL_SEND_TAB_TITLE": "Enviar título da aba",
+  "LABEL_SEND_TAB_TITLE_TOOLTIP": "Envia para a sala o título da aba selecionada do navegador.",
+  "LABEL_MEDIA_TITLE_PRIVACY": "Título da mídia",
+  "LABEL_MEDIA_TITLE_PRIVACY_TOOLTIP": "Escolha como os títulos de mídia são enviados para a sala."
 }

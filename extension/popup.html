@@ -566,14 +566,24 @@
             </label>
         </div>
 
-        <div class="form-group" style="display: flex; align-items: center; justify-content: space-between; gap: 12px; background: var(--card); padding: 10px; border-radius: 8px; margin-bottom: 12px; border: 1px solid #334155;">
-            <label style="margin-bottom: 0; cursor: help;" title="Choose whether tab and media titles are sent to the room." data-i18n="LABEL_TITLE_PRIVACY" data-i18n-title="LABEL_TITLE_PRIVACY_TOOLTIP">Tab/Media Titles</label>
-            <select id="titlePrivacyMode" style="width: 165px; background: var(--bg); border: 1px solid #334155; color: white; padding: 6px 10px; border-radius: 8px; font-size: 12px; cursor: pointer; outline: none; font-family: inherit;">
-                <option value="full" data-i18n="OPTION_TITLE_PRIVACY_FULL">Send full titles</option>
-                <option value="episode" data-i18n="OPTION_TITLE_PRIVACY_EPISODE">Send episode IDs</option>
-                <option value="hidden" data-i18n="OPTION_TITLE_PRIVACY_HIDDEN">Do not send</option>
-            </select>
-        </div>
+        <details class="form-group" style="background: var(--card); padding: 10px; border-radius: 8px; margin-bottom: 12px; border: 1px solid #334155;">
+            <summary style="cursor: pointer; font-size: 12px; font-weight: 700; color: var(--text);" title="Choose which titles are sent to the room." data-i18n="LABEL_PRIVACY_SETTINGS" data-i18n-title="LABEL_PRIVACY_SETTINGS_TOOLTIP">Privacy Settings</summary>
+            <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 10px;">
+                <label style="margin-bottom: 0; cursor: help;" title="Send the selected browser tab title to the room." data-i18n="LABEL_SEND_TAB_TITLE" data-i18n-title="LABEL_SEND_TAB_TITLE_TOOLTIP">Send tab title</label>
+                <label class="toggle-switch">
+                    <input type="checkbox" id="sendTabTitle" checked>
+                    <span class="slider"></span>
+                </label>
+            </div>
+            <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 10px;">
+                <label style="margin-bottom: 0; cursor: help;" title="Choose how media titles are sent to the room." data-i18n="LABEL_MEDIA_TITLE_PRIVACY" data-i18n-title="LABEL_MEDIA_TITLE_PRIVACY_TOOLTIP">Media title</label>
+                <select id="mediaTitlePrivacyMode" style="width: 165px; background: var(--bg); border: 1px solid #334155; color: white; padding: 6px 10px; border-radius: 8px; font-size: 12px; cursor: pointer; outline: none; font-family: inherit;">
+                    <option value="full" data-i18n="OPTION_TITLE_PRIVACY_FULL">Send full title</option>
+                    <option value="episode" data-i18n="OPTION_TITLE_PRIVACY_EPISODE">Send episode ID</option>
+                    <option value="hidden" data-i18n="OPTION_TITLE_PRIVACY_HIDDEN">Do not send</option>
+                </select>
+            </div>
+        </details>
 
         <div class="form-group" style="display: flex; align-items: center; justify-content: space-between; background: var(--card); padding: 10px; border-radius: 8px; margin-bottom: 12px; border: 1px solid #334155;">
             <label style="margin-bottom: 0; cursor: help;" title="Automatically copies the invite link to your clipboard when creating a new room." data-i18n="LABEL_AUTO_COPY_INVITE" data-i18n-title="LABEL_AUTO_COPY_INVITE_TOOLTIP">Auto-Copy Invite Link</label>
