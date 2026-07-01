@@ -26,7 +26,7 @@ All notable changes to the KoalaSync browser extension and relay server.
 ### Changed
 - **Playback sync now follows the room's control setting** — When Host Control is enabled, only the host can drive room-wide playback changes; guests can still watch in sync without accidentally changing playback for everyone.
 - **Architecture: Modularized background.js** — Refactored 2410-line file into 11 focused modules for better maintainability.
-- **Documentation: Consolidated Host Control Mode** — Unified documentation in host-control-mode.md with references to internal implementation details.
+- **Documentation: Consolidated Host Control Mode** — Unified documentation in host-control-mode.md.
 - **README: Added protocol documentation** — Updated documentation links to include PROTOCOL.md reference.
 - **ARCHITECTURE: Added protocol reference** — Updated architecture documentation with link to PROTOCOL.md.
 

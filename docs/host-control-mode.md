@@ -123,9 +123,9 @@ When a guest's action is blocked:
 function getHostSyncTarget() {
   const host = currentRoom.peers.find(p => p.peerId === hostPeerId);
   if (!host) return null;
-  
+
   let targetTime = host.currentTime;
-  
+
   // Extrapolate if host is playing
   if (host.playbackState === 'playing' && host.lastHeartbeat) {
     const elapsedSec = (Date.now() - host.lastHeartbeat) / 1000;
@@ -133,7 +133,7 @@ function getHostSyncTarget() {
       targetTime += elapsedSec;
     }
   }
-  
+
   return { playbackState: host.playbackState, targetTime };
 }
 ```
@@ -284,4 +284,3 @@ function getHostSyncTarget() {
 
 - [Protocol Specification](PROTOCOL.md) — Technical event details
 - [Architecture](ARCHITECTURE.md) — System overview
-- [Internal Documentation](internal/host-control-mode-plan.md) — Original implementation plan (German)

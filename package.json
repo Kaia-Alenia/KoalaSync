@@ -12,8 +12,8 @@
     "verify": "node scripts/verify-release.mjs"
   },
   "devDependencies": {
+    "@vitest/coverage-v8": "^4.1.9",
     "archiver": "^7.0.1",
-    "c8": "^11.0.0",
     "esbuild": "^0.28.1",
     "eslint": "^10.4.0",
     "fs-extra": "^11.2.0",

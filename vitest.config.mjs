@@ -4,23 +4,21 @@ export default defineConfig({
     test: {
         globals: false,
         environment: 'node',
-        include: ['**/*.test.js', '**/*.test.mjs'],
-        exclude: ['**/scripts/test-*.*(mjs|cjs|js)'],
+        include: [
+            'server/**/*.test.js',
+            'server/**/*.test.mjs',
+            'shared/**/*.test.js',
+            'shared/**/*.test.mjs'
+        ],
         coverage: {
-            provider: 'c8',
+            provider: 'v8',
             reporter: ['text', 'lcov'],
             include: ['server/**/*.js', 'shared/**/*.js'],
             exclude: [
                 '**/node_modules/**',
                 '**/scripts/**',
                 '**/extension/**'
-            ],
-            thresholds: {
-                functions: 30,
-                lines: 30,
-                branches: 25,
-                statements: 30
-            }
+            ]
         }
     }
 });

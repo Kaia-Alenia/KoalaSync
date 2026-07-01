@@ -29,6 +29,7 @@ import {
     checkEventRate,
     checkHealthRate,
     checkAdminMetricsAuthRate,
+    checkLeaveRoomRate,
     startRateLimitCleanup,
     stopRateLimitCleanup,
     clearRateLimitMaps
@@ -949,7 +950,7 @@ export async function stopServerForTests() {
     healthResponseCache.clear();
     io.removeAllListeners();
     io.disconnectSockets(true);
-    Object.assign(rateLimitDenied, { connections: 0, events: 0, health: 0, adminMetricsAuth: 0, roomList: 0 });
+    Object.assign(rateLimitDenied, { connections: 0, events: 0, health: 0, adminMetricsAuth: 0, roomList: 0, leaveRoom: 0 });
     if (!httpServer.listening) return;
     await new Promise((resolve, reject) => {
         httpServer.close((err) => err ? reject(err) : resolve());

@@ -1,6 +1,6 @@
 export default [
   {
-    ignores: ["dist/**", "node_modules/**", "scratch/**"]
+    ignores: ["coverage/**", "dist/**", "node_modules/**", "scratch/**"]
   },
   {
     languageOptions: {
