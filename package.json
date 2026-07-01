@@ -1,6 +1,6 @@
 {
   "name": "koalasync",
-  "version": "2.5.0",
+  "version": "2.5.1",
   "description": "KoalaSync Build Scripts",
   "private": true,
   "type": "module",
