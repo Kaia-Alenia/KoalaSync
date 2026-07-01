@@ -229,5 +229,14 @@
   "AUDIO_COMING_SOON": "Çok yakında",
   "BTN_RESTART_TOUR": "Eğitimi Yeniden Başlat",
   "BTN_RESTART_TOUR_TOOLTIP": "Tanıtım eğitimini yeniden başlat",
-  "HINT_SELECT_VIDEO": "Videonuzu buradan seçin!"
+  "HINT_SELECT_VIDEO": "Videonuzu buradan seçin!",
+  "OPTION_TITLE_PRIVACY_FULL": "Tam başlığı gönder",
+  "OPTION_TITLE_PRIVACY_EPISODE": "Bölüm ID’sini gönder",
+  "OPTION_TITLE_PRIVACY_HIDDEN": "Gönderme",
+  "LABEL_PRIVACY_SETTINGS": "Gizlilik ayarları",
+  "LABEL_PRIVACY_SETTINGS_TOOLTIP": "Odaya hangi sekme ve medya başlıklarının gönderileceğini seçin.",
+  "LABEL_SEND_TAB_TITLE": "Sekme başlığını gönder",
+  "LABEL_SEND_TAB_TITLE_TOOLTIP": "Seçili tarayıcı sekmesinin başlığını odaya gönderir.",
+  "LABEL_MEDIA_TITLE_PRIVACY": "Medya başlığı",
+  "LABEL_MEDIA_TITLE_PRIVACY_TOOLTIP": "Medya başlıklarının odaya nasıl gönderileceğini seçin."
 }

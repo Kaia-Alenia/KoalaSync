@@ -229,5 +229,14 @@
   "AUDIO_COMING_SOON": "Скоро буде",
   "BTN_RESTART_TOUR": "Перезапустіть підручник",
   "BTN_RESTART_TOUR_TOOLTIP": "Перезапустіть навчальний посібник із адаптації",
-  "HINT_SELECT_VIDEO": "Виберіть своє відео тут!"
+  "HINT_SELECT_VIDEO": "Виберіть своє відео тут!",
+  "OPTION_TITLE_PRIVACY_FULL": "Надсилати повну назву",
+  "OPTION_TITLE_PRIVACY_EPISODE": "Надсилати ID епізоду",
+  "OPTION_TITLE_PRIVACY_HIDDEN": "Не надсилати",
+  "LABEL_PRIVACY_SETTINGS": "Налаштування приватності",
+  "LABEL_PRIVACY_SETTINGS_TOOLTIP": "Виберіть, які назви вкладки й медіа надсилати до кімнати.",
+  "LABEL_SEND_TAB_TITLE": "Надсилати назву вкладки",
+  "LABEL_SEND_TAB_TITLE_TOOLTIP": "Надсилає до кімнати назву вибраної вкладки браузера.",
+  "LABEL_MEDIA_TITLE_PRIVACY": "Назва медіа",
+  "LABEL_MEDIA_TITLE_PRIVACY_TOOLTIP": "Виберіть, як назви медіа надсилати до кімнати."
 }

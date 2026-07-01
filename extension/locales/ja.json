@@ -229,5 +229,14 @@
   "AUDIO_COMING_SOON": "近日公開",
   "BTN_RESTART_TOUR": "チュートリアルを再起動",
   "BTN_RESTART_TOUR_TOOLTIP": "オンボーディングチュートリアルを再起動する",
-  "HINT_SELECT_VIDEO": "ここで動画を選択してください！"
+  "HINT_SELECT_VIDEO": "ここで動画を選択してください！",
+  "OPTION_TITLE_PRIVACY_FULL": "完全なタイトルを送信",
+  "OPTION_TITLE_PRIVACY_EPISODE": "エピソードIDを送信",
+  "OPTION_TITLE_PRIVACY_HIDDEN": "送信しない",
+  "LABEL_PRIVACY_SETTINGS": "プライバシー設定",
+  "LABEL_PRIVACY_SETTINGS_TOOLTIP": "ルームに送信するタブタイトルとメディアタイトルを選択します。",
+  "LABEL_SEND_TAB_TITLE": "タブタイトルを送信",
+  "LABEL_SEND_TAB_TITLE_TOOLTIP": "選択中のブラウザータブのタイトルをルームに送信します。",
+  "LABEL_MEDIA_TITLE_PRIVACY": "メディアタイトル",
+  "LABEL_MEDIA_TITLE_PRIVACY_TOOLTIP": "メディアタイトルをルームに送信する方法を選択します。"
 }

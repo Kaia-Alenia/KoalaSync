@@ -229,5 +229,14 @@
   "AUDIO_COMING_SOON": "Demnächst",
   "BTN_RESTART_TOUR": "Einführung neu starten",
   "BTN_RESTART_TOUR_TOOLTIP": "Startet die Einführung für neue Benutzer erneut",
-  "HINT_SELECT_VIDEO": "Wähle hier dein Video aus!"
+  "HINT_SELECT_VIDEO": "Wähle hier dein Video aus!",
+  "OPTION_TITLE_PRIVACY_FULL": "Voll senden",
+  "OPTION_TITLE_PRIVACY_EPISODE": "Nur Episoden-ID senden",
+  "OPTION_TITLE_PRIVACY_HIDDEN": "Nicht senden",
+  "LABEL_PRIVACY_SETTINGS": "Privatsphäre-Einstellungen",
+  "LABEL_PRIVACY_SETTINGS_TOOLTIP": "Lege fest, welche Tab- und Medientitel an den Raum gesendet werden.",
+  "LABEL_SEND_TAB_TITLE": "Tab-Titel senden",
+  "LABEL_SEND_TAB_TITLE_TOOLTIP": "Sendet den Titel des ausgewählten Browser-Tabs an den Raum.",
+  "LABEL_MEDIA_TITLE_PRIVACY": "Medientitel",
+  "LABEL_MEDIA_TITLE_PRIVACY_TOOLTIP": "Lege fest, wie Medientitel an den Raum gesendet werden."
 }

@@ -229,5 +229,14 @@
   "AUDIO_COMING_SOON": "Próximamente",
   "BTN_RESTART_TOUR": "Reiniciar tutorial",
   "BTN_RESTART_TOUR_TOOLTIP": "Reiniciar el tutorial de inicio",
-  "HINT_SELECT_VIDEO": "¡Selecciona tu video aquí!"
+  "HINT_SELECT_VIDEO": "¡Selecciona tu video aquí!",
+  "OPTION_TITLE_PRIVACY_FULL": "Enviar título completo",
+  "OPTION_TITLE_PRIVACY_EPISODE": "Enviar ID de episodio",
+  "OPTION_TITLE_PRIVACY_HIDDEN": "No enviar",
+  "LABEL_PRIVACY_SETTINGS": "Ajustes de privacidad",
+  "LABEL_PRIVACY_SETTINGS_TOOLTIP": "Elige qué títulos de pestaña y multimedia se envían a la sala.",
+  "LABEL_SEND_TAB_TITLE": "Enviar título de pestaña",
+  "LABEL_SEND_TAB_TITLE_TOOLTIP": "Envía a la sala el título de la pestaña del navegador seleccionada.",
+  "LABEL_MEDIA_TITLE_PRIVACY": "Título multimedia",
+  "LABEL_MEDIA_TITLE_PRIVACY_TOOLTIP": "Elige cómo se envían los títulos multimedia a la sala."
 }
