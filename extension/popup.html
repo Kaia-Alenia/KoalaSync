@@ -550,22 +550,6 @@
             <input type="text" id="username" data-i18n-placeholder="PLACEHOLDER_USERNAME" placeholder="Anonymous Koala" maxlength="20" style="width: 150px;">
         </div>
 
-        <div class="form-group" style="display: flex; align-items: center; justify-content: space-between; background: var(--card); padding: 10px; border-radius: 8px; margin-bottom: 12px; border: 1px solid #334155;">
-            <label style="margin-bottom: 0; cursor: help;" title="Filters out non-video tabs and unrelated domains to keep the list clean" data-i18n="LABEL_HIDE_CLUTTER" data-i18n-title="LABEL_HIDE_CLUTTER_TOOLTIP">Hide Clutter Tabs</label>
-            <label class="toggle-switch">
-                <input type="checkbox" id="filterNoise" checked>
-                <span class="slider"></span>
-            </label>
-        </div>
-
-        <div class="form-group" style="display: flex; align-items: center; justify-content: space-between; background: var(--card); padding: 10px; border-radius: 8px; margin-bottom: 12px; border: 1px solid #334155;">
-            <label style="margin-bottom: 0; cursor: help;" title="Pauses automatically and waits for all peers when an episode changes, then sync-starts together." data-i18n="LABEL_AUTO_SYNC_NEXT" data-i18n-title="LABEL_AUTO_SYNC_NEXT_TOOLTIP">Auto-Sync Next Episode</label>
-            <label class="toggle-switch">
-                <input type="checkbox" id="autoSyncNextEpisode">
-                <span class="slider"></span>
-            </label>
-        </div>
-
         <details class="form-group" style="background: var(--card); padding: 10px; border-radius: 8px; margin-bottom: 12px; border: 1px solid #334155;">
             <summary style="cursor: pointer; font-size: 12px; font-weight: 700; color: var(--text);" title="Choose which titles are sent to the room." data-i18n="LABEL_PRIVACY_SETTINGS" data-i18n-title="LABEL_PRIVACY_SETTINGS_TOOLTIP">Privacy Settings</summary>
             <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 10px;">
@@ -584,6 +568,22 @@
                 </select>
             </div>
         </details>
+
+        <div class="form-group" style="display: flex; align-items: center; justify-content: space-between; background: var(--card); padding: 10px; border-radius: 8px; margin-bottom: 12px; border: 1px solid #334155;">
+            <label style="margin-bottom: 0; cursor: help;" title="Filters out non-video tabs and unrelated domains to keep the list clean" data-i18n="LABEL_HIDE_CLUTTER" data-i18n-title="LABEL_HIDE_CLUTTER_TOOLTIP">Hide Clutter Tabs</label>
+            <label class="toggle-switch">
+                <input type="checkbox" id="filterNoise" checked>
+                <span class="slider"></span>
+            </label>
+        </div>
+
+        <div class="form-group" style="display: flex; align-items: center; justify-content: space-between; background: var(--card); padding: 10px; border-radius: 8px; margin-bottom: 12px; border: 1px solid #334155;">
+            <label style="margin-bottom: 0; cursor: help;" title="Pauses automatically and waits for all peers when an episode changes, then sync-starts together." data-i18n="LABEL_AUTO_SYNC_NEXT" data-i18n-title="LABEL_AUTO_SYNC_NEXT_TOOLTIP">Auto-Sync Next Episode</label>
+            <label class="toggle-switch">
+                <input type="checkbox" id="autoSyncNextEpisode">
+                <span class="slider"></span>
+            </label>
+        </div>
 
         <div class="form-group" style="display: flex; align-items: center; justify-content: space-between; background: var(--card); padding: 10px; border-radius: 8px; margin-bottom: 12px; border: 1px solid #334155;">
             <label style="margin-bottom: 0; cursor: help;" title="Automatically copies the invite link to your clipboard when creating a new room." data-i18n="LABEL_AUTO_COPY_INVITE" data-i18n-title="LABEL_AUTO_COPY_INVITE_TOOLTIP">Auto-Copy Invite Link</label>
