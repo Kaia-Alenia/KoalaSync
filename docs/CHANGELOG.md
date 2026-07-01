@@ -8,6 +8,8 @@ All notable changes to the KoalaSync browser extension and relay server.
 
 ### Added
 - **Extension: Privacy title controls** - Advanced users can now disable sending browser tab titles separately from media titles. Media titles can still be sent in full, reduced to detected episode identifiers such as `S01E04`, or hidden entirely. Defaults remain full titles for backwards compatibility.
+- **Relay: Cleaner restart handling** — Connected clients are now disconnected explicitly during relay shutdown so reconnects recover more predictably.
+- **Relay: Stronger abuse protection** — Rapid room-leave spam is now rate-limited.
 
 ---
 

@@ -22,6 +22,7 @@ import {
     healthCounts,
     adminMetricsAuthCounts,
     roomListCooldowns,
+    leaveRoomCounts,
     rateLimitDenied,
     checkAuthRate,
     recordAuthFailure,
@@ -29,6 +30,7 @@ import {
     checkEventRate,
     checkHealthRate,
     checkAdminMetricsAuthRate,
+    checkLeaveRoomRate,
     startRateLimitCleanup,
     stopRateLimitCleanup,
     clearRateLimitMaps
@@ -114,7 +116,8 @@ app.get('/health', (req, res) => {
                 health: healthCounts.size,
                 adminMetricsAuth: adminMetricsAuthCounts.size,
                 authFailures: failedAuthAttempts.size,
-                roomList: roomListCooldowns.size
+                roomList: roomListCooldowns.size,
+                leaveRoom: leaveRoomCounts.size
             },
             rateLimitDenied
         })
@@ -661,6 +664,11 @@ io.on('connection', (socket) => {
     });
 
     socket.on(EVENTS.LEAVE_ROOM, () => {
+        if (!checkLeaveRoomRate(socket.id)) {
+            log('SECURITY', `LEAVE_ROOM rate limit exceeded for socket: ${socket.id}`);
+            socket.disconnect(true);
+            return;
+        }
         try {
             const mapping = socketToRoom.get(socket.id);
             if (mapping) {
@@ -839,6 +847,7 @@ io.on('connection', (socket) => {
     socket.on('disconnect', () => {
         eventCounts.delete(socket.id);
         roomListCooldowns.delete(socket.id);
+        leaveRoomCounts.delete(socket.id);
         const mapping = socketToRoom.get(socket.id);
         if (mapping) {
             try {
@@ -919,12 +928,14 @@ function gracefulShutdown(signal) {
     log('SERVER', `${signal} received — starting graceful shutdown...`);
     // 1. Notify all connected clients so they can display a meaningful message
     io.emit(EVENTS.ERROR, { message: 'Server is restarting. Reconnecting automatically...' });
-    // 2. Stop accepting new HTTP connections
+    // 2. Gracefully disconnect all Socket.IO clients
+    io.disconnectSockets(true);
+    // 3. Stop accepting new HTTP connections
     httpServer.close(() => {
         log('SERVER', 'HTTP server closed. Exiting.');
         process.exit(0);
     });
-    // 3. Safety net: force-exit after 5s if connections don't drain
+    // 4. Safety net: force-exit after 5s if connections don't drain
     setTimeout(() => {
         log('SERVER', 'Force-exit after timeout.');
         process.exit(1);
@@ -943,7 +954,7 @@ export async function stopServerForTests() {
     healthResponseCache.clear();
     io.removeAllListeners();
     io.disconnectSockets(true);
-    Object.assign(rateLimitDenied, { connections: 0, events: 0, health: 0, adminMetricsAuth: 0, roomList: 0 });
+    Object.assign(rateLimitDenied, { connections: 0, events: 0, health: 0, adminMetricsAuth: 0, roomList: 0, leaveRoom: 0 });
     if (!httpServer.listening) return;
     await new Promise((resolve, reject) => {
         httpServer.close((err) => err ? reject(err) : resolve());

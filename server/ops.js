@@ -97,14 +97,16 @@ export function buildHealthPayload({
                 health: rateLimitSizes.health || 0,
                 adminMetricsAuth: rateLimitSizes.adminMetricsAuth || 0,
                 authFailures: rateLimitSizes.authFailures || 0,
-                roomList: rateLimitSizes.roomList || 0
+                roomList: rateLimitSizes.roomList || 0,
+                leaveRoom: rateLimitSizes.leaveRoom || 0
             },
             denied: {
                 connections: rateLimitDenied.connections || 0,
                 events: rateLimitDenied.events || 0,
                 health: rateLimitDenied.health || 0,
                 adminMetricsAuth: rateLimitDenied.adminMetricsAuth || 0,
-                roomList: rateLimitDenied.roomList || 0
+                roomList: rateLimitDenied.roomList || 0,
+                leaveRoom: rateLimitDenied.leaveRoom || 0
             }
         },
         memory: {
