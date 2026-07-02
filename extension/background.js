@@ -4,6 +4,7 @@ import { loadLocale, getMessage, getSystemLanguage } from './i18n.js';
 import { sameEpisode } from './episode-utils.js';
 import { applyTitlePrivacyToPayload, sanitizeSharedTitle, sanitizeTabTitle, normalizeSendTabTitle, normalizeTitlePrivacyMode } from './title-privacy.js';
 import { initTabManager } from './modules/tab-manager.js';
+import './page-api-seek-overrides.js';
 
 // --- Uninstall URL Initialization ---
 let uninstallURLInitPromise = null;
@@ -1592,6 +1593,188 @@ async function routeToContent(action, payload) {
     _routeToContentInternal(tabId, action, payload, actionTimestamp, commandSenderId, 0);
 }
 
+function getTabVideoState(tabId) {
+    return new Promise((resolve) => {
+        chrome.tabs.sendMessage(tabId, { type: 'GET_VIDEO_STATE' }, (res) => {
+            if (chrome.runtime.lastError) {
+                resolve({ error: chrome.runtime.lastError.message });
+                return;
+            }
+            resolve(res);
+        });
+    });
+}
+
+async function getReadyTabVideoState(tabId) {
+    let state = await getTabVideoState(tabId);
+    if (!state || state.error) {
+        await injectContentScript(tabId);
+        await new Promise(resolve => setTimeout(resolve, 250));
+        state = await getTabVideoState(tabId);
+    }
+    return state;
+}
+
+async function simulateRemoteSeek(delta, explicitTargetTime = null) {
+    if (!currentTabId) return { status: 'no_tab' };
+    const tabId = parseInt(currentTabId);
+    if (isNaN(tabId)) return { status: 'no_tab' };
+
+    const state = await getReadyTabVideoState(tabId);
+    if (!state || state.error) return { status: 'error', message: state?.error || 'No video state' };
+    if (!state.found || !Number.isFinite(state.currentTime)) return { status: 'no_video' };
+
+    let targetTime = explicitTargetTime !== null ? explicitTargetTime : Math.max(0, state.currentTime + (delta || 0));
+    if (Number.isFinite(state.duration) && state.duration > 0) {
+        targetTime = Math.min(targetTime, Math.max(0, state.duration - 0.1));
+    }
+
+    const senderId = 'KoalaDev';
+    const timestamp = Date.now();
+    const payload = {
+        senderId,
+        actionTimestamp: timestamp,
+        currentTime: targetTime,
+        targetTime
+    };
+
+    addToHistory(EVENTS.SEEK, senderId);
+    showNotification(senderId, EVENTS.SEEK);
+    updateLastAction(EVENTS.SEEK, senderId, timestamp);
+    lastActionState.targetTime = targetTime;
+    if (storageInitialized) chrome.storage.session.set({ lastActionState });
+    updateLocalPeerState(senderId, { currentTime: targetTime });
+    routeToContent(EVENTS.SEEK, payload);
+
+    return { status: 'ok', targetTime };
+}
+
+async function devRemoteToolsAllowed() {
+    const data = await chrome.storage.local.get(['username']);
+    return data.username === 'KoalaDev';
+}
+
+function shouldUsePageApiSeek(url) {
+    return typeof globalThis.koalaFindPageApiSeekProvider === 'function' &&
+        !!globalThis.koalaFindPageApiSeekProvider(url);
+}
+
+function installPageApiSeekBridge() {
+    if (window.__koalaPageApiSeekBridgeInstalled) return;
+    window.__koalaPageApiSeekBridgeInstalled = true;
+
+    function currentMatch() {
+        return typeof window.koalaFindPageApiSeekProvider === 'function'
+            ? window.koalaFindPageApiSeekProvider(window.location.hostname)
+            : null;
+    }
+
+    // Disney+ ("hive"/BAM) player: the real media player hangs off the
+    // <disney-web-player> custom element as `.mediaPlayer`, exposing precise
+    // seek(ms) and timeline.info (playhead/duration in ms).
+    function disneyMediaPlayer() {
+        const el = document.querySelector('disney-web-player');
+        return el && el.mediaPlayer ? el.mediaPlayer : null;
+    }
+
+    function seekWithPageApi(time) {
+        const match = currentMatch();
+        if (!match) return;
+
+        try {
+            if (match.provider === 'netflix') {
+                const videoPlayer = window.netflix?.appContext?.state?.playerApp?.getAPI?.().videoPlayer;
+                const ids = videoPlayer?.getAllPlayerSessionIds?.();
+                const sessionId = ids ? ids[0] : null;
+                const player = sessionId ? videoPlayer.getVideoPlayerBySessionId(sessionId) : null;
+                player?.seek(Math.round(time * 1000));
+            } else if (match.provider === 'disney') {
+                const mp = disneyMediaPlayer();
+                if (mp && typeof mp.seek === 'function') mp.seek(Math.round(time * 1000));
+            }
+        } catch (_e) {
+            // Player not ready or private API changed; the next sync tick can retry.
+        }
+    }
+
+    window.addEventListener('message', (event) => {
+        if (event.source !== window) return;
+        const data = event.data;
+        if (!data || data.__koalaPageApiSeek !== 1 || data.kind !== 'seek' || typeof data.time !== 'number') return;
+        seekWithPageApi(data.time);
+    });
+
+    // Disney+'s <video> currentTime is blob-relative and its scrubber lags, so
+    // the isolated-world content script can't read an accurate position. Push
+    // the real playhead/duration (seconds) from the page's media player.
+    setInterval(() => {
+        try {
+            const match = currentMatch();
+            if (!match || match.provider !== 'disney') return;
+            const mp = disneyMediaPlayer();
+            const info = mp && mp.timeline && mp.timeline.info;
+            if (!info || typeof info.playheadPositionMs !== 'number' || typeof info.programDurationMs !== 'number') return;
+            if (info.programDurationMs <= 0) return;
+            window.postMessage({
+                __koalaPlayerTime: 1,
+                provider: 'disney',
+                position: info.playheadPositionMs / 1000,
+                duration: info.programDurationMs / 1000
+            }, '*');
+        } catch (_e) {
+            // Ignore transient errors (player teardown / element swap).
+        }
+    }, 250);
+}
+
+function setPageApiSeekEnabled(enabled) {
+    window.KOALA_PAGE_API_SEEK_ENABLED = enabled === true;
+}
+
+async function injectContentScript(tabId) {
+    let needsPageApiSeek = false;
+    let pageApiSeekReady = false;
+    try {
+        const tab = await chrome.tabs.get(tabId);
+        const url = tab?.url || '';
+        needsPageApiSeek = shouldUsePageApiSeek(url);
+    } catch (_e) {
+        // Fall through to the generic content script injection.
+    }
+
+    if (needsPageApiSeek) {
+        try {
+            await chrome.scripting.executeScript({
+                target: { tabId },
+                world: 'MAIN',
+                files: ['page-api-seek-overrides.js']
+            });
+            await chrome.scripting.executeScript({
+                target: { tabId },
+                world: 'MAIN',
+                func: installPageApiSeekBridge
+            });
+            pageApiSeekReady = true;
+        } catch (err) {
+            addLog(`Page API seek bridge injection failed: ${err.message}`, 'warn');
+        }
+    }
+
+    await chrome.scripting.executeScript({
+        target: { tabId },
+        files: ['page-api-seek-overrides.js']
+    });
+    await chrome.scripting.executeScript({
+        target: { tabId },
+        func: setPageApiSeekEnabled,
+        args: [pageApiSeekReady]
+    });
+    return chrome.scripting.executeScript({
+        target: { tabId },
+        files: ['content.js']
+    });
+}
+
 function _routeToContentInternal(tabId, action, payload, actionTimestamp, commandSenderId, retries) {
     chrome.tabs.sendMessage(tabId, { 
         type: 'SERVER_COMMAND',
@@ -1606,10 +1789,7 @@ function _routeToContentInternal(tabId, action, payload, actionTimestamp, comman
             return;
         }
         if (err.message.includes('Receiving end does not exist') || err.message.includes('Extension context invalidated')) {
-            chrome.scripting.executeScript({
-                target: { tabId },
-                files: ['content.js']
-            }).then(() => {
+            injectContentScript(tabId).then(() => {
                 setTimeout(() => _routeToContentInternal(tabId, action, payload, actionTimestamp, commandSenderId, retries + 1), 500);
             }).catch(_err => {
                 addLog(`Auto-reinject failed for tab ${tabId}`, 'warn');
@@ -1997,6 +2177,22 @@ async function handleAsyncMessage(message, sender, sendResponse) {
                 sendResponse(res);
             }
         });
+    } else if (message.type === 'DEV_SIMULATE_REMOTE_SEEK') {
+        if (!(await devRemoteToolsAllowed())) {
+            sendResponse({ status: 'forbidden' });
+            return;
+        }
+        const delta = message.delta !== null && message.delta !== undefined ? Number(message.delta) : null;
+        const targetTime = message.targetTime !== null && message.targetTime !== undefined ? Number(message.targetTime) : null;
+
+        if (delta === null && targetTime === null) {
+            sendResponse({ status: 'invalid_params' });
+            return;
+        }
+        simulateRemoteSeek(delta, targetTime).then(sendResponse).catch(err => {
+            addLog(`Remote seek simulation failed: ${err.message}`, 'warn');
+            sendResponse({ status: 'error', message: err.message });
+        });
     } else if (message.type === 'CONTENT_EVENT') {
         const processEvent = async () => {
             // Host Control Mode (sender-side): a non-controller in host-only mode must
@@ -2196,6 +2392,20 @@ async function handleAsyncMessage(message, sender, sendResponse) {
             addLog('Heartbeat settings error: ' + err.message, 'error');
             sendResponse({ status: 'ok' });
         });
+    } else if (message.type === 'INJECT_CONTENT_SCRIPT') {
+        const tabId = Number(message.tabId);
+        if (!Number.isInteger(tabId)) {
+            sendResponse({ status: 'invalid_tab' });
+            return true;
+        }
+
+        injectContentScript(tabId).then(() => {
+            sendResponse({ status: 'ok' });
+        }).catch(err => {
+            addLog(`Failed to inject into tab: ${err.message}`, 'warn');
+            sendResponse({ status: 'error', message: err.message });
+        });
+        return true;
     } else if (message.type === 'SET_TARGET_TAB') {
         const previousTabId = currentTabId;
         currentTabId = message.tabId;
@@ -2213,10 +2423,7 @@ async function handleAsyncMessage(message, sender, sendResponse) {
         
         if (currentTabId) {
             const selectedTabId = currentTabId;
-            chrome.scripting.executeScript({
-                target: { tabId: selectedTabId },
-                files: ['content.js']
-            })
+            injectContentScript(selectedTabId)
                 .then(() => applyAudioSettingsToTab(selectedTabId))
                 .catch(err => {
                     addLog(`Failed to inject into tab: ${err.message}`, 'warn');
@@ -2399,6 +2606,7 @@ initTabManager({
     getSettings,
     emit,
     applyAudioSettingsToTab,
+    injectContentScript,
     ensureState,
     EVENTS
 });

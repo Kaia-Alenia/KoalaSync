@@ -2,7 +2,7 @@ import { EVENTS, OFFICIAL_LANDING_PAGE_URL, SUPPORT_URL, getReviewUrl } from './
 import { BLACKLIST_DOMAINS } from './shared/blacklist.js';
 import { getAvatarForName, generateUsername, USERNAME_ADJECTIVES, USERNAME_NOUNS } from './shared/names.js';
 import { loadLocale, translateDOM, getMessage, getSystemLanguage } from './i18n.js';
-import { TITLE_PRIVACY_MODES, normalizeSendTabTitle } from './title-privacy.js';
+import { TITLE_PRIVACY_MODES, normalizeSendTabTitle, normalizeTabTitle } from './title-privacy.js';
 
 
 const elements = {
@@ -71,7 +71,11 @@ const elements = {
     settingsVersion: document.getElementById('settingsVersion'),
     devSupportLink: document.getElementById('devSupportLink'),
     devReviewLink: document.getElementById('devReviewLink'),
-    syncTabCopyInvite: document.getElementById('syncTabCopyInvite')
+    syncTabCopyInvite: document.getElementById('syncTabCopyInvite'),
+    devToolsTabBtn: document.getElementById('devToolsTabBtn'),
+    remoteSeekBack: document.getElementById('remoteSeekBack'),
+    remoteSeekForward: document.getElementById('remoteSeekForward'),
+    remoteSeekFiveMin: document.getElementById('remoteSeekFiveMin')
 };
 
 let localPeerId = null;
@@ -88,6 +92,19 @@ let errorToken = 0;
 let forceSyncDone = false;
 let connectionErrorTimer = null;
 let pendingConnectionErrorMsg = null;
+
+function devToolsEnabled() {
+    return elements.username && elements.username.value.trim() === 'KoalaDev';
+}
+
+function syncDevToolsVisibility() {
+    if (!elements.devToolsTabBtn) return;
+    const enabled = devToolsEnabled();
+    elements.devToolsTabBtn.style.display = enabled ? '' : 'none';
+    if (!enabled && document.getElementById('tab-devtools')?.classList.contains('active')) {
+        document.querySelector('.tab-btn[data-tab="tab-settings"]')?.click();
+    }
+}
 let roomListRefreshTimer = null;
 let roomListRefreshInterval = null;
 const ROOM_LIST_REFRESH_COOLDOWN_MS = 11000;
@@ -210,6 +227,7 @@ async function init() {
     elements.roomId.value = localData.roomId || '';
     elements.password.value = localData.password || '';
     elements.username.value = username;
+    syncDevToolsVisibility();
     if (elements.filterNoise) elements.filterNoise.checked = localData.filterNoise !== false;
     if (elements.autoSyncNextEpisode) elements.autoSyncNextEpisode.checked = localData.autoSyncNextEpisode !== false;
     const legacyTitlePrivacyMode = Object.values(TITLE_PRIVACY_MODES).includes(localData.titlePrivacyMode) ? localData.titlePrivacyMode : TITLE_PRIVACY_MODES.FULL;
@@ -277,13 +295,13 @@ async function init() {
                 const syncTabBtn = document.querySelector('.tab-btn[data-tab="tab-sync"]');
                 if (syncTabBtn) syncTabBtn.click();
                 showSelectVideoHint();
-            } else if (localData.activeTab) {
+            } else if (localData.activeTab && (localData.activeTab !== 'tab-devtools' || devToolsEnabled())) {
                 const btn = document.querySelector(`.tab-btn[data-tab="${localData.activeTab}"]`);
                 if (btn) btn.click();
             }
         } else {
             await populateTabs();
-            if (localData.activeTab) {
+            if (localData.activeTab && (localData.activeTab !== 'tab-devtools' || devToolsEnabled())) {
                 const btn = document.querySelector(`.tab-btn[data-tab="${localData.activeTab}"]`);
                 if (btn) btn.click();
             }
@@ -903,7 +921,7 @@ async function populateTabs(providedPeers = null, providedTargetTabId = null) {
     // Smart Matching Logic — exclude own tabTitle to prevent self-match (computed once)
     const cleanTitle = (rawTitle) => {
         if (!rawTitle) return '';
-        return rawTitle
+        return (normalizeTabTitle(rawTitle) || '')
             .replace(/(?:\s*[-\|•]\s*(?:YouTube|Twitch|Jellyfin|Emby|Netflix|Vimeo|Dailymotion).*)$/i, '')
             .replace(/^(?:Netflix|Twitch|YouTube|Emby|Jellyfin)\s*[-\|•]\s*/i, '')
             .trim();
@@ -1275,8 +1293,10 @@ elements.serverUrl.addEventListener('input', () => {
     chrome.storage.local.set({ serverUrl: elements.serverUrl.value });
 });
 
+elements.username.addEventListener('input', syncDevToolsVisibility);
 elements.username.addEventListener('change', () => {
     chrome.storage.local.set({ username: elements.username.value });
+    syncDevToolsVisibility();
 });
 
 if (elements.langSelector) {
@@ -1609,10 +1629,14 @@ elements.forceSyncBtn.addEventListener('click', async () => {
     if (mode === 'jump-to-me') {
         chrome.tabs.sendMessage(tabId, { action: 'get_current_time' }, (response) => {
             if (chrome.runtime.lastError || !response || response.currentTime === undefined) {
-                chrome.scripting.executeScript({
-                    target: { tabId },
-                    files: ['content.js']
-                }).then(() => {
+                chrome.runtime.sendMessage({ type: 'INJECT_CONTENT_SCRIPT', tabId }, (injectResponse) => {
+                    if (chrome.runtime.lastError || !injectResponse || injectResponse.status !== 'ok') {
+                        showError(getMessage('ERR_NO_VIDEO_TAB'));
+                        forceSyncDone = true;
+                        elements.forceSyncBtn.disabled = false;
+                        elements.forceSyncBtn.textContent = originalText;
+                        return;
+                    }
                     setTimeout(() => {
                         chrome.tabs.sendMessage(tabId, { action: 'get_current_time' }, (retryResponse) => {
                             if (chrome.runtime.lastError) return;
@@ -1621,11 +1645,6 @@ elements.forceSyncBtn.addEventListener('click', async () => {
                             }
                         });
                     }, 500);
-                }).catch(() => {
-                    showError(getMessage('ERR_NO_VIDEO_TAB'));
-                    forceSyncDone = true;
-                    elements.forceSyncBtn.disabled = false;
-                    elements.forceSyncBtn.textContent = originalText;
                 });
                 return;
             }
@@ -1689,6 +1708,27 @@ elements.pauseBtn.addEventListener('click', () => {
         }
     }, 2500);
 });
+
+function simulateRemoteSeek({ delta = null, targetTime = null }) {
+    chrome.runtime.sendMessage({ type: 'DEV_SIMULATE_REMOTE_SEEK', delta, targetTime }, (res) => {
+        if (chrome.runtime.lastError || !res || res.status !== 'ok') {
+            showToast(res?.message || 'Remote seek failed', 'error');
+            return;
+        }
+        showToast(`Remote seek -> ${formatTime(res.targetTime)}`, 'success', 1200);
+        refreshDebugInfo();
+    });
+}
+
+if (elements.remoteSeekBack) {
+    elements.remoteSeekBack.addEventListener('click', () => simulateRemoteSeek({ delta: -30 }));
+}
+if (elements.remoteSeekForward) {
+    elements.remoteSeekForward.addEventListener('click', () => simulateRemoteSeek({ delta: 30 }));
+}
+if (elements.remoteSeekFiveMin) {
+    elements.remoteSeekFiveMin.addEventListener('click', () => simulateRemoteSeek({ targetTime: 300 }));
+}
 
 elements.clearLogs.addEventListener('click', () => {
     chrome.runtime.sendMessage({ type: 'CLEAR_LOGS' }, () => {
@@ -2047,6 +2087,26 @@ elements.copyLogs.addEventListener('click', () => {
             lines.push(`- **ReadyState:** ${readyOk ? '\u2705' : '\u26A0\uFE0F'} ${safe(vs.readyState, '?')} (${readyLabel})`);
             lines.push(`- **Network:** ${safe(vs.networkState, '?')} (${netLabel})`);
             lines.push(`- **Buffered:** ${safe(vs.buffered, '?')}`);
+            if (vs.nativeCurrentTime != null || vs.nativeDuration != null) {
+                lines.push(`- **Native Time:** ${safe(vs.nativeCurrentTime, '?')}s / ${safe(vs.nativeDuration, '?')}s`);
+            }
+            if (vs.siteQuirk) {
+                const quirk = vs.siteQuirk;
+                const label = quirk.name || quirk.key || 'site';
+                if (quirk.timeline) {
+                    lines.push(`- **${label} Timeline:** ${safe(quirk.timeline.current, '?')}s / ${safe(quirk.timeline.duration, '?')}s`);
+                }
+                const candidates = Array.isArray(quirk.timelineCandidates) ? quirk.timelineCandidates : [];
+                if (candidates.length > 0) {
+                    lines.push(`- **${label} Timeline Candidates:**`);
+                    candidates.forEach(c => lines.push(`  - ${safe(c.source, '?')}: ${safe(c.current, '?')}s / ${safe(c.duration, '?')}s`));
+                }
+                const buttons = Array.isArray(quirk.seekButtons) ? quirk.seekButtons : [];
+                if (buttons.length > 0) {
+                    lines.push(`- **${label} Buttons:**`);
+                    buttons.forEach(label => lines.push(`  - ${label}`));
+                }
+            }
             lines.push(`- **Dimensions:** ${safe(vs.videoWidth, '?')}x${safe(vs.videoHeight, '?')}${dimOk ? '' : ' \u26A0\uFE0F 0x0'}`);
             lines.push(`- **Muted:** ${safe(vs.muted, '?')} | **Volume:** ${safe(vs.volume, '?')} | **Speed:** ${safe(vs.playbackRate, '?')}x`);
             lines.push(`- **Seeking:** ${safe(vs.seeking, '?')} | **Ended:** ${safe(vs.ended, '?')} | **Loop:** ${safe(vs.loop, '?')}`);
@@ -2220,7 +2280,18 @@ function refreshDebugInfo() {
                 addField('Network', `${state.networkState} (${state.networkStateLabel || '?'})`,
                     state.networkState === 1 ? '#22c55e' : state.networkState === 3 ? '#ef4444' : 'var(--text-muted)');
                 addField('Buffered', state.buffered || '?');
-
+                if (state.nativeCurrentTime != null || state.nativeDuration != null) {
+                    addField('Native Time', `${state.nativeCurrentTime ?? '?'}s / ${state.nativeDuration ?? '?'}s`);
+                }
+                if (state.siteQuirk) {
+                    const quirk = state.siteQuirk;
+                    const label = quirk.name || quirk.key || 'Site';
+                    if (quirk.timeline) {
+                        addField(`${label} Timeline`, `${quirk.timeline.current ?? '?'}s / ${quirk.timeline.duration ?? '?'}s`);
+                    }
+                    const buttons = Array.isArray(quirk.seekButtons) ? quirk.seekButtons.slice(0, 4).join(' | ') : '';
+                    if (buttons) addField(`${label} Buttons`, buttons);
+                }
                 addSection('Properties');
                 addField('Seeking', String(state.seeking));
                 addField('Ended', String(state.ended));

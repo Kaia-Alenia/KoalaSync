@@ -60,6 +60,22 @@
   - **Legal/moderation:** Unclear what moderation requirements would apply if users can exchange chat messages. Could be relevant depending on jurisdiction.
 - **Status:** Under evaluation, may come later.
 
+### Cross-frame video detection and control
+
+- **Priority:** P3
+- **Category:** Compatibility / Embedded Players
+- **Background:** KoalaSync currently injects on demand into the selected tab's top frame. This works for normal top-frame players, including current Emby/Jellyfin usage, but does not cover cases where the real `<video>` lives inside a cross-origin iframe or an `about:blank`/`srcdoc` player frame.
+- **Possible approach:** Add an opt-in frame bridge where child frames announce detected videos to the top frame, and the top frame routes remote play/pause/seek commands to the active child video.
+- **Status:** Future compatibility work, not needed for current Emby behavior.
+
+### Local extension E2E smoke tests
+
+- **Priority:** P2
+- **Category:** Testing / Release Confidence
+- **Background:** The release verification covers unit tests, server integration, syntax, lint, audits, and builds, but it does not currently run a real browser extension flow. A small local E2E smoke suite would catch regressions in content-script injection, tab navigation reinjection, remote seek handling, and iframe player support.
+- **Possible approach:** Add a separate local-only Playwright smoke command that loads the unpacked extension, opens two controlled video pages, and verifies play/pause/seek through the actual extension path. Keep it outside `npm run verify` until it is stable enough for CI.
+- **Status:** Backlog, recommended before larger content-script or frame-bridge changes.
+
 ---
 
 ## ❌ Rejected
@@ -69,5 +85,4 @@
 | Feature | Reason |
 |---|---|
 | *(none yet)* | |
-
 

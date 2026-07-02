@@ -391,6 +391,7 @@
         <button class="tab-btn" data-tab="tab-sync" data-i18n="TAB_SYNC" data-i18n-title="TAB_SYNC_TOOLTIP" title="Video sync controls and remote actions">Sync</button>
         <button class="tab-btn" data-tab="tab-settings" data-i18n="TAB_SETTINGS" data-i18n-title="TAB_SETTINGS_TOOLTIP" title="Extension preferences">Settings</button>
         <button class="tab-btn" data-tab="tab-dev" data-i18n="TAB_STATUS" data-i18n-title="TAB_STATUS_TOOLTIP" title="Advanced Diagnostics & Logs">Status</button>
+        <button id="devToolsTabBtn" class="tab-btn" data-tab="tab-devtools" style="display:none;">Dev</button>
     </div>
 
     <!-- Room Tab -->
@@ -689,6 +690,18 @@
                 <span> · </span>
                 <span id="appVersion">v0.0.0</span>
             </div>
+        </div>
+    </div>
+
+    <div id="tab-devtools" class="tab-content">
+        <label>Remote Seek</label>
+        <div class="info-card" style="display:flex; gap:8px; margin-bottom:15px;">
+            <button id="remoteSeekBack" class="secondary" style="flex:1; font-size:12px;">-30s</button>
+            <button id="remoteSeekForward" class="secondary" style="flex:1; font-size:12px;">+30s</button>
+        </div>
+        <button id="remoteSeekFiveMin" class="secondary" style="width:100%; font-size:12px; margin-bottom:15px;">Seek 5:00</button>
+        <div style="font-size:10px; color:var(--text-muted); text-align:center; margin-top:10px; opacity:0.7;">
+            Build: <span id="buildIdentifier">__BUILD_TIMESTAMP__</span>
         </div>
     </div>
 
