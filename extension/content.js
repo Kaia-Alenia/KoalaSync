@@ -57,6 +57,22 @@
     let seekDebounceTimer = null;     // debounce timer for rapid seek events
     let expectedSeekTime = null;      // strictly track programmatic seeks
 
+    const NETFLIX_SEEK_BRIDGE = 1;
+
+    function isNetflixHost() {
+        const host = window.location.hostname.toLowerCase();
+        return host === 'netflix.com' || host.endsWith('.netflix.com');
+    }
+
+    function seekVideo(video, targetTime) {
+        expectedSeekTime = targetTime;
+        if (isNetflixHost()) {
+            window.postMessage({ __koalaNetflixSeek: NETFLIX_SEEK_BRIDGE, kind: 'seek', time: targetTime }, '*');
+            return;
+        }
+        video.currentTime = targetTime;
+    }
+
     // --- Play/Pause Coalescing (leading + trailing) ---
     // Media players (HLS/DASH, ad insertion, ABR/quality switches, source swaps,
     // page teardown) fire bursts of native play/pause events within a few hundred
@@ -748,8 +764,7 @@
                         ytButton.click();
                     }
                     if (action === EVENTS.SEEK) {
-                        expectedSeekTime = data.targetTime;
-                        video.currentTime = data.targetTime;
+                        seekVideo(video, data.targetTime);
                     }
                     return;
                 }
@@ -764,8 +779,7 @@
                         twitchButton.click();
                     }
                     if (action === EVENTS.SEEK) {
-                        expectedSeekTime = data.targetTime;
-                        video.currentTime = data.targetTime;
+                        seekVideo(video, data.targetTime);
                     }
                     return;
                 }
@@ -782,8 +796,7 @@
                 _setSuppress('paused');
                 video.pause();
             } else if (action === EVENTS.SEEK) {
-                expectedSeekTime = data.targetTime;
-                video.currentTime = data.targetTime;
+                seekVideo(video, data.targetTime);
             }
     } catch (e) {
             reportLog(`Media Action Error: ${e.message}`, 'error');
@@ -931,10 +944,9 @@
                         return;
                     }
                     _setSuppress('paused');
-                    expectedSeekTime = payload.targetTime;
                     video.pause();
                     try {
-                        video.currentTime = payload.targetTime;
+                        seekVideo(video, payload.targetTime);
                     } catch (e) {
                         reportLog(`Force Sync Seek Error: ${e.message}`, 'error');
                     }

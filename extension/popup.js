@@ -1609,10 +1609,14 @@ elements.forceSyncBtn.addEventListener('click', async () => {
     if (mode === 'jump-to-me') {
         chrome.tabs.sendMessage(tabId, { action: 'get_current_time' }, (response) => {
             if (chrome.runtime.lastError || !response || response.currentTime === undefined) {
-                chrome.scripting.executeScript({
-                    target: { tabId },
-                    files: ['content.js']
-                }).then(() => {
+                chrome.runtime.sendMessage({ type: 'INJECT_CONTENT_SCRIPT', tabId }, (injectResponse) => {
+                    if (chrome.runtime.lastError || !injectResponse || injectResponse.status !== 'ok') {
+                        showError(getMessage('ERR_NO_VIDEO_TAB'));
+                        forceSyncDone = true;
+                        elements.forceSyncBtn.disabled = false;
+                        elements.forceSyncBtn.textContent = originalText;
+                        return;
+                    }
                     setTimeout(() => {
                         chrome.tabs.sendMessage(tabId, { action: 'get_current_time' }, (retryResponse) => {
                             if (chrome.runtime.lastError) return;
@@ -1621,11 +1625,6 @@ elements.forceSyncBtn.addEventListener('click', async () => {
                             }
                         });
                     }, 500);
-                }).catch(() => {
-                    showError(getMessage('ERR_NO_VIDEO_TAB'));
-                    forceSyncDone = true;
-                    elements.forceSyncBtn.disabled = false;
-                    elements.forceSyncBtn.textContent = originalText;
                 });
                 return;
             }

@@ -1592,6 +1592,68 @@ async function routeToContent(action, payload) {
     _routeToContentInternal(tabId, action, payload, actionTimestamp, commandSenderId, 0);
 }
 
+function isNetflixUrl(url) {
+    try {
+        const host = new URL(url).hostname.toLowerCase();
+        return host === 'netflix.com' || host.endsWith('.netflix.com');
+    } catch (_e) {
+        return false;
+    }
+}
+
+function installNetflixSeekBridge() {
+    if (window.__koalaNetflixSeekBridgeInstalled) return;
+    window.__koalaNetflixSeekBridgeInstalled = true;
+
+    function getNetflixPlayer() {
+        try {
+            const videoPlayer = window.netflix?.appContext?.state?.playerApp?.getAPI?.().videoPlayer;
+            const sessionId = videoPlayer?.getAllPlayerSessionIds?.()[0];
+            return sessionId ? videoPlayer.getVideoPlayerBySessionId(sessionId) : null;
+        } catch (_e) {
+            return null;
+        }
+    }
+
+    window.addEventListener('message', (event) => {
+        if (event.source !== window) return;
+        const data = event.data;
+        if (!data || data.__koalaNetflixSeek !== 1 || data.kind !== 'seek' || typeof data.time !== 'number') return;
+        try {
+            getNetflixPlayer()?.seek(Math.round(data.time * 1000));
+        } catch (_e) {
+            // Netflix player not ready or private API changed; the next sync tick can retry.
+        }
+    });
+}
+
+async function injectContentScript(tabId) {
+    let isNetflix = false;
+    try {
+        const tab = await chrome.tabs.get(tabId);
+        isNetflix = isNetflixUrl(tab?.url || '');
+    } catch (_e) {
+        // Fall through to the generic content script injection.
+    }
+
+    if (isNetflix) {
+        try {
+            await chrome.scripting.executeScript({
+                target: { tabId },
+                world: 'MAIN',
+                func: installNetflixSeekBridge
+            });
+        } catch (err) {
+            addLog(`Netflix seek bridge injection failed: ${err.message}`, 'warn');
+        }
+    }
+
+    return chrome.scripting.executeScript({
+        target: { tabId },
+        files: ['content.js']
+    });
+}
+
 function _routeToContentInternal(tabId, action, payload, actionTimestamp, commandSenderId, retries) {
     chrome.tabs.sendMessage(tabId, { 
         type: 'SERVER_COMMAND',
@@ -1606,10 +1668,7 @@ function _routeToContentInternal(tabId, action, payload, actionTimestamp, comman
             return;
         }
         if (err.message.includes('Receiving end does not exist') || err.message.includes('Extension context invalidated')) {
-            chrome.scripting.executeScript({
-                target: { tabId },
-                files: ['content.js']
-            }).then(() => {
+            injectContentScript(tabId).then(() => {
                 setTimeout(() => _routeToContentInternal(tabId, action, payload, actionTimestamp, commandSenderId, retries + 1), 500);
             }).catch(_err => {
                 addLog(`Auto-reinject failed for tab ${tabId}`, 'warn');
@@ -2196,6 +2255,20 @@ async function handleAsyncMessage(message, sender, sendResponse) {
             addLog('Heartbeat settings error: ' + err.message, 'error');
             sendResponse({ status: 'ok' });
         });
+    } else if (message.type === 'INJECT_CONTENT_SCRIPT') {
+        const tabId = Number(message.tabId);
+        if (!Number.isInteger(tabId)) {
+            sendResponse({ status: 'invalid_tab' });
+            return true;
+        }
+
+        injectContentScript(tabId).then(() => {
+            sendResponse({ status: 'ok' });
+        }).catch(err => {
+            addLog(`Failed to inject into tab: ${err.message}`, 'warn');
+            sendResponse({ status: 'error', message: err.message });
+        });
+        return true;
     } else if (message.type === 'SET_TARGET_TAB') {
         const previousTabId = currentTabId;
         currentTabId = message.tabId;
@@ -2213,10 +2286,7 @@ async function handleAsyncMessage(message, sender, sendResponse) {
         
         if (currentTabId) {
             const selectedTabId = currentTabId;
-            chrome.scripting.executeScript({
-                target: { tabId: selectedTabId },
-                files: ['content.js']
-            })
+            injectContentScript(selectedTabId)
                 .then(() => applyAudioSettingsToTab(selectedTabId))
                 .catch(err => {
                     addLog(`Failed to inject into tab: ${err.message}`, 'warn');
