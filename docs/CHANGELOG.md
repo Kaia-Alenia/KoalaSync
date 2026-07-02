@@ -6,10 +6,25 @@ All notable changes to the KoalaSync browser extension and relay server.
 
 ## Unreleased
 
+---
+
+## [v2.5.2] — 2026-07-02
+
 ### Added
 - **Extension: Privacy title controls** - Advanced users can now disable sending browser tab titles separately from media titles. Media titles can still be sent in full, reduced to detected episode identifiers such as `S01E04`, or hidden entirely. Defaults remain full titles for backwards compatibility.
 - **Relay: Cleaner restart handling** — Connected clients are now disconnected explicitly during relay shutdown so reconnects recover more predictably.
 - **Relay: Stronger abuse protection** — Rapid room-leave spam is now rate-limited.
+- **Extension: Hidden remote seek diagnostics** — KoalaDev can use the hidden Dev tab to simulate remote seeks and inspect precise native/page-API timing while debugging playback integrations.
+
+### Changed
+- **Extension: Shared page-API seek bridge** — Netflix and Disney+ now use a common page-level seek bridge so private player APIs can be invoked from the page context while the default HTML5 path stays unchanged.
+- **Build: Release build timestamp** — Extension builds now inject a build timestamp into the hidden Dev tab for easier local package verification.
+
+### Fixed
+- **Extension: Disney+ precise sync** — Disney+ now reads time and seeks through the real page media-player API, and the temporary DOM timeline/button scraping fallback has been removed.
+- **Extension: Netflix seek reliability** — Netflix seeking keeps using the page player API with a safer session lookup path.
+- **Extension: Tab-title counter cleanup** — Leading browser notification counters such as `(14)` or `[7]` are removed from shared tab titles and matching logic without changing the existing privacy controls.
+- **Extension: Tab navigation reinjection** — Reinjecting the content script after selected-tab navigation now uses the same page-API-aware injection path.
 
 ---
 
