@@ -13,12 +13,12 @@ This document tracks which streaming platforms and media servers are supported b
 | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :--- |
 | **YouTube** | ✅ Full | ✅ Full | ❌ N/A | — | — | — | Individual videos, not episodes. |
 | **Twitch** | ✅ Full | ✅ Full | ❌ N/A | — | — | — | Individual streams/VODs. |
-| **Netflix** | ✅ Full | ❌ N/A | ❌ N/A | — | — | — | No media title exposed. |
+| **Netflix** | ✅ Full | ❌ | ❌ | — | — | — | No media title exposed. |
 | **Emby** | ✅ Full | ✅ Full | ✅ Full | — | — | — | Best-in-class support. |
 | **Jellyfin** | ✅ Full | ✅ Full | ✅ Full | — | — | — | — |
 | **Plex** | Not tested | Not tested | Not tested | — | — | — | — |
-| **Disney+** | ✅ Full | ⚠️ Partial | ❌ N/A | — | — | — | Series title only (e.g. "The Simpsons"), no episode info. |
-| **Prime Video** | ✅ Full  | ✅ Full  | ❌ N/A | — | — | — | — |
+| **Disney+** | ✅ Full | ⚠️ Partial | ❌ | — | — | — | Series title only (e.g. "The Simpsons"), no episode info. |
+| **Prime Video** | ✅ Full  | ✅ Full  | ❌ | — | — | — | — |
 | **HBO Max / Max** | Not tested | Not tested | Not tested | — | — | — | — |
 | **Crunchyroll** | Not tested | Not tested | Not tested | — | — | — | — |
 | **Vimeo** | Not tested | Not tested | Not tested | — | — | — | — |
@@ -31,7 +31,8 @@ This document tracks which streaming platforms and media servers are supported b
 | :---: | :--- |
 | ✅ Full | Works without limitations. |
 | ⚠️ Partial | Works with caveats (see Notes). |
-| ❌ N/A | Not applicable or not supported by the platform. |
+| ❌ | Not supported / does not work. |
+| ❌ N/A | Not applicable (feature does not exist on the platform). |
 | **Not tested** | Has not been tested yet. |
 
 ---
