@@ -314,12 +314,29 @@ async function compile() {
         }
     }
 
-    // ── 5. Copy generic static files ──
+    // ── 5. Copy generic static files and verification files ──
     const genericFiles = ['robots.txt', 'sitemap.xml', 'site.webmanifest', 'version.json'];
     for (const file of genericFiles) {
         const src = path.join(websiteDir, file);
         const dest = path.join(wwwDir, file);
         if (fs.existsSync(src)) { fs.copyFileSync(src, dest); }
+    }
+
+    // Auto-copy Google verification files and IndexNow/txt key files from website source to www root
+    const websiteFiles = fs.readdirSync(websiteDir);
+    for (const file of websiteFiles) {
+        const filePath = path.join(websiteDir, file);
+        if (fs.statSync(filePath).isFile()) {
+            // Match google[hex/alphanumeric].html or any hex/uuid txt file (e.g. 4650678bb36b488d8f64343a67f1b931.txt)
+            const isGoogleVerification = /^google[a-zA-Z0-9_-]+\.html$/i.test(file);
+            const isIndexNowVerification = (/^[a-zA-Z0-9_-]{8,}\.txt$/i.test(file) || /^[a-f0-9-]{32,36}$/i.test(file)) && file !== 'robots.txt';
+            
+            if (isGoogleVerification || isIndexNowVerification) {
+                const dest = path.join(wwwDir, file);
+                fs.copyFileSync(filePath, dest);
+                console.log(`  Copied verification file: ${file} → ${file}`);
+            }
+        }
     }
 
     // ── 6. Copy assets ──
