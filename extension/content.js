@@ -144,6 +144,7 @@
         const candidates = [];
         let best = null;
         let bestScore = -1;
+        let remainingSeconds = null;
 
         function considerTimeline(parsed, source, weight = 0) {
             if (!parsed) return;
@@ -176,8 +177,23 @@
                 considerTimeline(parsed, 'text', 100);
                 textParts.push(text);
             }
+            // Disney's scrubber aria-valuenow can lag several seconds behind
+            // real playback; a "time remaining" indicator updates live, so
+            // capture it and later derive current = duration - remaining.
+            const remClass = String(node.getAttribute?.('class') || '') + ' ' + String(node.getAttribute?.('data-testid') || '');
+            if (/remain/i.test(remClass)) {
+                const remMatch = String(node.textContent || '').match(/\d{1,3}:\d{2}(?::\d{2})?/);
+                const rem = remMatch ? parseClockTime(remMatch[0]) : null;
+                if (Number.isFinite(rem) && rem >= 0) remainingSeconds = rem;
+            }
         }
 
+        if (best && remainingSeconds !== null && best.duration > 0) {
+            const liveCurrent = best.duration - remainingSeconds;
+            if (liveCurrent >= 0 && liveCurrent <= best.duration + 5) {
+                considerTimeline({ current: Math.min(liveCurrent, best.duration), duration: best.duration }, 'time-remaining', 1000);
+            }
+        }
         considerTimeline(parseTimelineText(textParts.join(' ')), 'combined-text', 25);
         lastDisneyPlusTimelineCandidates = candidates
             .sort((a, b) => b.score - a.score)
