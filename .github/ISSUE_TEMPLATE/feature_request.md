@@ -2,7 +2,7 @@
 name: 🚀 Feature Request
 about: Suggest a new feature or enhancement for KoalaSync
 title: ''
-labels: enhancement
+labels: feature
 assignees: ''
 
 ---
