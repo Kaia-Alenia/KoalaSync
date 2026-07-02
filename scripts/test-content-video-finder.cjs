@@ -96,6 +96,7 @@ function loadTimelineFns(hostname, document = makeDocument()) {
     'let lastKnownDisneyPlusStart = 0;',
     'let lastDisneyPlusUiCurrent = null;',
     'let lastDisneyPlusNativeAtUi = null;',
+    'let disneyPageApiTime = null;',
     extractFunction('scanShadowDom', source),
     extractFunction('querySelectorAllShadow', source),
     extractFunction('hostMatchesUrl', source),

@@ -1663,10 +1663,22 @@ function installPageApiSeekBridge() {
     if (window.__koalaPageApiSeekBridgeInstalled) return;
     window.__koalaPageApiSeekBridgeInstalled = true;
 
-    function seekWithPageApi(time) {
-        const match = typeof window.koalaFindPageApiSeekProvider === 'function'
+    function currentMatch() {
+        return typeof window.koalaFindPageApiSeekProvider === 'function'
             ? window.koalaFindPageApiSeekProvider(window.location.hostname)
             : null;
+    }
+
+    // Disney+ ("hive"/BAM) player: the real media player hangs off the
+    // <disney-web-player> custom element as `.mediaPlayer`, exposing precise
+    // seek(ms) and timeline.info (playhead/duration in ms).
+    function disneyMediaPlayer() {
+        const el = document.querySelector('disney-web-player');
+        return el && el.mediaPlayer ? el.mediaPlayer : null;
+    }
+
+    function seekWithPageApi(time) {
+        const match = currentMatch();
         if (!match) return;
 
         try {
@@ -1676,6 +1688,9 @@ function installPageApiSeekBridge() {
                 const sessionId = ids ? ids[0] : null;
                 const player = sessionId ? videoPlayer.getVideoPlayerBySessionId(sessionId) : null;
                 player?.seek(Math.round(time * 1000));
+            } else if (match.provider === 'disney') {
+                const mp = disneyMediaPlayer();
+                if (mp && typeof mp.seek === 'function') mp.seek(Math.round(time * 1000));
             }
         } catch (_e) {
             // Player not ready or private API changed; the next sync tick can retry.
@@ -1688,6 +1703,28 @@ function installPageApiSeekBridge() {
         if (!data || data.__koalaPageApiSeek !== 1 || data.kind !== 'seek' || typeof data.time !== 'number') return;
         seekWithPageApi(data.time);
     });
+
+    // Disney+'s <video> currentTime is blob-relative and its scrubber lags, so
+    // the isolated-world content script can't read an accurate position. Push
+    // the real playhead/duration (seconds) from the page's media player.
+    setInterval(() => {
+        try {
+            const match = currentMatch();
+            if (!match || match.provider !== 'disney') return;
+            const mp = disneyMediaPlayer();
+            const info = mp && mp.timeline && mp.timeline.info;
+            if (!info || typeof info.playheadPositionMs !== 'number' || typeof info.programDurationMs !== 'number') return;
+            if (info.programDurationMs <= 0) return;
+            window.postMessage({
+                __koalaPlayerTime: 1,
+                provider: 'disney',
+                position: info.playheadPositionMs / 1000,
+                duration: info.programDurationMs / 1000
+            }, '*');
+        } catch (_e) {
+            // Ignore transient errors (player teardown / element swap).
+        }
+    }, 250);
 }
 
 function setPageApiSeekEnabled(enabled) {

@@ -4,6 +4,11 @@
             name: 'netflix-page-api-seek',
             urls: ['netflix.com'],
             provider: 'netflix'
+        },
+        {
+            name: 'disney-page-api-seek',
+            urls: ['disneyplus.com'],
+            provider: 'disney'
         }
     ];
 

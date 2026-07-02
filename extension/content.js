@@ -64,6 +64,20 @@
     let lastKnownDisneyPlusStart = 0;
     let lastDisneyPlusUiCurrent = null;
     let lastDisneyPlusNativeAtUi = null;
+    // Accurate Disney+ playhead pushed by the MAIN-world page-API bridge
+    // (background.js installPageApiSeekBridge). The isolated content world
+    // can't read the page's media player directly.
+    let disneyPageApiTime = null;
+    if (typeof window !== 'undefined' && typeof window.addEventListener === 'function') {
+        window.addEventListener('message', (event) => {
+            if (event.source !== window) return;
+            const data = event.data;
+            if (data && data.__koalaPlayerTime === 1 && data.provider === 'disney'
+                && Number.isFinite(data.position) && Number.isFinite(data.duration) && data.duration > 0) {
+                disneyPageApiTime = { position: data.position, duration: data.duration, at: Date.now() };
+            }
+        });
+    }
 
     function hostMatchesUrl(host, url) {
         const normalized = String(url || '')
@@ -277,6 +291,13 @@
 
     function getDisneyPlusTimeline(video) {
         if (!isDisneyPlusHost()) return null;
+        // Preferred: exact playhead/duration from the page media player,
+        // relayed by the MAIN-world bridge. Authoritative while fresh.
+        if (disneyPageApiTime && (Date.now() - disneyPageApiTime.at) < 2000 && disneyPageApiTime.duration > 0) {
+            lastKnownDisneyPlusDuration = disneyPageApiTime.duration;
+            const cur = Math.max(0, Math.min(disneyPageApiTime.duration, disneyPageApiTime.position));
+            return { start: 0, end: disneyPageApiTime.duration, duration: disneyPageApiTime.duration, current: cur, nativeScale: 1, nativeStart: 0 };
+        }
         const range = getSeekableRange(video);
         const current = video.currentTime;
         const ui = getDisneyPlusUiTimeline();
@@ -399,6 +420,13 @@
     }
 
     function seekVideo(video, targetTime, relativeDelta = null) {
+        // Prefer a precise page-level seek API when available (Netflix, Disney+);
+        // for those players the DOM/button seek path is imprecise or impossible.
+        if (shouldUsePageApiSeek()) {
+            expectedSeekTime = targetTime;
+            window.postMessage({ __koalaPageApiSeek: PAGE_API_SEEK_BRIDGE, kind: 'seek', time: targetTime }, '*');
+            return;
+        }
         const siteQuirk = getActiveSiteQuirk();
         let delta = relativeDelta;
         if (delta === null && siteQuirk) {
@@ -411,13 +439,8 @@
             expectedSeekTime = null;
             return;
         }
-        const nativeTargetTime = toNativeSeekTime(video, targetTime);
         expectedSeekTime = targetTime;
-        if (shouldUsePageApiSeek()) {
-            window.postMessage({ __koalaPageApiSeek: PAGE_API_SEEK_BRIDGE, kind: 'seek', time: targetTime }, '*');
-            return;
-        }
-        video.currentTime = nativeTargetTime;
+        video.currentTime = toNativeSeekTime(video, targetTime);
     }
 
     // --- Play/Pause Coalescing (leading + trailing) ---
