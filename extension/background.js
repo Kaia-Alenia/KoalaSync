@@ -1615,7 +1615,7 @@ async function getReadyTabVideoState(tabId) {
     return state;
 }
 
-async function simulateRemoteSeek(delta) {
+async function simulateRemoteSeek(delta, explicitTargetTime = null) {
     if (!currentTabId) return { status: 'no_tab' };
     const tabId = parseInt(currentTabId);
     if (isNaN(tabId)) return { status: 'no_tab' };
@@ -1624,7 +1624,7 @@ async function simulateRemoteSeek(delta) {
     if (!state || state.error) return { status: 'error', message: state?.error || 'No video state' };
     if (!state.found || !Number.isFinite(state.currentTime)) return { status: 'no_video' };
 
-    let targetTime = Math.max(0, state.currentTime + delta);
+    let targetTime = explicitTargetTime !== null ? explicitTargetTime : Math.max(0, state.currentTime + (delta || 0));
     if (Number.isFinite(state.duration) && state.duration > 0) {
         targetTime = Math.min(targetTime, Math.max(0, state.duration - 0.1));
     }
@@ -2143,12 +2143,14 @@ async function handleAsyncMessage(message, sender, sendResponse) {
             sendResponse({ status: 'forbidden' });
             return;
         }
-        const delta = Number(message.delta);
-        if (!Number.isFinite(delta)) {
-            sendResponse({ status: 'invalid_delta' });
+        const delta = message.delta !== null && message.delta !== undefined ? Number(message.delta) : null;
+        const targetTime = message.targetTime !== null && message.targetTime !== undefined ? Number(message.targetTime) : null;
+
+        if (delta === null && targetTime === null) {
+            sendResponse({ status: 'invalid_params' });
             return;
         }
-        simulateRemoteSeek(delta).then(sendResponse).catch(err => {
+        simulateRemoteSeek(delta, targetTime).then(sendResponse).catch(err => {
             addLog(`Remote seek simulation failed: ${err.message}`, 'warn');
             sendResponse({ status: 'error', message: err.message });
         });

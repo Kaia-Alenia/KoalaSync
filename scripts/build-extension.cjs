@@ -140,6 +140,12 @@ function copyExtensionFiles(targetDir, browserName) {
 
         fs.writeFileSync(destPath, content);
         console.log(`✓ Injected uninstall URL constants for ${browserName} into background.js`);
+      } else if (item === 'popup.html') {
+        let content = fs.readFileSync(srcPath, 'utf8');
+        const timestamp = new Date().toISOString().replace('T', ' ').substring(0, 19) + ' UTC';
+        content = content.replace(/__BUILD_TIMESTAMP__/g, timestamp);
+        fs.writeFileSync(destPath, content);
+        console.log(`✓ Injected build timestamp into popup.html: ${timestamp}`);
       } else {
         fs.copyFileSync(srcPath, destPath);
       }
