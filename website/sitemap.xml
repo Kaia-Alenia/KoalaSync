@@ -3,31 +3,31 @@
         xmlns:xhtml="http://www.w3.org/1999/xhtml">
   <url>
     <loc>https://sync.koalastuff.net/imprint</loc>
-    <lastmod>2026-07-01</lastmod>
+    <lastmod>2026-07-02</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.3</priority>
   </url>
   <url>
     <loc>https://sync.koalastuff.net/privacy</loc>
-    <lastmod>2026-07-01</lastmod>
+    <lastmod>2026-07-02</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.3</priority>
   </url>
   <url>
     <loc>https://sync.koalastuff.net/de/impressum</loc>
-    <lastmod>2026-07-01</lastmod>
+    <lastmod>2026-07-02</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.3</priority>
   </url>
   <url>
     <loc>https://sync.koalastuff.net/de/datenschutz</loc>
-    <lastmod>2026-07-01</lastmod>
+    <lastmod>2026-07-02</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.3</priority>
   </url>
   <url>
     <loc>https://sync.koalastuff.net/alternatives</loc>
-    <lastmod>2026-07-01</lastmod>
+    <lastmod>2026-07-02</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://sync.koalastuff.net/alternatives"/>
@@ -49,7 +49,7 @@
   </url>
   <url>
     <loc>https://sync.koalastuff.net/de/alternatives</loc>
-    <lastmod>2026-07-01</lastmod>
+    <lastmod>2026-07-02</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://sync.koalastuff.net/alternatives"/>
@@ -71,7 +71,7 @@
   </url>
   <url>
     <loc>https://sync.koalastuff.net/alternatives/teleparty</loc>
-    <lastmod>2026-07-01</lastmod>
+    <lastmod>2026-07-02</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://sync.koalastuff.net/alternatives/teleparty"/>
@@ -93,7 +93,7 @@
   </url>
   <url>
     <loc>https://sync.koalastuff.net/de/alternatives/teleparty</loc>
-    <lastmod>2026-07-01</lastmod>
+    <lastmod>2026-07-02</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://sync.koalastuff.net/alternatives/teleparty"/>
@@ -115,7 +115,7 @@
   </url>
   <url>
     <loc>https://sync.koalastuff.net/alternatives/screen-sharing</loc>
-    <lastmod>2026-07-01</lastmod>
+    <lastmod>2026-07-02</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://sync.koalastuff.net/alternatives/screen-sharing"/>
@@ -137,7 +137,7 @@
   </url>
   <url>
     <loc>https://sync.koalastuff.net/de/alternatives/screen-sharing</loc>
-    <lastmod>2026-07-01</lastmod>
+    <lastmod>2026-07-02</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://sync.koalastuff.net/alternatives/screen-sharing"/>
@@ -159,7 +159,7 @@
   </url>
   <url>
     <loc>https://sync.koalastuff.net/fr/alternatives</loc>
-    <lastmod>2026-07-01</lastmod>
+    <lastmod>2026-07-02</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://sync.koalastuff.net/alternatives"/>
@@ -181,7 +181,7 @@
   </url>
   <url>
     <loc>https://sync.koalastuff.net/fr/alternatives/teleparty</loc>
-    <lastmod>2026-07-01</lastmod>
+    <lastmod>2026-07-02</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://sync.koalastuff.net/alternatives/teleparty"/>
@@ -203,7 +203,7 @@
   </url>
   <url>
     <loc>https://sync.koalastuff.net/fr/alternatives/screen-sharing</loc>
-    <lastmod>2026-07-01</lastmod>
+    <lastmod>2026-07-02</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://sync.koalastuff.net/alternatives/screen-sharing"/>
@@ -225,7 +225,7 @@
   </url>
   <url>
     <loc>https://sync.koalastuff.net/es/alternatives</loc>
-    <lastmod>2026-07-01</lastmod>
+    <lastmod>2026-07-02</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://sync.koalastuff.net/alternatives"/>
@@ -247,7 +247,7 @@
   </url>
   <url>
     <loc>https://sync.koalastuff.net/es/alternatives/teleparty</loc>
-    <lastmod>2026-07-01</lastmod>
+    <lastmod>2026-07-02</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://sync.koalastuff.net/alternatives/teleparty"/>
@@ -269,7 +269,7 @@
   </url>
   <url>
     <loc>https://sync.koalastuff.net/es/alternatives/screen-sharing</loc>
-    <lastmod>2026-07-01</lastmod>
+    <lastmod>2026-07-02</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://sync.koalastuff.net/alternatives/screen-sharing"/>
@@ -291,7 +291,7 @@
   </url>
   <url>
     <loc>https://sync.koalastuff.net/it/alternatives</loc>
-    <lastmod>2026-07-01</lastmod>
+    <lastmod>2026-07-02</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://sync.koalastuff.net/alternatives"/>
@@ -313,7 +313,7 @@
   </url>
   <url>
     <loc>https://sync.koalastuff.net/it/alternatives/teleparty</loc>
-    <lastmod>2026-07-01</lastmod>
+    <lastmod>2026-07-02</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://sync.koalastuff.net/alternatives/teleparty"/>
@@ -335,7 +335,7 @@
   </url>
   <url>
     <loc>https://sync.koalastuff.net/it/alternatives/screen-sharing</loc>
-    <lastmod>2026-07-01</lastmod>
+    <lastmod>2026-07-02</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://sync.koalastuff.net/alternatives/screen-sharing"/>
@@ -357,7 +357,7 @@
   </url>
   <url>
     <loc>https://sync.koalastuff.net/nl/alternatives</loc>
-    <lastmod>2026-07-01</lastmod>
+    <lastmod>2026-07-02</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://sync.koalastuff.net/alternatives"/>
@@ -379,7 +379,7 @@
   </url>
   <url>
     <loc>https://sync.koalastuff.net/nl/alternatives/teleparty</loc>
-    <lastmod>2026-07-01</lastmod>
+    <lastmod>2026-07-02</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://sync.koalastuff.net/alternatives/teleparty"/>
@@ -401,7 +401,7 @@
   </url>
   <url>
     <loc>https://sync.koalastuff.net/nl/alternatives/screen-sharing</loc>
-    <lastmod>2026-07-01</lastmod>
+    <lastmod>2026-07-02</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://sync.koalastuff.net/alternatives/screen-sharing"/>
@@ -423,7 +423,7 @@
   </url>
   <url>
     <loc>https://sync.koalastuff.net/pl/alternatives</loc>
-    <lastmod>2026-07-01</lastmod>
+    <lastmod>2026-07-02</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://sync.koalastuff.net/alternatives"/>
@@ -445,7 +445,7 @@
   </url>
   <url>
     <loc>https://sync.koalastuff.net/pl/alternatives/teleparty</loc>
-    <lastmod>2026-07-01</lastmod>
+    <lastmod>2026-07-02</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://sync.koalastuff.net/alternatives/teleparty"/>
@@ -467,7 +467,7 @@
   </url>
   <url>
     <loc>https://sync.koalastuff.net/pl/alternatives/screen-sharing</loc>
-    <lastmod>2026-07-01</lastmod>
+    <lastmod>2026-07-02</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://sync.koalastuff.net/alternatives/screen-sharing"/>
@@ -489,7 +489,7 @@
   </url>
   <url>
     <loc>https://sync.koalastuff.net/pt/alternatives</loc>
-    <lastmod>2026-07-01</lastmod>
+    <lastmod>2026-07-02</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://sync.koalastuff.net/alternatives"/>
@@ -511,7 +511,7 @@
   </url>
   <url>
     <loc>https://sync.koalastuff.net/pt/alternatives/teleparty</loc>
-    <lastmod>2026-07-01</lastmod>
+    <lastmod>2026-07-02</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://sync.koalastuff.net/alternatives/teleparty"/>
@@ -533,7 +533,7 @@
   </url>
   <url>
     <loc>https://sync.koalastuff.net/pt/alternatives/screen-sharing</loc>
-    <lastmod>2026-07-01</lastmod>
+    <lastmod>2026-07-02</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://sync.koalastuff.net/alternatives/screen-sharing"/>
@@ -555,7 +555,7 @@
   </url>
   <url>
     <loc>https://sync.koalastuff.net/pt-BR/alternatives</loc>
-    <lastmod>2026-07-01</lastmod>
+    <lastmod>2026-07-02</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://sync.koalastuff.net/alternatives"/>
@@ -577,7 +577,7 @@
   </url>
   <url>
     <loc>https://sync.koalastuff.net/pt-BR/alternatives/teleparty</loc>
-    <lastmod>2026-07-01</lastmod>
+    <lastmod>2026-07-02</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://sync.koalastuff.net/alternatives/teleparty"/>
@@ -599,7 +599,7 @@
   </url>
   <url>
     <loc>https://sync.koalastuff.net/pt-BR/alternatives/screen-sharing</loc>
-    <lastmod>2026-07-01</lastmod>
+    <lastmod>2026-07-02</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://sync.koalastuff.net/alternatives/screen-sharing"/>
@@ -621,7 +621,7 @@
   </url>
   <url>
     <loc>https://sync.koalastuff.net/ru/alternatives</loc>
-    <lastmod>2026-07-01</lastmod>
+    <lastmod>2026-07-02</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://sync.koalastuff.net/alternatives"/>
@@ -643,7 +643,7 @@
   </url>
   <url>
     <loc>https://sync.koalastuff.net/ru/alternatives/teleparty</loc>
-    <lastmod>2026-07-01</lastmod>
+    <lastmod>2026-07-02</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://sync.koalastuff.net/alternatives/teleparty"/>
@@ -665,7 +665,7 @@
   </url>
   <url>
     <loc>https://sync.koalastuff.net/ru/alternatives/screen-sharing</loc>
-    <lastmod>2026-07-01</lastmod>
+    <lastmod>2026-07-02</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://sync.koalastuff.net/alternatives/screen-sharing"/>
@@ -687,7 +687,7 @@
   </url>
   <url>
     <loc>https://sync.koalastuff.net/tr/alternatives</loc>
-    <lastmod>2026-07-01</lastmod>
+    <lastmod>2026-07-02</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://sync.koalastuff.net/alternatives"/>
@@ -709,7 +709,7 @@
   </url>
   <url>
     <loc>https://sync.koalastuff.net/tr/alternatives/teleparty</loc>
-    <lastmod>2026-07-01</lastmod>
+    <lastmod>2026-07-02</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://sync.koalastuff.net/alternatives/teleparty"/>
@@ -731,7 +731,7 @@
   </url>
   <url>
     <loc>https://sync.koalastuff.net/tr/alternatives/screen-sharing</loc>
-    <lastmod>2026-07-01</lastmod>
+    <lastmod>2026-07-02</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://sync.koalastuff.net/alternatives/screen-sharing"/>
@@ -753,7 +753,7 @@
   </url>
   <url>
     <loc>https://sync.koalastuff.net/ja/alternatives</loc>
-    <lastmod>2026-07-01</lastmod>
+    <lastmod>2026-07-02</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://sync.koalastuff.net/alternatives"/>
@@ -775,7 +775,7 @@
   </url>
   <url>
     <loc>https://sync.koalastuff.net/ja/alternatives/teleparty</loc>
-    <lastmod>2026-07-01</lastmod>
+    <lastmod>2026-07-02</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://sync.koalastuff.net/alternatives/teleparty"/>
@@ -797,7 +797,7 @@
   </url>
   <url>
     <loc>https://sync.koalastuff.net/ja/alternatives/screen-sharing</loc>
-    <lastmod>2026-07-01</lastmod>
+    <lastmod>2026-07-02</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://sync.koalastuff.net/alternatives/screen-sharing"/>
@@ -819,7 +819,7 @@
   </url>
   <url>
     <loc>https://sync.koalastuff.net/ko/alternatives</loc>
-    <lastmod>2026-07-01</lastmod>
+    <lastmod>2026-07-02</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://sync.koalastuff.net/alternatives"/>
@@ -841,7 +841,7 @@
   </url>
   <url>
     <loc>https://sync.koalastuff.net/ko/alternatives/teleparty</loc>
-    <lastmod>2026-07-01</lastmod>
+    <lastmod>2026-07-02</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://sync.koalastuff.net/alternatives/teleparty"/>
@@ -863,7 +863,7 @@
   </url>
   <url>
     <loc>https://sync.koalastuff.net/ko/alternatives/screen-sharing</loc>
-    <lastmod>2026-07-01</lastmod>
+    <lastmod>2026-07-02</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://sync.koalastuff.net/alternatives/screen-sharing"/>
@@ -885,7 +885,7 @@
   </url>
   <url>
     <loc>https://sync.koalastuff.net/zh/alternatives</loc>
-    <lastmod>2026-07-01</lastmod>
+    <lastmod>2026-07-02</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://sync.koalastuff.net/alternatives"/>
@@ -907,7 +907,7 @@
   </url>
   <url>
     <loc>https://sync.koalastuff.net/zh/alternatives/teleparty</loc>
-    <lastmod>2026-07-01</lastmod>
+    <lastmod>2026-07-02</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://sync.koalastuff.net/alternatives/teleparty"/>
@@ -929,7 +929,7 @@
   </url>
   <url>
     <loc>https://sync.koalastuff.net/zh/alternatives/screen-sharing</loc>
-    <lastmod>2026-07-01</lastmod>
+    <lastmod>2026-07-02</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://sync.koalastuff.net/alternatives/screen-sharing"/>
@@ -951,7 +951,7 @@
   </url>
   <url>
     <loc>https://sync.koalastuff.net/uk/alternatives</loc>
-    <lastmod>2026-07-01</lastmod>
+    <lastmod>2026-07-02</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://sync.koalastuff.net/alternatives"/>
@@ -973,7 +973,7 @@
   </url>
   <url>
     <loc>https://sync.koalastuff.net/uk/alternatives/teleparty</loc>
-    <lastmod>2026-07-01</lastmod>
+    <lastmod>2026-07-02</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://sync.koalastuff.net/alternatives/teleparty"/>
@@ -995,7 +995,7 @@
   </url>
   <url>
     <loc>https://sync.koalastuff.net/uk/alternatives/screen-sharing</loc>
-    <lastmod>2026-07-01</lastmod>
+    <lastmod>2026-07-02</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://sync.koalastuff.net/alternatives/screen-sharing"/>
@@ -1017,7 +1017,7 @@
   </url>
   <url>
     <loc>https://sync.koalastuff.net/</loc>
-    <lastmod>2026-07-01</lastmod>
+    <lastmod>2026-07-02</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://sync.koalastuff.net/"/>
@@ -1037,7 +1037,7 @@
   </url>
   <url>
     <loc>https://sync.koalastuff.net/de/</loc>
-    <lastmod>2026-07-01</lastmod>
+    <lastmod>2026-07-02</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://sync.koalastuff.net/"/>
@@ -1057,7 +1057,7 @@
   </url>
   <url>
     <loc>https://sync.koalastuff.net/fr/</loc>
-    <lastmod>2026-07-01</lastmod>
+    <lastmod>2026-07-02</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://sync.koalastuff.net/"/>
@@ -1077,7 +1077,7 @@
   </url>
   <url>
     <loc>https://sync.koalastuff.net/es/</loc>
-    <lastmod>2026-07-01</lastmod>
+    <lastmod>2026-07-02</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://sync.koalastuff.net/"/>
@@ -1097,7 +1097,7 @@
   </url>
   <url>
     <loc>https://sync.koalastuff.net/pt-BR/</loc>
-    <lastmod>2026-07-01</lastmod>
+    <lastmod>2026-07-02</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://sync.koalastuff.net/"/>
@@ -1117,7 +1117,7 @@
   </url>
   <url>
     <loc>https://sync.koalastuff.net/ru/</loc>
-    <lastmod>2026-07-01</lastmod>
+    <lastmod>2026-07-02</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://sync.koalastuff.net/"/>
@@ -1137,7 +1137,7 @@
   </url>
   <url>
     <loc>https://sync.koalastuff.net/it/</loc>
-    <lastmod>2026-07-01</lastmod>
+    <lastmod>2026-07-02</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://sync.koalastuff.net/"/>
@@ -1157,7 +1157,7 @@
   </url>
   <url>
     <loc>https://sync.koalastuff.net/pl/</loc>
-    <lastmod>2026-07-01</lastmod>
+    <lastmod>2026-07-02</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://sync.koalastuff.net/"/>
@@ -1177,7 +1177,7 @@
   </url>
   <url>
     <loc>https://sync.koalastuff.net/tr/</loc>
-    <lastmod>2026-07-01</lastmod>
+    <lastmod>2026-07-02</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://sync.koalastuff.net/"/>
@@ -1197,7 +1197,7 @@
   </url>
   <url>
     <loc>https://sync.koalastuff.net/nl/</loc>
-    <lastmod>2026-07-01</lastmod>
+    <lastmod>2026-07-02</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://sync.koalastuff.net/"/>
@@ -1217,7 +1217,7 @@
   </url>
   <url>
     <loc>https://sync.koalastuff.net/ja/</loc>
-    <lastmod>2026-07-01</lastmod>
+    <lastmod>2026-07-02</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://sync.koalastuff.net/"/>
@@ -1237,7 +1237,7 @@
   </url>
   <url>
     <loc>https://sync.koalastuff.net/ko/</loc>
-    <lastmod>2026-07-01</lastmod>
+    <lastmod>2026-07-02</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://sync.koalastuff.net/"/>
@@ -1257,7 +1257,7 @@
   </url>
   <url>
     <loc>https://sync.koalastuff.net/pt/</loc>
-    <lastmod>2026-07-01</lastmod>
+    <lastmod>2026-07-02</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://sync.koalastuff.net/"/>
