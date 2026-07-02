@@ -1682,22 +1682,37 @@
     function getScrapedTimestamps() {
         if (typeof document === 'undefined') return [];
         try {
-            const elms = Array.from(document.querySelectorAll('div,span,p,button,a,[role="button"]'));
-            const unique = new Set();
             const results = [];
-            for (const el of elms) {
-                if (el.children.length > 3) continue;
-                const txt = (el.textContent || '').trim();
-                if (!txt || txt.length > 50) continue;
-                if (unique.has(txt)) continue;
-                const match = txt.match(/(\d{1,2}:)?\d{1,2}:\d{2}/);
-                if (match) {
-                    unique.add(txt);
-                    const tag = el.tagName.toLowerCase();
-                    const cls = el.className ? `.${el.className.split(' ')[0]}` : '';
-                    results.push(`${tag}${cls}: "${txt}"`);
+            const unique = new Set();
+
+            function scan(node) {
+                if (!node) return;
+                if (node.querySelectorAll) {
+                    const elms = Array.from(node.querySelectorAll('div,span,p,button,a,[role="button"]'));
+                    for (const el of elms) {
+                        if (el.children.length > 3) continue;
+                        const txt = (el.textContent || '').trim();
+                        if (!txt || txt.length > 50) continue;
+                        if (unique.has(txt)) continue;
+                        const match = txt.match(/(\d{1,2}:)?\d{1,2}:\d{2}/);
+                        if (match) {
+                            unique.add(txt);
+                            const tag = el.tagName.toLowerCase();
+                            const cls = el.className ? `.${el.className.split(' ')[0]}` : '';
+                            results.push(`${tag}${cls}: "${txt}"`);
+                        }
+                    }
+                }
+                const children = node.childNodes || [];
+                for (let i = 0; i < children.length; i++) {
+                    scan(children[i]);
+                }
+                if (node.shadowRoot) {
+                    scan(node.shadowRoot);
                 }
             }
+
+            scan(document.body);
             return results.slice(0, 15);
         } catch (_e) {
             return [];
