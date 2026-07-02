@@ -240,7 +240,14 @@
         });
 
         if (button && typeof button.click === 'function') {
-            const clicks = Math.max(1, Math.min(12, Math.round(Math.abs(delta) / 10)));
+            // Disney offers no absolute seek on its blob <video>, so we click its
+            // relative skip button. Derive the step from the button's own label
+            // (usually 10s; some UIs 5/15/30) and issue enough clicks to cover the
+            // full delta. The previous 120s cap truncated any larger seek, which
+            // broke absolute-position sync (e.g. seeking to 5:00 from far away).
+            const stepMatch = getElementLabel(button).match(/\b(5|10|15|30)\b/);
+            const step = stepMatch ? Number(stepMatch[1]) : 10;
+            const clicks = Math.max(1, Math.min(90, Math.round(Math.abs(delta) / step)));
             for (let i = 0; i < clicks; i++) {
                 setTimeout(() => button.click(), i * 60);
             }
