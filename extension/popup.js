@@ -2283,6 +2283,10 @@ function refreshDebugInfo() {
                 if (state.nativeCurrentTime != null || state.nativeDuration != null) {
                     addField('Native Time', `${state.nativeCurrentTime ?? '?'}s / ${state.nativeDuration ?? '?'}s`);
                 }
+                if (state.mediaSessionPosition) {
+                    const pos = state.mediaSessionPosition;
+                    addField('MediaSession Captured', `${pos.position ?? '?'}s / ${pos.duration ?? '?'}s (@ ${pos.playbackRate ?? 1}x)`, '#a855f7');
+                }
                 if (state.siteQuirk) {
                     const quirk = state.siteQuirk;
                     const label = quirk.name || quirk.key || 'Site';

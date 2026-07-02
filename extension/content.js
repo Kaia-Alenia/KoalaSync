@@ -1396,6 +1396,7 @@
                     inShadowDom,
                     platform,
                     siteQuirk: getSiteQuirkDebug(video),
+                    mediaSessionPosition: window.__koalaLastCapturedMediaPosition || null,
                     allVideos
                 });
             } else {
@@ -1406,7 +1407,8 @@
                     platform,
                     allVideos,
                     url: window.location.href,
-                    pageTitle: document.title,
+                    pageTitle: document.title,
+                    mediaSessionPosition: window.__koalaLastCapturedMediaPosition || null,
                     metadata: (navigator.mediaSession && navigator.mediaSession.metadata) ? {
                         title: navigator.mediaSession.metadata.title,
                         artist: navigator.mediaSession.metadata.artist,
@@ -1804,6 +1806,13 @@
         // If the badge is already showing (early desync), refresh its text in place.
         // Re-creating the host element nukes the click target mid-poll and can drop a
         // click that landed between remove() and the re-create (L-4).
+        window.addEventListener('message', (event) => {
+            if (event.source !== window) return;
+            const data = event.data;
+            if (data && data.__koalaMediaSessionCapture === 1) {
+                window.__koalaLastCapturedMediaPosition = data.state;
+            }
+        });
         if (hcmBadgeHost) {
             const span = hcmBadgeHost.shadowRoot && hcmBadgeHost.shadowRoot.querySelector('span');
             if (span) span.textContent = '● ' + hcmStrings.badge;
