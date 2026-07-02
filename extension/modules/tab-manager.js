@@ -12,6 +12,7 @@ export function initTabManager({
     getSettings,
     emit,
     applyAudioSettingsToTab,
+    injectContentScript,
     ensureState,
     EVENTS
 }) {
@@ -83,10 +84,7 @@ export function initTabManager({
         await ensureState();
         const curTabId = getCurrentTabId();
         if (curTabId && tabId === parseInt(curTabId) && changeInfo.status === 'complete') {
-            chrome.scripting.executeScript({
-                target: { tabId },
-                files: ['content.js']
-            })
+            injectContentScript(tabId)
                 .then(() => applyAudioSettingsToTab(tabId))
                 .catch(() => {});
         }

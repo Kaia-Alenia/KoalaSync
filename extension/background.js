@@ -2565,6 +2565,7 @@ initTabManager({
     getSettings,
     emit,
     applyAudioSettingsToTab,
+    injectContentScript,
     ensureState,
     EVENTS
 });
