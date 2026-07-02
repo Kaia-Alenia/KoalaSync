@@ -1672,7 +1672,8 @@ function installPageApiSeekBridge() {
         try {
             if (match.provider === 'netflix') {
                 const videoPlayer = window.netflix?.appContext?.state?.playerApp?.getAPI?.().videoPlayer;
-                const sessionId = videoPlayer?.getAllPlayerSessionIds?.()[0];
+                const ids = videoPlayer?.getAllPlayerSessionIds?.();
+                const sessionId = ids ? ids[0] : null;
                 const player = sessionId ? videoPlayer.getVideoPlayerBySessionId(sessionId) : null;
                 player?.seek(Math.round(time * 1000));
             }
