@@ -60,6 +60,8 @@
     const PAGE_API_SEEK_BRIDGE = 1;
     let lastDisneyPlusTimelineCandidates = [];
     let lastKnownDisneyPlusDuration = 0;
+    let lastKnownDisneyPlusScale = 1;
+    let lastKnownDisneyPlusStart = 0;
 
     function hostMatchesUrl(host, url) {
         const normalized = String(url || '')
@@ -265,6 +267,8 @@
             const nativeStart = Number.isFinite(current)
                 ? current - ui.current * nativeScale
                 : (range ? range.start : 0);
+            lastKnownDisneyPlusScale = nativeScale;
+            lastKnownDisneyPlusStart = nativeStart;
             return {
                 ...(range || {}),
                 current: ui.current,
@@ -275,13 +279,16 @@
         }
 
         if (lastKnownDisneyPlusDuration > 0) {
+            const calculatedCurrent = (Number.isFinite(current) && lastKnownDisneyPlusScale > 0)
+                ? (current - lastKnownDisneyPlusStart) / lastKnownDisneyPlusScale
+                : 0;
             return {
                 start: 0,
                 end: lastKnownDisneyPlusDuration,
                 duration: lastKnownDisneyPlusDuration,
-                current: Number.isFinite(current) ? current : 0,
-                nativeScale: 1,
-                nativeStart: 0
+                current: Math.max(0, Math.min(lastKnownDisneyPlusDuration, calculatedCurrent)),
+                nativeScale: lastKnownDisneyPlusScale,
+                nativeStart: lastKnownDisneyPlusStart
             };
         }
 
