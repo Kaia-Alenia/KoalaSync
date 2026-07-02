@@ -62,6 +62,7 @@
     let lastKnownDisneyPlusDuration = 0;
     let lastKnownDisneyPlusScale = 1;
     let lastKnownDisneyPlusStart = 0;
+    let videoEventsLog = [];
 
     function hostMatchesUrl(host, url) {
         const normalized = String(url || '')
@@ -1445,6 +1446,8 @@
                     platform,
                     siteQuirk: getSiteQuirkDebug(video),
                     mediaSessionPosition: window.__koalaLastCapturedMediaPosition || null,
+                    scrapedTimestamps: getScrapedTimestamps(),
+                    videoEventsLog: videoEventsLog,
                     allVideos
                 });
             } else {
@@ -1456,7 +1459,9 @@
                     allVideos,
                     url: window.location.href,
                     pageTitle: document.title,
-                    mediaSessionPosition: window.__koalaLastCapturedMediaPosition || null,
+                    mediaSessionPosition: window.__koalaLastCapturedMediaPosition || null,
+                    scrapedTimestamps: getScrapedTimestamps(),
+                    videoEventsLog: videoEventsLog,
                     metadata: (navigator.mediaSession && navigator.mediaSession.metadata) ? {
                         title: navigator.mediaSession.metadata.title,
                         artist: navigator.mediaSession.metadata.artist,
@@ -1674,6 +1679,46 @@
         checkEpisodeTransition();
     };
 
+    function getScrapedTimestamps() {
+        if (typeof document === 'undefined') return [];
+        try {
+            const elms = Array.from(document.querySelectorAll('div,span,p,button,a,[role="button"]'));
+            const unique = new Set();
+            const results = [];
+            for (const el of elms) {
+                if (el.children.length > 3) continue;
+                const txt = (el.textContent || '').trim();
+                if (!txt || txt.length > 50) continue;
+                if (unique.has(txt)) continue;
+                const match = txt.match(/(\d{1,2}:)?\d{1,2}:\d{2}/);
+                if (match) {
+                    unique.add(txt);
+                    const tag = el.tagName.toLowerCase();
+                    const cls = el.className ? `.${el.className.split(' ')[0]}` : '';
+                    results.push(`${tag}${cls}: "${txt}"`);
+                }
+            }
+            return results.slice(0, 15);
+        } catch (_e) {
+            return [];
+        }
+    }
+
+    function logVideoEvent(name, video) {
+        try {
+            const time = Number.isFinite(video?.currentTime) ? video.currentTime.toFixed(2) : '?';
+            const dur = Number.isFinite(video?.duration) ? video.duration.toFixed(2) : '?';
+            const timeStr = new Date().toTimeString().split(' ')[0];
+            const msg = `[${timeStr}] ${name} (t=${time}s, d=${dur}s)`;
+            videoEventsLog.unshift(msg);
+            if (videoEventsLog.length > 15) {
+                videoEventsLog.pop();
+            }
+        } catch (_e) {
+            // safe
+        }
+    }
+
     function setupListeners() {
         const video = findVideo();
         if (video) {
@@ -1688,7 +1733,14 @@
                 video.removeEventListener('loadeddata', existing.loadeddata);
                 if (existing.waiting) video.removeEventListener('waiting', existing.waiting);
             }
-            video._koalaHandlers = { play: handlePlay, pause: handlePause, seeked: handleSeeked, loadeddata: handleLoadedData, waiting: handleWaiting };
+            video._koalaHandlers = { play: handlePlay, pause: handlePause, seeked: handleSeeked, loadeddata: handleLoadedData, waiting: handleWaiting };
+            if (!video._koalaLoggingAttached) {
+                video._koalaLoggingAttached = true;
+                const logEvents = ['play', 'pause', 'seeking', 'seeked', 'durationchange', 'ratechange', 'volumechange', 'waiting', 'playing'];
+                logEvents.forEach(evt => {
+                    video.addEventListener(evt, () => logVideoEvent(evt.toUpperCase(), video));
+                });
+            }
 
             video.addEventListener('play', handlePlay);
             video.addEventListener('pause', handlePause);

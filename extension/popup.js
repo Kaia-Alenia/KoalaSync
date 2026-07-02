@@ -2296,6 +2296,18 @@ function refreshDebugInfo() {
                     const buttons = Array.isArray(quirk.seekButtons) ? quirk.seekButtons.slice(0, 4).join(' | ') : '';
                     if (buttons) addField(`${label} Buttons`, buttons);
                 }
+                const domScraperEl = document.getElementById('devtoolsDomScraperList');
+                const eventLogEl = document.getElementById('devtoolsVideoEventLogList');
+                if (domScraperEl && state.scrapedTimestamps) {
+                    domScraperEl.textContent = state.scrapedTimestamps.length > 0 
+                        ? state.scrapedTimestamps.join('\n') 
+                        : 'No timestamps scraped.';
+                }
+                if (eventLogEl && state.videoEventsLog) {
+                    eventLogEl.textContent = state.videoEventsLog.length > 0 
+                        ? state.videoEventsLog.join('\n') 
+                        : 'No events logged.';
+                }
 
                 addSection('Properties');
                 addField('Seeking', String(state.seeking));
