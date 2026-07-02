@@ -62,6 +62,8 @@
     let lastKnownDisneyPlusDuration = 0;
     let lastKnownDisneyPlusScale = 1;
     let lastKnownDisneyPlusStart = 0;
+    let lastDisneyPlusUiCurrent = null;
+    let lastDisneyPlusNativeAtUi = null;
 
     function hostMatchesUrl(host, url) {
         const normalized = String(url || '')
@@ -285,6 +287,8 @@
                 : (range ? range.start : 0);
             lastKnownDisneyPlusScale = nativeScale;
             lastKnownDisneyPlusStart = nativeStart;
+            lastDisneyPlusUiCurrent = ui.current;
+            lastDisneyPlusNativeAtUi = Number.isFinite(current) ? current : null;
             return {
                 ...(range || {}),
                 current: ui.current,
@@ -294,15 +298,24 @@
             };
         }
 
-        if (lastKnownDisneyPlusDuration > 0) {
-            const calculatedCurrent = (Number.isFinite(current) && lastKnownDisneyPlusScale > 0)
-                ? (current - lastKnownDisneyPlusStart) / lastKnownDisneyPlusScale
-                : 0;
+        // No live UI readout (control overlay hidden or mid-rebuild). Extrapolate
+        // from the last live UI position using the native clock, which advances 1:1
+        // with real playback. Disney recreates the <video> on some play/pause
+        // transitions, which resets currentTime; if the native clock jumped back or
+        // leapt implausibly, freeze at the last known position instead of a garbage time.
+        if (lastDisneyPlusUiCurrent !== null && lastKnownDisneyPlusDuration > 0) {
+            let estimated = lastDisneyPlusUiCurrent;
+            if (Number.isFinite(current) && lastDisneyPlusNativeAtUi !== null) {
+                const delta = current - lastDisneyPlusNativeAtUi;
+                if (delta >= 0 && delta < 60) {
+                    estimated = lastDisneyPlusUiCurrent + delta;
+                }
+            }
             return {
                 start: 0,
                 end: lastKnownDisneyPlusDuration,
                 duration: lastKnownDisneyPlusDuration,
-                current: Math.max(0, Math.min(lastKnownDisneyPlusDuration, calculatedCurrent)),
+                current: Math.max(0, Math.min(lastKnownDisneyPlusDuration, estimated)),
                 nativeScale: lastKnownDisneyPlusScale,
                 nativeStart: lastKnownDisneyPlusStart
             };
