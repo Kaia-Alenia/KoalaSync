@@ -1,6 +1,10 @@
 (function(root) {
-    const PAGE_API_SEEK_PROVIDERS = [
-        { domain: 'netflix.com', provider: 'netflix' } // Avoids M7375 when seeking via video.currentTime.
+    const PAGE_API_SEEK_FIXES = [
+        {
+            name: 'netflix-page-api-seek',
+            urls: ['netflix.com'],
+            provider: 'netflix'
+        }
     ];
 
     function normalizeHost(input) {
@@ -12,12 +16,16 @@
     }
 
     function matchesDomain(host, domain) {
-        return host === domain || host.endsWith(`.${domain}`);
+        const normalizedDomain = normalizeHost(domain);
+        return normalizedDomain && (host === normalizedDomain || host.endsWith(`.${normalizedDomain}`));
     }
 
-    root.KOALA_PAGE_API_SEEK_PROVIDERS = PAGE_API_SEEK_PROVIDERS;
+    root.KOALA_PAGE_API_SEEK_FIXES = PAGE_API_SEEK_FIXES;
+    root.KOALA_PAGE_API_SEEK_PROVIDERS = PAGE_API_SEEK_FIXES;
     root.koalaFindPageApiSeekProvider = (input) => {
         const host = normalizeHost(input);
-        return PAGE_API_SEEK_PROVIDERS.find(entry => matchesDomain(host, entry.domain)) || null;
+        return PAGE_API_SEEK_FIXES.find(entry =>
+            Array.isArray(entry.urls) && entry.urls.some(url => matchesDomain(host, url))
+        ) || null;
     };
 })(globalThis);

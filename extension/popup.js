@@ -74,7 +74,8 @@ const elements = {
     syncTabCopyInvite: document.getElementById('syncTabCopyInvite'),
     devToolsTabBtn: document.getElementById('devToolsTabBtn'),
     remoteSeekBack: document.getElementById('remoteSeekBack'),
-    remoteSeekForward: document.getElementById('remoteSeekForward')
+    remoteSeekForward: document.getElementById('remoteSeekForward'),
+    remoteSeekFiveMin: document.getElementById('remoteSeekFiveMin')
 };
 
 let localPeerId = null;
@@ -1708,8 +1709,8 @@ elements.pauseBtn.addEventListener('click', () => {
     }, 2500);
 });
 
-function simulateRemoteSeek(delta) {
-    chrome.runtime.sendMessage({ type: 'DEV_SIMULATE_REMOTE_SEEK', delta }, (res) => {
+function simulateRemoteSeek({ delta = null, targetTime = null }) {
+    chrome.runtime.sendMessage({ type: 'DEV_SIMULATE_REMOTE_SEEK', delta, targetTime }, (res) => {
         if (chrome.runtime.lastError || !res || res.status !== 'ok') {
             showToast(res?.message || 'Remote seek failed', 'error');
             return;
@@ -1720,10 +1721,13 @@ function simulateRemoteSeek(delta) {
 }
 
 if (elements.remoteSeekBack) {
-    elements.remoteSeekBack.addEventListener('click', () => simulateRemoteSeek(-30));
+    elements.remoteSeekBack.addEventListener('click', () => simulateRemoteSeek({ delta: -30 }));
 }
 if (elements.remoteSeekForward) {
-    elements.remoteSeekForward.addEventListener('click', () => simulateRemoteSeek(30));
+    elements.remoteSeekForward.addEventListener('click', () => simulateRemoteSeek({ delta: 30 }));
+}
+if (elements.remoteSeekFiveMin) {
+    elements.remoteSeekFiveMin.addEventListener('click', () => simulateRemoteSeek({ targetTime: 300 }));
 }
 
 elements.clearLogs.addEventListener('click', () => {
@@ -2083,6 +2087,26 @@ elements.copyLogs.addEventListener('click', () => {
             lines.push(`- **ReadyState:** ${readyOk ? '\u2705' : '\u26A0\uFE0F'} ${safe(vs.readyState, '?')} (${readyLabel})`);
             lines.push(`- **Network:** ${safe(vs.networkState, '?')} (${netLabel})`);
             lines.push(`- **Buffered:** ${safe(vs.buffered, '?')}`);
+            if (vs.nativeCurrentTime != null || vs.nativeDuration != null) {
+                lines.push(`- **Native Time:** ${safe(vs.nativeCurrentTime, '?')}s / ${safe(vs.nativeDuration, '?')}s`);
+            }
+            if (vs.siteQuirk) {
+                const quirk = vs.siteQuirk;
+                const label = quirk.name || quirk.key || 'site';
+                if (quirk.timeline) {
+                    lines.push(`- **${label} Timeline:** ${safe(quirk.timeline.current, '?')}s / ${safe(quirk.timeline.duration, '?')}s`);
+                }
+                const candidates = Array.isArray(quirk.timelineCandidates) ? quirk.timelineCandidates : [];
+                if (candidates.length > 0) {
+                    lines.push(`- **${label} Timeline Candidates:**`);
+                    candidates.forEach(c => lines.push(`  - ${safe(c.source, '?')}: ${safe(c.current, '?')}s / ${safe(c.duration, '?')}s`));
+                }
+                const buttons = Array.isArray(quirk.seekButtons) ? quirk.seekButtons : [];
+                if (buttons.length > 0) {
+                    lines.push(`- **${label} Buttons:**`);
+                    buttons.forEach(label => lines.push(`  - ${label}`));
+                }
+            }
             lines.push(`- **Dimensions:** ${safe(vs.videoWidth, '?')}x${safe(vs.videoHeight, '?')}${dimOk ? '' : ' \u26A0\uFE0F 0x0'}`);
             lines.push(`- **Muted:** ${safe(vs.muted, '?')} | **Volume:** ${safe(vs.volume, '?')} | **Speed:** ${safe(vs.playbackRate, '?')}x`);
             lines.push(`- **Seeking:** ${safe(vs.seeking, '?')} | **Ended:** ${safe(vs.ended, '?')} | **Loop:** ${safe(vs.loop, '?')}`);
@@ -2256,6 +2280,18 @@ function refreshDebugInfo() {
                 addField('Network', `${state.networkState} (${state.networkStateLabel || '?'})`,
                     state.networkState === 1 ? '#22c55e' : state.networkState === 3 ? '#ef4444' : 'var(--text-muted)');
                 addField('Buffered', state.buffered || '?');
+                if (state.nativeCurrentTime != null || state.nativeDuration != null) {
+                    addField('Native Time', `${state.nativeCurrentTime ?? '?'}s / ${state.nativeDuration ?? '?'}s`);
+                }
+                if (state.siteQuirk) {
+                    const quirk = state.siteQuirk;
+                    const label = quirk.name || quirk.key || 'Site';
+                    if (quirk.timeline) {
+                        addField(`${label} Timeline`, `${quirk.timeline.current ?? '?'}s / ${quirk.timeline.duration ?? '?'}s`);
+                    }
+                    const buttons = Array.isArray(quirk.seekButtons) ? quirk.seekButtons.slice(0, 4).join(' | ') : '';
+                    if (buttons) addField(`${label} Buttons`, buttons);
+                }
 
                 addSection('Properties');
                 addField('Seeking', String(state.seeking));
