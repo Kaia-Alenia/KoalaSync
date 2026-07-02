@@ -71,7 +71,10 @@ const elements = {
     settingsVersion: document.getElementById('settingsVersion'),
     devSupportLink: document.getElementById('devSupportLink'),
     devReviewLink: document.getElementById('devReviewLink'),
-    syncTabCopyInvite: document.getElementById('syncTabCopyInvite')
+    syncTabCopyInvite: document.getElementById('syncTabCopyInvite'),
+    devToolsTabBtn: document.getElementById('devToolsTabBtn'),
+    remoteSeekBack: document.getElementById('remoteSeekBack'),
+    remoteSeekForward: document.getElementById('remoteSeekForward')
 };
 
 let localPeerId = null;
@@ -88,6 +91,19 @@ let errorToken = 0;
 let forceSyncDone = false;
 let connectionErrorTimer = null;
 let pendingConnectionErrorMsg = null;
+
+function devToolsEnabled() {
+    return elements.username && elements.username.value.trim() === 'KoalaDev';
+}
+
+function syncDevToolsVisibility() {
+    if (!elements.devToolsTabBtn) return;
+    const enabled = devToolsEnabled();
+    elements.devToolsTabBtn.style.display = enabled ? '' : 'none';
+    if (!enabled && document.getElementById('tab-devtools')?.classList.contains('active')) {
+        document.querySelector('.tab-btn[data-tab="tab-settings"]')?.click();
+    }
+}
 let roomListRefreshTimer = null;
 let roomListRefreshInterval = null;
 const ROOM_LIST_REFRESH_COOLDOWN_MS = 11000;
@@ -210,6 +226,7 @@ async function init() {
     elements.roomId.value = localData.roomId || '';
     elements.password.value = localData.password || '';
     elements.username.value = username;
+    syncDevToolsVisibility();
     if (elements.filterNoise) elements.filterNoise.checked = localData.filterNoise !== false;
     if (elements.autoSyncNextEpisode) elements.autoSyncNextEpisode.checked = localData.autoSyncNextEpisode !== false;
     const legacyTitlePrivacyMode = Object.values(TITLE_PRIVACY_MODES).includes(localData.titlePrivacyMode) ? localData.titlePrivacyMode : TITLE_PRIVACY_MODES.FULL;
@@ -277,13 +294,13 @@ async function init() {
                 const syncTabBtn = document.querySelector('.tab-btn[data-tab="tab-sync"]');
                 if (syncTabBtn) syncTabBtn.click();
                 showSelectVideoHint();
-            } else if (localData.activeTab) {
+            } else if (localData.activeTab && (localData.activeTab !== 'tab-devtools' || devToolsEnabled())) {
                 const btn = document.querySelector(`.tab-btn[data-tab="${localData.activeTab}"]`);
                 if (btn) btn.click();
             }
         } else {
             await populateTabs();
-            if (localData.activeTab) {
+            if (localData.activeTab && (localData.activeTab !== 'tab-devtools' || devToolsEnabled())) {
                 const btn = document.querySelector(`.tab-btn[data-tab="${localData.activeTab}"]`);
                 if (btn) btn.click();
             }
@@ -1275,8 +1292,10 @@ elements.serverUrl.addEventListener('input', () => {
     chrome.storage.local.set({ serverUrl: elements.serverUrl.value });
 });
 
+elements.username.addEventListener('input', syncDevToolsVisibility);
 elements.username.addEventListener('change', () => {
     chrome.storage.local.set({ username: elements.username.value });
+    syncDevToolsVisibility();
 });
 
 if (elements.langSelector) {
@@ -1688,6 +1707,24 @@ elements.pauseBtn.addEventListener('click', () => {
         }
     }, 2500);
 });
+
+function simulateRemoteSeek(delta) {
+    chrome.runtime.sendMessage({ type: 'DEV_SIMULATE_REMOTE_SEEK', delta }, (res) => {
+        if (chrome.runtime.lastError || !res || res.status !== 'ok') {
+            showToast(res?.message || 'Remote seek failed', 'error');
+            return;
+        }
+        showToast(`Remote seek -> ${formatTime(res.targetTime)}`, 'success', 1200);
+        refreshDebugInfo();
+    });
+}
+
+if (elements.remoteSeekBack) {
+    elements.remoteSeekBack.addEventListener('click', () => simulateRemoteSeek(-30));
+}
+if (elements.remoteSeekForward) {
+    elements.remoteSeekForward.addEventListener('click', () => simulateRemoteSeek(30));
+}
 
 elements.clearLogs.addEventListener('click', () => {
     chrome.runtime.sendMessage({ type: 'CLEAR_LOGS' }, () => {

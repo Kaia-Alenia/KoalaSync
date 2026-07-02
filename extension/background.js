@@ -1592,6 +1592,62 @@ async function routeToContent(action, payload) {
     _routeToContentInternal(tabId, action, payload, actionTimestamp, commandSenderId, 0);
 }
 
+function getTabVideoState(tabId) {
+    return new Promise((resolve) => {
+        chrome.tabs.sendMessage(tabId, { type: 'GET_VIDEO_STATE' }, (res) => {
+            if (chrome.runtime.lastError) {
+                resolve({ error: chrome.runtime.lastError.message });
+                return;
+            }
+            resolve(res);
+        });
+    });
+}
+
+async function getReadyTabVideoState(tabId) {
+    let state = await getTabVideoState(tabId);
+    if (!state || state.error) {
+        await injectContentScript(tabId);
+        await new Promise(resolve => setTimeout(resolve, 250));
+        state = await getTabVideoState(tabId);
+    }
+    return state;
+}
+
+async function simulateRemoteSeek(delta) {
+    if (!currentTabId) return { status: 'no_tab' };
+    const tabId = parseInt(currentTabId);
+    if (isNaN(tabId)) return { status: 'no_tab' };
+
+    const state = await getReadyTabVideoState(tabId);
+    if (!state || state.error) return { status: 'error', message: state?.error || 'No video state' };
+    if (!state.found || !Number.isFinite(state.currentTime)) return { status: 'no_video' };
+
+    let targetTime = Math.max(0, state.currentTime + delta);
+    if (Number.isFinite(state.duration) && state.duration > 0) {
+        targetTime = Math.min(targetTime, Math.max(0, state.duration - 0.1));
+    }
+
+    const senderId = 'KoalaDev';
+    const timestamp = Date.now();
+    const payload = {
+        senderId,
+        actionTimestamp: timestamp,
+        currentTime: targetTime,
+        targetTime
+    };
+
+    addToHistory(EVENTS.SEEK, senderId);
+    showNotification(senderId, EVENTS.SEEK);
+    updateLastAction(EVENTS.SEEK, senderId, timestamp);
+    lastActionState.targetTime = targetTime;
+    if (storageInitialized) chrome.storage.session.set({ lastActionState });
+    updateLocalPeerState(senderId, { currentTime: targetTime });
+    routeToContent(EVENTS.SEEK, payload);
+
+    return { status: 'ok', targetTime };
+}
+
 function isNetflixUrl(url) {
     try {
         const host = new URL(url).hostname.toLowerCase();
@@ -2055,6 +2111,16 @@ async function handleAsyncMessage(message, sender, sendResponse) {
             } else {
                 sendResponse(res);
             }
+        });
+    } else if (message.type === 'DEV_SIMULATE_REMOTE_SEEK') {
+        const delta = Number(message.delta);
+        if (!Number.isFinite(delta)) {
+            sendResponse({ status: 'invalid_delta' });
+            return;
+        }
+        simulateRemoteSeek(delta).then(sendResponse).catch(err => {
+            addLog(`Remote seek simulation failed: ${err.message}`, 'warn');
+            sendResponse({ status: 'error', message: err.message });
         });
     } else if (message.type === 'CONTENT_EVENT') {
         const processEvent = async () => {
