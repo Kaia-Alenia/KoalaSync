@@ -91,6 +91,7 @@ function makeNode(attrs = {}, textContent = '') {
 function loadTimelineFns(hostname, document = makeDocument()) {
   return Function('window', 'document', [
     'let lastDisneyPlusTimelineCandidates = [];',
+    'let lastKnownDisneyPlusDuration = 0;',
     extractFunction('hostMatchesUrl', source),
     extractFunction('matchesPlayerUrls', source),
     extractFunction('isDisneyPlusHost', source),

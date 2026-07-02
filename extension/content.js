@@ -59,6 +59,7 @@
 
     const PAGE_API_SEEK_BRIDGE = 1;
     let lastDisneyPlusTimelineCandidates = [];
+    let lastKnownDisneyPlusDuration = 0;
 
     function hostMatchesUrl(host, url) {
         const normalized = String(url || '')
@@ -218,10 +219,31 @@
             return backward ? backRe.test(label) : forwardRe.test(label);
         });
 
-        if (!button || typeof button.click !== 'function') return false;
+        if (button && typeof button.click === 'function') {
+            const clicks = Math.max(1, Math.min(12, Math.round(Math.abs(delta) / 10)));
+            for (let i = 0; i < clicks; i++) {
+                setTimeout(() => button.click(), i * 60);
+            }
+            return true;
+        }
+
+        // Fallback: Simulate ArrowLeft / ArrowRight keyboard events
         const clicks = Math.max(1, Math.min(12, Math.round(Math.abs(delta) / 10)));
+        const eventInit = {
+            key: backward ? 'ArrowLeft' : 'ArrowRight',
+            code: backward ? 'ArrowLeft' : 'ArrowRight',
+            keyCode: backward ? 37 : 39,
+            which: backward ? 37 : 39,
+            bubbles: true,
+            cancelable: true,
+            view: window
+        };
+        const target = document.querySelector('.hive-video') || document.activeElement || document.body;
         for (let i = 0; i < clicks; i++) {
-            setTimeout(() => button.click(), i * 60);
+            setTimeout(() => {
+                target.dispatchEvent(new window.KeyboardEvent('keydown', eventInit));
+                target.dispatchEvent(new window.KeyboardEvent('keyup', eventInit));
+            }, i * 60);
         }
         return true;
     }
@@ -233,6 +255,7 @@
         const ui = getDisneyPlusUiTimeline();
 
         if (ui) {
+            lastKnownDisneyPlusDuration = ui.duration;
             let nativeScale = 1;
             if (range && range.duration > ui.duration * 1.2) {
                 nativeScale = range.duration / ui.duration;
@@ -248,6 +271,17 @@
                 duration: ui.duration,
                 nativeScale,
                 nativeStart
+            };
+        }
+
+        if (lastKnownDisneyPlusDuration > 0) {
+            return {
+                start: 0,
+                end: lastKnownDisneyPlusDuration,
+                duration: lastKnownDisneyPlusDuration,
+                current: Number.isFinite(current) ? current : 0,
+                nativeScale: 1,
+                nativeStart: 0
             };
         }
 
