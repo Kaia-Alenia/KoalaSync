@@ -2,7 +2,7 @@ import { EVENTS, OFFICIAL_LANDING_PAGE_URL, SUPPORT_URL, getReviewUrl } from './
 import { BLACKLIST_DOMAINS } from './shared/blacklist.js';
 import { getAvatarForName, generateUsername, USERNAME_ADJECTIVES, USERNAME_NOUNS } from './shared/names.js';
 import { loadLocale, translateDOM, getMessage, getSystemLanguage } from './i18n.js';
-import { TITLE_PRIVACY_MODES, normalizeSendTabTitle } from './title-privacy.js';
+import { TITLE_PRIVACY_MODES, normalizeSendTabTitle, normalizeTabTitle } from './title-privacy.js';
 
 
 const elements = {
@@ -920,7 +920,7 @@ async function populateTabs(providedPeers = null, providedTargetTabId = null) {
     // Smart Matching Logic — exclude own tabTitle to prevent self-match (computed once)
     const cleanTitle = (rawTitle) => {
         if (!rawTitle) return '';
-        return rawTitle
+        return (normalizeTabTitle(rawTitle) || '')
             .replace(/(?:\s*[-\|•]\s*(?:YouTube|Twitch|Jellyfin|Emby|Netflix|Vimeo|Dailymotion).*)$/i, '')
             .replace(/^(?:Netflix|Twitch|YouTube|Emby|Jellyfin)\s*[-\|•]\s*/i, '')
             .trim();

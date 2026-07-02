@@ -17,9 +17,15 @@ export function normalizeSendTabTitle(sendTabTitle, legacyMode = TITLE_PRIVACY_M
     return normalizeTitlePrivacyMode(legacyMode) === TITLE_PRIVACY_MODES.FULL;
 }
 
+export function normalizeTabTitle(title) {
+    if (typeof title !== 'string') return null;
+    const normalized = title.replace(/^\s*(?:\(\d{1,2}\)|\[\d{1,2}\])\s+/, '').trim();
+    return normalized.length > 0 ? normalized : null;
+}
+
 export function sanitizeTabTitle(title, sendTabTitle) {
     if (!sendTabTitle) return null;
-    return typeof title === 'string' && title.length > 0 ? title : null;
+    return normalizeTabTitle(title);
 }
 
 export function sanitizeSharedTitle(title, mode) {
