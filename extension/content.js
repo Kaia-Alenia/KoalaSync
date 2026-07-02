@@ -323,7 +323,14 @@
 
     function seekVideo(video, targetTime, relativeDelta = null) {
         const siteQuirk = getActiveSiteQuirk();
-        if (siteQuirk && !siteQuirk.getTimeline(video) && siteQuirk.clickRelativeSeek(relativeDelta)) {
+        let delta = relativeDelta;
+        if (delta === null && siteQuirk) {
+            const current = getSyncCurrentTime(video);
+            if (current !== null) {
+                delta = targetTime - current;
+            }
+        }
+        if (siteQuirk && siteQuirk.clickRelativeSeek(delta)) {
             expectedSeekTime = null;
             return;
         }
