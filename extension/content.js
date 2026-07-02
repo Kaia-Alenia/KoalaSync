@@ -1799,6 +1799,14 @@
         }
     });
 
+    window.addEventListener('message', (event) => {
+        if (event.source !== window) return;
+        const data = event.data;
+        if (data && data.__koalaMediaSessionCapture === 1) {
+            window.__koalaLastCapturedMediaPosition = data.state;
+        }
+    });
+
     // Pull localized strings for the in-page dialog/badge (English fallback above).
     chrome.runtime.sendMessage({ type: 'GET_HCM_STRINGS' }, (res) => {
         if (chrome.runtime.lastError || !res) return;
@@ -1806,13 +1814,6 @@
         // If the badge is already showing (early desync), refresh its text in place.
         // Re-creating the host element nukes the click target mid-poll and can drop a
         // click that landed between remove() and the re-create (L-4).
-        window.addEventListener('message', (event) => {
-            if (event.source !== window) return;
-            const data = event.data;
-            if (data && data.__koalaMediaSessionCapture === 1) {
-                window.__koalaLastCapturedMediaPosition = data.state;
-            }
-        });
         if (hcmBadgeHost) {
             const span = hcmBadgeHost.shadowRoot && hcmBadgeHost.shadowRoot.querySelector('span');
             if (span) span.textContent = '● ' + hcmStrings.badge;
