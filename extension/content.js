@@ -58,12 +58,6 @@
     let expectedSeekTime = null;      // strictly track programmatic seeks
 
     const PAGE_API_SEEK_BRIDGE = 1;
-    let lastDisneyPlusTimelineCandidates = [];
-    let lastKnownDisneyPlusDuration = 0;
-    let lastKnownDisneyPlusScale = 1;
-    let lastKnownDisneyPlusStart = 0;
-    let lastDisneyPlusUiCurrent = null;
-    let lastDisneyPlusNativeAtUi = null;
     // Accurate Disney+ playhead pushed by the MAIN-world page-API bridge
     // (background.js installPageApiSeekBridge). The isolated content world
     // can't read the page's media player directly.
@@ -96,281 +90,31 @@
         return matchesPlayerUrls(['disneyplus.com']);
     }
 
-    function getSeekableRange(video) {
-        try {
-            const ranges = video.seekable;
-            if (!ranges || ranges.length === 0) return null;
-            const current = video.currentTime;
-            let index = ranges.length - 1;
-            if (Number.isFinite(current)) {
-                for (let i = 0; i < ranges.length; i++) {
-                    if (current >= ranges.start(i) && current <= ranges.end(i)) {
-                        index = i;
-                        break;
-                    }
-                }
-            }
-            const start = ranges.start(index);
-            const end = ranges.end(index);
-            if (!Number.isFinite(start) || !Number.isFinite(end) || end <= start) return null;
-            return { start, end, duration: end - start };
-        } catch (_e) {
-            return null;
-        }
-    }
-
-    function parseClockTime(value) {
-        const parts = String(value || '').trim().split(':').map(Number);
-        if (parts.length < 2 || parts.length > 3 || parts.some(n => !Number.isFinite(n))) return null;
-        return parts.length === 2
-            ? parts[0] * 60 + parts[1]
-            : parts[0] * 3600 + parts[1] * 60 + parts[2];
-    }
-
-    function parseTimelineText(text) {
-        const matches = String(text || '').match(/\b\d{1,3}:\d{2}(?::\d{2})?\b/g);
-        if (!matches || matches.length < 2) return null;
-        const current = parseClockTime(matches[0]);
-        const duration = parseClockTime(matches[matches.length - 1]);
-        if (!Number.isFinite(current) || !Number.isFinite(duration) || duration < 60 || current > duration + 5) return null;
-        return { current, duration };
-    }
-
-    function getDisneyPlusUiTimeline() {
-        if (typeof document === 'undefined') return null;
-        const selectors = [
-            '[role="slider"]',
-            '[role="progressbar"]',
-            '[aria-valuenow][aria-valuemax]',
-            '[aria-valuetext]',
-            '[aria-label]',
-            '[data-testid]',
-            '[data-test]',
-            '[class*="time" i]',
-            '[class*="progress" i]',
-            'time',
-            'output',
-            'button',
-            'span',
-            'p',
-            'div'
-        ].join(',');
-        const nodes = querySelectorAllShadow(selectors).slice(0, 2000);
-        const textParts = [];
-        const candidates = [];
-        let best = null;
-        let bestScore = -1;
-        let remainingSeconds = null;
-
-        function considerTimeline(parsed, source, weight = 0) {
-            if (!parsed) return;
-            const score = weight +
-                (parsed.duration >= 20 * 60 ? 200 : 0) +
-                (parsed.current > 0 ? 50 : 0) -
-                Math.abs((parsed.duration / 2) - parsed.current) / 100;
-            candidates.push({ ...parsed, source, score: Math.round(score) });
-            if (score > bestScore) {
-                bestScore = score;
-                best = parsed;
-            }
-        }
-
-        for (const node of nodes) {
-            const now = Number(node.getAttribute?.('aria-valuenow') ?? node.value);
-            const max = Number(node.getAttribute?.('aria-valuemax') ?? node.max);
-            if (Number.isFinite(now) && Number.isFinite(max) && max >= 60 && now >= 0 && now <= max + 5) {
-                considerTimeline({ current: now, duration: max }, 'aria-value', 300);
-            }
-
-            for (const attr of ['aria-valuetext', 'aria-label', 'title', 'data-testid', 'data-test']) {
-                const parsed = parseTimelineText(node.getAttribute?.(attr));
-                considerTimeline(parsed, attr, 200);
-            }
-
-            const text = String(node.textContent || '').trim();
-            if (text && text.length < 200) {
-                const parsed = parseTimelineText(text);
-                considerTimeline(parsed, 'text', 100);
-                textParts.push(text);
-            }
-            // Disney's scrubber aria-valuenow can lag several seconds behind
-            // real playback; a "time remaining" indicator updates live, so
-            // capture it and later derive current = duration - remaining.
-            const remClass = String(node.getAttribute?.('class') || '') + ' ' + String(node.getAttribute?.('data-testid') || '');
-            if (/remain/i.test(remClass)) {
-                const remMatch = String(node.textContent || '').match(/\d{1,3}:\d{2}(?::\d{2})?/);
-                const rem = remMatch ? parseClockTime(remMatch[0]) : null;
-                if (Number.isFinite(rem) && rem >= 0) remainingSeconds = rem;
-            }
-        }
-
-        if (best && remainingSeconds !== null && best.duration > 0) {
-            const liveCurrent = best.duration - remainingSeconds;
-            if (liveCurrent >= 0 && liveCurrent <= best.duration + 5) {
-                considerTimeline({ current: Math.min(liveCurrent, best.duration), duration: best.duration }, 'time-remaining', 1000);
-            }
-        }
-        considerTimeline(parseTimelineText(textParts.join(' ')), 'combined-text', 25);
-        lastDisneyPlusTimelineCandidates = candidates
-            .sort((a, b) => b.score - a.score)
-            .slice(0, 8)
-            .map(({ source, current, duration }) => ({ source, current, duration }));
-        return best;
-    }
-
-    function getElementLabel(el) {
-        return [
-            el.getAttribute?.('aria-label'),
-            el.getAttribute?.('title'),
-            el.getAttribute?.('data-testid'),
-            el.getAttribute?.('data-test'),
-            el.textContent
-        ].filter(Boolean).join(' ').replace(/\s+/g, ' ').trim();
-    }
-
-    function getDisneyPlusSeekButtonLabels() {
-        if (!isDisneyPlusHost() || typeof document === 'undefined') return [];
-        return querySelectorAllShadow('button,[role="button"]')
-            .map(getElementLabel)
-            .filter(Boolean)
-            .slice(0, 20);
-    }
-
-    function clickDisneyPlusRelativeSeek(delta) {
-        if (!isDisneyPlusHost() || !Number.isFinite(delta) || Math.abs(delta) < 1 || typeof document === 'undefined') return false;
-        const backward = delta < 0;
-        const candidates = querySelectorAllShadow('button,[role="button"]');
-        const backRe = /rewind|backward|back\b|zurück|zurueck|rück|rueck|retour|recul|retroced|atrás|voltar|indietro/i;
-        const forwardRe = /forward|ahead|skip|vorwärts|vorwaerts|vorsp|weiter|avancer|adelant|avançar|avancar|avanti/i;
-        const timeRe = /\b(5|10|15|30)\b|sec|sek|second/i;
-
-        const button = candidates.find(btn => {
-            const label = getElementLabel(btn);
-            const matchesDirection = backward ? backRe.test(label) : forwardRe.test(label);
-            return matchesDirection && timeRe.test(label);
-        }) || candidates.find(btn => {
-            const label = getElementLabel(btn);
-            return backward ? backRe.test(label) : forwardRe.test(label);
-        });
-
-        if (button && typeof button.click === 'function') {
-            // Disney offers no absolute seek on its blob <video>, so we click its
-            // relative skip button. Derive the step from the button's own label
-            // (usually 10s; some UIs 5/15/30) and issue enough clicks to cover the
-            // full delta. The previous 120s cap truncated any larger seek, which
-            // broke absolute-position sync (e.g. seeking to 5:00 from far away).
-            const stepMatch = getElementLabel(button).match(/\b(5|10|15|30)\b/);
-            const step = stepMatch ? Number(stepMatch[1]) : 10;
-            const clicks = Math.max(1, Math.min(90, Math.round(Math.abs(delta) / step)));
-            for (let i = 0; i < clicks; i++) {
-                setTimeout(() => button.click(), i * 60);
-            }
-            return true;
-        }
-
-        // Fallback: Simulate ArrowLeft / ArrowRight keyboard events
-        const clicks = Math.max(1, Math.min(12, Math.round(Math.abs(delta) / 10)));
-        const eventInit = {
-            key: backward ? 'ArrowLeft' : 'ArrowRight',
-            code: backward ? 'ArrowLeft' : 'ArrowRight',
-            keyCode: backward ? 37 : 39,
-            which: backward ? 37 : 39,
-            bubbles: true,
-            cancelable: true,
-            view: window
-        };
-        const target = document.querySelector('.hive-video') || document.activeElement || document.body;
-        for (let i = 0; i < clicks; i++) {
-            setTimeout(() => {
-                target.dispatchEvent(new window.KeyboardEvent('keydown', eventInit));
-                target.dispatchEvent(new window.KeyboardEvent('keyup', eventInit));
-            }, i * 60);
-        }
-        return true;
-    }
-
-    function getDisneyPlusTimeline(video) {
+    function getDisneyPlusTimeline() {
         if (!isDisneyPlusHost()) return null;
-        // Preferred: exact playhead/duration from the page media player,
-        // relayed by the MAIN-world bridge. Authoritative while fresh.
+        // Exact playhead/duration from the page media player, relayed by the
+        // MAIN-world bridge. No Disney DOM scraping fallback.
         if (disneyPageApiTime && (Date.now() - disneyPageApiTime.at) < 2000 && disneyPageApiTime.duration > 0) {
-            lastKnownDisneyPlusDuration = disneyPageApiTime.duration;
             const cur = Math.max(0, Math.min(disneyPageApiTime.duration, disneyPageApiTime.position));
             return { start: 0, end: disneyPageApiTime.duration, duration: disneyPageApiTime.duration, current: cur, nativeScale: 1, nativeStart: 0 };
         }
-        const range = getSeekableRange(video);
-        const current = video.currentTime;
-        const ui = getDisneyPlusUiTimeline();
-
-        if (ui) {
-            lastKnownDisneyPlusDuration = ui.duration;
-            let nativeScale = 1;
-            if (range && range.duration > ui.duration * 1.2) {
-                nativeScale = range.duration / ui.duration;
-            } else if (Number.isFinite(current) && ui.current > 1 && current > ui.current * 1.5) {
-                nativeScale = current / ui.current;
-            }
-            const nativeStart = Number.isFinite(current)
-                ? current - ui.current * nativeScale
-                : (range ? range.start : 0);
-            lastKnownDisneyPlusScale = nativeScale;
-            lastKnownDisneyPlusStart = nativeStart;
-            lastDisneyPlusUiCurrent = ui.current;
-            lastDisneyPlusNativeAtUi = Number.isFinite(current) ? current : null;
-            return {
-                ...(range || {}),
-                current: ui.current,
-                duration: ui.duration,
-                nativeScale,
-                nativeStart
-            };
-        }
-
-        // No live UI readout (control overlay hidden or mid-rebuild). Extrapolate
-        // from the last live UI position using the native clock, which advances 1:1
-        // with real playback. Disney recreates the <video> on some play/pause
-        // transitions, which resets currentTime; if the native clock jumped back or
-        // leapt implausibly, freeze at the last known position instead of a garbage time.
-        if (lastDisneyPlusUiCurrent !== null && lastKnownDisneyPlusDuration > 0) {
-            let estimated = lastDisneyPlusUiCurrent;
-            if (Number.isFinite(current) && lastDisneyPlusNativeAtUi !== null) {
-                const delta = current - lastDisneyPlusNativeAtUi;
-                if (delta >= 0 && delta < 60) {
-                    estimated = lastDisneyPlusUiCurrent + delta;
-                }
-            }
-            return {
-                start: 0,
-                end: lastKnownDisneyPlusDuration,
-                duration: lastKnownDisneyPlusDuration,
-                current: Math.max(0, Math.min(lastKnownDisneyPlusDuration, estimated)),
-                nativeScale: lastKnownDisneyPlusScale,
-                nativeStart: lastKnownDisneyPlusStart
-            };
-        }
-
-        if (!range || range.start < 1 || range.duration < 60) return null;
-        if (!Number.isFinite(current) || current < range.start - 1 || current > range.end + 1) return null;
-        return { ...range, current: Math.max(0, current - range.start), nativeScale: 1, nativeStart: range.start };
+        return null;
     }
 
     // Site-specific player exceptions live here. The default HTML5 path stays below.
     function getSiteQuirkAdapters() {
         return [{
-            name: 'disneyplus-timeline-and-buttons',
+            name: 'disneyplus-page-api',
             key: 'disneyPlus',
             urls: ['disneyplus.com'],
             matches() { return matchesPlayerUrls(this.urls); },
             getTimeline: getDisneyPlusTimeline,
-            clickRelativeSeek: clickDisneyPlusRelativeSeek,
             getDebug(video) {
                 return {
                     name: this.name,
                     key: 'disneyPlus',
                     urls: this.urls,
-                    timeline: getDisneyPlusTimeline(video),
-                    timelineCandidates: lastDisneyPlusTimelineCandidates,
-                    seekButtons: getDisneyPlusSeekButtonLabels()
+                    timeline: getDisneyPlusTimeline(video)
                 };
             }
         }];
@@ -419,24 +163,12 @@
             !!window.koalaFindPageApiSeekProvider(window.location.hostname);
     }
 
-    function seekVideo(video, targetTime, relativeDelta = null) {
+    function seekVideo(video, targetTime) {
         // Prefer a precise page-level seek API when available (Netflix, Disney+);
         // for those players the DOM/button seek path is imprecise or impossible.
         if (shouldUsePageApiSeek()) {
             expectedSeekTime = targetTime;
             window.postMessage({ __koalaPageApiSeek: PAGE_API_SEEK_BRIDGE, kind: 'seek', time: targetTime }, '*');
-            return;
-        }
-        const siteQuirk = getActiveSiteQuirk();
-        let delta = relativeDelta;
-        if (delta === null && siteQuirk) {
-            const current = getSyncCurrentTime(video);
-            if (current !== null) {
-                delta = targetTime - current;
-            }
-        }
-        if (siteQuirk && siteQuirk.clickRelativeSeek(delta)) {
-            expectedSeekTime = null;
             return;
         }
         expectedSeekTime = targetTime;
@@ -1503,7 +1235,6 @@
                     inShadowDom,
                     platform,
                     siteQuirk: getSiteQuirkDebug(video),
-                    scrapedTimestamps: getScrapedTimestamps(),
                     allVideos
                 });
             } else {
@@ -1513,10 +1244,9 @@
                     inShadowDom,
                     platform,
                     allVideos,
-                    url: window.location.href,
+                    url: window.location.href,
                     pageTitle: document.title,
-                    scrapedTimestamps: getScrapedTimestamps(),
-                    metadata: (navigator.mediaSession && navigator.mediaSession.metadata) ? {
+                    metadata: (navigator.mediaSession && navigator.mediaSession.metadata) ? {
                         title: navigator.mediaSession.metadata.title,
                         artist: navigator.mediaSession.metadata.artist,
                         album: navigator.mediaSession.metadata.album
@@ -1733,80 +1463,7 @@
         checkEpisodeTransition();
     };
 
-    function scanShadowDom(node, callback) {
-        if (!node) return;
-        callback(node);
-        const children = node.childNodes || [];
-        for (let i = 0; i < children.length; i++) {
-            scanShadowDom(children[i], callback);
-        }
-        if (node.shadowRoot) {
-            scanShadowDom(node.shadowRoot, callback);
-        }
-    }
-
-    function querySelectorAllShadow(selector) {
-        if (typeof document === 'undefined') return [];
-        if (!document.body && typeof document.querySelectorAll === 'function') {
-            try {
-                return Array.from(document.querySelectorAll(selector));
-            } catch (_e) {
-                return [];
-            }
-        }
-        const results = [];
-        scanShadowDom(document.body || document, (node) => {
-            if (node.nodeType === 1 && typeof node.matches === 'function' && node.matches(selector)) {
-                results.push(node);
-            }
-        });
-        return results;
-    }
-
-    function getScrapedTimestamps() {
-        if (typeof document === 'undefined') return [];
-        try {
-            const results = [];
-            const unique = new Set();
-
-            scanShadowDom(document.body, (node) => {
-                if (node.nodeType !== 1) return;
-                
-                const txt = (node.textContent || '').trim();
-                if (txt && txt.length < 50 && !unique.has(txt)) {
-                    const match = txt.match(/(\d{1,2}:)?\d{1,2}:\d{2}/);
-                    if (match) {
-                        unique.add(txt);
-                        const tag = node.tagName.toLowerCase();
-                        const cls = node.className ? `.${node.className.split(' ')[0]}` : '';
-                        results.push(`${tag}${cls}: "${txt}"`);
-                    }
-                }
-
-                const isSlider = node.getAttribute('role') === 'slider' || 
-                                 node.getAttribute('role') === 'progressbar' ||
-                                 node.hasAttribute('aria-valuenow') ||
-                                 node.tagName.toLowerCase() === 'progress' ||
-                                 (node.tagName.toLowerCase() === 'input' && node.type === 'range');
-                
-                if (isSlider) {
-                    const tag = node.tagName.toLowerCase();
-                    const cls = node.className ? `.${node.className.split(' ')[0]}` : '';
-                    const now = node.getAttribute('aria-valuenow') || node.value || '?';
-                    const max = node.getAttribute('aria-valuemax') || node.max || '?';
-                    const text = node.getAttribute('aria-valuetext') || '?';
-                    const width = node.style?.width || '?';
-                    results.push(`[SLIDER] ${tag}${cls}: now=${now}, max=${max}, text="${text}", width=${width}`);
-                }
-            });
-
-            return results.slice(0, 15);
-        } catch (_e) {
-            return [];
-        }
-    }
-
-    function setupListeners() {
+    function setupListeners() {
         const video = findVideo();
         if (video) {
             if (currentAudioVideo && currentAudioVideo !== video) {

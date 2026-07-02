@@ -2292,13 +2292,6 @@ function refreshDebugInfo() {
                     const buttons = Array.isArray(quirk.seekButtons) ? quirk.seekButtons.slice(0, 4).join(' | ') : '';
                     if (buttons) addField(`${label} Buttons`, buttons);
                 }
-                const domScraperEl = document.getElementById('devtoolsDomScraperList');
-                if (domScraperEl && state.scrapedTimestamps) {
-                    domScraperEl.textContent = state.scrapedTimestamps.length > 0
-                        ? state.scrapedTimestamps.join('\n')
-                        : 'No timestamps scraped.';
-                }
-
                 addSection('Properties');
                 addField('Seeking', String(state.seeking));
                 addField('Ended', String(state.ended));
