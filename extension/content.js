@@ -140,7 +140,7 @@
             'p',
             'div'
         ].join(',');
-        const nodes = Array.from(document.querySelectorAll(selectors)).slice(0, 2000);
+        const nodes = querySelectorAllShadow(selectors).slice(0, 2000);
         const textParts = [];
         const candidates = [];
         let best = null;
@@ -199,7 +199,7 @@
 
     function getDisneyPlusSeekButtonLabels() {
         if (!isDisneyPlusHost() || typeof document === 'undefined') return [];
-        return Array.from(document.querySelectorAll('button,[role="button"]'))
+        return querySelectorAllShadow('button,[role="button"]')
             .map(getElementLabel)
             .filter(Boolean)
             .slice(0, 20);
@@ -208,7 +208,7 @@
     function clickDisneyPlusRelativeSeek(delta) {
         if (!isDisneyPlusHost() || !Number.isFinite(delta) || Math.abs(delta) < 1 || typeof document === 'undefined') return false;
         const backward = delta < 0;
-        const candidates = Array.from(document.querySelectorAll('button,[role="button"]'));
+        const candidates = querySelectorAllShadow('button,[role="button"]');
         const backRe = /rewind|backward|back\b|zurück|zurueck|rück|rueck|retour|recul|retroced|atrás|voltar|indietro/i;
         const forwardRe = /forward|ahead|skip|vorwärts|vorwaerts|vorsp|weiter|avancer|adelant|avançar|avancar|avanti/i;
         const timeRe = /\b(5|10|15|30)\b|sec|sek|second/i;
@@ -1679,40 +1679,73 @@
         checkEpisodeTransition();
     };
 
+    function scanShadowDom(node, callback) {
+        if (!node) return;
+        callback(node);
+        const children = node.childNodes || [];
+        for (let i = 0; i < children.length; i++) {
+            scanShadowDom(children[i], callback);
+        }
+        if (node.shadowRoot) {
+            scanShadowDom(node.shadowRoot, callback);
+        }
+    }
+
+    function querySelectorAllShadow(selector) {
+        if (typeof document === 'undefined') return [];
+        if (!document.body && typeof document.querySelectorAll === 'function') {
+            try {
+                return Array.from(document.querySelectorAll(selector));
+            } catch (_e) {
+                return [];
+            }
+        }
+        const results = [];
+        scanShadowDom(document.body || document, (node) => {
+            if (node.nodeType === 1 && typeof node.matches === 'function' && node.matches(selector)) {
+                results.push(node);
+            }
+        });
+        return results;
+    }
+
     function getScrapedTimestamps() {
         if (typeof document === 'undefined') return [];
         try {
             const results = [];
             const unique = new Set();
 
-            function scan(node) {
-                if (!node) return;
-                if (node.querySelectorAll) {
-                    const elms = Array.from(node.querySelectorAll('div,span,p,button,a,[role="button"]'));
-                    for (const el of elms) {
-                        if (el.children.length > 3) continue;
-                        const txt = (el.textContent || '').trim();
-                        if (!txt || txt.length > 50) continue;
-                        if (unique.has(txt)) continue;
-                        const match = txt.match(/(\d{1,2}:)?\d{1,2}:\d{2}/);
-                        if (match) {
-                            unique.add(txt);
-                            const tag = el.tagName.toLowerCase();
-                            const cls = el.className ? `.${el.className.split(' ')[0]}` : '';
-                            results.push(`${tag}${cls}: "${txt}"`);
-                        }
+            scanShadowDom(document.body, (node) => {
+                if (node.nodeType !== 1) return;
+                
+                const txt = (node.textContent || '').trim();
+                if (txt && txt.length < 50 && !unique.has(txt)) {
+                    const match = txt.match(/(\d{1,2}:)?\d{1,2}:\d{2}/);
+                    if (match) {
+                        unique.add(txt);
+                        const tag = node.tagName.toLowerCase();
+                        const cls = node.className ? `.${node.className.split(' ')[0]}` : '';
+                        results.push(`${tag}${cls}: "${txt}"`);
                     }
                 }
-                const children = node.childNodes || [];
-                for (let i = 0; i < children.length; i++) {
-                    scan(children[i]);
-                }
-                if (node.shadowRoot) {
-                    scan(node.shadowRoot);
-                }
-            }
 
-            scan(document.body);
+                const isSlider = node.getAttribute('role') === 'slider' || 
+                                 node.getAttribute('role') === 'progressbar' ||
+                                 node.hasAttribute('aria-valuenow') ||
+                                 node.tagName.toLowerCase() === 'progress' ||
+                                 (node.tagName.toLowerCase() === 'input' && node.type === 'range');
+                
+                if (isSlider) {
+                    const tag = node.tagName.toLowerCase();
+                    const cls = node.className ? `.${node.className.split(' ')[0]}` : '';
+                    const now = node.getAttribute('aria-valuenow') || node.value || '?';
+                    const max = node.getAttribute('aria-valuemax') || node.max || '?';
+                    const text = node.getAttribute('aria-valuetext') || '?';
+                    const width = node.style?.width || '?';
+                    results.push(`[SLIDER] ${tag}${cls}: now=${now}, max=${max}, text="${text}", width=${width}`);
+                }
+            });
+
             return results.slice(0, 15);
         } catch (_e) {
             return [];
