@@ -1654,42 +1654,6 @@ async function devRemoteToolsAllowed() {
     return data.username === 'KoalaDev';
 }
 
-const mediaSessionInterceptorHosts = [
-    'disneyplus.com'
-];
-
-function shouldInstallMediaSessionInterceptor(url) {
-    try {
-        const host = new URL(url).hostname.toLowerCase();
-        return mediaSessionInterceptorHosts.some(h => host === h || host.endsWith('.' + h));
-    } catch (_e) {
-        return false;
-    }
-}
-
-function installMediaSessionInterceptor() {
-    if (window.__koalaMediaSessionInterceptorInstalled) return;
-    window.__koalaMediaSessionInterceptorInstalled = true;
-    if (!navigator.mediaSession || typeof navigator.mediaSession.setPositionState !== 'function') return;
-
-    const originalSet = navigator.mediaSession.setPositionState;
-    navigator.mediaSession.setPositionState = function(state) {
-        try {
-            window.postMessage({
-                __koalaMediaSessionCapture: 1,
-                state: {
-                    duration: state?.duration,
-                    playbackRate: state?.playbackRate,
-                    position: state?.position
-                }
-            }, '*');
-        } catch (_e) {
-            // Suppress errors to not interfere with player
-        }
-        return originalSet.apply(navigator.mediaSession, arguments);
-    };
-}
-
 function shouldUsePageApiSeek(url) {
     return typeof globalThis.koalaFindPageApiSeekProvider === 'function' &&
         !!globalThis.koalaFindPageApiSeekProvider(url);
@@ -1733,12 +1697,10 @@ function setPageApiSeekEnabled(enabled) {
 async function injectContentScript(tabId) {
     let needsPageApiSeek = false;
     let pageApiSeekReady = false;
-    let isMediaSessionCapable = false;
     try {
         const tab = await chrome.tabs.get(tabId);
         const url = tab?.url || '';
         needsPageApiSeek = shouldUsePageApiSeek(url);
-        isMediaSessionCapable = shouldInstallMediaSessionInterceptor(url);
     } catch (_e) {
         // Fall through to the generic content script injection.
     }
@@ -1758,18 +1720,6 @@ async function injectContentScript(tabId) {
             pageApiSeekReady = true;
         } catch (err) {
             addLog(`Page API seek bridge injection failed: ${err.message}`, 'warn');
-        }
-    }
-
-    if (isMediaSessionCapable) {
-        try {
-            await chrome.scripting.executeScript({
-                target: { tabId },
-                world: 'MAIN',
-                func: installMediaSessionInterceptor
-            });
-        } catch (err) {
-            addLog(`Media Session interceptor injection failed: ${err.message}`, 'warn');
         }
     }
 

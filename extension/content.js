@@ -62,7 +62,6 @@
     let lastKnownDisneyPlusDuration = 0;
     let lastKnownDisneyPlusScale = 1;
     let lastKnownDisneyPlusStart = 0;
-    let videoEventsLog = [];
 
     function hostMatchesUrl(host, url) {
         const normalized = String(url || '')
@@ -1445,9 +1444,7 @@
                     inShadowDom,
                     platform,
                     siteQuirk: getSiteQuirkDebug(video),
-                    mediaSessionPosition: window.__koalaLastCapturedMediaPosition || null,
                     scrapedTimestamps: getScrapedTimestamps(),
-                    videoEventsLog: videoEventsLog,
                     allVideos
                 });
             } else {
@@ -1459,9 +1456,7 @@
                     allVideos,
                     url: window.location.href,
                     pageTitle: document.title,
-                    mediaSessionPosition: window.__koalaLastCapturedMediaPosition || null,
                     scrapedTimestamps: getScrapedTimestamps(),
-                    videoEventsLog: videoEventsLog,
                     metadata: (navigator.mediaSession && navigator.mediaSession.metadata) ? {
                         title: navigator.mediaSession.metadata.title,
                         artist: navigator.mediaSession.metadata.artist,
@@ -1752,21 +1747,6 @@
         }
     }
 
-    function logVideoEvent(name, video) {
-        try {
-            const time = Number.isFinite(video?.currentTime) ? video.currentTime.toFixed(2) : '?';
-            const dur = Number.isFinite(video?.duration) ? video.duration.toFixed(2) : '?';
-            const timeStr = new Date().toTimeString().split(' ')[0];
-            const msg = `[${timeStr}] ${name} (t=${time}s, d=${dur}s)`;
-            videoEventsLog.unshift(msg);
-            if (videoEventsLog.length > 15) {
-                videoEventsLog.pop();
-            }
-        } catch (_e) {
-            // safe
-        }
-    }
-
     function setupListeners() {
         const video = findVideo();
         if (video) {
@@ -1782,14 +1762,6 @@
                 if (existing.waiting) video.removeEventListener('waiting', existing.waiting);
             }
             video._koalaHandlers = { play: handlePlay, pause: handlePause, seeked: handleSeeked, loadeddata: handleLoadedData, waiting: handleWaiting };
-            if (!video._koalaLoggingAttached) {
-                video._koalaLoggingAttached = true;
-                const logEvents = ['play', 'pause', 'seeking', 'seeked', 'durationchange', 'ratechange', 'volumechange', 'waiting', 'playing'];
-                logEvents.forEach(evt => {
-                    video.addEventListener(evt, () => logVideoEvent(evt.toUpperCase(), video));
-                });
-            }
-
             video.addEventListener('play', handlePlay);
             video.addEventListener('pause', handlePause);
             video.addEventListener('seeked', handleSeeked);
@@ -1947,14 +1919,6 @@
         }
     });
 
-    window.addEventListener('message', (event) => {
-        if (event.source !== window) return;
-        const data = event.data;
-        if (data && data.__koalaMediaSessionCapture === 1) {
-            window.__koalaLastCapturedMediaPosition = data.state;
-        }
-    });
-
     // Pull localized strings for the in-page dialog/badge (English fallback above).
     chrome.runtime.sendMessage({ type: 'GET_HCM_STRINGS' }, (res) => {
         if (chrome.runtime.lastError || !res) return;
