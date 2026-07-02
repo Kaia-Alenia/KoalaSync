@@ -6,6 +6,7 @@
   "type": "module",
   "scripts": {
     "build:extension": "node scripts/build-extension.cjs",
+    "indexnow": "node website/submit-indexnow.cjs",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "test": "npm run verify",
