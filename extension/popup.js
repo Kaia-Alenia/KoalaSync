@@ -1588,8 +1588,9 @@ elements.forceSyncBtn.addEventListener('click', async () => {
         }
         const peers = status.peers || [];
         const otherTimes = peers
-            .filter(p => typeof p === 'object' && p.peerId !== localPeerId && p.currentTime != null && !isNaN(p.currentTime))
-            .map(p => p.currentTime);
+            .filter(p => typeof p === 'object' && p.peerId !== localPeerId && p.currentTime != null && p.currentTime !== '')
+            .map(p => Number(p.currentTime))
+            .filter(Number.isFinite);
 
         if (otherTimes.length === 0) {
             showError(getMessage('ERR_NO_PEERS_TIME'));
@@ -1618,37 +1619,57 @@ elements.forceSyncBtn.addEventListener('click', async () => {
     forceSyncResetTimer = setTimeout(forceSyncReset, syncTimeoutMs);
     const tabId = parseInt(status.targetTabId);
 
+    const failForceSyncTime = () => {
+        if (forceSyncResetTimer) { clearTimeout(forceSyncResetTimer); forceSyncResetTimer = null; }
+        showError(getMessage('ERR_NO_VIDEO_TAB'));
+        forceSyncDone = true;
+        elements.forceSyncBtn.disabled = false;
+        elements.forceSyncBtn.textContent = originalText;
+    };
+
     const sendForceSync = (time) => {
+        if (time === null || time === undefined) {
+            failForceSyncTime();
+            return;
+        }
+        const target = Number(time);
+        if (!Number.isFinite(target)) {
+            failForceSyncTime();
+            return;
+        }
         chrome.runtime.sendMessage({
             type: 'CONTENT_EVENT',
             action: EVENTS.FORCE_SYNC_PREPARE,
-            payload: { targetTime: parseFloat(time) }
+            payload: { targetTime: target }
         });
     };
 
     if (mode === 'jump-to-me') {
+        const retryQueryTime = () => {
+            chrome.tabs.sendMessage(tabId, { action: 'get_current_time' }, (retryResponse) => {
+                if (chrome.runtime.lastError || !retryResponse || !Number.isFinite(retryResponse.currentTime)) {
+                    failForceSyncTime();
+                    return;
+                }
+                sendForceSync(retryResponse.currentTime);
+            });
+        };
         chrome.tabs.sendMessage(tabId, { action: 'get_current_time' }, (response) => {
-            if (chrome.runtime.lastError || !response || response.currentTime === undefined) {
+            if (Number.isFinite(response?.currentTime)) {
+                sendForceSync(response.currentTime);
+                return;
+            }
+            if (chrome.runtime.lastError || !response) {
                 chrome.runtime.sendMessage({ type: 'INJECT_CONTENT_SCRIPT', tabId }, (injectResponse) => {
                     if (chrome.runtime.lastError || !injectResponse || injectResponse.status !== 'ok') {
-                        showError(getMessage('ERR_NO_VIDEO_TAB'));
-                        forceSyncDone = true;
-                        elements.forceSyncBtn.disabled = false;
-                        elements.forceSyncBtn.textContent = originalText;
+                        failForceSyncTime();
                         return;
                     }
-                    setTimeout(() => {
-                        chrome.tabs.sendMessage(tabId, { action: 'get_current_time' }, (retryResponse) => {
-                            if (chrome.runtime.lastError) return;
-                            if (retryResponse && retryResponse.currentTime !== undefined) {
-                                sendForceSync(retryResponse.currentTime);
-                            }
-                        });
-                    }, 500);
+                    setTimeout(retryQueryTime, 500);
                 });
                 return;
             }
-            sendForceSync(response.currentTime);
+            setTimeout(retryQueryTime, 500);
         });
     } else {
         sendForceSync(targetTime);

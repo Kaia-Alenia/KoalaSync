@@ -122,6 +122,10 @@ const disneyVideo = makeVideo('disney-offset', 1920, 1080, {
 assert.equal(disneyFns.getSyncCurrentTime(disneyVideo), 9);
 assert.equal(disneyFns.getSyncDuration(disneyVideo), 10800);
 assert.equal(disneyFns.toNativeSeekTime(disneyVideo, 39), 39);
+assert.equal(disneyFns.getSyncCurrentTime(makeVideo('disney-native-broken', 1920, 1080, {
+  currentTime: Number.NaN,
+  duration: 0
+})), 9);
 
 const disneyNoPageApiFns = loadTimelineFns('www.disneyplus.com');
 const disneyOffsetVideo = makeVideo('disney-offset', 1920, 1080, {
@@ -129,7 +133,7 @@ const disneyOffsetVideo = makeVideo('disney-offset', 1920, 1080, {
   duration: 0,
   seekable: makeSeekable([[20, 10820]])
 });
-assert.equal(disneyNoPageApiFns.getSyncCurrentTime(disneyOffsetVideo), 29);
+assert.equal(disneyNoPageApiFns.getSyncCurrentTime(disneyOffsetVideo), null);
 assert.equal(disneyNoPageApiFns.getSyncDuration(disneyOffsetVideo), 0);
 assert.equal(disneyNoPageApiFns.toNativeSeekTime(disneyOffsetVideo, 39), 39);
 

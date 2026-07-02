@@ -135,15 +135,17 @@
     }
 
     function getSyncCurrentTime(video) {
-        const current = video.currentTime;
-        if (!Number.isFinite(current)) return null;
         const siteTimeline = getSiteQuirkTimeline(video);
-        return siteTimeline ? siteTimeline.current : current;
+        if (siteTimeline) return siteTimeline.current;
+        if (isDisneyPlusHost()) return null;
+        const current = video.currentTime;
+        return Number.isFinite(current) ? current : null;
     }
 
     function getSyncDuration(video) {
         const siteTimeline = getSiteQuirkTimeline(video);
         if (siteTimeline) return siteTimeline.duration;
+        if (isDisneyPlusHost()) return 0;
         return Number.isFinite(video.duration) && video.duration > 0 ? video.duration : 0;
     }
 
@@ -283,7 +285,7 @@
         // otherwise pre-loaded videos report NaN and get misclassified as live,
         // which suppresses the desync dialog (L-2).
         if (video.readyState < 1) return false;
-        if (!Number.isFinite(video.duration)) return true;
+        if (!isDisneyPlusHost() && !Number.isFinite(video.duration)) return true;
         try {
             const s = video.seekable;
             if (s && s.length > 0 && s.start(0) > 1) return true; // sliding DVR window
@@ -746,17 +748,19 @@
         if (!idA || !idB) return false; // At least one unparseable → allow
         return idA !== idB;             // Both parseable → only block if different
     }
-
-    function checkEpisodeTransition() {
-        const currentTitle = getMediaTitle();
-        const video = findVideo();
-
+    function checkEpisodeTransition() {
+
+        const currentTitle = getMediaTitle();
+
+        const video = findVideo();
+
+        const current = video ? getSyncCurrentTime(video) : null;
         // Only trigger if: we had a previous title, the title changed,
         // a video exists, and we're near the start of new content.
         if (lastKnownMediaTitle && currentTitle
             && !sameEpisode(currentTitle, lastKnownMediaTitle)
             && video
-            && video.currentTime < 5
+            && current !== null && current < 5
             && video.readyState >= 1) {
             onEpisodeTransition(currentTitle);
         }
@@ -786,13 +790,15 @@
             payload: { newTitle }
         }).catch(() => {});
     }
-
-    function checkAndReportLobbyReady(expectedTitle) {
-        const video = findVideo();
-        const currentTitle = getMediaTitle();
-
+    function checkAndReportLobbyReady(expectedTitle) {
+
+        const video = findVideo();
+
+        const currentTitle = getMediaTitle();
+
+        const current = video ? getSyncCurrentTime(video) : null;
         if (video && currentTitle && sameEpisode(currentTitle, expectedTitle)
-            && video.currentTime < 5 && video.readyState >= 1) {
+            && current !== null && current < 5 && video.readyState >= 1) {
             // Match! Pause at start and report ready.
             if (!video.paused) {
                 _setSuppress('paused');
@@ -941,12 +947,12 @@
 
     // Listen for commands from background.js
     chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-        if (!message) return;
-        if (message.action === 'get_current_time') {
-            const video = findVideo();
-            sendResponse({ currentTime: video ? video.currentTime : null });
-            return true;
-        }
+        if (!message) return;
+        if (message.action === 'get_current_time') {
+            const video = findVideo();
+            sendResponse({ currentTime: video ? getSyncCurrentTime(video) : null });
+            return true;
+        }
 
         if (message.action === 'APPLY_AUDIO_SETTINGS') {
             _audioProcessingAllowed = true;

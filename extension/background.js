@@ -2227,12 +2227,40 @@ async function handleAsyncMessage(message, sender, sendResponse) {
                 return;
             }
 
+            const payload = message.payload && typeof message.payload === 'object' ? message.payload : {};
+            const payloadNumber = (value) => value !== undefined && value !== null && value !== '' ? Number(value) : NaN;
+            if (message.action === EVENTS.FORCE_SYNC_PREPARE) {
+                const targetTime = payloadNumber(payload.targetTime);
+                if (!Number.isFinite(targetTime)) {
+                    sendResponse({ status: 'invalid_params' });
+                    return;
+                }
+                payload.targetTime = targetTime;
+            } else if (message.action === EVENTS.SEEK) {
+                const targetTime = payloadNumber(payload.targetTime !== undefined ? payload.targetTime : payload.currentTime);
+                if (!Number.isFinite(targetTime)) {
+                    sendResponse({ status: 'invalid_params' });
+                    return;
+                }
+                payload.currentTime = targetTime;
+                payload.targetTime = targetTime;
+            }
+
             const timestamp = Date.now();
             localSeq++;
             chrome.storage.session.set({ localSeq });
             updateLastAction(message.action, 'You', timestamp);
             
-            const payload = message.payload || {};
+            const hasPlaybackTime = Number.isFinite(payload.currentTime) || Number.isFinite(payload.targetTime);
+            if (!sender?.tab && (message.action === EVENTS.PLAY || message.action === EVENTS.PAUSE) && !hasPlaybackTime) {
+                const tabId = currentTabId ? parseInt(currentTabId) : NaN;
+                if (!isNaN(tabId)) {
+                    const state = await getReadyTabVideoState(tabId);
+                    if (state && !state.error && state.found && Number.isFinite(state.currentTime)) {
+                        payload.currentTime = state.currentTime;
+                    }
+                }
+            }
             lastActionState.targetTime = payload.targetTime !== undefined ? payload.targetTime : payload.currentTime;
             if (storageInitialized) chrome.storage.session.set({ lastActionState });
             
@@ -2245,6 +2273,10 @@ async function handleAsyncMessage(message, sender, sendResponse) {
                 playbackState: message.action === EVENTS.PLAY ? 'playing' : (message.action === EVENTS.PAUSE ? 'paused' : undefined),
                 currentTime: payload.currentTime !== undefined ? payload.currentTime : (payload.targetTime !== undefined ? payload.targetTime : undefined)
             });
+
+            if (!sender?.tab && (message.action === EVENTS.PLAY || message.action === EVENTS.PAUSE || message.action === EVENTS.SEEK)) {
+                routeToContent(message.action, message.payload);
+            }
 
             if (message.action === EVENTS.FORCE_SYNC_PREPARE) {
                 isForceSyncInitiator = true;
@@ -2299,7 +2331,6 @@ async function handleAsyncMessage(message, sender, sendResponse) {
                 sendResponse({ status: 'error' });
             });
         } else {
-            routeToContent(message.action, message.payload);
             processEvent().catch(err => {
                 addLog('Content event privacy error: ' + err.message, 'error');
                 sendResponse({ status: 'error' });

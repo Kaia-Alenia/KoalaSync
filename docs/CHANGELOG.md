@@ -8,6 +8,19 @@ All notable changes to the KoalaSync browser extension and relay server.
 
 ---
 
+## [v2.5.3] — 2026-07-02
+
+### Fixed
+- **Extension: Disney+ force sync and seek reliability** — The v2.5.2 Disney+ page-API integration leaked blob-relative `<video>` time into force sync, seeks, and heartbeats when the page-API bridge had no fresh data, which presented as "force sync does nothing on Disney+". Time/duration accessors now refuse to return native values on Disney+ (returning null/0) so stale bridge data degrades to a clean no-op instead of broadcasting garbage. `FORCE_SYNC_PREPARE` and `SEEK` payloads are now validated as finite before being relayed, and the popup's force-sync flow fails cleanly with a clear error rather than sending NaN through.
+- **Extension: Force-sync no longer routed twice** — A popup-initiated `FORCE_SYNC_PREPARE` was being delivered to the content script twice (once by the generic popup route and once by the force-sync-specific route), causing a double seek. The generic route is now scoped to play/pause/seek only.
+- **Extension: Disney+ Host Control Mode classification** — `hcmIsLive` previously read the native `<video>` duration to detect live streams, which on Disney+ is blob-relative garbage and falsely classified every stream as live (disabling snap-back and the desync dialog). The native-duration live signal is now skipped on Disney+ while YouTube/Twitch live detection via `Infinity` duration is preserved.
+- **Extension: Disney+ episode auto-sync and lobby readiness** — Episode-transition detection and the episode-lobby "ready" poll now read the playhead through the gated time accessor, so they no longer rely on blob-relative `currentTime` on Disney+.
+- **Extension: Force-sync median no longer skewed by peers without a known time** — A peer broadcasting `currentTime: null` (e.g. a Disney+ peer whose page-API bridge was not yet ready, or a freshly joined peer) was coerced to `0` by the jump-to-others median calculation, dragging the sync target toward the start of the video. Null and empty peer times are now excluded before the median.
+- **Extension: Force-sync `jump-to-me` retry on Disney+** — When the content script responds but the page-API bridge has not yet delivered a finite time (typical during the first ~250 ms after a Disney+ player loads), the popup now retries once without redundantly re-injecting the content script.
+- **Extension: Empty-string seek payload rejection** — The internal seek-time coercion no longer treats `''` as `0`; an empty-string `targetTime`/`currentTime` is rejected as invalid.
+
+---
+
 ## [v2.5.2] — 2026-07-02
 
 ### Added
