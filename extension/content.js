@@ -57,17 +57,18 @@
     let seekDebounceTimer = null;     // debounce timer for rapid seek events
     let expectedSeekTime = null;      // strictly track programmatic seeks
 
-    const NETFLIX_SEEK_BRIDGE = 1;
+    const PAGE_API_SEEK_BRIDGE = 1;
 
-    function isNetflixHost() {
-        const host = window.location.hostname.toLowerCase();
-        return host === 'netflix.com' || host.endsWith('.netflix.com');
+    function shouldUsePageApiSeek() {
+        return window.KOALA_PAGE_API_SEEK_ENABLED === true &&
+            typeof window.koalaFindPageApiSeekProvider === 'function' &&
+            !!window.koalaFindPageApiSeekProvider(window.location.hostname);
     }
 
     function seekVideo(video, targetTime) {
         expectedSeekTime = targetTime;
-        if (isNetflixHost()) {
-            window.postMessage({ __koalaNetflixSeek: NETFLIX_SEEK_BRIDGE, kind: 'seek', time: targetTime }, '*');
+        if (shouldUsePageApiSeek()) {
+            window.postMessage({ __koalaPageApiSeek: PAGE_API_SEEK_BRIDGE, kind: 'seek', time: targetTime }, '*');
             return;
         }
         video.currentTime = targetTime;

@@ -4,6 +4,7 @@ import { loadLocale, getMessage, getSystemLanguage } from './i18n.js';
 import { sameEpisode } from './episode-utils.js';
 import { applyTitlePrivacyToPayload, sanitizeSharedTitle, sanitizeTabTitle, normalizeSendTabTitle, normalizeTitlePrivacyMode } from './title-privacy.js';
 import { initTabManager } from './modules/tab-manager.js';
+import './page-api-seek-overrides.js';
 
 // --- Uninstall URL Initialization ---
 let uninstallURLInitPromise = null;
@@ -1648,62 +1649,87 @@ async function simulateRemoteSeek(delta) {
     return { status: 'ok', targetTime };
 }
 
-function isNetflixUrl(url) {
-    try {
-        const host = new URL(url).hostname.toLowerCase();
-        return host === 'netflix.com' || host.endsWith('.netflix.com');
-    } catch (_e) {
-        return false;
-    }
+async function devRemoteToolsAllowed() {
+    const data = await chrome.storage.local.get(['username']);
+    return data.username === 'KoalaDev';
 }
 
-function installNetflixSeekBridge() {
-    if (window.__koalaNetflixSeekBridgeInstalled) return;
-    window.__koalaNetflixSeekBridgeInstalled = true;
+function shouldUsePageApiSeek(url) {
+    return typeof globalThis.koalaFindPageApiSeekProvider === 'function' &&
+        !!globalThis.koalaFindPageApiSeekProvider(url);
+}
 
-    function getNetflixPlayer() {
+function installPageApiSeekBridge() {
+    if (window.__koalaPageApiSeekBridgeInstalled) return;
+    window.__koalaPageApiSeekBridgeInstalled = true;
+
+    function seekWithPageApi(time) {
+        const match = typeof window.koalaFindPageApiSeekProvider === 'function'
+            ? window.koalaFindPageApiSeekProvider(window.location.hostname)
+            : null;
+        if (!match) return;
+
         try {
-            const videoPlayer = window.netflix?.appContext?.state?.playerApp?.getAPI?.().videoPlayer;
-            const sessionId = videoPlayer?.getAllPlayerSessionIds?.()[0];
-            return sessionId ? videoPlayer.getVideoPlayerBySessionId(sessionId) : null;
+            if (match.provider === 'netflix') {
+                const videoPlayer = window.netflix?.appContext?.state?.playerApp?.getAPI?.().videoPlayer;
+                const sessionId = videoPlayer?.getAllPlayerSessionIds?.()[0];
+                const player = sessionId ? videoPlayer.getVideoPlayerBySessionId(sessionId) : null;
+                player?.seek(Math.round(time * 1000));
+            }
         } catch (_e) {
-            return null;
+            // Player not ready or private API changed; the next sync tick can retry.
         }
     }
 
     window.addEventListener('message', (event) => {
         if (event.source !== window) return;
         const data = event.data;
-        if (!data || data.__koalaNetflixSeek !== 1 || data.kind !== 'seek' || typeof data.time !== 'number') return;
-        try {
-            getNetflixPlayer()?.seek(Math.round(data.time * 1000));
-        } catch (_e) {
-            // Netflix player not ready or private API changed; the next sync tick can retry.
-        }
+        if (!data || data.__koalaPageApiSeek !== 1 || data.kind !== 'seek' || typeof data.time !== 'number') return;
+        seekWithPageApi(data.time);
     });
 }
 
+function setPageApiSeekEnabled(enabled) {
+    window.KOALA_PAGE_API_SEEK_ENABLED = enabled === true;
+}
+
 async function injectContentScript(tabId) {
-    let isNetflix = false;
+    let needsPageApiSeek = false;
+    let pageApiSeekReady = false;
     try {
         const tab = await chrome.tabs.get(tabId);
-        isNetflix = isNetflixUrl(tab?.url || '');
+        needsPageApiSeek = shouldUsePageApiSeek(tab?.url || '');
     } catch (_e) {
         // Fall through to the generic content script injection.
     }
 
-    if (isNetflix) {
+    if (needsPageApiSeek) {
         try {
             await chrome.scripting.executeScript({
                 target: { tabId },
                 world: 'MAIN',
-                func: installNetflixSeekBridge
+                files: ['page-api-seek-overrides.js']
             });
+            await chrome.scripting.executeScript({
+                target: { tabId },
+                world: 'MAIN',
+                func: installPageApiSeekBridge
+            });
+            pageApiSeekReady = true;
         } catch (err) {
-            addLog(`Netflix seek bridge injection failed: ${err.message}`, 'warn');
+            addLog(`Page API seek bridge injection failed: ${err.message}`, 'warn');
         }
     }
 
+    await chrome.scripting.executeScript({
+        target: { tabId },
+        files: ['page-api-seek-overrides.js']
+    });
+    await chrome.scripting.executeScript({
+        target: { tabId },
+        func: setPageApiSeekEnabled,
+        args: [pageApiSeekReady]
+    });
     return chrome.scripting.executeScript({
         target: { tabId },
         files: ['content.js']
@@ -2113,6 +2139,10 @@ async function handleAsyncMessage(message, sender, sendResponse) {
             }
         });
     } else if (message.type === 'DEV_SIMULATE_REMOTE_SEEK') {
+        if (!(await devRemoteToolsAllowed())) {
+            sendResponse({ status: 'forbidden' });
+            return;
+        }
         const delta = Number(message.delta);
         if (!Number.isFinite(delta)) {
             sendResponse({ status: 'invalid_delta' });
