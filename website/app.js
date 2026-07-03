@@ -1248,4 +1248,64 @@ document.addEventListener('DOMContentLoaded', () => {
     updateDynamicVersion();
     localizeHomeLinks();
     initLanguageSelectorValue();
+    // FAQ Accordion Transition (Web Animations API for smooth vertical spring height collapse/expand)
+    try {
+        document.querySelectorAll('.faq-item').forEach(details => {
+            const summary = details.querySelector('summary');
+            let isAnimating = false;
+
+            summary.addEventListener('click', (e) => {
+                e.preventDefault();
+                if (isAnimating) return;
+
+                const startHeight = details.offsetHeight;
+
+                if (details.hasAttribute('open')) {
+                    isAnimating = true;
+                    const computed = window.getComputedStyle(details);
+                    const padY = parseInt(computed.paddingTop) + parseInt(computed.paddingBottom);
+                    const borderY = parseInt(computed.borderTopWidth) + parseInt(computed.borderBottomWidth);
+                    const closedHeight = summary.offsetHeight + padY + (isNaN(borderY) ? 0 : borderY);
+
+                    const animation = details.animate([
+                        { height: startHeight + 'px' },
+                        { height: closedHeight + 'px' }
+                    ], {
+                        duration: 250,
+                        easing: 'cubic-bezier(0.16, 1, 0.3, 1)'
+                    });
+
+                    animation.onfinish = () => {
+                        details.removeAttribute('open');
+                        details.style.height = '';
+                        isAnimating = false;
+                    };
+                } else {
+                    isAnimating = true;
+                    details.setAttribute('open', '');
+                    const openHeight = details.offsetHeight;
+
+                    const computed = window.getComputedStyle(details);
+                    const padY = parseInt(computed.paddingTop) + parseInt(computed.paddingBottom);
+                    const borderY = parseInt(computed.borderTopWidth) + parseInt(computed.borderBottomWidth);
+                    const closedHeight = summary.offsetHeight + padY + (isNaN(borderY) ? 0 : borderY);
+
+                    const animation = details.animate([
+                        { height: closedHeight + 'px' },
+                        { height: openHeight + 'px' }
+                    ], {
+                        duration: 250,
+                        easing: 'cubic-bezier(0.16, 1, 0.3, 1)'
+                    });
+
+                    animation.onfinish = () => {
+                        details.style.height = '';
+                        isAnimating = false;
+                    };
+                }
+            });
+        });
+    } catch (err) {
+        console.warn(err);
+    }
 });
