@@ -23,6 +23,7 @@
   "DEMO_CREATE_ROOM": "Kamer aanmaken",
   "DEMO_JOINED": "In de kamer",
   "DEMO_TAB_SELECTED": "Tabblad geselecteerd",
+  "DEMO_SELECT_PLACEHOLDER": "Kies een videotabblad…",
   "ADD_TO_CHROME": "Toevoegen aan Chrome",
   "ADD_TO_FIREFOX": "Toevoegen aan Firefox",
   "COMPAT_HEADING": "Werkt op uw favoriete platforms",

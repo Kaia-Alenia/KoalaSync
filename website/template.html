@@ -276,16 +276,12 @@
     <header class="hero" id="main-content">
         <div class="container hero-grid">
             <div class="hero-text">
-                <a href="https://github.com/Shik3i/KoalaSync/blob/main/docs/CHANGELOG.md" target="_blank" rel="noopener" class="version-badge" data-reveal style="text-decoration: none; display: inline-block; transition: transform 0.2s, box-shadow 0.2s;" title="View Changelog">
-                    <span class="version-text-en" lang="en">v2.2.1 OUT NOW</span>
-                    <span class="version-text-de" lang="de">v2.2.1 JETZT VERFÜGBAR</span>
-                </a>
-                <h1 data-reveal>{{HERO_TITLE}}</h1>
-                <p class="hero-subtitle" data-reveal>{{HERO_SUBTITLE}}</p>
-                <div class="hero-mascot-container" data-reveal>
+                <h1>{{HERO_TITLE}}</h1>
+                <p class="hero-subtitle">{{HERO_SUBTITLE}}</p>
+                <div class="hero-mascot-container">
                     <img src="{{ASSET_PATH}}assets/LookDownKoala-1x.webp" srcset="{{ASSET_PATH}}assets/LookDownKoala-1x.webp 90w, {{ASSET_PATH}}assets/LookDownKoala.webp 205w" sizes="90px" alt="{{HERO_MASCOT_ALT}}" class="hero-lookdown-mascot" width="90" height="132" loading="eager" fetchpriority="high" decoding="async">
                 </div>
-                <div class="cta-group" data-reveal>
+                <div class="cta-group">
                     <a href="https://chromewebstore.google.com/detail/koalasync/obbnmkmlaaddodakcbdljknjpagklifc" class="btn btn-primary">
                         <img src="{{ASSET_PATH}}assets/chrome.svg" alt="Chrome" width="20" height="20">
                         <span>{{ADD_TO_CHROME}}</span>
@@ -299,6 +295,10 @@
                         GitHub Releases
                     </a>
                 </div>
+                <a href="https://github.com/Shik3i/KoalaSync/blob/main/docs/CHANGELOG.md" target="_blank" rel="noopener" class="version-badge version-badge-below" style="text-decoration: none; display: inline-block; transition: transform 0.2s, box-shadow 0.2s;" title="View Changelog">
+                    <span class="version-text-en" lang="en">v2.2.1 OUT NOW</span>
+                    <span class="version-text-de" lang="de">v2.2.1 JETZT VERFÜGBAR</span>
+                </a>
             </div>
 
             <!-- Interactive Live Demo: two synced video tabs + the extension popup -->
@@ -321,19 +321,22 @@
                         </div>
                         <div class="demo-video">
                             <div class="demo-video-art" aria-hidden="true"></div>
-                            <svg class="demo-film" viewBox="0 0 160 90" preserveAspectRatio="xMidYMax slice" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
-                                <ellipse cx="34" cy="98" rx="60" ry="20" fill="rgba(30,27,75,0.6)"/>
-                                <ellipse cx="128" cy="102" rx="75" ry="24" fill="rgba(49,46,129,0.4)"/>
-                                <g class="film-ball-x"><circle class="film-ball" cx="0" cy="74" r="3.2" fill="#a5b4fc"/></g>
-                                <g class="film-walker">
-                                    <g class="film-bob">
-                                        <circle cx="0" cy="-23" r="4.2" fill="#e2e8f0"/>
-                                        <line x1="0" y1="-19" x2="0" y2="-8" class="film-limb"/>
-                                        <line x1="0" y1="-16.5" x2="0" y2="-8.5" class="film-limb film-swing-1"/>
-                                        <line x1="0" y1="-16.5" x2="0" y2="-8.5" class="film-limb film-swing-2"/>
-                                        <line x1="0" y1="-8" x2="0" y2="3" class="film-limb film-swing-1"/>
-                                        <line x1="0" y1="-8" x2="0" y2="3" class="film-limb film-swing-2"/>
-                                    </g>
+                            <div class="demo-seek-sweep" aria-hidden="true"></div>
+                            <svg class="demo-film" viewBox="0 0 160 90" preserveAspectRatio="xMidYMid slice" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
+                                <g class="film-stars" fill="#e2e8f0">
+                                    <circle class="film-star" cx="18" cy="14" r="0.8"/>
+                                    <circle class="film-star" cx="42" cy="24" r="0.6"/>
+                                    <circle class="film-star" cx="64" cy="10" r="0.9"/>
+                                    <circle class="film-star" cx="90" cy="28" r="0.6"/>
+                                    <circle class="film-star" cx="108" cy="16" r="0.5"/>
+                                    <circle class="film-star" cx="134" cy="22" r="0.8"/>
+                                    <circle class="film-star" cx="150" cy="12" r="0.5"/>
+                                </g>
+                                <circle class="film-moon" cx="122" cy="26" r="7.5" fill="#f1f5f9" opacity="0.92"/>
+                                <path class="film-mtn-back" d="M-12,66 L16,46 L40,60 L66,42 L94,58 L122,44 L150,60 L172,50 L172,92 L-12,92 Z" fill="rgba(30,27,75,0.7)"/>
+                                <path class="film-mtn-front" d="M-12,80 L14,66 L36,78 L60,62 L86,76 L112,64 L140,78 L172,68 L172,92 L-12,92 Z" fill="rgba(49,46,129,0.6)"/>
+                                <g class="film-firefly">
+                                    <circle class="film-firefly-light" cx="0" cy="72" r="1.4" fill="#fde047"/>
                                 </g>
                             </svg>
                             <div class="demo-play-overlay" aria-hidden="true">
@@ -357,19 +360,22 @@
                         </div>
                         <div class="demo-video">
                             <div class="demo-video-art" aria-hidden="true"></div>
-                            <svg class="demo-film" viewBox="0 0 160 90" preserveAspectRatio="xMidYMax slice" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
-                                <ellipse cx="34" cy="98" rx="60" ry="20" fill="rgba(30,27,75,0.6)"/>
-                                <ellipse cx="128" cy="102" rx="75" ry="24" fill="rgba(49,46,129,0.4)"/>
-                                <g class="film-ball-x"><circle class="film-ball" cx="0" cy="74" r="3.2" fill="#a5b4fc"/></g>
-                                <g class="film-walker">
-                                    <g class="film-bob">
-                                        <circle cx="0" cy="-23" r="4.2" fill="#e2e8f0"/>
-                                        <line x1="0" y1="-19" x2="0" y2="-8" class="film-limb"/>
-                                        <line x1="0" y1="-16.5" x2="0" y2="-8.5" class="film-limb film-swing-1"/>
-                                        <line x1="0" y1="-16.5" x2="0" y2="-8.5" class="film-limb film-swing-2"/>
-                                        <line x1="0" y1="-8" x2="0" y2="3" class="film-limb film-swing-1"/>
-                                        <line x1="0" y1="-8" x2="0" y2="3" class="film-limb film-swing-2"/>
-                                    </g>
+                            <div class="demo-seek-sweep" aria-hidden="true"></div>
+                            <svg class="demo-film" viewBox="0 0 160 90" preserveAspectRatio="xMidYMid slice" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
+                                <g class="film-stars" fill="#e2e8f0">
+                                    <circle class="film-star" cx="18" cy="14" r="0.8"/>
+                                    <circle class="film-star" cx="42" cy="24" r="0.6"/>
+                                    <circle class="film-star" cx="64" cy="10" r="0.9"/>
+                                    <circle class="film-star" cx="90" cy="28" r="0.6"/>
+                                    <circle class="film-star" cx="108" cy="16" r="0.5"/>
+                                    <circle class="film-star" cx="134" cy="22" r="0.8"/>
+                                    <circle class="film-star" cx="150" cy="12" r="0.5"/>
+                                </g>
+                                <circle class="film-moon" cx="122" cy="26" r="7.5" fill="#f1f5f9" opacity="0.92"/>
+                                <path class="film-mtn-back" d="M-12,66 L16,46 L40,60 L66,42 L94,58 L122,44 L150,60 L172,50 L172,92 L-12,92 Z" fill="rgba(30,27,75,0.7)"/>
+                                <path class="film-mtn-front" d="M-12,80 L14,66 L36,78 L60,62 L86,76 L112,64 L140,78 L172,68 L172,92 L-12,92 Z" fill="rgba(49,46,129,0.6)"/>
+                                <g class="film-firefly">
+                                    <circle class="film-firefly-light" cx="0" cy="72" r="1.4" fill="#fde047"/>
                                 </g>
                             </svg>
                             <div class="demo-play-overlay" aria-hidden="true">
@@ -456,6 +462,7 @@
                                     {{MOCK_09}}
                                 </label>
                                 <select class="mock-input" id="demo-video-select" style="width: 100%; box-sizing: border-box; background: var(--card); border: 1px solid #334155; color: white; padding: 8px; border-radius: 8px; font-family: inherit; font-size: 0.75rem; outline: none; cursor: default;">
+                                    <option value="" class="demo-select-placeholder" selected hidden>{{DEMO_SELECT_PLACEHOLDER}}</option>
                                     <option><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="12" height="12" aria-hidden="true"><rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18"/><line x1="7" y1="2" x2="7" y2="22"/><line x1="17" y1="2" x2="17" y2="22"/><line x1="2" y1="12" x2="22" y2="12"/><line x1="2" y1="7" x2="7" y2="7"/><line x1="2" y1="17" x2="7" y2="17"/><line x1="17" y1="17" x2="22" y2="17"/><line x1="17" y1="7" x2="22" y2="7"/></svg> Stranger Things - S4E1</option>
                                 </select>
                             </div>

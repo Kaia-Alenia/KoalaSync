@@ -23,6 +23,7 @@
   "DEMO_CREATE_ROOM": "ルームを作成",
   "DEMO_JOINED": "ルームに参加",
   "DEMO_TAB_SELECTED": "タブを選択済み",
+  "DEMO_SELECT_PLACEHOLDER": "動画タブを選ぶ…",
   "ADD_TO_CHROME": "Chromeに追加",
   "ADD_TO_FIREFOX": "Firefoxに追加",
   "COMPAT_HEADING": "お気に入りのプラットフォームで動作",

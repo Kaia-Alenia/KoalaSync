@@ -23,6 +23,7 @@
   "DEMO_CREATE_ROOM": "Create Room",
   "DEMO_JOINED": "Room joined",
   "DEMO_TAB_SELECTED": "Tab selected",
+  "DEMO_SELECT_PLACEHOLDER": "Choose a video tab…",
   "ADD_TO_CHROME": "Add to Chrome",
   "ADD_TO_FIREFOX": "Add to Firefox",
   "COMPAT_HEADING": "Works on your favorite platforms",

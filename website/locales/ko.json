@@ -23,6 +23,7 @@
   "DEMO_CREATE_ROOM": "방 만들기",
   "DEMO_JOINED": "방 참여됨",
   "DEMO_TAB_SELECTED": "탭 선택됨",
+  "DEMO_SELECT_PLACEHOLDER": "동영상 탭 선택…",
   "ADD_TO_CHROME": "Chrome에 추가",
   "ADD_TO_FIREFOX": "Firefox에 추가",
   "COMPAT_HEADING": "가장 좋아하는 플랫폼에서 작동합니다",

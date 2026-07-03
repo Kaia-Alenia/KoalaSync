@@ -29,8 +29,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             });
         }, {
-            rootMargin: '0px 0px -150px 0px',
-            threshold: 0.1
+            rootMargin: '0px 0px -30px 0px',
+            threshold: 0.05
         });
 
         revealElements.forEach(el => revealObserver.observe(el));
@@ -433,7 +433,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!launcher || !chip || !cursor || !playBtn || !pauseBtn) return;
 
         const EP_LEN = 2537;   // fake 42:17 episode
-        const RATE = 8;        // timelapse factor so the demo feels alive
+        const RATE = 1;        // realtime: 1 wall-clock second = 1 video second
         const START_T = 754;   // 12:34
 
         const tabs = {};
@@ -548,12 +548,33 @@ document.addEventListener('DOMContentLoaded', () => {
             tabs[sourceKey].t = fraction * EP_LEN;
             renderTab(tabs[sourceKey]);
             showEvent('» ' + NAMES[sourceKey]);
+            // visible "cut" so the jump reads as a real seek, not a silent update
+            flashSeek(tabs[sourceKey].root);
             setTimeout(() => {
                 tabs[peerKey].t = tabs[sourceKey].t;
                 renderTab(tabs[peerKey]);
+                flashSeek(tabs[peerKey].root);
                 pulse();
                 broadcasting = false;
             }, 90);
+        };
+
+        // Restart the film animations mid-stride + trigger the sweep overlay
+        let seekFlashTimers = [];
+        const flashSeek = (root) => {
+            if (!root) return;
+            root.classList.remove('demo-seeking');
+            // Restart every animated layer from frame zero so the jump is visible
+            const film = root.querySelector('.demo-film');
+            if (film) {
+                film.classList.add('demo-reset');
+                void film.offsetWidth; // force reflow so the browser commits the reset
+                film.classList.remove('demo-reset');
+            }
+            void root.offsetWidth;
+            root.classList.add('demo-seeking');
+            const t = setTimeout(() => root.classList.remove('demo-seeking'), 360);
+            seekFlashTimers.push(t);
         };
 
         const setPopupOpen = (open) => {
@@ -651,6 +672,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const flashSelect = () => {
             if (!videoSelect) return;
+            // Actually pick the Stranger Things tab so the placeholder reads as chosen
+            if (videoSelect.options.length > 1) {
+                videoSelect.selectedIndex = 1;
+            }
             videoSelect.classList.remove('demo-attn');
             void videoSelect.offsetWidth;
             videoSelect.classList.add('demo-attn');

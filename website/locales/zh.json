@@ -23,6 +23,7 @@
   "DEMO_CREATE_ROOM": "创建房间",
   "DEMO_JOINED": "已加入房间",
   "DEMO_TAB_SELECTED": "已选择标签页",
+  "DEMO_SELECT_PLACEHOLDER": "选择视频标签页…",
   "ADD_TO_CHROME": "添加到Chrome",
   "ADD_TO_FIREFOX": "添加到Firefox",
   "COMPAT_HEADING": "适用于您最喜欢的平台",

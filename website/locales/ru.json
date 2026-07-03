@@ -23,6 +23,7 @@
   "DEMO_CREATE_ROOM": "Создать комнату",
   "DEMO_JOINED": "В комнате",
   "DEMO_TAB_SELECTED": "Вкладка выбрана",
+  "DEMO_SELECT_PLACEHOLDER": "Выберите вкладку с видео…",
   "ADD_TO_CHROME": "Установить в Chrome",
   "ADD_TO_FIREFOX": "Установить в Firefox",
   "COMPAT_HEADING": "Работает на ваших любимых платформах",
