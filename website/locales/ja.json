@@ -214,5 +214,7 @@
   "ALT_SCREEN_SUMMARY_BODY": "画質やプライバシー、個別の操作性をあまり気にせず、手軽に済ませたい場合は「画面共有」が最も簡単な選択肢です。一方、参加者それぞれが自身のブラウザで動画を再生し、実際に同じ空間で一緒に視聴しているような感覚を重視するなら、KoalaSyncの方が適しています。",
   "ALT_TRY_KOALASYNC": "KoalaSyncを試す",
   "MOCK_HOST_CONTROL_LABEL": "ホスト操作",
-  "MOCK_HOST_CONTROL_TOGGLE": "自分だけが再生を操作できる"
+  "MOCK_HOST_CONTROL_TOGGLE": "自分だけが再生を操作できる",
+  "LABEL_SELECT_VIDEO": "ビデオを選択",
+  "OPTION_SELECT_TAB": "-- タブを選択してください --"
 }

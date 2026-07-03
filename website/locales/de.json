@@ -214,5 +214,7 @@
   "ALT_SCREEN_SUMMARY_BODY": "Bildschirmübertragung ist die einfachste Lösung, wenn es schnell gehen soll und Qualität, Privatsphäre oder individuelle Kontrolle nicht so wichtig sind. KoalaSync passt besser, wenn jeder lokal im eigenen Browser schauen soll und sich der Filmabend mehr wie wirklich gemeinsames Schauen anfühlen soll.",
   "ALT_TRY_KOALASYNC": "KoalaSync ausprobieren",
   "MOCK_HOST_CONTROL_LABEL": "Host-Steuerung",
-  "MOCK_HOST_CONTROL_TOGGLE": "Nur ich darf die Wiedergabe steuern"
+  "MOCK_HOST_CONTROL_TOGGLE": "Nur ich darf die Wiedergabe steuern",
+  "LABEL_SELECT_VIDEO": "Video auswählen",
+  "OPTION_SELECT_TAB": "-- Wähle einen Tab --"
 }

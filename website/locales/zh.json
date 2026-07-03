@@ -214,5 +214,7 @@
   "ALT_SCREEN_SUMMARY_BODY": "如果您追求快速便捷，且不太在意画质、隐私或个性化控制，那么屏幕共享是最简单的选择。而当您希望每位参与者都在各自的浏览器中观看，并营造出一种真正“共同观看”的氛围时，KoalaSync 则是更理想的方案。",
   "ALT_TRY_KOALASYNC": "试用 KoalaSync",
   "MOCK_HOST_CONTROL_LABEL": "主持人控制",
-  "MOCK_HOST_CONTROL_TOGGLE": "只有我可以控制播放"
+  "MOCK_HOST_CONTROL_TOGGLE": "只有我可以控制播放",
+  "LABEL_SELECT_VIDEO": "选择视频",
+  "OPTION_SELECT_TAB": "-- 选择一个选项卡 --"
 }

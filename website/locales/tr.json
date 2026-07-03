@@ -214,5 +214,7 @@
   "ALT_SCREEN_SUMMARY_BODY": "Hızlı bir çözüm aradığınızda ve kalite, gizlilik ya da bireysel kontrol konularına çok önem vermediğinizde, ekran paylaşımı en basit seçenektir. Herkesin içeriği kendi tarayıcısında yerel olarak izlemesi gereken ve oturumun gerçekten birlikte izliyormuş hissi verdiği durumlarda ise KoalaSync daha uygun bir tercihtir.",
   "ALT_TRY_KOALASYNC": "KoalaSync'i Deneyin",
   "MOCK_HOST_CONTROL_LABEL": "Sunucu Kontrolü",
-  "MOCK_HOST_CONTROL_TOGGLE": "Oynatmayı yalnızca ben kontrol edebilirim"
+  "MOCK_HOST_CONTROL_TOGGLE": "Oynatmayı yalnızca ben kontrol edebilirim",
+  "LABEL_SELECT_VIDEO": "Video Seç",
+  "OPTION_SELECT_TAB": "-- Bir Sekme Seçin --"
 }

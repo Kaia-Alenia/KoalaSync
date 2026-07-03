@@ -214,5 +214,7 @@
   "ALT_SCREEN_SUMMARY_BODY": "La condivisione dello schermo è l'opzione più semplice quando si cerca una soluzione rapida e non si dà molta importanza alla qualità, alla privacy o al controllo individuale. KoalaSync è la scelta ideale quando tutti devono guardare il contenuto localmente sul proprio browser, offrendo un'esperienza che ricorda più da vicino la visione condivisa reale.",
   "ALT_TRY_KOALASYNC": "Prova KoalaSync",
   "MOCK_HOST_CONTROL_LABEL": "Controllo host",
-  "MOCK_HOST_CONTROL_TOGGLE": "Solo io posso controllare la riproduzione"
+  "MOCK_HOST_CONTROL_TOGGLE": "Solo io posso controllare la riproduzione",
+  "LABEL_SELECT_VIDEO": "Seleziona Video",
+  "OPTION_SELECT_TAB": "-- Seleziona una Scheda --"
 }

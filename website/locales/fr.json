@@ -214,5 +214,7 @@
   "ALT_SCREEN_SUMMARY_BODY": "Le partage d'écran est la solution la plus simple si vous cherchez une méthode rapide sans accorder une grande importance à la qualité, à la confidentialité ou au contrôle individuel. KoalaSync est plus adapté lorsque chaque participant doit visionner le contenu localement dans son propre navigateur, pour une expérience se rapprochant davantage d'un véritable visionnage en commun.",
   "ALT_TRY_KOALASYNC": "Essayer KoalaSync",
   "MOCK_HOST_CONTROL_LABEL": "Contrôle de l'hôte",
-  "MOCK_HOST_CONTROL_TOGGLE": "Seul moi peut contrôler la lecture"
+  "MOCK_HOST_CONTROL_TOGGLE": "Seul moi peut contrôler la lecture",
+  "LABEL_SELECT_VIDEO": "Choisir une vidéo",
+  "OPTION_SELECT_TAB": "-- Choisir un onglet --"
 }

@@ -214,5 +214,7 @@
   "ALT_SCREEN_SUMMARY_BODY": "Screen sharing is the simplest option when you just want something quick and do not care much about quality, privacy or individual control. KoalaSync is a better fit when everyone should watch locally in their own browser and the session should feel more like actually watching together.",
   "ALT_TRY_KOALASYNC": "Try KoalaSync",
   "MOCK_HOST_CONTROL_LABEL": "Host Control",
-  "MOCK_HOST_CONTROL_TOGGLE": "Only I can control playback"
+  "MOCK_HOST_CONTROL_TOGGLE": "Only I can control playback",
+  "LABEL_SELECT_VIDEO": "Select Video",
+  "OPTION_SELECT_TAB": "-- Select a Tab --"
 }

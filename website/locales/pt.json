@@ -214,5 +214,7 @@
   "ALT_SCREEN_SUMMARY_BODY": "Partilhar o ecrã é a opção mais simples quando se quer algo rápido e não se liga muito à qualidade, privacidade ou controlo individual. O KoalaSync é mais adequado quando todos devem assistir localmente nos seus próprios browsers e a sessão deve parecer mais como assistir em conjunto.",
   "ALT_TRY_KOALASYNC": "Experimente o KoalaSync",
   "MOCK_HOST_CONTROL_LABEL": "Controlo do anfitrião",
-  "MOCK_HOST_CONTROL_TOGGLE": "Apenas eu posso controlar a reprodução"
+  "MOCK_HOST_CONTROL_TOGGLE": "Apenas eu posso controlar a reprodução",
+  "LABEL_SELECT_VIDEO": "Selecionar Vídeo",
+  "OPTION_SELECT_TAB": "-- Selecionar um Separador --"
 }

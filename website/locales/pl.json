@@ -214,5 +214,7 @@
   "ALT_SCREEN_SUMMARY_BODY": "Udostępnianie ekranu to najprostsze rozwiązanie, gdy zależy Ci na szybkości, a kwestie jakości, prywatności czy indywidualnej kontroli nad odtwarzaniem nie są priorytetem. KoalaSync sprawdza się lepiej, gdy uczestnicy oglądają materiał lokalnie we własnych przeglądarkach, a sesja ma bardziej przypominać wspólny seans.",
   "ALT_TRY_KOALASYNC": "Wypróbuj KoalaSync",
   "MOCK_HOST_CONTROL_LABEL": "Kontrola hosta",
-  "MOCK_HOST_CONTROL_TOGGLE": "Tylko ja mogę sterować odtwarzaniem"
+  "MOCK_HOST_CONTROL_TOGGLE": "Tylko ja mogę sterować odtwarzaniem",
+  "LABEL_SELECT_VIDEO": "Wybierz wideo",
+  "OPTION_SELECT_TAB": "-- Wybierz kartę --"
 }

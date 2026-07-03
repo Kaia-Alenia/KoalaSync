@@ -214,5 +214,7 @@
   "ALT_SCREEN_SUMMARY_BODY": "화질, 개인정보 보호, 개별 제어 기능 등을 크게 신경 쓰지 않고 간편하게 진행하고 싶을 때는 화면 공유가 가장 간단한 방법입니다. 반면, 모든 참가자가 각자의 브라우저에서 직접 영상을 시청하며 실제로 함께 보는 듯한 느낌을 원한다면 KoalaSync가 더 적합합니다.",
   "ALT_TRY_KOALASYNC": "KoalaSync 사용해 보기",
   "MOCK_HOST_CONTROL_LABEL": "호스트 제어",
-  "MOCK_HOST_CONTROL_TOGGLE": "나만 재생을 제어할 수 있음"
+  "MOCK_HOST_CONTROL_TOGGLE": "나만 재생을 제어할 수 있음",
+  "LABEL_SELECT_VIDEO": "비디오 선택",
+  "OPTION_SELECT_TAB": "-- 탭 선택 --"
 }
