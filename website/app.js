@@ -784,9 +784,8 @@ document.addEventListener('DOMContentLoaded', () => {
             const firstTake = !userTookOver;
             userTookOver = true;
             finishDemo();
-            // if the story left the popup open and the user clicked elsewhere,
-            // tuck it away; clicks inside the popup (or on its icon) keep it
-            if (firstTake && !demoFinishedByStory && e && e.target &&
+            // Clicks outside the popup (and not on its launcher icon) always collapse the popup
+            if (e && e.target &&
                 !e.target.closest('.extension-mockup') &&
                 !e.target.closest('.demo-ext-launcher')) {
                 setPopupOpen(false);
