@@ -767,8 +767,6 @@ document.addEventListener('DOMContentLoaded', () => {
         let userTookOver = false;
         let demoStarted = false;
         let demoFinished = false;
-        let demoFinishedByStory = false;
-
         const finishDemo = () => {
             if (demoFinished) return;
             demoFinished = true;
@@ -780,7 +778,6 @@ document.addEventListener('DOMContentLoaded', () => {
         };
 
         const takeOver = (e) => {
-            const firstTake = !userTookOver;
             userTookOver = true;
             finishDemo();
             // Clicks outside the popup (and not on its launcher icon) always collapse the popup
@@ -856,7 +853,6 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!await step(progressA, 1300, () => seekTo('a', 0.62), 0.62)) return;
             if (!await step(tabs.a.root, 700)) return;
 
-            demoFinishedByStory = true;
             finishDemo();
         };
 
