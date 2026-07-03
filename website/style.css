@@ -3898,3 +3898,141 @@ header[id] {
     background-color: var(--accent);
     box-shadow: 0 0 6px var(--accent-glow);
 }
+
+/* --- Step 2 & Step 3 Visual Redesign Styles --- */
+
+/* Step 2 Browser video player mock */
+.illus-video-player-mock {
+    width: 85%;
+    height: 65%;
+    background: linear-gradient(135deg, #1e1b4b, #090514);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    margin-top: 15px;
+}
+
+.video-mock-play-button {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 0.8rem;
+    cursor: default;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+}
+
+.video-mock-timeline {
+    position: absolute;
+    bottom: 8px;
+    left: 8px;
+    right: 8px;
+    height: 3px;
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 2px;
+}
+
+.video-mock-timeline-fill {
+    width: 35%;
+    height: 100%;
+    background: var(--accent);
+    border-radius: 2px;
+}
+
+/* Step 2 extension popup dropdown alignment */
+.illus-extension-popup.drop-down {
+    top: 2.2rem;
+    right: 0.6rem;
+    width: 145px;
+    animation: popup-dropdown-float 4s ease-in-out infinite;
+}
+
+@keyframes popup-dropdown-float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-3px); }
+}
+
+.status-badge-select {
+    background: rgba(99, 102, 241, 0.12);
+    color: #c7d2fe;
+    font-size: 0.58rem;
+    font-weight: 700;
+    padding: 2px 6px;
+    border-radius: 4px;
+    border: 1px solid rgba(99, 102, 241, 0.2);
+    display: inline-flex;
+    align-items: center;
+    text-transform: uppercase;
+    letter-spacing: 0.2px;
+}
+
+.popup-select-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin-top: 8px;
+    width: 100%;
+}
+
+.popup-select-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 6px;
+    background: rgba(99, 102, 241, 0.15);
+    border: 1px solid rgba(99, 102, 241, 0.35);
+    border-radius: 6px;
+    font-size: 0.6rem;
+    font-weight: 700;
+    color: white;
+    cursor: default;
+    box-shadow: 0 0 8px rgba(99, 102, 241, 0.2);
+    animation: tab-select-pulse 1.8s infinite alternate;
+}
+
+@keyframes tab-select-pulse {
+    0% { box-shadow: 0 0 4px rgba(99, 102, 241, 0.2); transform: scale(1); }
+    100% { box-shadow: 0 0 12px rgba(99, 102, 241, 0.5); transform: scale(1.02); }
+}
+
+/* Step 3 forest movie continuous animation bindings */
+.step-illustration-3 .film-mtn-scroll {
+    animation: scrollBack 12s linear infinite !important;
+}
+.step-illustration-3 .film-mid-scroll {
+    animation: scrollMid 6s linear infinite !important;
+}
+.step-illustration-3 .film-fore-scroll {
+    animation: scrollFore 3s linear infinite !important;
+}
+.step-illustration-3 .film-bounce-ball {
+    animation: ballBounce 0.8s ease-in-out infinite !important;
+    transform-origin: bottom center;
+}
+
+@keyframes scrollBack {
+    0% { transform: translateX(0); }
+    100% { transform: translateX(-160px); }
+}
+@keyframes scrollMid {
+    0% { transform: translateX(0); }
+    100% { transform: translateX(-160px); }
+}
+@keyframes scrollFore {
+    0% { transform: translateX(0); }
+    100% { transform: translateX(-160px); }
+}
+@keyframes ballBounce {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-16px); }
+}
