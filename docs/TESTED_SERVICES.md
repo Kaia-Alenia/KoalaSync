@@ -17,6 +17,7 @@ This document tracks which streaming platforms and media servers have been teste
 | **Vimeo** | Not tested | Not tested | Not tested | — |
 | **Dailymotion** | Not tested | Not tested | Not tested | — |
 | **ARD / ZDF Mediathek** | Not tested | Not tested | Not tested | — |
+| **Vix** | ✅ Full | ✅ Full | ✅ Full | Everything works correctly. |
 
 ## Legend
 
