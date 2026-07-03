@@ -2,24 +2,28 @@
 
 document.addEventListener('DOMContentLoaded', () => {
     // Mockup Video Title Randomization on Load
-    const RANDOM_TITLES = [
-        { ep1: 'Stranger Things - S4E1', ep2: 'Stranger Things - S4E2' },
-        { ep1: 'Wednesday - S1E1', ep2: 'Wednesday - S1E2' },
-        { ep1: 'The Boys - S3E1', ep2: 'The Boys - S3E2' },
-        { ep1: 'The Mandalorian - S2E1', ep2: 'The Mandalorian - S2E2' },
-        { ep1: 'Arcane - S1E3', ep2: 'Arcane - S1E4' },
-        { ep1: 'Breaking Bad - S5E14', ep2: 'Breaking Bad - S5E15' },
-        { ep1: 'One Piece - S1E4', ep2: 'One Piece - S1E5' },
-        { ep1: 'House of the Dragon - S1E1', ep2: 'House of the Dragon - S1E2' }
+    const SERIES_NAMES = [
+        'Stranger Things',
+        'Wednesday',
+        'The Boys',
+        'Loki',
+        'Arcane',
+        'Dark',
+        'One Piece',
+        'Lupin'
     ];
 
     try {
-        const chosenTitle = RANDOM_TITLES[Math.floor(Math.random() * RANDOM_TITLES.length)];
+        const chosenSeries = SERIES_NAMES[Math.floor(Math.random() * SERIES_NAMES.length)];
+        const startEp = Math.floor(Math.random() * 7) + 1; // Random episode between 1 and 7
+        const ep1 = `${chosenSeries} - S1E${startEp}`;
+        const ep2 = `${chosenSeries} - S1E${startEp + 1}`;
+
         document.querySelectorAll('.demo-title-text-ep1').forEach(el => {
-            el.textContent = chosenTitle.ep1;
+            el.textContent = ep1;
         });
         document.querySelectorAll('.demo-title-text-ep2').forEach(el => {
-            el.textContent = chosenTitle.ep2;
+            el.textContent = ep2;
         });
     } catch (err) {
         console.warn(err);
