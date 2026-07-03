@@ -25,6 +25,21 @@ document.addEventListener('DOMContentLoaded', () => {
         console.warn(err);
     }
 
+    // Scroll Progress Indicator
+    try {
+        const progressBar = document.querySelector('.scroll-progress-bar');
+        if (progressBar) {
+            window.addEventListener('scroll', () => {
+                const winScroll = document.body.scrollTop || document.documentElement.scrollTop;
+                const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+                const scrolled = height > 0 ? (winScroll / height) * 100 : 0;
+                progressBar.style.width = scrolled + '%';
+            }, { passive: true });
+        }
+    } catch (err) {
+        console.warn(err);
+    }
+
     const safeGetLocalStorage = (key) => {
         try {
             return localStorage.getItem(key);
