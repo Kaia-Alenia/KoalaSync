@@ -3582,8 +3582,8 @@ header[id] {
 
 .demo-hint.show { opacity: 0.75; }
 
-/* Mobile: fall back to the classic static popup mockup */
-@media (max-width: 768px) {
+/* Tablet/Small Desktop: fall back to the classic static popup mockup */
+@media (max-width: 1024px) {
     .hero-demo-scene,
     .hero-demo-scene.popup-open {
         height: auto;
