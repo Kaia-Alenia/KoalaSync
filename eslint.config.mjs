@@ -18,6 +18,8 @@ export default [
         setInterval: "readonly",
         clearTimeout: "readonly",
         clearInterval: "readonly",
+        requestAnimationFrame: "readonly",
+        cancelAnimationFrame: "readonly",
         fetch: "readonly",
         CustomEvent: "readonly",
         MutationObserver: "readonly",
