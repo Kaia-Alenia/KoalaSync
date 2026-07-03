@@ -489,7 +489,7 @@
                         <!-- SYNC TAB -->
                         <div id="mock-sync" class="mock-screen">
                             <div class="mock-form-group" style="margin-bottom: 12px;">
-                                <label class="mock-section-label" title="Choose the browser tab containing the video to sync">
+                                <label class="mock-section-label" for="demo-video-select" title="Choose the browser tab containing the video to sync">
                                     {{MOCK_09}}
                                 </label>
                                 <select class="mock-input" id="demo-video-select" style="width: 100%; box-sizing: border-box; background: var(--card); border: 1px solid #334155; color: white; padding: 8px; border-radius: 8px; font-family: inherit; font-size: 0.75rem; outline: none; cursor: default;">
@@ -1116,9 +1116,9 @@
                             </div>
                             <div class="illus-popup-body">
                                 <div class="popup-form-group">
-                                    <label class="popup-form-label">{{LABEL_SELECT_VIDEO}}</label>
+                                    <label class="popup-form-label" for="popup-select-mock-el">{{LABEL_SELECT_VIDEO}}</label>
                                     <div class="popup-select-wrapper">
-                                        <select class="popup-select-mock" disabled>
+                                        <select class="popup-select-mock" id="popup-select-mock-el" disabled>
                                             <option class="demo-title-text-ep1">Stranger Things - S4E1</option>
                                         </select>
                                         <div class="popup-cursor-pointer">👆</div>
