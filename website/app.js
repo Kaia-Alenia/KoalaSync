@@ -525,7 +525,7 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         };
 
-        const NAMES = { a: 'CoolUsername', b: 'KoalaPC' };
+        const NAMES = { a: '🐱 ChillCat', b: '🐶 HappyDog' };
         const chipEvent = chip.querySelector('.demo-chip-event');
 
         let eventTimer = null;
@@ -602,7 +602,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // Manual controls (the automated walkthrough drives these same handlers)
         launcher.addEventListener('click', () => setPopupOpen(!scene.classList.contains('popup-open')));
 
-        // The popup remote control acts as CoolUsername (tab A's user)
+        // The popup remote control acts as 🐱 ChillCat (tab A's user)
         playBtn.addEventListener('click', () => {
             if (tabs.a.playing && tabs.b.playing) { pulse(); return; }
             broadcast('a', true);
