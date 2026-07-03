@@ -1095,45 +1095,38 @@
                     </div>
                     <!-- Custom Step 2 Illustration -->
                     <div class="step-illustration-1" data-reveal>
-                        <div class="illus-browser-container">
-                            <div class="illus-browser-header">
-                                <div class="illus-browser-dots">
-                                    <span class="illus-browser-dot"></span>
-                                    <span class="illus-browser-dot"></span>
-                                    <span class="illus-browser-dot"></span>
+                        <div class="illus-popup-card">
+                            <div class="illus-popup-header">
+                                <div class="illus-popup-brand">
+                                    <img src="{{ASSET_PATH}}assets/NewLogoIcon.webp" alt="KoalaSync Logo" width="14" height="14">
+                                    <span>KoalaSync</span>
                                 </div>
-                                <div class="illus-browser-address-bar">
-                                    <span class="url-protocol">https://</span>youtube.com/watch?v=5xkoala
+                                <div class="illus-popup-version mockup-version">{{VERSION}}</div>
+                            </div>
+                            <div class="illus-popup-tabs">
+                                <div class="illus-popup-tab">
+                                    <span>{{STEP_2_ILLUS_ROOM}}</span>
                                 </div>
-                                <div class="illus-browser-toolbar">
-                                    <div class="illus-extension-btn active">
-                                        <img src="{{ASSET_PATH}}assets/NewLogoIcon.webp" alt="KoalaSync Extension" width="14" height="14">
-                                    </div>
+                                <div class="illus-popup-tab active">
+                                    <span>{{STEP_2_ILLUS_SYNC}}</span>
+                                </div>
+                                <div class="illus-popup-tab">
+                                    <span>{{STEP_2_ILLUS_SETTINGS}}</span>
                                 </div>
                             </div>
-                            <div class="illus-browser-content">
-                                <div class="illus-video-player-mock">
-                                    <div class="video-mock-play-button">▶</div>
-                                    <div class="video-mock-timeline">
-                                        <div class="video-mock-timeline-fill"></div>
+                            <div class="illus-popup-body">
+                                <div class="popup-form-group">
+                                    <label class="popup-form-label">{{LABEL_SELECT_VIDEO}}</label>
+                                    <div class="popup-select-wrapper">
+                                        <select class="popup-select-mock" disabled>
+                                            <option class="demo-title-text-ep1">Stranger Things - S4E1</option>
+                                        </select>
+                                        <div class="popup-cursor-pointer">👆</div>
                                     </div>
                                 </div>
-                                
-                                <!-- Floating Extension Dropdown Popup (aligned below toolbar icon) -->
-                                <div class="illus-extension-popup drop-down">
-                                    <div class="popup-title">
-                                        <img src="{{ASSET_PATH}}assets/NewLogoIcon.webp" alt="KoalaSync Logo" width="12" height="12">
-                                        <span>KoalaSync</span>
-                                    </div>
-                                    <div class="popup-form-group">
-                                        <label class="popup-form-label">{{LABEL_SELECT_VIDEO}}</label>
-                                        <div class="popup-select-wrapper">
-                                            <select class="popup-select-mock" disabled>
-                                                <option class="demo-title-text-ep1">Stranger Things - S4E1</option>
-                                            </select>
-                                            <div class="popup-cursor-pointer">👆</div>
-                                        </div>
-                                    </div>
+                                <div class="popup-mock-controls">
+                                    <div class="popup-mock-btn play">▶ Play</div>
+                                    <div class="popup-mock-btn pause">⏸ Pause</div>
                                 </div>
                             </div>
                         </div>
