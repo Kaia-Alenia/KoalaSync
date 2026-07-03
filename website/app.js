@@ -456,6 +456,23 @@ document.addEventListener('DOMContentLoaded', () => {
         const renderTab = (tab) => {
             tab.fill.style.width = ((tab.t / EP_LEN) * 100).toFixed(2) + '%';
             tab.time.textContent = fmt(tab.t);
+            
+            // Frame-locked parallax offsets
+            const t = tab.t;
+            const backOffset = (t * -8) % 160;
+            const midOffset = (t * -24) % 160;
+            const foreOffset = (t * -48) % 160;
+            
+            // Bouncing ball logic (bounce Y is computed as parabolic arc)
+            const bouncePeriod = 0.8;
+            const bounceProgress = (t % bouncePeriod) / bouncePeriod;
+            const bounceHeight = 16;
+            const bounceY = 4 * bounceProgress * (1 - bounceProgress) * -bounceHeight;
+            
+            tab.root.style.setProperty('--scroll-back', backOffset.toFixed(2) + 'px');
+            tab.root.style.setProperty('--scroll-mid', midOffset.toFixed(2) + 'px');
+            tab.root.style.setProperty('--scroll-fore', foreOffset.toFixed(2) + 'px');
+            tab.root.style.setProperty('--bounce-y', bounceY.toFixed(2) + 'px');
         };
 
         const updateSyncUI = () => {

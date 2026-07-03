@@ -3612,6 +3612,7 @@ header[id] {
     transform-box: fill-box;
     transform-origin: center;
     animation: filmMoon 6s ease-in-out infinite alternate;
+    animation-play-state: paused;
 }
 
 @keyframes filmMoon {
@@ -3619,48 +3620,30 @@ header[id] {
     to { transform: translate(-6px, 3px); filter: drop-shadow(0 0 10px rgba(241,245,249,0.95)); }
 }
 
-/* Parallax Forest Scroll Layers */
-@keyframes scrollBack {
-    0% { transform: translateX(0); }
-    100% { transform: translateX(-160px); }
-}
-@keyframes scrollMid {
-    0% { transform: translateX(0); }
-    100% { transform: translateX(-160px); }
-}
-@keyframes scrollFore {
-    0% { transform: translateX(0); }
-    100% { transform: translateX(-160px); }
-}
-@keyframes ballBounce {
-    0%, 100% { transform: translateY(0); }
-    50% { transform: translateY(-16px); }
-}
-
 .film-mtn-scroll {
-    animation: scrollBack 12s linear infinite;
-    animation-play-state: paused;
+    transform: translateX(var(--scroll-back, 0px));
 }
 .film-mid-scroll {
-    animation: scrollMid 6s linear infinite;
-    animation-play-state: paused;
+    transform: translateX(var(--scroll-mid, 0px));
 }
 .film-fore-scroll {
-    animation: scrollFore 3s linear infinite;
-    animation-play-state: paused;
+    transform: translateX(var(--scroll-fore, 0px));
 }
 .film-bounce-ball {
     transform-origin: bottom center;
-    animation: ballBounce 0.8s ease-in-out infinite;
-    animation-play-state: paused;
+    transform: translateY(var(--bounce-y, 0px));
     filter: drop-shadow(0 0 4px #fde047);
 }
 
-/* Playback state bindings for all animation layers */
-.demo-tab-card.playing .film-mtn-scroll,
-.demo-tab-card.playing .film-mid-scroll,
-.demo-tab-card.playing .film-fore-scroll,
-.demo-tab-card.playing .film-bounce-ball {
+/* Twinkle & Glow play state bindings */
+.film-star {
+    transform-box: fill-box;
+    transform-origin: center;
+    animation: filmTwinkle 2.8s ease-in-out infinite;
+    animation-play-state: paused;
+}
+.demo-tab-card.playing .film-star,
+.demo-tab-card.playing .film-moon {
     animation-play-state: running;
 }
 
