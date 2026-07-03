@@ -4157,3 +4157,10 @@ header[id] {
 .popup-mock-btn.pause {
     background: #ef4444;
 }
+
+/* Mobile: completely hide the extension demo mockup on mobile viewports */
+@media (max-width: 480px) {
+    .hero-mockup-wrapper {
+        display: none !important;
+    }
+}
