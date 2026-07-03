@@ -4158,8 +4158,8 @@ header[id] {
     background: #ef4444;
 }
 
-/* Mobile: completely hide the extension demo mockup on mobile viewports */
-@media (max-width: 480px) {
+/* Mobile & Tablet Stacked: completely hide the extension demo mockup when it wraps below the text */
+@media (max-width: 768px) {
     .hero-mockup-wrapper {
         display: none !important;
     }
