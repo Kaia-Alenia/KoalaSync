@@ -559,13 +559,11 @@ document.addEventListener('DOMContentLoaded', () => {
             updateSyncUI();
         };
 
-        const pulse = () => {
-            ['a', 'b'].forEach(k => {
-                const el = tabs[k].root;
-                el.classList.remove('sync-pulse');
-                void el.offsetWidth; // restart the CSS animation
-                el.classList.add('sync-pulse');
-            });
+        const pulse = (key) => {
+            const el = tabs[key].root;
+            el.classList.remove('sync-pulse');
+            void el.offsetWidth; // restart the CSS animation
+            el.classList.add('sync-pulse');
         };
 
         const NAMES = { a: '🐱 ChillCat', b: '🐶 HappyDog' };
@@ -595,7 +593,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 tabs[peerKey].t = tabs[sourceKey].t;
                 setPlaying(peerKey, playing);
                 renderTab(tabs[peerKey]);
-                pulse();
+                pulse(peerKey);
                 broadcasting = false;
             }, 90);
         };
@@ -614,7 +612,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 tabs[peerKey].t = tabs[sourceKey].t;
                 renderTab(tabs[peerKey]);
                 flashSeek(tabs[peerKey].root);
-                pulse();
+                pulse(peerKey);
                 broadcasting = false;
             }, 90);
         };
@@ -647,18 +645,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // The popup remote control acts as 🐱 ChillCat (tab A's user)
         playBtn.addEventListener('click', () => {
-            if (tabs.a.playing && tabs.b.playing) { pulse(); return; }
+            if (tabs.a.playing && tabs.b.playing) { pulse('b'); return; }
             broadcast('a', true);
         });
         pauseBtn.addEventListener('click', () => {
-            if (!tabs.a.playing && !tabs.b.playing) { pulse(); return; }
+            if (!tabs.a.playing && !tabs.b.playing) { pulse('b'); return; }
             broadcast('a', false);
         });
         if (forceSyncBtn) forceSyncBtn.addEventListener('click', () => {
             tabs.b.t = tabs.a.t = Math.max(tabs.a.t, tabs.b.t);
             renderTab(tabs.a);
             renderTab(tabs.b);
-            pulse();
+            pulse('a');
+            pulse('b');
         });
 
         ['a', 'b'].forEach(k => {
@@ -837,7 +836,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (userTookOver) return;
             setConnected(true);
             showToastB(toastB ? toastB.dataset.joined : '');
-            pulse();
+            pulse('b');
             await wait(900);
             if (userTookOver) return;
 

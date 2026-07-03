@@ -218,18 +218,19 @@ nav {
 .hero {
     min-height: 100vh;
     display: flex;
-    align-items: flex-start;
-    padding-top: 7.5rem;
-    padding-bottom: 3rem;
+    align-items: center;
+    padding-top: clamp(4.5rem, 8vh, 7rem);
+    padding-bottom: clamp(2rem, 5vh, 4rem);
 }
 
 .hero-grid {
     display: grid;
     grid-template-columns: 1.2fr 1fr;
-    align-items: start;
+    align-items: center;
     gap: 3rem;
     text-align: left;
     width: 100%;
+    min-height: calc(100svh - clamp(6.5rem, 13vh, 11rem));
 }
 
 @media (min-width: 1024px) {
@@ -381,7 +382,7 @@ nav {
 .extension-mockup {
     width: 100%;
     max-width: 320px;
-    height: 600px;
+    height: 528px;
     background: #0f172a;
     border-radius: 20px;
     border: 1px solid rgba(255, 255, 255, 0.08);
@@ -392,7 +393,7 @@ nav {
     overflow: hidden;
     position: relative;
     user-select: none;
-    padding: 16px;
+    padding: 14px;
     padding-bottom: 0;
     box-sizing: border-box;
 }
@@ -400,7 +401,7 @@ nav {
 .mock-header-row {
     display: flex;
     align-items: center;
-    margin-bottom: 16px;
+    margin-bottom: 12px;
     flex-shrink: 0;
 }
 
@@ -451,7 +452,7 @@ nav {
     background: #1e293b;
     padding: 4px;
     border-radius: 12px;
-    margin-bottom: 20px;
+    margin-bottom: 14px;
     flex-shrink: 0;
 }
 
@@ -462,7 +463,7 @@ nav {
     color: var(--text-muted);
     font-size: 0.75rem;
     font-weight: 600;
-    padding: 8px 4px;
+    padding: 7px 4px;
     cursor: pointer;
     border-radius: 8px;
     transition: color 0.2s, background-color 0.2s;
@@ -482,7 +483,7 @@ nav {
     flex: 1;
     overflow-y: auto;
     padding: 0;
-    padding-bottom: 16px;
+    padding-bottom: 12px;
     display: flex;
     flex-direction: column;
     font-size: 0.8rem;
@@ -496,7 +497,7 @@ nav {
 .mock-screen {
     display: none;
     flex-direction: column;
-    gap: 12px;
+    gap: 10px;
 }
 
 .mock-screen.active {
@@ -508,7 +509,7 @@ nav {
     background: #1e293b;
     border: 1px solid #334155;
     border-radius: 8px;
-    padding: 12px;
+    padding: 10px;
 }
 
 .mock-label {
@@ -517,7 +518,7 @@ nav {
     color: var(--text-muted);
     text-transform: uppercase;
     letter-spacing: 0.05em;
-    margin-bottom: 0.4rem;
+    margin-bottom: 0.3rem;
 }
 
 .mock-section-label {
@@ -585,7 +586,7 @@ nav {
 
 .mock-invite-box {
     display: flex;
-    gap: 0.4rem;
+    gap: 0.35rem;
 }
 
 .mock-invite-box input {
@@ -600,8 +601,8 @@ nav {
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 12px;
-    padding: 34px 10px;
+    gap: 10px;
+    padding: 24px 10px;
     text-align: center;
 }
 .demo-room-empty img {
@@ -635,7 +636,7 @@ nav {
 .mock-peer-list {
     display: flex;
     flex-direction: column;
-    gap: 0.5rem;
+    gap: 0.4rem;
 }
 
 .mock-peer-item {
@@ -644,14 +645,14 @@ nav {
     background: rgba(255, 255, 255, 0.02);
     border: 1px solid rgba(255, 255, 255, 0.03);
     border-radius: 8px;
-    padding: 0.5rem 0.6rem;
+    padding: 0.45rem 0.55rem;
 }
 
 .mock-peer-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 0.25rem;
+    margin-bottom: 0.2rem;
 }
 
 .mock-peer-name {
@@ -1395,11 +1396,11 @@ input:checked + .mock-slider:before {
     -webkit-backdrop-filter: blur(16px);
     border: 1px solid rgba(255, 255, 255, 0.12);
     border-radius: 16px;
-    padding: 0.95rem;
+    padding: 0.8rem;
     box-shadow: 0 18px 40px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.1);
     display: flex;
     flex-direction: column;
-    gap: 0.75rem;
+    gap: 0.55rem;
     animation: popup-float 4s ease-in-out infinite;
     animation-delay: -1s;
 }
@@ -1454,17 +1455,17 @@ input:checked + .mock-slider:before {
 .illus-popup-body {
     display: flex;
     flex-direction: column;
-    gap: 0.75rem;
+    gap: 0.55rem;
     position: relative;
 }
 
 .illus-popup-btn {
     background: linear-gradient(135deg, var(--accent), #8b5cf6);
     border-radius: 8px;
-    padding: 9px; /* Scaled up padding */
+    padding: 7px 9px;
     color: white;
     font-weight: 700;
-    font-size: 0.7rem; /* Scaled up font */
+    font-size: 0.68rem;
     text-align: center;
     box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
     position: relative;
@@ -1498,8 +1499,8 @@ input:checked + .mock-slider:before {
     background: rgba(9, 13, 22, 0.4);
     border: 1px solid rgba(255, 255, 255, 0.05);
     border-radius: 8px;
-    padding: 7px 12px; /* Scaled up padding */
-    font-size: 0.56rem; /* Scaled up font */
+    padding: 6px 11px;
+    font-size: 0.54rem;
     color: var(--text-muted);
     font-weight: 700;
     text-transform: uppercase;
@@ -1518,13 +1519,13 @@ input:checked + .mock-slider:before {
 /* Floating Success Badge */
 .illus-floating-success {
     position: absolute;
-    bottom: -1.2rem;
+    bottom: -0.9rem;
     left: 50%;
     transform: translateX(-50%);
     background: rgba(9, 13, 22, 0.9);
     border: 1px solid rgba(34, 197, 94, 0.3);
     border-radius: 20px;
-    padding: 3px 10px;
+    padding: 2px 9px;
     display: flex;
     align-items: center;
     gap: 4px;
@@ -1986,6 +1987,16 @@ footer a:hover {
 }
 
 @media (max-width: 768px) {
+    .hero {
+        align-items: flex-start;
+        padding-top: 5.5rem;
+        padding-bottom: 2.5rem;
+    }
+
+    .hero-grid {
+        min-height: auto;
+    }
+
     .hero-grid, .step {
         grid-template-columns: minmax(0, 1fr);
         text-align: center;
@@ -2050,6 +2061,17 @@ footer a:hover {
     }
     .legal-card {
         padding: 1.5rem;
+    }
+}
+
+@media (min-width: 769px) and (max-height: 920px) {
+    .hero {
+        padding-top: clamp(3.75rem, 6vh, 5.5rem);
+        padding-bottom: clamp(1.5rem, 3vh, 2.75rem);
+    }
+
+    .hero-grid {
+        min-height: calc(100svh - 9.5rem);
     }
 }
 
@@ -3175,22 +3197,22 @@ header[id] {
 
 /* When the popup slides in from the right edge, the tabs step aside */
 .hero-demo-scene.popup-open .demo-tab-a {
-    transform: rotate(1deg) translate(-48%, 2%) scale(0.88);
+    transform: rotate(1deg) translate(-44%, 20%) scale(0.88);
 }
 
 .hero-demo-scene.popup-open .demo-tab-a:hover {
     z-index: 4;
-    transform: rotate(1deg) translate(-48%, 2%) scale(0.92);
+    transform: rotate(1deg) translate(-44%, 20%) scale(0.92);
     box-shadow: 0 25px 50px rgba(0, 0, 0, 0.65), 0 0 20px rgba(99, 102, 241, 0.2);
 }
 
 .hero-demo-scene.popup-open .demo-tab-b {
-    transform: rotate(-1.6deg) scale(0.94);
+    transform: rotate(-1.6deg) translate(0, 14%) scale(0.94);
 }
 
 .hero-demo-scene.popup-open .demo-tab-b:hover {
     z-index: 4;
-    transform: rotate(-1.6deg) scale(0.98);
+    transform: rotate(-1.6deg) translate(0, 14%) scale(0.98);
     box-shadow: 0 25px 50px rgba(0, 0, 0, 0.65), 0 0 20px rgba(99, 102, 241, 0.2);
 }
 
