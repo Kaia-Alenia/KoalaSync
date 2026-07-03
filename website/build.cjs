@@ -315,7 +315,7 @@ async function compile() {
     }
 
     // ── 5. Copy generic static files and verification files ──
-    const genericFiles = ['robots.txt', 'sitemap.xml', 'site.webmanifest', 'version.json'];
+    const genericFiles = ['robots.txt', 'sitemap.xml', 'site.webmanifest', 'version.json', 'llms.txt'];
     for (const file of genericFiles) {
         const src = path.join(websiteDir, file);
         const dest = path.join(wwwDir, file);

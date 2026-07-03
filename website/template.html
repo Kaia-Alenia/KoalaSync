@@ -201,6 +201,7 @@
     </noscript>
 </head>
 <body>
+    <div class="scroll-progress-bar"></div>
 
     <a class="skip-link" href="#main-content">Skip to main content</a>
 
@@ -213,7 +214,7 @@
     <nav>
         <div class="container nav-content">
             <div class="logo-area">
-                <img src="{{ASSET_PATH}}assets/NewLogoIcon_128.webp" srcset="{{ASSET_PATH}}assets/NewLogoIcon_64.webp 64w, {{ASSET_PATH}}assets/NewLogoIcon_128.webp 128w, {{ASSET_PATH}}assets/NewLogoIcon.webp 256w" sizes="64px" alt="KoalaSync Logo" width="64" height="64">
+                <img class="nav-logo-img" src="{{ASSET_PATH}}assets/NewLogoIcon_128.webp" srcset="{{ASSET_PATH}}assets/NewLogoIcon_64.webp 64w, {{ASSET_PATH}}assets/NewLogoIcon_128.webp 128w, {{ASSET_PATH}}assets/NewLogoIcon.webp 256w" sizes="64px" alt="KoalaSync Logo" width="64" height="64">
                 <span>KoalaSync</span>
                 <div id="nav-extension-status" class="nav-ext-status" style="display: none;">
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" width="12" height="12"><polyline points="20 6 9 17 4 12"></polyline></svg>
@@ -276,16 +277,12 @@
     <header class="hero" id="main-content">
         <div class="container hero-grid">
             <div class="hero-text">
-                <a href="https://github.com/Shik3i/KoalaSync/blob/main/docs/CHANGELOG.md" target="_blank" rel="noopener" class="version-badge" data-reveal style="text-decoration: none; display: inline-block; transition: transform 0.2s, box-shadow 0.2s;" title="View Changelog">
-                    <span class="version-text-en" lang="en">v2.2.1 OUT NOW</span>
-                    <span class="version-text-de" lang="de">v2.2.1 JETZT VERFÜGBAR</span>
-                </a>
-                <h1 data-reveal>{{HERO_TITLE}}</h1>
-                <p class="hero-subtitle" data-reveal>{{HERO_SUBTITLE}}</p>
-                <div class="hero-mascot-container" data-reveal>
+                <h1>{{HERO_TITLE}}</h1>
+                <p class="hero-subtitle">{{HERO_SUBTITLE}}</p>
+                <div class="hero-mascot-container">
                     <img src="{{ASSET_PATH}}assets/LookDownKoala-1x.webp" srcset="{{ASSET_PATH}}assets/LookDownKoala-1x.webp 90w, {{ASSET_PATH}}assets/LookDownKoala.webp 205w" sizes="90px" alt="{{HERO_MASCOT_ALT}}" class="hero-lookdown-mascot" width="90" height="132" loading="eager" fetchpriority="high" decoding="async">
                 </div>
-                <div class="cta-group" data-reveal>
+                <div class="cta-group">
                     <a href="https://chromewebstore.google.com/detail/koalasync/obbnmkmlaaddodakcbdljknjpagklifc" class="btn btn-primary">
                         <img src="{{ASSET_PATH}}assets/chrome.svg" alt="Chrome" width="20" height="20">
                         <span>{{ADD_TO_CHROME}}</span>
@@ -299,10 +296,133 @@
                         GitHub Releases
                     </a>
                 </div>
+                <a href="https://github.com/Shik3i/KoalaSync/blob/main/docs/CHANGELOG.md" target="_blank" rel="noopener" class="version-badge version-badge-below" style="text-decoration: none; display: inline-block; transition: transform 0.2s, box-shadow 0.2s;" title="View Changelog">
+                    <span class="version-text-en" lang="en">v2.2.1 OUT NOW</span>
+                    <span class="version-text-de" lang="de">v2.2.1 JETZT VERFÜGBAR</span>
+                </a>
             </div>
 
-            <!-- Interactive CSS Extension Mockup -->
+            <!-- Interactive Live Demo: two synced video tabs + the extension popup -->
             <div class="hero-mockup-wrapper" data-reveal>
+                <div class="hero-demo-scene popup-open connected" id="hero-demo">
+                    <button class="demo-sync-chip" id="demo-sync-chip" type="button" title="Live sync status of the two demo tabs">
+                        <span class="demo-chip-dot" aria-hidden="true"></span>
+                        <span class="demo-chip-label-sync">{{DEMO_SYNC}}</span>
+                        <span class="demo-chip-event"></span>
+                    </button>
+
+                    <div class="demo-tab-card demo-tab-a" id="demo-tab-a" role="button" tabindex="0" aria-pressed="false" aria-label="Press play or pause as 🐱 ChillCat — KoalaSync mirrors it to the other tab" title="Press play/pause here — KoalaSync mirrors it to the other tab">
+                        <div class="demo-tab-titlebar">
+                            <span class="demo-tab-dots" aria-hidden="true"><i></i><i></i><i></i></span>
+                            <span class="demo-tab-title"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="11" height="11" aria-hidden="true"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg> <span class="demo-title-text-ep1">Stranger Things - S4E1</span></span>
+                            <span class="demo-tab-user demo-user-a">🐱 ChillCat</span>
+                            <button class="demo-ext-launcher" id="demo-launcher" type="button" aria-expanded="true" title="Open or close the KoalaSync popup">
+                                <img src="{{ASSET_PATH}}assets/NewLogoIcon.webp" alt="" width="16" height="16" loading="eager" decoding="async">
+                            </button>
+                        </div>
+                        <div class="demo-video">
+                            <div class="demo-video-art" aria-hidden="true"></div>
+                            <div class="demo-seek-sweep" aria-hidden="true"></div>
+                            <svg class="demo-film" viewBox="0 0 160 90" preserveAspectRatio="xMidYMid slice" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
+                                <g class="film-stars" fill="#e2e8f0">
+                                    <circle class="film-star" cx="18" cy="14" r="0.8"/>
+                                    <circle class="film-star" cx="42" cy="24" r="0.6"/>
+                                    <circle class="film-star" cx="64" cy="10" r="0.9"/>
+                                    <circle class="film-star" cx="90" cy="28" r="0.6"/>
+                                    <circle class="film-star" cx="108" cy="16" r="0.5"/>
+                                    <circle class="film-star" cx="134" cy="22" r="0.8"/>
+                                    <circle class="film-star" cx="150" cy="12" r="0.5"/>
+                                </g>
+                                <circle class="film-moon" cx="122" cy="26" r="7.5" fill="#f1f5f9" opacity="0.92"/>
+                                <path class="film-mtn-scroll" d="M0,60 L30,45 L70,55 L110,40 L160,60 L190,45 L230,55 L270,40 L320,60 L320,92 L0,92 Z" fill="rgba(30,27,75,0.7)"/>
+                                <g class="film-mid-scroll">
+                                    <polygon points="20,76 26,60 32,76" fill="rgba(49,46,129,0.55)"/>
+                                    <polygon points="55,78 63,52 71,78" fill="rgba(49,46,129,0.55)"/>
+                                    <polygon points="95,76 101,62 107,76" fill="rgba(49,46,129,0.55)"/>
+                                    <polygon points="135,77 144,55 153,77" fill="rgba(49,46,129,0.55)"/>
+                                    <polygon points="180,76 186,60 192,76" fill="rgba(49,46,129,0.55)"/>
+                                    <polygon points="215,78 223,52 231,78" fill="rgba(49,46,129,0.55)"/>
+                                    <polygon points="255,76 261,62 267,76" fill="rgba(49,46,129,0.55)"/>
+                                    <polygon points="295,77 304,55 313,77" fill="rgba(49,46,129,0.55)"/>
+                                    <path d="M0,76 Q40,73 80,76 T160,76 Q200,73 240,76 T320,76 L320,92 L0,92 Z" fill="rgba(49,46,129,0.55)"/>
+                                </g>
+                                <g class="film-fore-scroll">
+                                    <polygon points="40,84 52,48 64,84" fill="#090d16"/>
+                                    <polygon points="115,84 128,42 141,84" fill="#090d16"/>
+                                    <polygon points="200,84 212,48 224,84" fill="#090d16"/>
+                                    <polygon points="275,84 288,42 301,84" fill="#090d16"/>
+                                    <path d="M0,84 Q80,82 160,84 T320,84 L320,92 L0,92 Z" fill="#090d16"/>
+                                </g>
+                                <circle class="film-bounce-ball" cx="80" cy="46" r="3.5" fill="#fde047"/>
+                            </svg>
+                            <div class="demo-play-overlay" aria-hidden="true">
+                                <span class="demo-icon-wrap">
+                                    <svg class="icon-play" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="18" height="18"><path d="M8 5v14l11-7z"/></svg>
+                                    <svg class="icon-pause" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="18" height="18"><path d="M6 5h4v14H6zM14 5h4v14h-4z"/></svg>
+                                </span>
+                            </div>
+                            <div class="demo-video-controls">
+                                <span class="demo-time">12:34</span>
+                                <div class="demo-progress" title="Seek — KoalaSync jumps the other tab to the same spot"><div class="demo-progress-fill"></div></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="demo-tab-card demo-tab-b" id="demo-tab-b" role="button" tabindex="0" aria-pressed="false" aria-label="Press play or pause as 🐶 HappyDog — KoalaSync mirrors it to the other tab" title="Press play/pause here — KoalaSync mirrors it to the other tab">
+                        <div class="demo-tab-titlebar">
+                            <span class="demo-tab-dots" aria-hidden="true"><i></i><i></i><i></i></span>
+                            <span class="demo-tab-title"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="11" height="11" aria-hidden="true"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg> <span class="demo-title-text-ep1">Stranger Things - S4E1</span></span>
+                            <span class="demo-tab-user demo-user-b">🐶 HappyDog</span>
+                        </div>
+                        <div class="demo-video">
+                            <div class="demo-video-art" aria-hidden="true"></div>
+                            <div class="demo-seek-sweep" aria-hidden="true"></div>
+                            <svg class="demo-film" viewBox="0 0 160 90" preserveAspectRatio="xMidYMid slice" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
+                                <g class="film-stars" fill="#e2e8f0">
+                                    <circle class="film-star" cx="18" cy="14" r="0.8"/>
+                                    <circle class="film-star" cx="42" cy="24" r="0.6"/>
+                                    <circle class="film-star" cx="64" cy="10" r="0.9"/>
+                                    <circle class="film-star" cx="90" cy="28" r="0.6"/>
+                                    <circle class="film-star" cx="108" cy="16" r="0.5"/>
+                                    <circle class="film-star" cx="134" cy="22" r="0.8"/>
+                                    <circle class="film-star" cx="150" cy="12" r="0.5"/>
+                                </g>
+                                <circle class="film-moon" cx="122" cy="26" r="7.5" fill="#f1f5f9" opacity="0.92"/>
+                                <path class="film-mtn-scroll" d="M0,60 L30,45 L70,55 L110,40 L160,60 L190,45 L230,55 L270,40 L320,60 L320,92 L0,92 Z" fill="rgba(30,27,75,0.7)"/>
+                                <g class="film-mid-scroll">
+                                    <polygon points="20,76 26,60 32,76" fill="rgba(49,46,129,0.55)"/>
+                                    <polygon points="55,78 63,52 71,78" fill="rgba(49,46,129,0.55)"/>
+                                    <polygon points="95,76 101,62 107,76" fill="rgba(49,46,129,0.55)"/>
+                                    <polygon points="135,77 144,55 153,77" fill="rgba(49,46,129,0.55)"/>
+                                    <polygon points="180,76 186,60 192,76" fill="rgba(49,46,129,0.55)"/>
+                                    <polygon points="215,78 223,52 231,78" fill="rgba(49,46,129,0.55)"/>
+                                    <polygon points="255,76 261,62 267,76" fill="rgba(49,46,129,0.55)"/>
+                                    <polygon points="295,77 304,55 313,77" fill="rgba(49,46,129,0.55)"/>
+                                    <path d="M0,76 Q40,73 80,76 T160,76 Q200,73 240,76 T320,76 L320,92 L0,92 Z" fill="rgba(49,46,129,0.55)"/>
+                                </g>
+                                <g class="film-fore-scroll">
+                                    <polygon points="40,84 52,48 64,84" fill="#090d16"/>
+                                    <polygon points="115,84 128,42 141,84" fill="#090d16"/>
+                                    <polygon points="200,84 212,48 224,84" fill="#090d16"/>
+                                    <polygon points="275,84 288,42 301,84" fill="#090d16"/>
+                                    <path d="M0,84 Q80,82 160,84 T320,84 L320,92 L0,92 Z" fill="#090d16"/>
+                                </g>
+                                <circle class="film-bounce-ball" cx="80" cy="46" r="3.5" fill="#fde047"/>
+                            </svg>
+                            <div class="demo-play-overlay" aria-hidden="true">
+                                <span class="demo-icon-wrap">
+                                    <svg class="icon-play" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="18" height="18"><path d="M8 5v14l11-7z"/></svg>
+                                    <svg class="icon-pause" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="18" height="18"><path d="M6 5h4v14H6zM14 5h4v14h-4z"/></svg>
+                                </span>
+                            </div>
+                            <div class="demo-video-controls">
+                                <span class="demo-time">12:34</span>
+                                <div class="demo-progress" title="Seek — KoalaSync jumps the other tab to the same spot"><div class="demo-progress-fill"></div></div>
+                            </div>
+                        </div>
+                        <div class="demo-tab-toast" id="demo-toast-b" data-joined="{{DEMO_JOINED}}" data-selected="{{DEMO_TAB_SELECTED}}" aria-hidden="true"></div>
+                    </div>
+
                 <div class="extension-mockup">
                     <div class="mock-header-row">
                         <div class="mock-header-title"><img src="{{ASSET_PATH}}assets/NewLogoIcon.webp" alt="KoalaSync Logo">KoalaSync</div>
@@ -320,6 +440,13 @@
                     <div class="mock-body">
                         <!-- ROOM TAB -->
                         <div id="mock-room" class="mock-screen active">
+                            <!-- Pre-room state, shown only during the scripted walkthrough -->
+                            <div id="demo-room-empty" class="demo-room-empty">
+                                <img src="{{ASSET_PATH}}assets/NewLogoIcon.webp" alt="" width="42" height="42" loading="eager" decoding="async">
+                                <div class="demo-room-empty-text">{{DEMO_NO_ROOM}}</div>
+                                <button id="demo-create-room" class="demo-create-room-btn" type="button">{{DEMO_CREATE_ROOM}}</button>
+                            </div>
+                            <div id="demo-room-joined">
                             <div class="mock-joined-room" style="display: flex; justify-content: space-between; align-items: center; border-left: 4px solid var(--accent); padding: 8px 10px; background: var(--card); border-radius: 8px; margin-bottom: 12px;" title="The room you are currently connected to">
                                 <div style="display: flex; flex-direction: column;">
                                     <span style="font-size: 0.6rem; text-transform: uppercase; color: var(--text-muted); font-weight: 700; line-height: 1;">{{MOCK_01}}</span>
@@ -331,7 +458,7 @@
                                     <div class="mock-label" title="Share this link with friends so they can join">{{MOCK_03}}</div>
                                 <div class="mock-invite-box">
                                     <input type="text" class="mock-input" value="https://sync.koalastuff.net/join#join:brave-eagle-80:pass" readonly style="flex: 1;" aria-label="Invite link">
-                                    <button class="mock-btn" style="width: 40px; padding: 0.45rem 0; flex-shrink: 0; background: #334155;" title="Copy Invite Link"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button>
+                                    <button class="mock-btn" id="demo-invite-copy" style="width: 40px; padding: 0.45rem 0; flex-shrink: 0; background: #334155;" title="Copy Invite Link"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button>
                                 </div>
                             </div>
                             <div class="mock-card" style="margin-bottom: 12px;">
@@ -339,33 +466,35 @@
                                 <div class="mock-peer-list">
                                     <div class="mock-peer-item">
                                         <div class="mock-peer-header">
-                                            <span class="mock-peer-name">CoolUsername</span>
+                                            <span class="mock-peer-name">🐱 ChillCat</span>
                                                 <span class="mock-peer-meta">{{MOCK_05}}</span>
                                         </div>
-                                        <div class="mock-peer-tab"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="12" height="12" aria-hidden="true"><rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18"/><line x1="7" y1="2" x2="7" y2="22"/><line x1="17" y1="2" x2="17" y2="22"/><line x1="2" y1="12" x2="22" y2="12"/><line x1="2" y1="7" x2="7" y2="7"/><line x1="2" y1="17" x2="7" y2="17"/><line x1="17" y1="17" x2="22" y2="17"/><line x1="17" y1="7" x2="22" y2="7"/></svg> Stranger Things - S4E1</div>
+                                        <div class="mock-peer-tab"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="12" height="12" aria-hidden="true"><rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18"/><line x1="7" y1="2" x2="7" y2="22"/><line x1="17" y1="2" x2="17" y2="22"/><line x1="2" y1="12" x2="22" y2="12"/><line x1="2" y1="7" x2="7" y2="7"/><line x1="2" y1="17" x2="7" y2="17"/><line x1="17" y1="17" x2="22" y2="17"/><line x1="17" y1="7" x2="22" y2="7"/></svg> <span class="demo-title-text-ep1">Stranger Things - S4E1</span></div>
                                             <div class="mock-peer-status"><span style="color:#22c55e;">●</span> 0:55 • {{MOCK_06}}</div>
                                     </div>
-                                    <div class="mock-peer-item">
+                                    <div class="mock-peer-item demo-peer-b">
                                         <div class="mock-peer-header">
-                                            <span class="mock-peer-name">KoalaPC</span>
+                                            <span class="mock-peer-name">🐶 HappyDog</span>
                                                 <span class="mock-peer-meta">{{MOCK_07}}</span>
                                         </div>
-                                        <div class="mock-peer-tab"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="12" height="12" aria-hidden="true"><rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18"/><line x1="7" y1="2" x2="7" y2="22"/><line x1="17" y1="2" x2="17" y2="22"/><line x1="2" y1="12" x2="22" y2="12"/><line x1="2" y1="7" x2="7" y2="7"/><line x1="2" y1="17" x2="7" y2="17"/><line x1="17" y1="17" x2="22" y2="17"/><line x1="17" y1="7" x2="22" y2="7"/></svg> Stranger Things - S4E1</div>
+                                        <div class="mock-peer-tab"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="12" height="12" aria-hidden="true"><rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18"/><line x1="7" y1="2" x2="7" y2="22"/><line x1="17" y1="2" x2="17" y2="22"/><line x1="2" y1="12" x2="22" y2="12"/><line x1="2" y1="7" x2="7" y2="7"/><line x1="2" y1="17" x2="7" y2="17"/><line x1="17" y1="17" x2="22" y2="17"/><line x1="17" y1="7" x2="22" y2="7"/></svg> <span class="demo-title-text-ep1">Stranger Things - S4E1</span></div>
                                             <div class="mock-peer-status"><span style="color:#22c55e;">●</span> 0:55 • {{MOCK_06}}</div>
                                     </div>
                                 </div>
                             </div>
                                 <button class="mock-btn" style="background:#ef4444; width:100%; border: none; padding: 10px; border-radius: 8px; color: white; font-weight: 700; cursor: pointer; border: 1px solid #ef4444;">{{MOCK_08}}</button>
+                            </div>
                         </div>
 
                         <!-- SYNC TAB -->
                         <div id="mock-sync" class="mock-screen">
                             <div class="mock-form-group" style="margin-bottom: 12px;">
-                                <label class="mock-section-label" title="Choose the browser tab containing the video to sync">
+                                <label class="mock-section-label" for="demo-video-select" title="Choose the browser tab containing the video to sync">
                                     {{MOCK_09}}
                                 </label>
-                                <select class="mock-input" style="width: 100%; box-sizing: border-box; background: var(--card); border: 1px solid #334155; color: white; padding: 8px; border-radius: 8px; font-family: inherit; font-size: 0.75rem; outline: none; cursor: default;">
-                                    <option><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="12" height="12" aria-hidden="true"><rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18"/><line x1="7" y1="2" x2="7" y2="22"/><line x1="17" y1="2" x2="17" y2="22"/><line x1="2" y1="12" x2="22" y2="12"/><line x1="2" y1="7" x2="7" y2="7"/><line x1="2" y1="17" x2="7" y2="17"/><line x1="17" y1="17" x2="22" y2="17"/><line x1="17" y1="7" x2="22" y2="7"/></svg> Stranger Things - S4E1</option>
+                                <select class="mock-input" id="demo-video-select" style="width: 100%; box-sizing: border-box; background: var(--card); border: 1px solid #334155; color: white; padding: 8px; border-radius: 8px; font-family: inherit; font-size: 0.75rem; outline: none; cursor: default;">
+                                    <option value="" class="demo-select-placeholder" selected hidden>{{DEMO_SELECT_PLACEHOLDER}}</option>
+                                    <option><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="12" height="12" aria-hidden="true"><rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18"/><line x1="7" y1="2" x2="7" y2="22"/><line x1="17" y1="2" x2="17" y2="22"/><line x1="2" y1="12" x2="22" y2="12"/><line x1="2" y1="7" x2="7" y2="7"/><line x1="2" y1="17" x2="7" y2="17"/><line x1="17" y1="17" x2="22" y2="17"/><line x1="17" y1="7" x2="22" y2="7"/></svg> <span class="demo-title-text-ep1">Stranger Things - S4E1</span></option>
                                 </select>
                             </div>
                             
@@ -379,12 +508,12 @@
                                 </button>
                             </div>
                             <div style="display: flex; gap: 8px; margin-bottom: 12px;">
-                                    <button class="mock-btn mock-btn-play" style="flex: 1; background: #22c55e; color: white; padding: 8px; border-radius: 8px; font-weight: 700; border: none; cursor: pointer;" title="Send a Play command to everyone">{{MOCK_11}}</button>
-                                    <button class="mock-btn mock-btn-pause" style="flex: 1; background: #ef4444; color: white; padding: 8px; border-radius: 8px; font-weight: 700; border: none; cursor: pointer;" title="Send a Pause command to everyone">{{MOCK_12}}</button>
+                                    <button class="mock-btn mock-btn-play" id="demo-play-btn" style="flex: 1; background: #22c55e; color: white; padding: 8px; border-radius: 8px; font-weight: 700; border: none; cursor: pointer;" title="Send a Play command to everyone">{{MOCK_11}}</button>
+                                    <button class="mock-btn mock-btn-pause" id="demo-pause-btn" style="flex: 1; background: #ef4444; color: white; padding: 8px; border-radius: 8px; font-weight: 700; border: none; cursor: pointer;" title="Send a Pause command to everyone">{{MOCK_12}}</button>
                             </div>
                             
                             <div style="display: flex; gap: 8px; margin-bottom: 15px; align-items: stretch;">
-                                <button class="mock-btn" style="background: linear-gradient(135deg, #6366f1, #a855f7); flex: 1; color: white; border: none; font-weight: 700; border-radius: 8px; padding: 8px; cursor: pointer;" title="Force all users to sync up">
+                                <button class="mock-btn" id="demo-force-sync" style="background: linear-gradient(135deg, #6366f1, #a855f7); flex: 1; color: white; border: none; font-weight: 700; border-radius: 8px; padding: 8px; cursor: pointer;" title="Force all users to sync up">
                                     {{MOCK_13}}
                                 </button>
                                 <div class="mock-input" style="flex: 1; background: var(--card); border: 1px solid #334155; color: white; padding: 6px; border-radius: 8px; font-size: 0.75rem; display: flex; align-items: center; justify-content: space-between;" title="Choose sync target">
@@ -401,12 +530,12 @@
                             <div class="mock-card" style="margin-bottom: 15px; display: flex; flex-direction: column; gap: 6px;">
                                 <div style="display: flex; justify-content: space-between; align-items: baseline;">
                                     <span style="font-weight: 700; color: #ef4444; font-size: 11px;">PAUSE</span>
-                                    <span style="font-size: 9px; color: var(--text-muted);">CoolUsername @ 12:44:32</span>
+                                    <span style="font-size: 9px; color: var(--text-muted);">🐱 ChillCat @ 12:44:32</span>
                                 </div>
                                 <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(36px, 1fr)); gap: 5px; margin-top: 4px;">
                                     <div style="display: flex; flex-direction: column; align-items: center;">
                                         <div style="width: 18px; height: 18px; border-radius: 50%; background: var(--success); color: white; display: flex; align-items: center; justify-content: center; font-size: 9px; font-weight: bold; margin-bottom: 1px;"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" width="10" height="10" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg></div>
-                                        <span style="font-size: 7px; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 36px;">🐨 KoalaPC</span>
+                                        <span style="font-size: 7px; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 36px;">🐶 HappyDog</span>
                                     </div>
                                 </div>
                             </div>
@@ -418,7 +547,7 @@
                                     <span style="font-weight: 700; color: #fbbf24; font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.05em;">Episode Lobby</span>
                                 </div>
                                 <div style="font-size: 0.7rem; color: white; margin-bottom: 4px; font-weight: 600;">
-                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="12" height="12" aria-hidden="true"><rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18"/><line x1="7" y1="2" x2="7" y2="22"/><line x1="17" y1="2" x2="17" y2="22"/><line x1="2" y1="12" x2="22" y2="12"/><line x1="2" y1="7" x2="7" y2="7"/><line x1="2" y1="17" x2="7" y2="17"/><line x1="17" y1="17" x2="22" y2="17"/><line x1="17" y1="7" x2="22" y2="7"/></svg> Stranger Things - S4E2
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="12" height="12" aria-hidden="true"><rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18"/><line x1="7" y1="2" x2="7" y2="22"/><line x1="17" y1="2" x2="17" y2="22"/><line x1="2" y1="12" x2="22" y2="12"/><line x1="2" y1="7" x2="7" y2="7"/><line x1="2" y1="17" x2="7" y2="17"/><line x1="17" y1="17" x2="22" y2="17"/><line x1="17" y1="7" x2="22" y2="7"/></svg> <span class="demo-title-text-ep2">Stranger Things - S4E2</span>
                                 </div>
                                 <div style="font-size: 0.65rem; color: var(--text-muted); margin-bottom: 6px;">
                                     {{MOCK_16}}
@@ -435,18 +564,18 @@
                                 <div class="mock-peer-list">
                                     <div class="mock-peer-item">
                                         <div class="mock-peer-header">
-                                            <span class="mock-peer-name">CoolUsername</span>
+                                            <span class="mock-peer-name">🐱 ChillCat</span>
                                                 <span class="mock-peer-meta">{{MOCK_05}}</span>
                                         </div>
-                                        <div class="mock-peer-tab"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="12" height="12" aria-hidden="true"><rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18"/><line x1="7" y1="2" x2="7" y2="22"/><line x1="17" y1="2" x2="17" y2="22"/><line x1="2" y1="12" x2="22" y2="12"/><line x1="2" y1="7" x2="7" y2="7"/><line x1="2" y1="17" x2="7" y2="17"/><line x1="17" y1="17" x2="22" y2="17"/><line x1="17" y1="7" x2="22" y2="7"/></svg> Stranger Things - S4E1</div>
+                                        <div class="mock-peer-tab"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="12" height="12" aria-hidden="true"><rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18"/><line x1="7" y1="2" x2="7" y2="22"/><line x1="17" y1="2" x2="17" y2="22"/><line x1="2" y1="12" x2="22" y2="12"/><line x1="2" y1="7" x2="7" y2="7"/><line x1="2" y1="17" x2="7" y2="17"/><line x1="17" y1="17" x2="22" y2="17"/><line x1="17" y1="7" x2="22" y2="7"/></svg> <span class="demo-title-text-ep1">Stranger Things - S4E1</span></div>
                                             <div class="mock-peer-status"><span style="color:#22c55e;">●</span> 0:55 • {{MOCK_06}}</div>
                                     </div>
-                                    <div class="mock-peer-item">
+                                    <div class="mock-peer-item demo-peer-b">
                                         <div class="mock-peer-header">
-                                            <span class="mock-peer-name">KoalaPC</span>
+                                            <span class="mock-peer-name">🐶 HappyDog</span>
                                                 <span class="mock-peer-meta">{{MOCK_07}}</span>
                                         </div>
-                                        <div class="mock-peer-tab"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="12" height="12" aria-hidden="true"><rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18"/><line x1="7" y1="2" x2="7" y2="22"/><line x1="17" y1="2" x2="17" y2="22"/><line x1="2" y1="12" x2="22" y2="12"/><line x1="2" y1="7" x2="7" y2="7"/><line x1="2" y1="17" x2="7" y2="17"/><line x1="17" y1="17" x2="22" y2="17"/><line x1="17" y1="7" x2="22" y2="7"/></svg> Stranger Things - S4E1</div>
+                                        <div class="mock-peer-tab"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="12" height="12" aria-hidden="true"><rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18"/><line x1="7" y1="2" x2="7" y2="22"/><line x1="17" y1="2" x2="17" y2="22"/><line x1="2" y1="12" x2="22" y2="12"/><line x1="2" y1="7" x2="7" y2="7"/><line x1="2" y1="17" x2="7" y2="17"/><line x1="17" y1="17" x2="22" y2="17"/><line x1="17" y1="7" x2="22" y2="7"/></svg> <span class="demo-title-text-ep1">Stranger Things - S4E1</span></div>
                                             <div class="mock-peer-status"><span style="color:#22c55e;">●</span> 0:55 • {{MOCK_06}}</div>
                                     </div>
                                 </div>
@@ -459,7 +588,7 @@
                                 <label style="margin: 0; font-size: 11px; text-transform: uppercase; color: var(--text-muted); font-weight: 700;" title="Username helps others identify you.">
                                     {{MOCK_18}}
                                 </label>
-                                <input type="text" class="mock-input" value="CoolUsername" readonly style="width: 110px; padding: 4px; text-align: right; background: transparent; border: none; color: var(--accent); font-weight: 700;">
+                                <input type="text" class="mock-input" value="🐱 ChillCat" readonly style="width: 110px; padding: 4px; text-align: right; background: transparent; border: none; color: var(--accent); font-weight: 700;">
                             </div>
 
                             <div style="display: flex; align-items: center; justify-content: space-between; background: var(--card); padding: 8px 10px; border-radius: 8px; margin-bottom: 8px; border: 1px solid #334155;">
@@ -545,11 +674,11 @@
                             </label>
                             <div class="mock-card" style="font-size: 0.65rem; color: var(--text-muted); line-height: 1.4; margin-bottom: 12px; max-height: 100px; overflow-y: auto; display: flex; flex-direction: column; gap: 4px;">
                                 <div style="display: flex; justify-content: space-between; border-bottom: 1px solid #334155; padding-bottom: 4px;">
-                                    <span>CoolUsername: PAUSE</span>
+                                    <span>🐱 ChillCat: PAUSE</span>
                                     <span style="opacity: 0.5;">0:55</span>
                                 </div>
                                 <div style="display: flex; justify-content: space-between; padding-top: 2px;">
-                                    <span>KoalaPC: PLAY</span>
+                                    <span>🐶 HappyDog: PLAY</span>
                                     <span style="opacity: 0.5;">0:00</span>
                                 </div>
                             </div>
@@ -576,6 +705,16 @@
                         </div>
                     </div>
                 </div>
+
+                    <div class="demo-invite-fly" id="demo-invite-fly" aria-hidden="true">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" width="11" height="11" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+                        sync.koalastuff.net/join…
+                    </div>
+                    <div class="demo-cursor" id="demo-cursor" aria-hidden="true">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M5 2l13 11.5-6 .7 3.4 6.3-2.6 1.4-3.4-6.4L5 19.5z" fill="#f8fafc" stroke="#0f172a" stroke-width="1.4" stroke-linejoin="round"/></svg>
+                    </div>
+                </div>
+                <p class="demo-hint" id="demo-hint">{{DEMO_HINT}}</p>
             </div>
         </div>
     </header>
@@ -675,7 +814,19 @@
                         </span>
                         <span>{{FEATURE_1_TITLE}}</span>
                     </h3>
-                    <p>{{FEATURE_1_DESC}}</p>
+                    <div class="bento-content-wrap">
+                        <p>{{FEATURE_1_DESC}}</p>
+                        <div class="bento-host-control-mockup">
+                            <div class="bento-mockup-header">{{MOCK_HOST_CONTROL_LABEL}}</div>
+                            <div class="bento-mockup-row">
+                                <span>{{MOCK_HOST_CONTROL_TOGGLE}}</span>
+                                <label class="bento-switch-wrap">
+                                    <input type="checkbox" checked disabled>
+                                    <span class="bento-switch-slider"></span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- Card 2: Endless Binge-Watching (Bento Standard) -->
@@ -897,73 +1048,6 @@
                         <p>{{STEP_1_DESC}}</p>
                     </div>
                     <!-- Custom Step 1 Illustration -->
-                    <div class="step-illustration-1" data-reveal>
-                        <div class="illus-browser-container">
-                            <div class="illus-browser-header">
-                                <div class="illus-browser-dots">
-                                    <span class="illus-browser-dot"></span>
-                                    <span class="illus-browser-dot"></span>
-                                    <span class="illus-browser-dot"></span>
-                                </div>
-                                <div class="illus-browser-address-bar">
-                                    <span class="url-protocol">https://</span>sync.koalastuff.net
-                                </div>
-                                <div class="illus-browser-toolbar">
-                                    <div class="illus-extension-btn active">
-                                        <img src="{{ASSET_PATH}}assets/NewLogoIcon.webp" alt="KoalaSync Extension" width="14" height="14">
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="illus-browser-content">
-                                <div class="illus-store-card">
-                                    <div class="illus-store-card-header">
-                                        <img src="{{ASSET_PATH}}assets/NewLogoIcon.webp" alt="KoalaSync Logo" class="illus-large-logo" width="30" height="30">
-                                        <div class="illus-store-info">
-                                            <div class="illus-store-title">KoalaSync</div>
-                                            <div class="illus-store-desc">
-                                                <span>{{STEP_1_ILLUS_DESC}}</span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="illus-store-buttons">
-                                        <div class="illus-store-btn chrome">
-                                            <img src="{{ASSET_PATH}}assets/chrome.svg" alt="Chrome Logo" width="12" height="12">
-                                            <span>{{STEP_1_ILLUS_DL_CHROME}}</span>
-                                        </div>
-                                        <div class="illus-store-btn firefox">
-                                            <img src="{{ASSET_PATH}}assets/firefox.svg" alt="Firefox Logo" width="12" height="12">
-                                            <span>{{STEP_1_ILLUS_DL_FIREFOX}}</span>
-                                        </div>
-                                    </div>
-                                </div>
-                                
-                                <!-- Floating Extension Success Popup -->
-                                <div class="illus-extension-popup">
-                                    <div class="popup-title">
-                                        <img src="{{ASSET_PATH}}assets/NewLogoIcon.webp" alt="KoalaSync Logo" width="12" height="12">
-                                        <span>KoalaSync</span>
-                                    </div>
-                                    <div class="popup-status">
-                                        <div class="status-badge-success">
-                                            <span class="status-check"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" width="12" height="12" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg></span>
-                                            <span>{{STEP_1_ILLUS_ACTIVE}}</span>
-                                        </div>
-                                    </div>
-                                    <div class="popup-quick-start">
-                                        <span>{{STEP_1_ILLUS_READY}}</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="step">
-                    <div class="step-text" data-reveal>
-                        <div class="step-num" aria-hidden="true">02</div>
-                        <h3><span>{{STEP_2_TITLE}}</span></h3>
-                        <p>{{STEP_2_DESC}}</p>
-                    </div>
-                    <!-- Custom Step 2 Illustration -->
                     <div class="step-illustration-2" data-reveal>
                         <div class="illus-popup-card">
                             <div class="illus-popup-header">
@@ -1005,6 +1089,51 @@
                 </div>
                 <div class="step">
                     <div class="step-text" data-reveal>
+                        <div class="step-num" aria-hidden="true">02</div>
+                        <h3><span>{{STEP_2_TITLE}}</span></h3>
+                        <p>{{STEP_2_DESC}}</p>
+                    </div>
+                    <!-- Custom Step 2 Illustration -->
+                    <div class="step-illustration-1" data-reveal>
+                        <div class="illus-popup-card">
+                            <div class="illus-popup-header">
+                                <div class="illus-popup-brand">
+                                    <img src="{{ASSET_PATH}}assets/NewLogoIcon.webp" alt="KoalaSync Logo" width="14" height="14">
+                                    <span>KoalaSync</span>
+                                </div>
+                                <div class="illus-popup-version mockup-version">{{VERSION}}</div>
+                            </div>
+                            <div class="illus-popup-tabs">
+                                <div class="illus-popup-tab">
+                                    <span>{{STEP_2_ILLUS_ROOM}}</span>
+                                </div>
+                                <div class="illus-popup-tab active">
+                                    <span>{{STEP_2_ILLUS_SYNC}}</span>
+                                </div>
+                                <div class="illus-popup-tab">
+                                    <span>{{STEP_2_ILLUS_SETTINGS}}</span>
+                                </div>
+                            </div>
+                            <div class="illus-popup-body">
+                                <div class="popup-form-group">
+                                    <label class="popup-form-label" for="popup-select-mock-el">{{LABEL_SELECT_VIDEO}}</label>
+                                    <div class="popup-select-wrapper">
+                                        <select class="popup-select-mock" id="popup-select-mock-el" disabled>
+                                            <option class="demo-title-text-ep1">Stranger Things - S4E1</option>
+                                        </select>
+                                        <div class="popup-cursor-pointer">👆</div>
+                                    </div>
+                                </div>
+                                <div class="popup-mock-controls">
+                                    <div class="popup-mock-btn play">▶ Play</div>
+                                    <div class="popup-mock-btn pause">⏸ Pause</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="step">
+                    <div class="step-text" data-reveal>
                         <div class="step-num" aria-hidden="true">03</div>
                         <h3><span>{{STEP_3_TITLE}}</span></h3>
                         <p>{{STEP_3_DESC}}</p>
@@ -1012,15 +1141,38 @@
                     <!-- Custom Step 3 Illustration -->
                     <div class="step-illustration-3" data-reveal>
                         <div class="illus-sync-theater">
-                            <!-- Player A (KoalaPC) -->
+                            <!-- Player A (🐱 ChillCat) -->
                             <div class="illus-player-card player-a">
                                 <div class="player-header">
-                                    <span class="player-user">🐨 KoalaPC</span>
+                                    <span class="player-user">🐱 ChillCat</span>
                                     <span class="player-badge active">PLAYING</span>
                                 </div>
                                 <div class="player-video-canvas">
-                                    <div class="player-play-pulse">▶</div>
                                     <div class="player-video-overlay"></div>
+                                    <svg class="demo-film" viewBox="0 0 160 90" preserveAspectRatio="xMidYMid slice" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
+                                        <g class="film-stars" fill="#e2e8f0">
+                                            <circle class="film-star" cx="18" cy="14" r="0.8"/>
+                                            <circle class="film-star" cx="42" cy="24" r="0.6"/>
+                                            <circle class="film-star" cx="64" cy="10" r="0.9"/>
+                                            <circle class="film-star" cx="90" cy="28" r="0.6"/>
+                                            <circle class="film-star" cx="134" cy="22" r="0.8"/>
+                                        </g>
+                                        <circle class="film-moon" cx="122" cy="26" r="7.5" fill="#f1f5f9" opacity="0.92"/>
+                                        <path class="film-mtn-scroll" d="M0,60 L30,45 L70,55 L110,40 L160,60 L190,45 L230,55 L270,40 L320,60 L320,92 L0,92 Z" fill="rgba(30,27,75,0.7)"/>
+                                        <g class="film-mid-scroll">
+                                            <polygon points="20,76 26,60 32,76" fill="rgba(49,46,129,0.55)"/>
+                                            <polygon points="55,78 63,52 71,78" fill="rgba(49,46,129,0.55)"/>
+                                            <polygon points="95,76 101,62 107,76" fill="rgba(49,46,129,0.55)"/>
+                                            <polygon points="135,77 144,55 153,77" fill="rgba(49,46,129,0.55)"/>
+                                            <path d="M0,76 Q40,73 80,76 T160,76 Q200,73 240,76 T320,76 L320,92 L0,92 Z" fill="rgba(49,46,129,0.55)"/>
+                                        </g>
+                                        <g class="film-fore-scroll">
+                                            <polygon points="40,84 52,48 64,84" fill="#090d16"/>
+                                            <polygon points="115,84 128,42 141,84" fill="#090d16"/>
+                                            <path d="M0,84 Q40,82 80,84 T160,84 L160,92 L0,92 Z" fill="#090d16"/>
+                                        </g>
+                                        <circle class="film-bounce-ball" cx="80" cy="80" r="4.5" fill="#fde047"/>
+                                    </svg>
                                 </div>
                                 <div class="player-controls">
                                     <span class="control-btn">⏸</span>
@@ -1042,15 +1194,38 @@
                                 </div>
                             </div>
                             
-                            <!-- Player B (LaptopKoala) -->
+                            <!-- Player B (🐶 HappyDog) -->
                             <div class="illus-player-card player-b">
                                 <div class="player-header">
-                                    <span class="player-user">💻 LaptopKoala</span>
+                                    <span class="player-user">🐶 HappyDog</span>
                                     <span class="player-badge active">PLAYING</span>
                                 </div>
                                 <div class="player-video-canvas">
-                                    <div class="player-play-pulse">▶</div>
                                     <div class="player-video-overlay"></div>
+                                    <svg class="demo-film" viewBox="0 0 160 90" preserveAspectRatio="xMidYMid slice" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
+                                        <g class="film-stars" fill="#e2e8f0">
+                                            <circle class="film-star" cx="18" cy="14" r="0.8"/>
+                                            <circle class="film-star" cx="42" cy="24" r="0.6"/>
+                                            <circle class="film-star" cx="64" cy="10" r="0.9"/>
+                                            <circle class="film-star" cx="90" cy="28" r="0.6"/>
+                                            <circle class="film-star" cx="134" cy="22" r="0.8"/>
+                                        </g>
+                                        <circle class="film-moon" cx="122" cy="26" r="7.5" fill="#f1f5f9" opacity="0.92"/>
+                                        <path class="film-mtn-scroll" d="M0,60 L30,45 L70,55 L110,40 L160,60 L190,45 L230,55 L270,40 L320,60 L320,92 L0,92 Z" fill="rgba(30,27,75,0.7)"/>
+                                        <g class="film-mid-scroll">
+                                            <polygon points="20,76 26,60 32,76" fill="rgba(49,46,129,0.55)"/>
+                                            <polygon points="55,78 63,52 71,78" fill="rgba(49,46,129,0.55)"/>
+                                            <polygon points="95,76 101,62 107,76" fill="rgba(49,46,129,0.55)"/>
+                                            <polygon points="135,77 144,55 153,77" fill="rgba(49,46,129,0.55)"/>
+                                            <path d="M0,76 Q40,73 80,76 T160,76 Q200,73 240,76 T320,76 L320,92 L0,92 Z" fill="rgba(49,46,129,0.55)"/>
+                                        </g>
+                                        <g class="film-fore-scroll">
+                                            <polygon points="40,84 52,48 64,84" fill="#090d16"/>
+                                            <polygon points="115,84 128,42 141,84" fill="#090d16"/>
+                                            <path d="M0,84 Q40,82 80,84 T160,84 L160,92 L0,92 Z" fill="#090d16"/>
+                                        </g>
+                                        <circle class="film-bounce-ball" cx="80" cy="80" r="4.5" fill="#fde047"/>
+                                    </svg>
                                 </div>
                                 <div class="player-controls">
                                     <span class="control-btn">⏸</span>
