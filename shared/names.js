@@ -2,7 +2,7 @@
  * KoalaSync Shared Name Generation & Emoji Mapping
  *
  * ⚠️ WARNING: This is the SINGLE SOURCE OF TRUTH.
- * If you edit this file, you MUST run: node scripts/build-extension.js
+ * If you edit this file, you MUST run: node scripts/build-extension.cjs
  * to propagate changes to the extension.
  *
  * The emoji map covers every animal/creature that has a Unicode emoji.

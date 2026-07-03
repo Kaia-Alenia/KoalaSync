@@ -156,7 +156,7 @@ While in a room, two heartbeats keep the session alive:
 | Heartbeat | Interval | Source | Purpose |
 |:----------|:---------|:-------|:--------|
 | **Background** | 30 seconds | `background.js` | While connected, signals "I'm still connected" and triggers automatic reconnect (500ms base, max 5s). No heartbeats fire when idle (lazy connect). |
-| **Content** | 15 seconds | `content.js` | Sends video metadata: `currentTime`, `mediaTitle`, `playbackState`, `volume`, `muted` |
+| **Content** | 15 seconds | `content.js` | Sends video metadata: `currentTime`, privacy-filtered `mediaTitle`, `playbackState`, `volume`, `muted` |
 
 - **Server Reaper**: Every 2 minutes, the server checks for peers with no activity for 5+ minutes and disconnects them ("dead peer pruning").
 - **Room Cleanup**: Empty rooms are deleted immediately. Inactive rooms are pruned after 2 hours.
@@ -184,7 +184,7 @@ When a user clicks **"Leave"** or closes their browser:
 When watching a series and an episode ends:
 
 1. `content.js` monitors the [Media Session API](https://developer.mozilla.org/en-US/docs/Web/API/Media_Session_API) for title changes.
-2. When a new title is detected, the peer broadcasts `EPISODE_LOBBY` with the expected new title.
+2. When a new title is detected, the peer broadcasts `EPISODE_LOBBY` with the expected title after applying the local media title privacy setting. In episode-only mode this is an identifier such as `S01E04`; when media titles are not sent, the client does not create a new episode lobby.
 3. All peers' videos freeze. The UI shows an "Episode Lobby" card with peer readiness status.
 4. Each peer's `content.js` polls for the new title to appear in the `<video>` element's metadata.
 5. Once a peer detects the matching title, they send `EPISODE_READY`.

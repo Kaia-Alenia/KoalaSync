@@ -126,17 +126,13 @@ function setCustomParam(param, value) {
 }
 
 async function init() {
-    let audioData = (await chrome.storage.local.get(['audioSettings'])).audioSettings;
-    const syncData = await chrome.storage.sync.get(['audioSettings', 'locale']);
-    if (!audioData && syncData.audioSettings) {
-        audioData = syncData.audioSettings;
-        await chrome.storage.local.set({ audioSettings: audioData });
-    }
-    const lang = syncData.locale || getSystemLanguage();
+    // Local-only: audioSettings/locale are never read from storage.sync.
+    const { audioSettings, locale } = await chrome.storage.local.get(['audioSettings', 'locale']);
+    const lang = locale || getSystemLanguage();
     await loadLocale(lang);
     translateDOM();
 
-    currentSettings = mergeAudioSettings(audioData);
+    currentSettings = mergeAudioSettings(audioSettings);
     render();
 }
 

@@ -2,6 +2,7 @@ import { EVENTS, OFFICIAL_LANDING_PAGE_URL, SUPPORT_URL, getReviewUrl } from './
 import { BLACKLIST_DOMAINS } from './shared/blacklist.js';
 import { getAvatarForName, generateUsername, USERNAME_ADJECTIVES, USERNAME_NOUNS } from './shared/names.js';
 import { loadLocale, translateDOM, getMessage, getSystemLanguage } from './i18n.js';
+import { TITLE_PRIVACY_MODES, normalizeSendTabTitle, normalizeTabTitle } from './title-privacy.js';
 
 
 const elements = {
@@ -16,6 +17,7 @@ const elements = {
     clearLogs: document.getElementById('clearLogs'),
     connDot: document.getElementById('connDot'),
     connText: document.getElementById('connText'),
+    connInfo: document.getElementById('connInfo'),
     connPing: document.getElementById('connPing'),
     serverUrl: document.getElementById('serverUrl'),
     serverOfficial: document.getElementById('serverOfficial'),
@@ -40,6 +42,12 @@ const elements = {
     retryBtn: document.getElementById('retryBtn'),
     sectionJoin: document.getElementById('section-join'),
     sectionActive: document.getElementById('section-active'),
+    hostControlCard: document.getElementById('hostControlCard'),
+    hostRoleBadge: document.getElementById('hostRoleBadge'),
+    hostControlToggleRow: document.getElementById('hostControlToggleRow'),
+    hostControlToggle: document.getElementById('hostControlToggle'),
+    hostControlGuestNote: document.getElementById('hostControlGuestNote'),
+    hostControlCohostHint: document.getElementById('hostControlCohostHint'),
     activeRoomId: document.getElementById('activeRoomId'),
     activeServer: document.getElementById('activeServer'),
     peerListSync: document.getElementById('peerListSync'),
@@ -47,6 +55,8 @@ const elements = {
     playBtn: document.getElementById('playBtn'),
     pauseBtn: document.getElementById('pauseBtn'),
     autoSyncNextEpisode: document.getElementById('autoSyncNextEpisode'),
+    sendTabTitle: document.getElementById('sendTabTitle'),
+    mediaTitlePrivacyMode: document.getElementById('mediaTitlePrivacyMode'),
     episodeLobbyCard: document.getElementById('episodeLobbyCard'),
     lobbyTitle: document.getElementById('lobbyTitle'),
     lobbyPeerStatus: document.getElementById('lobbyPeerStatus'),
@@ -61,7 +71,11 @@ const elements = {
     settingsVersion: document.getElementById('settingsVersion'),
     devSupportLink: document.getElementById('devSupportLink'),
     devReviewLink: document.getElementById('devReviewLink'),
-    syncTabCopyInvite: document.getElementById('syncTabCopyInvite')
+    syncTabCopyInvite: document.getElementById('syncTabCopyInvite'),
+    devToolsTabBtn: document.getElementById('devToolsTabBtn'),
+    remoteSeekBack: document.getElementById('remoteSeekBack'),
+    remoteSeekForward: document.getElementById('remoteSeekForward'),
+    remoteSeekFiveMin: document.getElementById('remoteSeekFiveMin')
 };
 
 let localPeerId = null;
@@ -78,6 +92,19 @@ let errorToken = 0;
 let forceSyncDone = false;
 let connectionErrorTimer = null;
 let pendingConnectionErrorMsg = null;
+
+function devToolsEnabled() {
+    return elements.username && elements.username.value.trim() === 'KoalaDev';
+}
+
+function syncDevToolsVisibility() {
+    if (!elements.devToolsTabBtn) return;
+    const enabled = devToolsEnabled();
+    elements.devToolsTabBtn.style.display = enabled ? '' : 'none';
+    if (!enabled && document.getElementById('tab-devtools')?.classList.contains('active')) {
+        document.querySelector('.tab-btn[data-tab="tab-settings"]')?.click();
+    }
+}
 let roomListRefreshTimer = null;
 let roomListRefreshInterval = null;
 const ROOM_LIST_REFRESH_COOLDOWN_MS = 11000;
@@ -175,19 +202,9 @@ function setRoomRefreshCooldown() {
 
 // --- Initialization ---
 async function init() {
-    const localData = await chrome.storage.local.get(['serverUrl', 'useCustomServer', 'roomId', 'password', 'username', 'filterNoise', 'autoSyncNextEpisode', 'forceSyncMode', 'browserNotifications', 'autoCopyInvite', 'locale', 'audioSettings', 'activeTab']);
-    // Migrate preferences from sync → local for existing users
-    const oldSync = await chrome.storage.sync.get(['serverUrl', 'useCustomServer', 'roomId', 'password', 'username', 'filterNoise', 'autoSyncNextEpisode', 'forceSyncMode', 'browserNotifications', 'autoCopyInvite', 'locale', 'audioSettings']);
-    const toMigrate = {};
-    for (const key of ['serverUrl', 'useCustomServer', 'roomId', 'password', 'username', 'filterNoise', 'autoSyncNextEpisode', 'forceSyncMode', 'browserNotifications', 'autoCopyInvite', 'locale', 'audioSettings']) {
-        if (localData[key] === undefined && oldSync[key] !== undefined) {
-            toMigrate[key] = oldSync[key];
-            localData[key] = oldSync[key];
-        }
-    }
-    if (Object.keys(toMigrate).length) {
-        await chrome.storage.local.set(toMigrate);
-    }
+    // Local-only by design — settings and room credentials never come from
+    // storage.sync (only onboardingComplete + dismissedHints live there).
+    const localData = await chrome.storage.local.get(['serverUrl', 'useCustomServer', 'roomId', 'password', 'username', 'filterNoise', 'autoSyncNextEpisode', 'sendTabTitle', 'mediaTitlePrivacyMode', 'titlePrivacyMode', 'forceSyncMode', 'browserNotifications', 'autoCopyInvite', 'locale', 'audioSettings', 'activeTab']);
 
     let activeLang = localData.locale;
     if (!activeLang) {
@@ -210,8 +227,13 @@ async function init() {
     elements.roomId.value = localData.roomId || '';
     elements.password.value = localData.password || '';
     elements.username.value = username;
+    syncDevToolsVisibility();
     if (elements.filterNoise) elements.filterNoise.checked = localData.filterNoise !== false;
     if (elements.autoSyncNextEpisode) elements.autoSyncNextEpisode.checked = localData.autoSyncNextEpisode !== false;
+    const legacyTitlePrivacyMode = Object.values(TITLE_PRIVACY_MODES).includes(localData.titlePrivacyMode) ? localData.titlePrivacyMode : TITLE_PRIVACY_MODES.FULL;
+    const mediaTitlePrivacyMode = Object.values(TITLE_PRIVACY_MODES).includes(localData.mediaTitlePrivacyMode) ? localData.mediaTitlePrivacyMode : legacyTitlePrivacyMode;
+    if (elements.sendTabTitle) elements.sendTabTitle.checked = normalizeSendTabTitle(localData.sendTabTitle, legacyTitlePrivacyMode);
+    if (elements.mediaTitlePrivacyMode) elements.mediaTitlePrivacyMode.value = mediaTitlePrivacyMode;
     if (elements.forceSyncMode) elements.forceSyncMode.value = localData.forceSyncMode || 'jump-to-others';
     if (elements.browserNotifications) elements.browserNotifications.checked = localData.browserNotifications === true;
     if (elements.autoCopyInvite) elements.autoCopyInvite.checked = localData.autoCopyInvite !== false;
@@ -253,11 +275,12 @@ async function init() {
             updatePingDisplay(res.ping);
             updatePeerList(res.peers);
             lastKnownPeers = res.peers || [];
+            updateHostControlUI({ controlMode: res.controlMode, amHost: res.amHost, amController: res.amController, controllers: res.controllers, hostPeerId: res.hostPeerId, hostControlSupported: res.hostControlSupported, coHostSupported: res.coHostSupported, inRoom: res.status === 'connected' });
             if (res.lastActionState) updateLastActionUI(res.lastActionState, res.peers);
 
-            // If user has a room configured but background is not connected,
+            // If user has a room configured but background is not connected (disconnected or idle),
             // trigger connection now — the popup opening is explicit user intent.
-            if (res.status === 'disconnected' && localData.roomId) {
+            if ((res.status === 'disconnected' || res.status === 'idle') && localData.roomId) {
                 chrome.runtime.sendMessage({ type: 'CONNECT' }).catch(() => {});
                 applyConnectionStatus('connecting');
             }
@@ -272,13 +295,13 @@ async function init() {
                 const syncTabBtn = document.querySelector('.tab-btn[data-tab="tab-sync"]');
                 if (syncTabBtn) syncTabBtn.click();
                 showSelectVideoHint();
-            } else if (localData.activeTab) {
+            } else if (localData.activeTab && (localData.activeTab !== 'tab-devtools' || devToolsEnabled())) {
                 const btn = document.querySelector(`.tab-btn[data-tab="${localData.activeTab}"]`);
                 if (btn) btn.click();
             }
         } else {
             await populateTabs();
-            if (localData.activeTab) {
+            if (localData.activeTab && (localData.activeTab !== 'tab-devtools' || devToolsEnabled())) {
                 const btn = document.querySelector(`.tab-btn[data-tab="${localData.activeTab}"]`);
                 if (btn) btn.click();
             }
@@ -310,6 +333,98 @@ function toggleUIState(inRoom) {
     const syncInactive = document.getElementById('sync-inactive');
     if (syncActive) syncActive.style.display = inRoom ? 'block' : 'none';
     if (syncInactive) syncInactive.style.display = inRoom ? 'none' : 'block';
+}
+
+// --- Host Control Mode UI ---
+// True when we're a guest in a host-only room → remote-control buttons are locked.
+let hcmGuestLocked = false;
+
+// Co-Host state mirrored for the peer-list renderer (promote/demote + role badges).
+let hcmAmOwner = false;
+let hcmControllers = [];
+let hcmCoHostSupported = false;
+let hcmOwnerPeerId = null;
+let hcmRoomIsHostOnly = false;
+
+function updateHostControlUI(state) {
+    const s = state || {};
+    const controlMode = s.controlMode;
+    const amHost = !!s.amHost;
+    const amController = !!s.amController;
+    const hostOnly = controlMode === 'host-only';
+
+    // Stash for the peer-list renderer, then force it to re-render with new roles.
+    hcmAmOwner = amHost;
+    hcmControllers = Array.isArray(s.controllers) ? s.controllers : [];
+    hcmCoHostSupported = !!s.coHostSupported;
+    hcmOwnerPeerId = s.hostPeerId || null;
+    hcmRoomIsHostOnly = hostOnly;
+    lastPeersJson = '';
+    if (activePeers) updatePeerList(activePeers);
+
+    const card = elements.hostControlCard;
+    if (!card) return;
+    // Explicit capability advertised by the relay. Against an older relay it's
+    // false/absent → feature unavailable, so hide the card instead of misleading UI.
+    const serverSupportsHostControl = !!s.hostControlSupported;
+    // Show the card only when meaningful: owner always (to manage); a non-controller
+    // guest only while host-only is active. A guest in a normal room sees nothing.
+    const show = s.inRoom && serverSupportsHostControl && (amHost || hostOnly);
+    if (!show) {
+        card.style.display = 'none';
+        hcmGuestLocked = false;
+        setRemoteControlsLocked(false);
+        return;
+    }
+    card.style.display = 'block';
+    if (elements.hostRoleBadge) {
+        const role = amHost ? (getMessage('BADGE_HOST') || 'Host')
+                   : amController ? (getMessage('BADGE_CONTROLLER') || 'Controller')
+                   : (getMessage('BADGE_GUEST') || 'Guest');
+        elements.hostRoleBadge.textContent = role;
+        elements.hostRoleBadge.style.background = (amHost || amController) ? 'var(--accent)' : 'var(--text-muted)';
+    }
+    if (elements.hostControlToggleRow) elements.hostControlToggleRow.style.display = amHost ? 'flex' : 'none';
+    if (elements.hostControlToggle) elements.hostControlToggle.checked = hostOnly;
+    if (elements.hostControlGuestNote) elements.hostControlGuestNote.style.display = (!amController && hostOnly) ? 'block' : 'none';
+    // Owner-only discoverability hint: co-hosting is granted down in the peer list,
+    // which isn't obvious from this card. Only show it when it's actionable — owner,
+    // relay supports co-host, and the room is locked to host-only (the buttons only
+    // render in that mode).
+    if (elements.hostControlCohostHint) elements.hostControlCohostHint.style.display = (amHost && !!s.coHostSupported && hostOnly) ? 'block' : 'none';
+
+    // Only a non-controller is locked out of the remote controls.
+    hcmGuestLocked = (!amController && hostOnly);
+    setRemoteControlsLocked(hcmGuestLocked);
+}
+
+function setRemoteControlsLocked(locked) {
+    [elements.playBtn, elements.pauseBtn, elements.forceSyncBtn].forEach(btn => {
+        if (!btn) return;
+        btn.disabled = locked;
+        btn.style.opacity = locked ? '0.5' : '';
+        btn.style.cursor = locked ? 'not-allowed' : '';
+        btn.title = locked ? (getMessage('NOTICE_HOST_CONTROLS') || 'The host controls playback for everyone.') : '';
+    });
+    // Always restore the default labels. The action handlers leave the text in a
+    // transitional state ("Playing..." / "Pausing...") and the 2.5s safety reset
+    // skips the refresh while guest-locked — so reset on BOTH transitions: on lock
+    // (host enabled host-only just as the guest clicked → don't freeze "Playing...")
+    // and on unlock (L-1).
+    if (elements.playBtn) elements.playBtn.textContent = getMessage('BTN_PLAY') || 'Play';
+    if (elements.pauseBtn) elements.pauseBtn.textContent = getMessage('BTN_PAUSE') || 'Pause';
+}
+
+if (elements.hostControlToggle) {
+    elements.hostControlToggle.addEventListener('change', () => {
+        const mode = elements.hostControlToggle.checked ? 'host-only' : 'everyone';
+        chrome.runtime.sendMessage({ type: 'SET_CONTROL_MODE', controlMode: mode }, (res) => {
+            // Server broadcasts CONTROL_MODE back to refresh the UI; revert on failure.
+            if (chrome.runtime.lastError || !res || res.status !== 'ok') {
+                elements.hostControlToggle.checked = (mode === 'everyone');
+            }
+        });
+    });
 }
 
 function updateUI(roomId, password, useCustomServer = false, serverUrl = '') {
@@ -503,6 +618,24 @@ function renderEmpty(container, type) {
     wrapper.appendChild(iconDiv);
     wrapper.appendChild(titleDiv);
     wrapper.appendChild(hintDiv);
+
+    // "No peers yet" — turn the hint into a one-click action so the user can
+    // immediately copy and share the invite link instead of hunting for it.
+    if (type === 'peers' && elements.inviteLink && elements.inviteLink.value) {
+        const copyBtn = document.createElement('button');
+        copyBtn.type = 'button';
+        copyBtn.className = 'primary';
+        copyBtn.style.cssText = 'display:inline-block; width:auto; margin-top:12px; padding:6px 14px; font-size:11px;';
+        copyBtn.textContent = getMessage('BTN_COPY_INVITE');
+        copyBtn.title = getMessage('BTN_COPY_INVITE_TOOLTIP');
+        copyBtn.addEventListener('click', () => {
+            navigator.clipboard.writeText(elements.inviteLink.value)
+                .then(() => showToast(getMessage('TOAST_INVITE_COPIED'), 'success', 2000))
+                .catch(() => showToast(getMessage('TOAST_COPY_FAILED'), 'error'));
+        });
+        wrapper.appendChild(copyBtn);
+    }
+
     container.replaceChildren(wrapper);
 }
 
@@ -568,6 +701,11 @@ function updatePeerList(peers) {
 
             header.appendChild(nameSpan);
 
+            // Right-side badges + actions, kept in one group so they sit together
+            // on the right instead of being scattered by the header's space-between.
+            const rightGroup = document.createElement('div');
+            rightGroup.style.cssText = 'display:flex; align-items:center; gap:6px; flex-shrink:0;';
+
             // Volume Icon (Top Right)
             if (p.volume !== undefined && p.volume !== null) {
                 const volIcon = document.createElement('div');
@@ -581,8 +719,56 @@ function updatePeerList(peers) {
                 const you = document.createElement('span');
                 you.style.cssText = 'font-size:10px; color:var(--accent); font-weight:bold;';
                 you.textContent = getMessage('LABEL_YOU') || 'YOU';
-                header.appendChild(you);
+                rightGroup.appendChild(you);
             }
+
+            // Host Control Mode: show "Solo" badge for peers watching on their own.
+            if (typeof p === 'object' && p.desynced) {
+                const solo = document.createElement('span');
+                solo.style.cssText = 'font-size:10px; color:#fff; background:#b45309; padding:2px 6px; border-radius:6px; font-weight:600;';
+                const soloText = getMessage('BADGE_DESYNCED') || 'Solo';
+                solo.textContent = soloText;
+                solo.title = getMessage('TOOLTIP_PEER_DESYNCED') || soloText;
+                rightGroup.appendChild(solo);
+            }
+
+            // Co-Host: role badges + the owner's promote/demote control. Only meaningful
+            // once the room is locked to host-only — in 'everyone' mode anyone can already
+            // control, so roles are moot and we show nothing (no badge/button noise).
+            // The promote/demote button additionally requires owner privileges (below).
+            const showRoles = !!hcmOwnerPeerId && hcmRoomIsHostOnly;
+            if (showRoles) {
+                const isOwner = pId === hcmOwnerPeerId;
+                const isController = !isOwner && hcmControllers.includes(pId);
+                if (isOwner || isController) {
+                    const roleBadge = document.createElement('span');
+                    roleBadge.style.cssText = 'font-size:10px; color:#fff; background:var(--accent); padding:2px 6px; border-radius:6px; font-weight:600;';
+                    roleBadge.textContent = isOwner ? (getMessage('BADGE_HOST') || 'Host') : (getMessage('BADGE_CONTROLLER') || 'Controller');
+                    rightGroup.appendChild(roleBadge);
+                }
+                // Owner can promote/demote any non-owner peer.
+                if (hcmAmOwner && hcmCoHostSupported && !isOwner) {
+                    const btn = document.createElement('button');
+                    const revoke = isController;
+                    btn.style.cssText = `font-size:10px; padding:3px 9px; border-radius:6px; cursor:pointer; white-space:nowrap; font-weight:600; transition:background .15s,color .15s; border:1px solid ${revoke ? 'var(--text-muted)' : 'var(--accent)'}; background:transparent; color:${revoke ? 'var(--text-muted)' : 'var(--accent)'};`;
+                    btn.textContent = revoke ? (getMessage('BTN_REVOKE_CONTROL') || 'Revoke') : (getMessage('BTN_GIVE_CONTROL') || 'Give control');
+                    btn.title = revoke ? (getMessage('BTN_REVOKE_CONTROL') || 'Revoke') : (getMessage('BTN_GIVE_CONTROL') || 'Give control');
+                    btn.addEventListener('mouseenter', () => {
+                        btn.style.background = revoke ? 'var(--text-muted)' : 'var(--accent)';
+                        btn.style.color = '#fff';
+                    });
+                    btn.addEventListener('mouseleave', () => {
+                        btn.style.background = 'transparent';
+                        btn.style.color = revoke ? 'var(--text-muted)' : 'var(--accent)';
+                    });
+                    btn.addEventListener('click', () => {
+                        chrome.runtime.sendMessage({ type: 'SET_PEER_ROLE', peerId: pId, controller: !isController }, () => {});
+                    });
+                    rightGroup.appendChild(btn);
+                }
+            }
+
+            if (rightGroup.childNodes.length) header.appendChild(rightGroup);
 
             peerItem.appendChild(header);
 
@@ -735,7 +921,7 @@ async function populateTabs(providedPeers = null, providedTargetTabId = null) {
     // Smart Matching Logic — exclude own tabTitle to prevent self-match (computed once)
     const cleanTitle = (rawTitle) => {
         if (!rawTitle) return '';
-        return rawTitle
+        return (normalizeTabTitle(rawTitle) || '')
             .replace(/(?:\s*[-\|•]\s*(?:YouTube|Twitch|Jellyfin|Emby|Netflix|Vimeo|Dailymotion).*)$/i, '')
             .replace(/^(?:Netflix|Twitch|YouTube|Emby|Jellyfin)\s*[-\|•]\s*/i, '')
             .trim();
@@ -810,19 +996,33 @@ async function populateTabs(providedPeers = null, providedTargetTabId = null) {
 }
 
 function applyConnectionStatus(status) {
+    // Coerce 'idle' to 'disconnected' if a room is actively configured.
+    // An 'idle' status with a configured room indicates the background
+    // worker dropped connection intent due to a server error.
+    if (status === 'idle' && elements.sectionActive && elements.sectionActive.style.display !== 'none') {
+        status = 'disconnected';
+    }
+
     const connected = status === 'connected';
     const connecting = status === 'connecting';
     const reconnecting = status === 'reconnecting';
+    // 'idle' = not in a room and not trying to connect. This is the normal
+    // resting state (lazy connect), NOT an error — surface it neutrally.
+    const idle = status === 'idle';
 
     if (elements.connDot) {
         elements.connDot.className = 'status-dot ' + (connected ? 'status-online' : ((connecting || reconnecting) ? 'status-online' : 'status-offline'));
-        
+
         if (reconnecting) {
             elements.connDot.style.background = '#f59e0b';
             elements.connDot.style.boxShadow = '0 0 8px #f59e0b';
         } else if (connecting) {
             elements.connDot.style.background = '#fbbf24';
             elements.connDot.style.boxShadow = '0 0 8px #fbbf24';
+        } else if (idle) {
+            // Neutral grey — ready, not failed.
+            elements.connDot.style.background = '#9ca3af';
+            elements.connDot.style.boxShadow = 'none';
         } else if (!connected) {
             elements.connDot.style.background = '#ef4444';
             elements.connDot.style.boxShadow = 'none';
@@ -833,7 +1033,12 @@ function applyConnectionStatus(status) {
     }
 
     if (elements.connText) {
-        elements.connText.textContent = connected ? getMessage('STATUS_CONNECTED') : (reconnecting ? getMessage('STATUS_RECONNECTING') : (connecting ? getMessage('STATUS_CONNECTING') : getMessage('STATUS_DISCONNECTED')));
+        elements.connText.textContent = connected ? getMessage('STATUS_CONNECTED') : (reconnecting ? getMessage('STATUS_RECONNECTING') : (connecting ? getMessage('STATUS_CONNECTING') : (idle ? getMessage('STATUS_IDLE') : getMessage('STATUS_DISCONNECTED'))));
+    }
+
+    // Show the info "i" + tooltip only in the idle state.
+    if (elements.connInfo) {
+        elements.connInfo.style.display = idle ? '' : 'none';
     }
     if (!connected) {
         updatePingDisplay(null);
@@ -1042,6 +1247,22 @@ elements.autoSyncNextEpisode.addEventListener('change', () => {
     chrome.storage.local.set({ autoSyncNextEpisode: elements.autoSyncNextEpisode.checked });
 });
 
+if (elements.sendTabTitle) {
+    elements.sendTabTitle.addEventListener('change', () => {
+        chrome.storage.local.set({ sendTabTitle: elements.sendTabTitle.checked }, () => {
+            chrome.runtime.sendMessage({ type: 'TITLE_PRIVACY_CHANGED' }).catch(() => {});
+        });
+    });
+}
+
+if (elements.mediaTitlePrivacyMode) {
+    elements.mediaTitlePrivacyMode.addEventListener('change', () => {
+        chrome.storage.local.set({ mediaTitlePrivacyMode: elements.mediaTitlePrivacyMode.value }, () => {
+            chrome.runtime.sendMessage({ type: 'TITLE_PRIVACY_CHANGED' }).catch(() => {});
+        });
+    });
+}
+
 elements.browserNotifications.addEventListener('change', () => {
     chrome.storage.local.set({ browserNotifications: elements.browserNotifications.checked });
 });
@@ -1072,8 +1293,10 @@ elements.serverUrl.addEventListener('input', () => {
     chrome.storage.local.set({ serverUrl: elements.serverUrl.value });
 });
 
+elements.username.addEventListener('input', syncDevToolsVisibility);
 elements.username.addEventListener('change', () => {
     chrome.storage.local.set({ username: elements.username.value });
+    syncDevToolsVisibility();
 });
 
 if (elements.langSelector) {
@@ -1117,7 +1340,11 @@ if (elements.langSelector) {
 elements.serverUrl.addEventListener('change', () => {
     let url = elements.serverUrl.value.trim();
     if (url && !url.includes('://')) {
-        url = 'ws://' + url;
+        // Default to secure wss:// — plain ws:// is only valid for a local relay
+        // (and the background rejects/upgrades ws:// for any remote host anyway).
+        const host = url.split('/')[0].split(':')[0].toLowerCase();
+        const isLocal = host === 'localhost' || host === '127.0.0.1';
+        url = (isLocal ? 'ws://' : 'wss://') + url;
         elements.serverUrl.value = url;
         chrome.storage.local.set({ serverUrl: url });
     }
@@ -1234,7 +1461,7 @@ elements.joinBtn.addEventListener('click', async () => {
     }
     if (useCustom && serverUrl) {
         try {
-            const urlToCheck = serverUrl.includes('://') ? serverUrl : 'ws://' + serverUrl;
+            const urlToCheck = serverUrl.includes('://') ? serverUrl : 'wss://' + serverUrl;
             new URL(urlToCheck);
         } catch (_e) {
             showError(getMessage('ERR_INVALID_SERVER_URL'));
@@ -1338,6 +1565,7 @@ elements.targetTab.addEventListener('change', () => {
 });
 
 elements.forceSyncBtn.addEventListener('click', async () => {
+    if (hcmGuestLocked) return; // guest in host-only room — backstop (M-2/L-3)
     if (elements.forceSyncBtn.disabled) return;
     
     const originalText = elements.forceSyncBtn.textContent;
@@ -1360,8 +1588,9 @@ elements.forceSyncBtn.addEventListener('click', async () => {
         }
         const peers = status.peers || [];
         const otherTimes = peers
-            .filter(p => typeof p === 'object' && p.peerId !== localPeerId && p.currentTime != null && !isNaN(p.currentTime))
-            .map(p => p.currentTime);
+            .filter(p => typeof p === 'object' && p.peerId !== localPeerId && p.currentTime != null && p.currentTime !== '')
+            .map(p => Number(p.currentTime))
+            .filter(Number.isFinite);
 
         if (otherTimes.length === 0) {
             showError(getMessage('ERR_NO_PEERS_TIME'));
@@ -1379,7 +1608,10 @@ elements.forceSyncBtn.addEventListener('click', async () => {
     const peerCount = (status.peers || []).filter(p => (typeof p === 'object' ? p.peerId : p) !== localPeerId).length;
     const syncTimeoutMs = peerCount === 0 ? 3000 : 12000;
     const forceSyncReset = () => {
-        if (!forceSyncDone) {
+        // Don't unlock a button that's locked because we became a guest mid-flight —
+        // hcmGuestLocked is the source of truth for the lock state, and the next
+        // CONTROL_MODE update restores the correct label.
+        if (!forceSyncDone && !hcmGuestLocked) {
             elements.forceSyncBtn.disabled = false;
             elements.forceSyncBtn.textContent = originalText;
         }
@@ -1387,38 +1619,57 @@ elements.forceSyncBtn.addEventListener('click', async () => {
     forceSyncResetTimer = setTimeout(forceSyncReset, syncTimeoutMs);
     const tabId = parseInt(status.targetTabId);
 
+    const failForceSyncTime = () => {
+        if (forceSyncResetTimer) { clearTimeout(forceSyncResetTimer); forceSyncResetTimer = null; }
+        showError(getMessage('ERR_NO_VIDEO_TAB'));
+        forceSyncDone = true;
+        elements.forceSyncBtn.disabled = false;
+        elements.forceSyncBtn.textContent = originalText;
+    };
+
     const sendForceSync = (time) => {
+        if (time === null || time === undefined) {
+            failForceSyncTime();
+            return;
+        }
+        const target = Number(time);
+        if (!Number.isFinite(target)) {
+            failForceSyncTime();
+            return;
+        }
         chrome.runtime.sendMessage({
             type: 'CONTENT_EVENT',
             action: EVENTS.FORCE_SYNC_PREPARE,
-            payload: { targetTime: parseFloat(time) }
+            payload: { targetTime: target }
         });
     };
 
     if (mode === 'jump-to-me') {
+        const retryQueryTime = () => {
+            chrome.tabs.sendMessage(tabId, { action: 'get_current_time' }, (retryResponse) => {
+                if (chrome.runtime.lastError || !retryResponse || !Number.isFinite(retryResponse.currentTime)) {
+                    failForceSyncTime();
+                    return;
+                }
+                sendForceSync(retryResponse.currentTime);
+            });
+        };
         chrome.tabs.sendMessage(tabId, { action: 'get_current_time' }, (response) => {
-            if (chrome.runtime.lastError || !response || response.currentTime === undefined) {
-                chrome.scripting.executeScript({
-                    target: { tabId },
-                    files: ['content.js']
-                }).then(() => {
-                    setTimeout(() => {
-                        chrome.tabs.sendMessage(tabId, { action: 'get_current_time' }, (retryResponse) => {
-                            if (chrome.runtime.lastError) return;
-                            if (retryResponse && retryResponse.currentTime !== undefined) {
-                                sendForceSync(retryResponse.currentTime);
-                            }
-                        });
-                    }, 500);
-                }).catch(() => {
-                    showError(getMessage('ERR_NO_VIDEO_TAB'));
-                    forceSyncDone = true;
-                    elements.forceSyncBtn.disabled = false;
-                    elements.forceSyncBtn.textContent = originalText;
+            if (Number.isFinite(response?.currentTime)) {
+                sendForceSync(response.currentTime);
+                return;
+            }
+            if (chrome.runtime.lastError || !response) {
+                chrome.runtime.sendMessage({ type: 'INJECT_CONTENT_SCRIPT', tabId }, (injectResponse) => {
+                    if (chrome.runtime.lastError || !injectResponse || injectResponse.status !== 'ok') {
+                        failForceSyncTime();
+                        return;
+                    }
+                    setTimeout(retryQueryTime, 500);
                 });
                 return;
             }
-            sendForceSync(response.currentTime);
+            setTimeout(retryQueryTime, 500);
         });
     } else {
         sendForceSync(targetTime);
@@ -1426,6 +1677,7 @@ elements.forceSyncBtn.addEventListener('click', async () => {
 });
 
 elements.playBtn.addEventListener('click', () => {
+    if (hcmGuestLocked) return; // guest in host-only room — backstop
     if (!elements.targetTab.value) {
         showToast(getMessage('ERR_SELECT_VIDEO'), 'warning');
         return;
@@ -1444,7 +1696,7 @@ elements.playBtn.addEventListener('click', () => {
     });
     // Safety reset: restore button after 2.5s in case no peers respond
     setTimeout(() => {
-        if (elements.playBtn.disabled) {
+        if (elements.playBtn.disabled && !hcmGuestLocked) {
             elements.playBtn.textContent = getMessage('BTN_PLAY');
             elements.playBtn.disabled = false;
         }
@@ -1452,6 +1704,7 @@ elements.playBtn.addEventListener('click', () => {
 });
 
 elements.pauseBtn.addEventListener('click', () => {
+    if (hcmGuestLocked) return; // guest in host-only room — backstop
     if (!elements.targetTab.value) {
         showToast(getMessage('ERR_SELECT_VIDEO'), 'warning');
         return;
@@ -1470,18 +1723,53 @@ elements.pauseBtn.addEventListener('click', () => {
     });
     // Safety reset: restore button after 2.5s in case no peers respond
     setTimeout(() => {
-        if (elements.pauseBtn.disabled) {
+        if (elements.pauseBtn.disabled && !hcmGuestLocked) {
             elements.pauseBtn.textContent = getMessage('BTN_PAUSE');
             elements.pauseBtn.disabled = false;
         }
     }, 2500);
 });
 
+function simulateRemoteSeek({ delta = null, targetTime = null }) {
+    chrome.runtime.sendMessage({ type: 'DEV_SIMULATE_REMOTE_SEEK', delta, targetTime }, (res) => {
+        if (chrome.runtime.lastError || !res || res.status !== 'ok') {
+            showToast(res?.message || 'Remote seek failed', 'error');
+            return;
+        }
+        showToast(`Remote seek -> ${formatTime(res.targetTime)}`, 'success', 1200);
+        refreshDebugInfo();
+    });
+}
+
+if (elements.remoteSeekBack) {
+    elements.remoteSeekBack.addEventListener('click', () => simulateRemoteSeek({ delta: -30 }));
+}
+if (elements.remoteSeekForward) {
+    elements.remoteSeekForward.addEventListener('click', () => simulateRemoteSeek({ delta: 30 }));
+}
+if (elements.remoteSeekFiveMin) {
+    elements.remoteSeekFiveMin.addEventListener('click', () => simulateRemoteSeek({ targetTime: 300 }));
+}
+
 elements.clearLogs.addEventListener('click', () => {
     chrome.runtime.sendMessage({ type: 'CLEAR_LOGS' }, () => {
         elements.logList.innerHTML = '';
     });
 });
+
+if (elements.regenId) {
+    elements.regenId.addEventListener('click', () => {
+        elements.regenId.disabled = true;
+        chrome.runtime.sendMessage({ type: 'REGENERATE_ID' }, (res) => {
+            elements.regenId.disabled = false;
+            if (chrome.runtime.lastError || !res || !res.peerId) {
+                showToast(getMessage('TOAST_ID_REGENERATED') || 'Failed to regenerate identity', 'error');
+                return;
+            }
+            showToast(getMessage('TOAST_ID_REGENERATED') || 'Identity regenerated — reconnecting…', 'success', 3000);
+        });
+    });
+}
 
 elements.copyInvite.addEventListener('click', () => {
     navigator.clipboard.writeText(elements.inviteLink.value).then(() => {
@@ -1628,6 +1916,9 @@ chrome.runtime.onMessage.addListener((msg) => {
     } else if (msg.type === 'PEER_UPDATE') {
         updatePeerList(msg.peers);
         if (msg.peers) detectPeerChanges(msg.peers);
+    } else if (msg.type === 'CONTROL_MODE') {
+        const inRoom = elements.sectionActive && elements.sectionActive.style.display === 'block';
+        updateHostControlUI({ controlMode: msg.controlMode, amHost: msg.amHost, amController: msg.amController, controllers: msg.controllers, hostPeerId: msg.hostPeerId, hostControlSupported: msg.hostControlSupported, coHostSupported: msg.coHostSupported, inRoom });
     } else if (msg.type === 'CONNECTION_STATUS') {
         if (msg.status === 'connected' || msg.status === 'disconnected') {
             if (joinBtnTimeout) { clearTimeout(joinBtnTimeout); joinBtnTimeout = null; }
@@ -1645,6 +1936,7 @@ chrome.runtime.onMessage.addListener((msg) => {
                 if (res.peers) updatePeerList(res.peers);
                 if (res.lastActionState) updateLastActionUI(res.lastActionState, res.peers);
                 updatePingDisplay(res.ping);
+                updateHostControlUI({ controlMode: res.controlMode, amHost: res.amHost, amController: res.amController, controllers: res.controllers, hostPeerId: res.hostPeerId, hostControlSupported: res.hostControlSupported, coHostSupported: res.coHostSupported, inRoom: true });
             });
         }
         if (msg.status === 'disconnected') {
@@ -1816,6 +2108,26 @@ elements.copyLogs.addEventListener('click', () => {
             lines.push(`- **ReadyState:** ${readyOk ? '\u2705' : '\u26A0\uFE0F'} ${safe(vs.readyState, '?')} (${readyLabel})`);
             lines.push(`- **Network:** ${safe(vs.networkState, '?')} (${netLabel})`);
             lines.push(`- **Buffered:** ${safe(vs.buffered, '?')}`);
+            if (vs.nativeCurrentTime != null || vs.nativeDuration != null) {
+                lines.push(`- **Native Time:** ${safe(vs.nativeCurrentTime, '?')}s / ${safe(vs.nativeDuration, '?')}s`);
+            }
+            if (vs.siteQuirk) {
+                const quirk = vs.siteQuirk;
+                const label = quirk.name || quirk.key || 'site';
+                if (quirk.timeline) {
+                    lines.push(`- **${label} Timeline:** ${safe(quirk.timeline.current, '?')}s / ${safe(quirk.timeline.duration, '?')}s`);
+                }
+                const candidates = Array.isArray(quirk.timelineCandidates) ? quirk.timelineCandidates : [];
+                if (candidates.length > 0) {
+                    lines.push(`- **${label} Timeline Candidates:**`);
+                    candidates.forEach(c => lines.push(`  - ${safe(c.source, '?')}: ${safe(c.current, '?')}s / ${safe(c.duration, '?')}s`));
+                }
+                const buttons = Array.isArray(quirk.seekButtons) ? quirk.seekButtons : [];
+                if (buttons.length > 0) {
+                    lines.push(`- **${label} Buttons:**`);
+                    buttons.forEach(label => lines.push(`  - ${label}`));
+                }
+            }
             lines.push(`- **Dimensions:** ${safe(vs.videoWidth, '?')}x${safe(vs.videoHeight, '?')}${dimOk ? '' : ' \u26A0\uFE0F 0x0'}`);
             lines.push(`- **Muted:** ${safe(vs.muted, '?')} | **Volume:** ${safe(vs.volume, '?')} | **Speed:** ${safe(vs.playbackRate, '?')}x`);
             lines.push(`- **Seeking:** ${safe(vs.seeking, '?')} | **Ended:** ${safe(vs.ended, '?')} | **Loop:** ${safe(vs.loop, '?')}`);
@@ -1989,7 +2301,18 @@ function refreshDebugInfo() {
                 addField('Network', `${state.networkState} (${state.networkStateLabel || '?'})`,
                     state.networkState === 1 ? '#22c55e' : state.networkState === 3 ? '#ef4444' : 'var(--text-muted)');
                 addField('Buffered', state.buffered || '?');
-
+                if (state.nativeCurrentTime != null || state.nativeDuration != null) {
+                    addField('Native Time', `${state.nativeCurrentTime ?? '?'}s / ${state.nativeDuration ?? '?'}s`);
+                }
+                if (state.siteQuirk) {
+                    const quirk = state.siteQuirk;
+                    const label = quirk.name || quirk.key || 'Site';
+                    if (quirk.timeline) {
+                        addField(`${label} Timeline`, `${quirk.timeline.current ?? '?'}s / ${quirk.timeline.duration ?? '?'}s`);
+                    }
+                    const buttons = Array.isArray(quirk.seekButtons) ? quirk.seekButtons.slice(0, 4).join(' | ') : '';
+                    if (buttons) addField(`${label} Buttons`, buttons);
+                }
                 addSection('Properties');
                 addField('Seeking', String(state.seeking));
                 addField('Ended', String(state.ended));
@@ -2119,9 +2442,9 @@ const onboardingSteps = [
     { 
         icon: '👋', 
         get title() { return getMessage('ONBOARDING_1_TITLE'); }, 
-        get text() { return getMessage('ONBOARDING_1_TEXT'); }, 
+        get text() { return getMessage('ONBOARDING_1_TEXT'); },
         targetTab: 'tab-room',
-        targetSelector: 'h1'
+        targetSelector: null
     },
     { 
         icon: '🏠', 
@@ -2140,9 +2463,16 @@ const onboardingSteps = [
     { 
         icon: '⚙️', 
         get title() { return getMessage('ONBOARDING_4_TITLE'); }, 
-        get text() { return getMessage('ONBOARDING_4_TEXT'); }, 
+        get text() { return getMessage('ONBOARDING_4_TEXT'); },
         targetTab: 'tab-settings',
         targetSelector: '#username'
+    },
+    {
+        icon: '🍿',
+        get title() { return getMessage('ONBOARDING_5_TITLE'); },
+        get text() { return getMessage('ONBOARDING_5_TEXT'); },
+        targetTab: 'tab-room',
+        targetSelector: null
     }
 ];
 
@@ -2316,7 +2646,7 @@ function renderOnboardingStep() {
     }
 
     onboardingTimeout = setTimeout(() => {
-        const targetEl = document.querySelector(step.targetSelector);
+        const targetEl = step.targetSelector ? document.querySelector(step.targetSelector) : null;
         if (targetEl && targetEl.offsetParent !== null) {
             positionSpotlightAndCard(targetEl);
         } else {

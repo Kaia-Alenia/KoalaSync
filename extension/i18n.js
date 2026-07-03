@@ -1,5 +1,5 @@
 // extension/i18n.js
-export const SUPPORTED_LANGUAGES = ['en', 'de', 'fr', 'es', 'pt-BR', 'ru', 'it', 'pl', 'tr', 'nl', 'ja', 'ko', 'pt'];
+export const SUPPORTED_LANGUAGES = ['en', 'de', 'fr', 'es', 'it', 'nl', 'pl', 'pt', 'pt-BR', 'tr', 'ru', 'ja', 'ko', 'zh', 'uk'];
 export const DEFAULT_LANGUAGE = 'en';
 
 let activeDictionary = {};

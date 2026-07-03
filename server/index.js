@@ -4,7 +4,7 @@ import { fileURLToPath } from 'url';
 import { Server } from 'socket.io';
 import crypto from 'crypto';
 import dotenv from 'dotenv';
-import { EVENTS, OFFICIAL_SERVER_TOKEN, PROTOCOL_VERSION } from '../shared/constants.js';
+import { EVENTS, OFFICIAL_SERVER_TOKEN, PROTOCOL_VERSION, CONTROL_MODES, CAPABILITIES } from '../shared/constants.js';
 import {
     buildHealthPayload,
     checkCooldown,
@@ -22,6 +22,7 @@ import {
     healthCounts,
     adminMetricsAuthCounts,
     roomListCooldowns,
+    leaveRoomCounts,
     rateLimitDenied,
     checkAuthRate,
     recordAuthFailure,
@@ -29,6 +30,7 @@ import {
     checkEventRate,
     checkHealthRate,
     checkAdminMetricsAuthRate,
+    checkLeaveRoomRate,
     startRateLimitCleanup,
     stopRateLimitCleanup,
     clearRateLimitMaps
@@ -62,6 +64,10 @@ const HEALTH_RESPONSE_CACHE_TTL_MS = 60000;
 
 if (!isAdminMetricsTokenStrong(ADMIN_METRICS_TOKEN)) {
     console.warn('[SECURITY] ADMIN_METRICS_TOKEN is set but shorter than 32 characters. Use a long random token.');
+}
+
+if (!process.env.SERVER_SALT) {
+    console.warn('[SECURITY] SERVER_SALT is not set — using the built-in default salt (public in the repo). Set a unique SERVER_SALT so room-password hashes are not computed with a known salt.');
 }
 
 export const app = express();
@@ -110,7 +116,8 @@ app.get('/health', (req, res) => {
                 health: healthCounts.size,
                 adminMetricsAuth: adminMetricsAuthCounts.size,
                 authFailures: failedAuthAttempts.size,
-                roomList: roomListCooldowns.size
+                roomList: roomListCooldowns.size,
+                leaveRoom: leaveRoomCounts.size
             },
             rateLimitDenied
         })
@@ -148,9 +155,42 @@ const peerToSocket = new Map(); // peerId -> socketId (Global lookup)
 const roomCreationLocks = new Map(); // roomId -> Promise (prevents race on room creation)
 const peerJoinLocks = new Map(); // peerId -> Promise (prevents race on same peerId joins)
 
+// Host Control Mode: events a non-host guest may NOT initiate while a room is in
+// 'host-only' mode (they would move/disrupt everyone). Reactions like FORCE_SYNC_ACK,
+// EPISODE_READY, PEER_STATUS heartbeats remain allowed for all peers.
+const HOST_ONLY_GATED_EVENTS = new Set([
+    EVENTS.PLAY,
+    EVENTS.PAUSE,
+    EVENTS.SEEK,
+    EVENTS.FORCE_SYNC_PREPARE,
+    EVENTS.FORCE_SYNC_EXECUTE,
+    EVENTS.EPISODE_LOBBY,
+    EVENTS.EPISODE_LOBBY_CANCEL
+]);
+
+// Features this relay supports, advertised to clients in ROOM_DATA so they can
+// enable matching UI/behavior only when the server actually backs it. Append a
+// flag here when a new server-gated feature ships (e.g. co-host promotion).
+const SERVER_CAPABILITIES = [CAPABILITIES.HOST_CONTROL, CAPABILITIES.CO_HOST];
+
+// M-4: minimum interval between CONTROL_MODE changes per room. Stops a rapidly
+// toggling host from thrashing every guest's UI (locked/unlocked/locked...) and
+// from generating one broadcast per toggle across all peers.
+const CONTROL_MODE_MIN_INTERVAL_MS = 500;
+
+// Canonical control-mode/role snapshot sent to clients. controllers always includes
+// the owner (hostPeerId). Built in one place so every emit stays consistent.
+function controlModePayload(room) {
+    return {
+        controlMode: room.controlMode,
+        hostPeerId: room.hostPeerId,
+        controllers: room.controllers ? Array.from(room.controllers) : (room.hostPeerId ? [room.hostPeerId] : [])
+    };
+}
+
 function log(type, message, details = '') {
     const debugLogging = process.env.DEBUG_LOGGING === '1';
-    const isVerbose = type === 'CONN' || type === 'ROOM' || type === 'DEDUPE' || type === 'CORS';
+    const isVerbose = type === 'CONN' || type === 'ROOM' || type === 'DEDUPE' || type === 'CORS' || type === 'ACKDROP';
     if (!debugLogging && isVerbose) return;
 
     const timestamp = new Date().toISOString();
@@ -198,6 +238,42 @@ function removePeerFromRoom(socketId, roomId, reason) {
         room.activeLobby.readyPeers = room.activeLobby.readyPeers.filter(id => id !== peerId);
         if (room.activeLobby.readyPeers.length <= 1 || room.activeLobby.initiatorPeerId === peerId) {
             room.activeLobby = null; // Dissolve lobby
+        }
+    }
+
+    // 3.6. Host Control Mode: if the host left (and isn't still connected via another
+    //      socket), fall back to 'everyone' so the room never gets stuck locked, and
+    //      reassign host to the earliest remaining peer so the feature stays usable.
+    //      (v1: immediate fallback, no grace period — see host-control-mode docs.)
+    //      Skip while a join for this peerId is in flight (peerJoinLocks holds it):
+    //      that's the reconnect / second-tab case where the same peerId is being
+    //      re-added right after the dedupe kicked the old socket. Demoting there
+    //      would silently unlock the room on every second-tab open.
+    //      NOTE: this does *not* cover a true network blip where the old socket's
+    //      'disconnect' fires before the new socket acquires its join lock — in that
+    //      window peerJoinLocks is empty, so the fallback fires. Documented v1
+    //      limitation (no host grace period); see KNOWN_LIMITATIONS.md.
+    const peerRejoining = peerJoinLocks.has(peerId);
+    const peerGone = !isPeerStillConnected && !peerRejoining;
+    if (peerGone && room.controllers && room.peers.size > 0) {
+        const wasController = room.controllers.has(peerId);
+        room.controllers.delete(peerId);
+        // H-1: a leaving initiator strands the room's force-sync — release the
+        // slot so a future controller's PREPARE can take over cleanly.
+        if (room.forceSyncInitiator === peerId) room.forceSyncInitiator = null;
+        if (room.hostPeerId === peerId) {
+            // Owner left → reassign owner + fall back to 'everyone' so the room is
+            // never stuck locked, and reset the controller set to just the new owner.
+            const nextPeerData = room.peerData.values().next().value;
+            room.hostPeerId = nextPeerData ? nextPeerData.peerId : null;
+            room.controlMode = CONTROL_MODES.EVERYONE;
+            room.controllers = new Set(room.hostPeerId ? [room.hostPeerId] : []);
+            io.to(roomId).emit(EVENTS.CONTROL_MODE, controlModePayload(room));
+            log('ROOM', `Owner left room ${roomId.substring(0, 3)}*** — fell back to 'everyone', new owner: ${room.hostPeerId}`);
+        } else if (wasController) {
+            // A co-host left → keep the mode, just broadcast the updated controller list.
+            io.to(roomId).emit(EVENTS.CONTROL_MODE, controlModePayload(room));
+            log('ROOM', `Controller ${peerId} left room ${roomId.substring(0, 3)}***`);
         }
     }
 
@@ -333,7 +409,19 @@ io.on('connection', (socket) => {
                             peers: new Set(),
                             peerIds: new Map(),
                             peerData: new Map(),
-                            lastActivity: Date.now()
+                            lastActivity: Date.now(),
+                            // Host Control Mode: creator (first joiner) is the host/owner.
+                            hostPeerId: peerId,
+                            controlMode: CONTROL_MODES.EVERYONE,
+                            lastControlModeChangeAt: 0, // M-4: per-room debounce for control-mode toggles
+                            lastRoleChangeAt: 0, // M-4: per-room debounce for role promote/demote
+                            // Co-Host: peers allowed to drive in 'host-only'. Always includes the owner.
+                            controllers: new Set([peerId]),
+                            // H-1: peerId of the in-flight force-sync initiator. Lets a demoted
+                            // controller's FORCE_SYNC_EXECUTE through the host-only gate — without
+                            // it, demoting a co-host mid-force-sync would drop their EXECUTE and
+                            // leave every peer stuck paused.
+                            forceSyncInitiator: null
                         };
                         rooms.set(roomId, room);
                         createdByMe = true;
@@ -415,10 +503,14 @@ io.on('connection', (socket) => {
             peerToSocket.set(peerId, socket.id);
 
             socket.to(roomId).emit(EVENTS.PEER_STATUS, { peerId, username: username || null, tabTitle: tabTitle || null, mediaTitle: mediaTitle || null, status: 'joined' });
-            socket.emit(EVENTS.ROOM_DATA, { 
-                roomId, 
+            socket.emit(EVENTS.ROOM_DATA, {
+                roomId,
                 peers: Array.from(room.peers).map(sid => room.peerData.get(sid)),
-                activeLobby: room.activeLobby || null
+                activeLobby: room.activeLobby || null,
+                hostPeerId: room.hostPeerId || null,
+                controlMode: room.controlMode || CONTROL_MODES.EVERYONE,
+                controllers: room.controllers ? Array.from(room.controllers) : [],
+                capabilities: SERVER_CAPABILITIES
             });
             log('ROOM', `Peer ${peerId} joined: ${roomId.substring(0, 3)}***`);
             } finally {
@@ -458,7 +550,35 @@ io.on('connection', (socket) => {
                     const room = rooms.get(mapping.roomId);
                     if (room) {
                     room.lastActivity = Date.now();
-                    
+
+                    // --- Host Control Mode gate ---
+                    // In 'host-only' mode, drop room-moving events from anyone who is not
+                    // a controller (the owner + any promoted co-hosts). Robust chokepoint:
+                    // independent of client behavior, kills spam. Heartbeats/ACKs pass.
+                    //
+                    // H-1 exception: a demoted co-host's FORCE_SYNC_EXECUTE still has to
+                    // land — otherwise their already-relayed PREPARE would leave the whole
+                    // room stuck paused. Track the in-flight initiator on PREPARE and let
+                    // their matching EXECUTE through regardless of current controllers set.
+                    if (eventName === EVENTS.FORCE_SYNC_PREPARE &&
+                        room.controlMode === CONTROL_MODES.HOST_ONLY &&
+                        room.controllers && room.controllers.has(mapping.peerId)) {
+                        room.forceSyncInitiator = mapping.peerId;
+                    }
+                    const isOwnForceSyncExecute = eventName === EVENTS.FORCE_SYNC_EXECUTE &&
+                        room.forceSyncInitiator && mapping.peerId === room.forceSyncInitiator;
+                    if (!isOwnForceSyncExecute &&
+                        room.controlMode === CONTROL_MODES.HOST_ONLY &&
+                        !(room.controllers && room.controllers.has(mapping.peerId)) &&
+                        HOST_ONLY_GATED_EVENTS.has(eventName)) {
+                        log('ROOM', `Dropped ${eventName} from guest ${mapping.peerId} in host-only room ${mapping.roomId.substring(0, 3)}***`);
+                        return;
+                    }
+                    // Clear initiator tracking once the EXECUTE has been relayed.
+                    if (eventName === EVENTS.FORCE_SYNC_EXECUTE && room.forceSyncInitiator) {
+                        room.forceSyncInitiator = null;
+                    }
+
                     // --- S-2 & S-3: Sanitize ALL relay fields (strings, numbers, booleans) ---
                     const clamp    = (val, max) => typeof val === 'string' ? val.substring(0, max) : undefined;
                     const clampNum = (val, min, max) => typeof val === 'number' && Number.isFinite(val) ? Math.max(min, Math.min(max, val)) : undefined;
@@ -469,12 +589,13 @@ io.on('connection', (socket) => {
                     room.peerData.set(socket.id, { 
                         ...existing,
                         username:      data.username      !== undefined ? (clamp(data.username, 30)   ?? existing.username)      : existing.username,
-                        tabTitle:      data.tabTitle      !== undefined ? (clamp(data.tabTitle, 100)  ?? existing.tabTitle)      : existing.tabTitle,
-                        mediaTitle:    data.mediaTitle    !== undefined ? (clamp(data.mediaTitle, 100) ?? existing.mediaTitle)   : existing.mediaTitle,
+                        tabTitle:      data.tabTitle      === null ? null : (data.tabTitle      !== undefined ? (clamp(data.tabTitle, 100)  ?? existing.tabTitle)      : existing.tabTitle),
+                        mediaTitle:    data.mediaTitle    === null ? null : (data.mediaTitle    !== undefined ? (clamp(data.mediaTitle, 100) ?? existing.mediaTitle)   : existing.mediaTitle),
                         playbackState: data.playbackState !== undefined ? (validState(data.playbackState) ?? existing.playbackState) : existing.playbackState,
-                        currentTime:   data.currentTime   !== undefined ? (clampNum(data.currentTime, 0, 86400) ?? existing.currentTime)   : existing.currentTime,
+                        currentTime:   data.currentTime   === null ? null : (data.currentTime   !== undefined ? (clampNum(data.currentTime, 0, 86400) ?? existing.currentTime)   : existing.currentTime),
                         volume:        data.volume        !== undefined ? (clampNum(data.volume, 0, 1) ?? existing.volume)                 : existing.volume,
                         muted:         data.muted         !== undefined ? (validBool(data.muted) ?? existing.muted)                       : existing.muted,
+                        desynced:      data.desynced      !== undefined ? (validBool(data.desynced) === true) : (existing.desynced || false),
                         lastSeen: Date.now()
                     });
 
@@ -482,14 +603,15 @@ io.on('connection', (socket) => {
                     const relayPayload = {
                         senderId:        mapping.peerId,
                         seq:             clampNum(data.seq, 0, Number.MAX_SAFE_INTEGER),
-                        currentTime:     clampNum(data.currentTime, 0, 86400),
+                        currentTime:     data.currentTime === null ? null : clampNum(data.currentTime, 0, 86400),
                         targetTime:      clampNum(data.targetTime, 0, 86400),
                         playbackState:   validState(data.playbackState),
                         username:        clamp(data.username, 30),
-                        tabTitle:        clamp(data.tabTitle, 100),
-                        mediaTitle:      clamp(data.mediaTitle, 100),
+                        tabTitle:        data.tabTitle === null ? null : clamp(data.tabTitle, 100),
+                        mediaTitle:      data.mediaTitle === null ? null : clamp(data.mediaTitle, 100),
                         volume:          clampNum(data.volume, 0, 1),
                         muted:           validBool(data.muted),
+                        desynced:        validBool(data.desynced),
                         peerId:          mapping.peerId,
                         status:          typeof data.status === 'string' ? data.status.substring(0, 16) : undefined,
                         expectedTitle:   clamp(data.expectedTitle, 100),
@@ -542,6 +664,11 @@ io.on('connection', (socket) => {
     });
 
     socket.on(EVENTS.LEAVE_ROOM, () => {
+        if (!checkLeaveRoomRate(socket.id)) {
+            log('SECURITY', `LEAVE_ROOM rate limit exceeded for socket: ${socket.id}`);
+            socket.disconnect(true);
+            return;
+        }
         try {
             const mapping = socketToRoom.get(socket.id);
             if (mapping) {
@@ -551,6 +678,97 @@ io.on('connection', (socket) => {
         } catch (err) {
             log('ERROR', 'removePeerFromRoom failed in leave', err);
         }
+    });
+
+    socket.on(EVENTS.SET_CONTROL_MODE, (data) => {
+        if (!checkEventRate(socket.id)) {
+            log('SECURITY', `Event rate limit exceeded for socket (SET_CONTROL_MODE): ${socket.id}`);
+            socket.disconnect(true);
+            return;
+        }
+        if (!data || typeof data !== 'object') return;
+        const mode = data.controlMode;
+        if (mode !== CONTROL_MODES.EVERYONE && mode !== CONTROL_MODES.HOST_ONLY) return;
+
+        const mapping = socketToRoom.get(socket.id);
+        if (!mapping) return;
+        const room = rooms.get(mapping.roomId);
+        if (!room) return;
+
+        // Only the owner may change the control mode.
+        if (mapping.peerId !== room.hostPeerId) {
+            log('AUTH', `Non-host ${mapping.peerId} tried to set control mode in ${mapping.roomId.substring(0, 3)}***`);
+            // Re-sync the sender to the actual room state so any optimistic UI
+            // (e.g. popup toggle) reverts — covers stale-local-amHost races (H-5).
+            socket.emit(EVENTS.CONTROL_MODE, controlModePayload(room));
+            return;
+        }
+        if (room.controlMode === mode) return; // no-op, ignore (UI debounce backstop)
+
+        // M-4: per-room debounce — reject toggles faster than CONTROL_MODE_MIN_INTERVAL_MS.
+        // The host still gets the final state via the next legit change; this just
+        // kills the spam vector.
+        const now = Date.now();
+        if (now - room.lastControlModeChangeAt < CONTROL_MODE_MIN_INTERVAL_MS) {
+            log('ROOM', `Control mode toggle debounced in ${mapping.roomId.substring(0, 3)}***`);
+            // Re-sync the sender so any optimistic UI matches the actual (unchanged) state.
+            socket.emit(EVENTS.CONTROL_MODE, controlModePayload(room));
+            return;
+        }
+
+        room.controlMode = mode;
+        room.lastControlModeChangeAt = now;
+        room.lastActivity = now;
+        io.to(mapping.roomId).emit(EVENTS.CONTROL_MODE, controlModePayload(room));
+        log('ROOM', `Control mode set to '${mode}' by host in room ${mapping.roomId.substring(0, 3)}***`);
+    });
+
+    socket.on(EVENTS.SET_PEER_ROLE, (data) => {
+        if (!checkEventRate(socket.id)) {
+            log('SECURITY', `Event rate limit exceeded for socket (SET_PEER_ROLE): ${socket.id}`);
+            socket.disconnect(true);
+            return;
+        }
+        if (!data || typeof data !== 'object') return;
+        const targetPeerId = typeof data.peerId === 'string' ? data.peerId.substring(0, 16) : null;
+        const makeController = data.controller === true;
+        if (!targetPeerId) return;
+
+        const mapping = socketToRoom.get(socket.id);
+        if (!mapping) return;
+        const room = rooms.get(mapping.roomId);
+        if (!room || !room.controllers) return;
+
+        // Only the owner may promote/demote controllers.
+        if (mapping.peerId !== room.hostPeerId) {
+            log('AUTH', `Non-owner ${mapping.peerId} tried to set peer role in ${mapping.roomId.substring(0, 3)}***`);
+            socket.emit(EVENTS.CONTROL_MODE, controlModePayload(room));
+            return;
+        }
+        // The owner is always a controller and cannot be demoted.
+        if (targetPeerId === room.hostPeerId) return;
+        // Target must be a peer currently in the room.
+        const targetPresent = Array.from(room.peerData.values()).some(d => d.peerId === targetPeerId);
+        if (!targetPresent) return;
+
+        const now = Date.now();
+        if (now - (room.lastRoleChangeAt || 0) < CONTROL_MODE_MIN_INTERVAL_MS) {
+            log('ROOM', `Role change debounced in ${mapping.roomId.substring(0, 3)}***`);
+            socket.emit(EVENTS.CONTROL_MODE, controlModePayload(room));
+            return;
+        }
+
+        if (makeController) {
+            if (room.controllers.has(targetPeerId)) return; // no-op
+            room.controllers.add(targetPeerId);
+        } else {
+            if (!room.controllers.has(targetPeerId)) return; // no-op
+            room.controllers.delete(targetPeerId);
+        }
+        room.lastRoleChangeAt = now;
+        room.lastActivity = now;
+        io.to(mapping.roomId).emit(EVENTS.CONTROL_MODE, controlModePayload(room));
+        log('ROOM', `Peer ${targetPeerId} ${makeController ? 'promoted to' : 'demoted from'} controller in ${mapping.roomId.substring(0, 3)}***`);
     });
 
     socket.on(EVENTS.EVENT_ACK, (data) => {
@@ -569,12 +787,18 @@ io.on('connection', (socket) => {
 
         // Security: Only relay ACK if both peers are in the same room
         if (senderMapping && targetMapping && senderMapping.roomId === targetMapping.roomId) {
-            io.to(targetSocketId).emit(EVENTS.EVENT_ACK, { 
+            io.to(targetSocketId).emit(EVENTS.EVENT_ACK, {
                 senderId: senderMapping.peerId,
                 actionTimestamp: data.actionTimestamp
             });
-        } else {
+        } else if (senderMapping && targetMapping) {
+            // Both peers exist but live in different rooms — genuinely suspicious.
             log('SECURITY', `Blocked cross-room ACK attempt from ${socket.id} to ${data.targetId}`);
+        } else {
+            // Benign + common: sender or target left/disconnected before the ACK
+            // arrived (a command was in-flight when they went). Not an attack —
+            // log quietly (verbose only) so it doesn't drown out real signals.
+            log('ACKDROP', `Dropped ACK from ${socket.id} to absent peer ${data.targetId}`);
         }
     });
 
@@ -623,6 +847,7 @@ io.on('connection', (socket) => {
     socket.on('disconnect', () => {
         eventCounts.delete(socket.id);
         roomListCooldowns.delete(socket.id);
+        leaveRoomCounts.delete(socket.id);
         const mapping = socketToRoom.get(socket.id);
         if (mapping) {
             try {
@@ -703,12 +928,14 @@ function gracefulShutdown(signal) {
     log('SERVER', `${signal} received — starting graceful shutdown...`);
     // 1. Notify all connected clients so they can display a meaningful message
     io.emit(EVENTS.ERROR, { message: 'Server is restarting. Reconnecting automatically...' });
-    // 2. Stop accepting new HTTP connections
+    // 2. Gracefully disconnect all Socket.IO clients
+    io.disconnectSockets(true);
+    // 3. Stop accepting new HTTP connections
     httpServer.close(() => {
         log('SERVER', 'HTTP server closed. Exiting.');
         process.exit(0);
     });
-    // 3. Safety net: force-exit after 5s if connections don't drain
+    // 4. Safety net: force-exit after 5s if connections don't drain
     setTimeout(() => {
         log('SERVER', 'Force-exit after timeout.');
         process.exit(1);
@@ -727,7 +954,7 @@ export async function stopServerForTests() {
     healthResponseCache.clear();
     io.removeAllListeners();
     io.disconnectSockets(true);
-    Object.assign(rateLimitDenied, { connections: 0, events: 0, health: 0, adminMetricsAuth: 0, roomList: 0 });
+    Object.assign(rateLimitDenied, { connections: 0, events: 0, health: 0, adminMetricsAuth: 0, roomList: 0, leaveRoom: 0 });
     if (!httpServer.listening) return;
     await new Promise((resolve, reject) => {
         httpServer.close((err) => err ? reject(err) : resolve());

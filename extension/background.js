@@ -1,12 +1,20 @@
-import { EVENTS, PROTOCOL_VERSION, OFFICIAL_SERVER_URL, OFFICIAL_SERVER_TOKEN, EPISODE_LOBBY_TIMEOUT, FORCE_SYNC_TIMEOUT } from './shared/constants.js';
+import { EVENTS, CONTROL_MODES, CAPABILITIES, PROTOCOL_VERSION, OFFICIAL_SERVER_URL, OFFICIAL_SERVER_TOKEN, EPISODE_LOBBY_TIMEOUT, FORCE_SYNC_TIMEOUT, HEARTBEAT_INTERVAL } from './shared/constants.js';
 import { generateUsername } from './shared/names.js';
 import { loadLocale, getMessage, getSystemLanguage } from './i18n.js';
 import { sameEpisode } from './episode-utils.js';
+import { applyTitlePrivacyToPayload, sanitizeSharedTitle, sanitizeTabTitle, normalizeSendTabTitle, normalizeTitlePrivacyMode } from './title-privacy.js';
 import { initTabManager } from './modules/tab-manager.js';
+import './page-api-seek-overrides.js';
 
 // --- Uninstall URL Initialization ---
-chrome.runtime.onInstalled.addListener((details) => {
-    if (details.reason === 'install' || details.reason === 'update') {
+let uninstallURLInitPromise = null;
+
+async function initUninstallURL() {
+    if (uninstallURLInitPromise) {
+        return uninstallURLInitPromise;
+    }
+    
+    uninstallURLInitPromise = (async () => {
         // --- UNINSTALL_URL_INJECT_START ---
         const UNINSTALL_URL = ""; // Populated during build
         const BROWSER_TYPE = "unknown";
@@ -26,10 +34,24 @@ chrome.runtime.onInstalled.addListener((details) => {
                     }
                 }
             } catch (err) {
-                console.error("Invalid uninstall URL provided:", err);
+                console.error("Failed to initialize uninstall URL:", err);
             }
         }
+    })();
+
+    return uninstallURLInitPromise;
+}
+
+chrome.runtime.onInstalled.addListener((details) => {
+    if (details.reason === 'install' || details.reason === 'update') {
+        initUninstallURL();
+        purgeLegacySyncKeys();
     }
+});
+
+chrome.runtime.onStartup.addListener(() => {
+    initUninstallURL();
+    purgeLegacySyncKeys();
 });
 
 // --- State Management ---
@@ -45,10 +67,53 @@ let storageInitialized = false;
 let pendingLogs = [];
 let pendingHistory = [];
 let eventQueue = [];
+let flushTimer = null; // paces draining of eventQueue after (re)connect
 let isNamespaceJoined = false;
 let lastActionState = { action: null, senderId: null, timestamp: 0, acks: [] };
 let localSeq = 0;                         // Monotonically increasing command sequence for this peer
 const lastSeqBySender = {};               // senderId → last received seq (stale command guard)
+
+// --- Host Control Mode ---
+let controlMode = CONTROL_MODES.EVERYONE;  // 'everyone' | 'host-only'
+let hostPeerId = null;                     // peerId of the room host (creator / fallback)
+// Features the connected relay advertises in ROOM_DATA. Empty against an older
+// relay (no capabilities field) → host-control UI/behavior stays unavailable.
+let serverCapabilities = [];
+function serverSupports(cap) { return Array.isArray(serverCapabilities) && serverCapabilities.includes(cap); }
+// Local peer's desync state (content.js reports it via HCM_DESYNC_STATE). Relayed
+// in heartbeats so the host's popup UI can show "Solo" instead of silently
+// appearing un-ACK'd.
+let hcmDesynced = false;
+// Co-Host: peerIds allowed to drive in host-only (always includes the owner).
+let controllers = [];
+function amHost() { return !!peerId && hostPeerId === peerId; }            // owner: can toggle mode / promote
+function amController() { return amHost() || (!!peerId && controllers.includes(peerId)); } // can drive the room
+// Room-moving actions a guest may not initiate while in host-only mode.
+const HOST_ONLY_GATED_ACTIONS = [
+    EVENTS.PLAY, EVENTS.PAUSE, EVENTS.SEEK,
+    EVENTS.FORCE_SYNC_PREPARE, EVENTS.FORCE_SYNC_EXECUTE,
+    EVENTS.EPISODE_LOBBY, EVENTS.EPISODE_LOBBY_CANCEL
+];
+// Best-effort estimate of where the room (host) is right now, for guest snap-back.
+// Extrapolates from the host peer's last known state. Used by content.js.
+function getHostSyncTarget() {
+    if (!currentRoom || !Array.isArray(currentRoom.peers)) return null;
+    const host = currentRoom.peers.find(p => (typeof p === 'object' ? p.peerId : p) === hostPeerId);
+    if (!host || typeof host !== 'object') return null;
+    let targetTime = typeof host.currentTime === 'number' ? host.currentTime : null;
+    if (targetTime !== null && host.playbackState === 'playing' && host.lastHeartbeat) {
+        // M-4: clamp extrapolation. lastHeartbeat is the *arrival* time of the host's
+        // last heartbeat — beyond ~2 heartbeat intervals the host's true state is too
+        // stale (they may have paused without the next heartbeat landing yet) and the
+        // linear extrapolation would overshoot by tens of seconds. Cap it so the
+        // guest snaps to a position within plausibility; the next heartbeat corrects.
+        const elapsedSec = (Date.now() - host.lastHeartbeat) / 1000;
+        if (elapsedSec > 0 && elapsedSec <= 2 * HEARTBEAT_INTERVAL / 1000) {
+            targetTime += elapsedSec;
+        }
+    }
+    return { playbackState: host.playbackState || null, targetTime };
+}
 const activePorts = new Set();            // New: track active content ports for keep-alive
 let expectedAcksCount = 0;                // Snapshot of peerCount when initiating Force Sync
 
@@ -57,6 +122,7 @@ let pingInterval = null;
 let pingTimeout = null;
 let pendingPingT = null;
 let currentPingMs = null;
+let missedPongs = 0;
 
 // --- Keep-Alive Port Listener ---
 chrome.runtime.onConnect.addListener((port) => {
@@ -68,8 +134,14 @@ chrome.runtime.onConnect.addListener((port) => {
     }
 });
 
+let _persistLastSeqTimer = null;
 function _persistLastSeq() {
-    if (storageInitialized) chrome.storage.session.set({ lastSeqBySender });
+    if (!storageInitialized) return;
+    if (_persistLastSeqTimer) clearTimeout(_persistLastSeqTimer);
+    _persistLastSeqTimer = setTimeout(() => {
+        _persistLastSeqTimer = null;
+        chrome.storage.session.set({ lastSeqBySender });
+    }, 500);
 }
 
 // --- Boot Sequence Lock ---
@@ -91,7 +163,8 @@ function ensureState() {
                 'logs', 'history', 'currentRoom', 'lastActionState', 
                 'eventQueue', 'isForceSyncInitiator', 'forceSyncAcks', 
                 'forceSyncDeadline', 'reconnectFailed', 'reconnectStartTime', 'reconnectAttempts', 'currentTabId', 'currentTabTitle',
-                'episodeLobby', 'localSeq', 'lastSeqBySender', 'expectedAcksCount', 'roomIdleSince', 'lastContentHeartbeatAt'
+                'episodeLobby', 'localSeq', 'lastSeqBySender', 'expectedAcksCount', 'roomIdleSince', 'lastContentHeartbeatAt',
+                'hcmDesynced'
             ], (data) => {
                 clearTimeout(storageTimeout);
                 if (data.expectedAcksCount !== undefined) expectedAcksCount = data.expectedAcksCount;
@@ -101,7 +174,20 @@ function ensureState() {
                 // New entries (added during boot) must stay at the top (index 0)
                 if (data.logs) logs = [...logs, ...data.logs].slice(0, 200);
                 if (data.history) history = [...history, ...data.history].slice(0, 20);
-                if (data.currentRoom) currentRoom = data.currentRoom;
+                if (data.currentRoom) {
+                    currentRoom = data.currentRoom;
+                    // Host Control Mode: restore role/mode/capabilities from persisted room.
+                    controlMode = currentRoom.controlMode || CONTROL_MODES.EVERYONE;
+                    hostPeerId = currentRoom.hostPeerId || null;
+                    controllers = Array.isArray(currentRoom.controllers) ? currentRoom.controllers : [];
+                    serverCapabilities = Array.isArray(currentRoom.capabilities) ? currentRoom.capabilities : [];
+                }
+                if (data.hcmDesynced !== undefined) hcmDesynced = data.hcmDesynced;
+                // L-2: enforce the desync invariant on restore — a persisted hcmDesynced=true
+                // is stale if our restored role is no longer "gated guest" (e.g. we became
+                // the host, or the room is in 'everyone'). Without this, the first heartbeat
+                // after SW restart would broadcast a bogus Solo flag for up to 15s.
+                hcmEnforceDesyncInvariant();
                 if (data.lastActionState) lastActionState = data.lastActionState;
                 
                 if (data.eventQueue) eventQueue = [...eventQueue, ...data.eventQueue].slice(0, 50);
@@ -180,8 +266,28 @@ let roomIdleSince = null;
 let lastContentHeartbeatAt = null;
 let connectIntent = false;
 const MAX_RECONNECT_ATTEMPTS = 20;
-const _RECONNECT_BASE_DELAY = 500;
-const _RECONNECT_MAX_DELAY = 5000;
+// Backoff tuned so that at most ~8 connection attempts land in any 60s window,
+// keeping a single client comfortably under the server's per-IP connection
+// budget (10/min) even before jitter. Cumulative (no jitter): 1, 2.8, 6, 11.9,
+// 22.4, 34.4, 46.4, 58.4s → 8th attempt at ~58s.
+const _RECONNECT_BASE_DELAY = 1000;
+const _RECONNECT_MAX_DELAY = 12000;
+const _RECONNECT_FACTOR = 1.8;
+const _RECONNECT_GIVEUP_MS = 300000;  // switch to slow mode after 5 min of fast retries
+const _RECONNECT_SLOW_DELAY = 300000; // slow-mode interval: every 5 min
+const _RECONNECT_JITTER = 0.2;        // ±20% randomization to de-synchronize reconnect herds
+// Paced queue flush: after a (re)connect we drain the offline event backlog in
+// small batches instead of one synchronous burst, so we stay well under the
+// server's per-socket event budget (50 / 10s) and leave headroom for the
+// heartbeats/pings/commands that also count toward it. 10 per 3s ≈ 33/10s.
+const FLUSH_BATCH_SIZE = 10;
+const FLUSH_BATCH_INTERVAL_MS = 3000;
+// Ping liveness: a single unanswered ping is tolerated (transient network
+// blip); only MAX_MISSED_PONGS consecutive misses force a reconnect. With a
+// 15s interval and 5s timeout that means ~20s to detect a genuinely dead link.
+const PING_INTERVAL_MS = 15000;
+const PING_TIMEOUT_MS = 5000;
+const MAX_MISSED_PONGS = 2;
 const ROOM_IDLE_AUTO_LEAVE_MS = 2 * 60 * 60 * 1000;
 
 // Force Sync Coordination
@@ -211,6 +317,7 @@ function createPeerData(raw) {
         currentTime:   raw.currentTime   != null ? raw.currentTime : null,
         volume:        raw.volume        != null ? raw.volume       : null,
         muted:         raw.muted         != null ? raw.muted        : null,
+        desynced:      raw.desynced === true,   // HCM: peer is watching on their own
         lastHeartbeat: Date.now()
     };
 }
@@ -240,44 +347,78 @@ function updateLocalPeerState(targetPeerId, updates) {
 async function getPeerId() {
     const data = await chrome.storage.local.get(['peerId']);
     if (data.peerId) return data.peerId;
-    const newId = self.crypto.randomUUID().substring(0, 8);
+    // 16 hex chars = 64 bits. At a busy relay (25k concurrent peers) the 32-bit
+    // (8-hex) generation would hit ~7% collision probability per snapshot —
+    // and a same-room collision triggers our dedup path, kicking the older
+    // session with a confusing error. 16 hex chars drops the probability to
+    // ~1e-10 even at a million peers, and the server already clamps peerId to
+    // 16 chars (server/index.js JOIN_ROOM sanitizer). Existing persisted 8-char
+    // IDs continue to work — this only affects newly-generated IDs.
+    const newId = self.crypto.randomUUID().replace(/-/g, '').substring(0, 16);
     await chrome.storage.local.set({ peerId: newId });
     return newId;
 }
 
 async function getSettings() {
-    // Try local (per-device) first, fall back to sync for migration
-    let data = await chrome.storage.local.get(['serverUrl', 'useCustomServer', 'roomId', 'password', 'username']);
-    let migrated = false;
-    if (!data.username) {
-        const syncData = await chrome.storage.sync.get(['serverUrl', 'useCustomServer', 'roomId', 'password', 'username']);
-        if (syncData.username || syncData.roomId) {
-            data = syncData;
-            migrated = true;
-        }
-    }
+    // Local-only by design. Room credentials (roomId/password) and identity
+    // (username) must NEVER come from storage.sync — syncing them across devices
+    // both leaks them and resurrects dead rooms on reinstall (a fresh install
+    // has empty local storage but sync survives in the user's Google account).
+    const data = await chrome.storage.local.get(['serverUrl', 'useCustomServer', 'roomId', 'password', 'username', 'sendTabTitle', 'mediaTitlePrivacyMode', 'titlePrivacyMode']);
     let username = data.username;
     if (!username) {
         username = generateUsername();
-    }
-    if (migrated) {
-        await chrome.storage.local.set({ 
-            serverUrl: data.serverUrl || '',
-            useCustomServer: data.useCustomServer || false,
-            roomId: data.roomId || '',
-            password: data.password || '',
-            username
-        });
-    } else if (!data.username) {
         await chrome.storage.local.set({ username });
     }
+    const legacyTitlePrivacyMode = normalizeTitlePrivacyMode(data.titlePrivacyMode);
+    const mediaTitlePrivacyMode = normalizeTitlePrivacyMode(data.mediaTitlePrivacyMode || legacyTitlePrivacyMode);
     return {
         serverUrl: data.serverUrl || '',
         useCustomServer: data.useCustomServer || false,
         roomId: data.roomId || '',
         password: data.password || '',
-        username
+        username,
+        sendTabTitle: normalizeSendTabTitle(data.sendTabTitle, legacyTitlePrivacyMode),
+        mediaTitlePrivacyMode
     };
+}
+
+function getSharedTitleFields(settings, mediaTitle = null) {
+    return {
+        tabTitle: sanitizeTabTitle(currentTabTitle, settings?.sendTabTitle),
+        mediaTitle: sanitizeSharedTitle(mediaTitle, settings?.mediaTitlePrivacyMode)
+    };
+}
+
+function withTitlePrivacy(payload, settings, keys) {
+    return applyTitlePrivacyToPayload(payload, settings?.mediaTitlePrivacyMode, keys);
+}
+
+function emitEpisodeLobbyForCurrentPrivacy() {
+    if (!episodeLobby || episodeLobby.initiatorPeerId !== peerId) return;
+    getSettings().then(settings => {
+        if (!episodeLobby || episodeLobby.initiatorPeerId !== peerId) return;
+        const expectedTitle = sanitizeSharedTitle(episodeLobby.expectedTitle, settings.mediaTitlePrivacyMode);
+        if (expectedTitle) {
+            emit(EVENTS.EPISODE_LOBBY, { peerId, expectedTitle });
+        }
+    }).catch(err => {
+        addLog('Episode lobby privacy error: ' + err.message, 'error');
+    });
+}
+
+// Privacy + correctness: only onboardingComplete and dismissedHints belong in
+// storage.sync. Everything else is per-device local storage. This actively
+// removes legacy keys that older versions wrote to sync (and that would
+// otherwise be redistributed across devices and resurrected on reinstall).
+const LEGACY_SYNC_KEYS = [
+    'serverUrl', 'useCustomServer', 'roomId', 'password', 'username',
+    'filterNoise', 'autoSyncNextEpisode', 'forceSyncMode',
+    'browserNotifications', 'autoCopyInvite', 'locale', 'audioSettings',
+    'titlePrivacyMode', 'sendTabTitle', 'mediaTitlePrivacyMode'
+];
+function purgeLegacySyncKeys() {
+    chrome.storage.sync.remove(LEGACY_SYNC_KEYS).catch(() => {});
 }
 
 function addLog(message, type = 'info') {
@@ -332,6 +473,7 @@ function forceDisconnect() {
     roomIdleSince = null;
     lastContentHeartbeatAt = null;
     forceSyncAcks.clear();
+    if (flushTimer) { clearTimeout(flushTimer); flushTimer = null; }
     eventQueue = [];
     chrome.storage.session.set({
         isForceSyncInitiator: false,
@@ -394,6 +536,14 @@ async function leaveRoomAfterIdleGrace(reason) {
     emit(EVENTS.LEAVE_ROOM, { peerId });
     forceDisconnect();
     currentRoom = null;
+    controlMode = CONTROL_MODES.EVERYONE;
+    hostPeerId = null;
+    controllers = [];
+    serverCapabilities = [];
+    hcmDesynced = false;
+    // Notify content.js/popup BEFORE currentTabId is cleared so they can reset
+    // any stale guest-side HCM state (dialog/badge/desync) — H-2.
+    broadcastControlMode();
     currentTabId = null;
     currentTabTitle = null;
     roomIdleSince = null;
@@ -405,7 +555,8 @@ async function leaveRoomAfterIdleGrace(reason) {
         currentTabTitle: null,
         roomIdleSince: null,
         lastContentHeartbeatAt: null,
-        episodeLobby: null
+        episodeLobby: null,
+        hcmDesynced: false
     }).catch(() => {});
     await chrome.storage.local.set({ roomId: '', password: '' }).catch(() => {});
     addLog(reason, 'info');
@@ -520,21 +671,17 @@ async function connect() {
                 addLog('Joined Namespace /', 'success');
                 const settings = await getSettings();
                 if (settings.roomId) {
+                    const sharedTitles = getSharedTitleFields(settings);
                     emit(EVENTS.JOIN_ROOM, { 
                         roomId: settings.roomId, 
                         password: settings.password,
                         peerId,
                         username: settings.username,
-                        tabTitle: currentTabTitle,
+                        tabTitle: sharedTitles.tabTitle,
                         protocolVersion: PROTOCOL_VERSION
                     });
                 }
-                while (eventQueue.length > 0) {
-                    const queuedMsg = eventQueue.shift();
-                    emit(queuedMsg.event, queuedMsg.data);
-                }
-                eventQueue = [];
-                chrome.storage.session.set({ eventQueue: [] });
+                flushEventQueue();
             } else if (msg.startsWith('42')) {
                 try {
                     const payload = JSON.parse(msg.substring(2));
@@ -553,6 +700,7 @@ async function connect() {
             isConnecting = false;
             isNamespaceJoined = false;
             stopPing();
+            if (flushTimer) { clearTimeout(flushTimer); flushTimer = null; }
             
             if (!connectIntent && !currentRoom) {
                 isForceSyncInitiator = false;
@@ -601,7 +749,36 @@ async function connect() {
 }
 
 
+// Invariant: only a gated guest (host-only room AND not the host) can be
+// "desynced". Any role/mode change that makes us the host, or switches the room
+// to 'everyone', must clear the persisted flag — otherwise a stale value would
+// mislabel us as "Solo" to peers and (in content) keep us ignoring host commands
+// after the reason to is gone. Call after any controlMode/hostPeerId change.
+function hcmEnforceDesyncInvariant() {
+    if (hcmDesynced && !(controlMode === CONTROL_MODES.HOST_ONLY && !amController())) {
+        hcmDesynced = false;
+        if (storageInitialized) chrome.storage.session.set({ hcmDesynced: false });
+    }
+}
+
+function broadcastControlMode() {
+    // Notify popup (role badge / host toggle) and the active content tab
+    // (so it can enable/disable the host-only guest gate).
+    const payload = { type: 'CONTROL_MODE', controlMode, hostPeerId, controllers, amHost: amHost(), amController: amController(), hostControlSupported: serverSupports(CAPABILITIES.HOST_CONTROL), coHostSupported: serverSupports(CAPABILITIES.CO_HOST) };
+    chrome.runtime.sendMessage(payload).catch(() => {});
+    if (currentTabId) {
+        const tabId = parseInt(currentTabId);
+        if (!isNaN(tabId)) chrome.tabs.sendMessage(tabId, payload).catch(() => {});
+    }
+}
+
 function broadcastConnectionStatus(status) {
+    // No room and no intent to connect → this isn't a failure, it's the normal
+    // resting state. Surface a distinct 'idle' status so the UI can say
+    // "ready to connect" instead of a misleading red "Disconnected".
+    if (status === 'disconnected' && !currentRoom && !connectIntent) {
+        status = 'idle';
+    }
     chrome.runtime.sendMessage({ type: 'CONNECTION_STATUS', status }).catch(() => {});
     updateBadgeStatus();
 }
@@ -671,17 +848,22 @@ function scheduleReconnect() {
     const elapsed = Date.now() - reconnectStartTime;
     reconnectAttempts++;
 
-    if (!reconnectFailed && (elapsed > 300000 || reconnectAttempts > MAX_RECONNECT_ATTEMPTS)) {
+    if (!reconnectFailed && (elapsed > _RECONNECT_GIVEUP_MS || reconnectAttempts > MAX_RECONNECT_ATTEMPTS)) {
         reconnectFailed = true;
         addLog('Switching to slow reconnect mode (every 5 minutes)', 'warn');
     }
 
-    const delay = reconnectFailed
-        ? 300000
-        : Math.min(_RECONNECT_BASE_DELAY * Math.pow(1.5, reconnectAttempts - 1), _RECONNECT_MAX_DELAY);
+    const baseDelay = reconnectFailed
+        ? _RECONNECT_SLOW_DELAY
+        : Math.min(_RECONNECT_BASE_DELAY * Math.pow(_RECONNECT_FACTOR, reconnectAttempts - 1), _RECONNECT_MAX_DELAY);
+    // Jitter de-synchronizes herds: many clients dropped by the same server
+    // blip won't all reconnect on the same tick and exhaust the connection
+    // budget in lockstep. Applied in both fast and slow mode.
+    const jitterFactor = 1 - _RECONNECT_JITTER + Math.random() * 2 * _RECONNECT_JITTER;
+    const delay = Math.round(baseDelay * jitterFactor);
 
     if (reconnectFailed) {
-        addLog(`Slow reconnect in 5min (attempt ${reconnectAttempts})`, 'info');
+        addLog(`Slow reconnect in ~5min (attempt ${reconnectAttempts})`, 'info');
     } else {
         addLog(`Reconnect in ${Math.round(delay)}ms (attempt ${reconnectAttempts})`, 'warn');
     }
@@ -699,15 +881,56 @@ function scheduleReconnect() {
 function emit(event, data) {
     if (socket && socket.readyState === WebSocket.OPEN && isNamespaceJoined) {
         const msg = `42${JSON.stringify([event, data])}`;
-        socket.send(msg);
-    } else {
-        eventQueue.push({ event, data });
-        if (eventQueue.length > 50) {
-            eventQueue.shift();
-            addLog('Event queue cap reached, dropping oldest event', 'warn');
+        try {
+            socket.send(msg);
+        } catch (e) {
+            // The socket can close between the readyState check and send()
+            // (race with a server-side disconnect). Re-queue so the event is
+            // retried on the next successful (re)connect instead of being lost.
+            addLog(`Send failed, re-queueing ${event}: ${e.message}`, 'warn');
+            queueEvent(event, data);
         }
-        chrome.storage.session.set({ eventQueue });
+    } else {
+        queueEvent(event, data);
     }
+}
+
+function queueEvent(event, data) {
+    eventQueue.push({ event, data });
+    if (eventQueue.length > 50) {
+        eventQueue.shift();
+        addLog('Event queue cap reached, dropping oldest event', 'warn');
+    }
+    chrome.storage.session.set({ eventQueue });
+}
+
+/**
+ * Drain the offline event queue in paced batches. A reconnect after a long
+ * outage can leave up to 50 queued events; dumping them in one tick would
+ * exceed the server's per-socket event budget and get us disconnected right
+ * after rejoining. We send FLUSH_BATCH_SIZE events, then wait
+ * FLUSH_BATCH_INTERVAL_MS before the next batch. Remaining events drain across
+ * subsequent batches; if the connection drops mid-drain, the rest stay queued.
+ */
+function flushEventQueue() {
+    if (flushTimer) return; // a drain is already in progress
+    const drainBatch = () => {
+        flushTimer = null;
+        if (!socket || socket.readyState !== WebSocket.OPEN || !isNamespaceJoined) {
+            return; // lost the connection — leave the rest queued for next connect
+        }
+        let sent = 0;
+        while (eventQueue.length > 0 && sent < FLUSH_BATCH_SIZE) {
+            const queuedMsg = eventQueue.shift();
+            emit(queuedMsg.event, queuedMsg.data);
+            sent++;
+        }
+        chrome.storage.session.set({ eventQueue }).catch(() => {});
+        if (eventQueue.length > 0) {
+            flushTimer = setTimeout(drainBatch, FLUSH_BATCH_INTERVAL_MS);
+        }
+    };
+    drainBatch();
 }
 
 function addToHistory(action, senderId) {
@@ -733,16 +956,23 @@ function sendPing() {
     emit(EVENTS.PING, { t });
     if (pingTimeout) clearTimeout(pingTimeout);
     pingTimeout = setTimeout(() => {
-        if (pendingPingT === t) {
-            addLog('Ping timeout reached, force disconnecting to trigger reconnect', 'warn');
-            pendingPingT = null;
+        pingTimeout = null;
+        if (pendingPingT !== t) return; // a PONG arrived in time
+        // This ping went unanswered. Tolerate transient blips: only force a
+        // reconnect after MAX_MISSED_PONGS consecutive misses, not the first.
+        pendingPingT = null;
+        missedPongs++;
+        if (missedPongs >= MAX_MISSED_PONGS) {
+            addLog(`${missedPongs} consecutive pings unanswered — force disconnecting to trigger reconnect`, 'warn');
+            missedPongs = 0;
             forceDisconnect();
             if (currentRoom || connectIntent) {
                 scheduleReconnect();
             }
+        } else {
+            addLog(`Ping unanswered (${missedPongs}/${MAX_MISSED_PONGS}) — retrying next interval`, 'warn');
         }
-        pingTimeout = null;
-    }, 5000);
+    }, PING_TIMEOUT_MS);
 }
 
 function startPing() {
@@ -750,7 +980,8 @@ function startPing() {
     if (pingTimeout) { clearTimeout(pingTimeout); pingTimeout = null; }
     currentPingMs = null;
     pendingPingT = null;
-    pingInterval = setInterval(sendPing, 15000);
+    missedPongs = 0;
+    pingInterval = setInterval(sendPing, PING_INTERVAL_MS);
     sendPing();
 }
 
@@ -765,6 +996,7 @@ function stopPing() {
     }
     currentPingMs = null;
     pendingPingT = null;
+    missedPongs = 0;
 }
 
 // --- Event Handlers ---
@@ -773,9 +1005,29 @@ function handleServerEvent(event, data) {
         addLog(`Ignored server event ${event} due to empty payload`, 'warn');
         return;
     }
+    // Host Control Mode (receiver-side backstop): in host-only mode, ignore
+    // room-moving events from any non-controller. The server already drops these,
+    // so this covers old/buggy/modified clients that slipped through.
+    // Defensive: require a known hostPeerId — if the server ever sends host-only
+    // without a host (state inconsistency), gate-everyone would lock the owner
+    // out of their own room (L-6).
+    if (controlMode === CONTROL_MODES.HOST_ONLY &&
+        hostPeerId &&
+        HOST_ONLY_GATED_ACTIONS.includes(event) &&
+        data.senderId && data.senderId !== hostPeerId && !controllers.includes(data.senderId)) {
+        addLog(`Ignored ${event} from non-controller ${data.senderId} (host-only)`, 'warn');
+        return;
+    }
     switch (event) {
         case EVENTS.ROOM_DATA:
             currentRoom = data;
+            // Host Control Mode: adopt room role/mode on (re)join.
+            controlMode = data.controlMode || CONTROL_MODES.EVERYONE;
+            hostPeerId = data.hostPeerId || null;
+            controllers = Array.isArray(data.controllers) ? data.controllers : [];
+            serverCapabilities = Array.isArray(data.capabilities) ? data.capabilities : [];
+            hcmEnforceDesyncInvariant();
+            broadcastControlMode();
             markRoomPotentiallyIdle();
             if (currentRoom && Array.isArray(currentRoom.peers)) {
                 currentRoom.peers = currentRoom.peers.map(p => typeof p === 'object' ? createPeerData(p) : { peerId: p, username: null, tabTitle: null, mediaTitle: null, playbackState: null, currentTime: null, volume: null, muted: null, lastHeartbeat: Date.now() });
@@ -832,6 +1084,21 @@ function handleServerEvent(event, data) {
                     chrome.tabs.sendMessage(tab.id, joinStatusMsg).catch(() => {});
                 });
             });
+            break;
+        case EVENTS.CONTROL_MODE:
+            // Host Control Mode changed (toggle or host-leave fallback).
+            controlMode = data.controlMode || CONTROL_MODES.EVERYONE;
+            hostPeerId = data.hostPeerId || null;
+            controllers = Array.isArray(data.controllers) ? data.controllers : [];
+            hcmEnforceDesyncInvariant();
+            if (currentRoom) {
+                currentRoom.controlMode = controlMode;
+                currentRoom.hostPeerId = hostPeerId;
+                currentRoom.controllers = controllers;
+                if (storageInitialized) chrome.storage.session.set({ currentRoom });
+            }
+            addLog(`Control mode: ${controlMode}${amHost() ? ' (you are owner)' : (amController() ? ' (you are controller)' : '')}`, 'info');
+            broadcastControlMode();
             break;
         case EVENTS.ROOM_LIST:
             chrome.runtime.sendMessage({ type: 'ROOM_LIST', rooms: data.rooms }).catch(() => {});
@@ -989,15 +1256,23 @@ function handleServerEvent(event, data) {
                 if (!Array.isArray(currentRoom.peers)) currentRoom.peers = [];
                 if (data.status === 'joined') {
                     if (!currentRoom.peers.find(p => (p.peerId || p) === data.peerId)) {
+                        const wasSolo = currentRoom.peers.filter(p => (p.peerId || p) !== peerId).length === 0;
                         delete lastSeqBySender[data.peerId];
                         _persistLastSeq();
-                        
+
                         currentRoom.peers.push(createPeerData(data));
                         if (storageInitialized) chrome.storage.session.set({ currentRoom });
                         chrome.runtime.sendMessage({ type: 'PEER_UPDATE', peers: currentRoom.peers }).catch(() => {});
 
+                        // We were alone and now we're not — proactively push our
+                        // current playback state so the newcomer syncs immediately
+                        // instead of waiting up to a full heartbeat interval.
+                        if (wasSolo && currentTabId) {
+                            chrome.tabs.sendMessage(currentTabId, { type: 'REQUEST_HEARTBEAT' }).catch(() => {});
+                        }
+
                         if (episodeLobby && episodeLobby.initiatorPeerId === peerId) {
-                            emit(EVENTS.EPISODE_LOBBY, { peerId, expectedTitle: episodeLobby.expectedTitle });
+                            emitEpisodeLobbyForCurrentPrivacy();
                         }
                     }
                 } else if (data.status === 'left') {
@@ -1027,6 +1302,11 @@ function handleServerEvent(event, data) {
                             peer.mediaTitle = data.mediaTitle !== undefined ? data.mediaTitle : peer.mediaTitle;
                             peer.volume = data.volume !== undefined ? data.volume : peer.volume;
                             peer.muted = data.muted !== undefined ? data.muted : peer.muted;
+                            // Only update when present. Our own heartbeats now carry
+                            // 'desynced', but other PEER_STATUS variants (server join
+                            // broadcast, future/old clients) omit it — and clobbering it
+                            // to false there would flicker the host's "Solo" badge.
+                            if (data.desynced !== undefined) peer.desynced = data.desynced === true;
 
                             const timeSinceReactive = peer.lastReactiveUpdate ? (Date.now() - peer.lastReactiveUpdate) : Infinity;
                             const ignoreStatus = timeSinceReactive < 300;
@@ -1105,6 +1385,7 @@ function handleServerEvent(event, data) {
             if (data && typeof data.t === 'number' && Number.isFinite(data.t)) {
                 if (pendingPingT === data.t) {
                     pendingPingT = null;
+                    missedPongs = 0;
                     if (pingTimeout) {
                         clearTimeout(pingTimeout);
                         pingTimeout = null;
@@ -1259,8 +1540,12 @@ function executeEpisodeLobby() {
 
 function checkEpisodeLobbyCompletion() {
     if (!episodeLobby || !currentRoom) return;
-    const peerCount = currentRoom.peers ? currentRoom.peers.length : 1;
-    if (episodeLobby.readyPeers.length >= peerCount) {
+    const peers = Array.isArray(currentRoom.peers) ? currentRoom.peers : [];
+    // M-3: desynced peers (watching on their own) sit out the lobby — their content
+    // script ignores EPISODE_LOBBY and never reports ready. Don't let them block
+    // completion: count only peers who actually participate.
+    const participatingCount = peers.filter(p => !(typeof p === 'object' && p.desynced)).length;
+    if (episodeLobby.readyPeers.length >= participatingCount) {
         executeEpisodeLobby();
     }
 }
@@ -1308,6 +1593,188 @@ async function routeToContent(action, payload) {
     _routeToContentInternal(tabId, action, payload, actionTimestamp, commandSenderId, 0);
 }
 
+function getTabVideoState(tabId) {
+    return new Promise((resolve) => {
+        chrome.tabs.sendMessage(tabId, { type: 'GET_VIDEO_STATE' }, (res) => {
+            if (chrome.runtime.lastError) {
+                resolve({ error: chrome.runtime.lastError.message });
+                return;
+            }
+            resolve(res);
+        });
+    });
+}
+
+async function getReadyTabVideoState(tabId) {
+    let state = await getTabVideoState(tabId);
+    if (!state || state.error) {
+        await injectContentScript(tabId);
+        await new Promise(resolve => setTimeout(resolve, 250));
+        state = await getTabVideoState(tabId);
+    }
+    return state;
+}
+
+async function simulateRemoteSeek(delta, explicitTargetTime = null) {
+    if (!currentTabId) return { status: 'no_tab' };
+    const tabId = parseInt(currentTabId);
+    if (isNaN(tabId)) return { status: 'no_tab' };
+
+    const state = await getReadyTabVideoState(tabId);
+    if (!state || state.error) return { status: 'error', message: state?.error || 'No video state' };
+    if (!state.found || !Number.isFinite(state.currentTime)) return { status: 'no_video' };
+
+    let targetTime = explicitTargetTime !== null ? explicitTargetTime : Math.max(0, state.currentTime + (delta || 0));
+    if (Number.isFinite(state.duration) && state.duration > 0) {
+        targetTime = Math.min(targetTime, Math.max(0, state.duration - 0.1));
+    }
+
+    const senderId = 'KoalaDev';
+    const timestamp = Date.now();
+    const payload = {
+        senderId,
+        actionTimestamp: timestamp,
+        currentTime: targetTime,
+        targetTime
+    };
+
+    addToHistory(EVENTS.SEEK, senderId);
+    showNotification(senderId, EVENTS.SEEK);
+    updateLastAction(EVENTS.SEEK, senderId, timestamp);
+    lastActionState.targetTime = targetTime;
+    if (storageInitialized) chrome.storage.session.set({ lastActionState });
+    updateLocalPeerState(senderId, { currentTime: targetTime });
+    routeToContent(EVENTS.SEEK, payload);
+
+    return { status: 'ok', targetTime };
+}
+
+async function devRemoteToolsAllowed() {
+    const data = await chrome.storage.local.get(['username']);
+    return data.username === 'KoalaDev';
+}
+
+function shouldUsePageApiSeek(url) {
+    return typeof globalThis.koalaFindPageApiSeekProvider === 'function' &&
+        !!globalThis.koalaFindPageApiSeekProvider(url);
+}
+
+function installPageApiSeekBridge() {
+    if (window.__koalaPageApiSeekBridgeInstalled) return;
+    window.__koalaPageApiSeekBridgeInstalled = true;
+
+    function currentMatch() {
+        return typeof window.koalaFindPageApiSeekProvider === 'function'
+            ? window.koalaFindPageApiSeekProvider(window.location.hostname)
+            : null;
+    }
+
+    // Disney+ ("hive"/BAM) player: the real media player hangs off the
+    // <disney-web-player> custom element as `.mediaPlayer`, exposing precise
+    // seek(ms) and timeline.info (playhead/duration in ms).
+    function disneyMediaPlayer() {
+        const el = document.querySelector('disney-web-player');
+        return el && el.mediaPlayer ? el.mediaPlayer : null;
+    }
+
+    function seekWithPageApi(time) {
+        const match = currentMatch();
+        if (!match) return;
+
+        try {
+            if (match.provider === 'netflix') {
+                const videoPlayer = window.netflix?.appContext?.state?.playerApp?.getAPI?.().videoPlayer;
+                const ids = videoPlayer?.getAllPlayerSessionIds?.();
+                const sessionId = ids ? ids[0] : null;
+                const player = sessionId ? videoPlayer.getVideoPlayerBySessionId(sessionId) : null;
+                player?.seek(Math.round(time * 1000));
+            } else if (match.provider === 'disney') {
+                const mp = disneyMediaPlayer();
+                if (mp && typeof mp.seek === 'function') mp.seek(Math.round(time * 1000));
+            }
+        } catch (_e) {
+            // Player not ready or private API changed; the next sync tick can retry.
+        }
+    }
+
+    window.addEventListener('message', (event) => {
+        if (event.source !== window) return;
+        const data = event.data;
+        if (!data || data.__koalaPageApiSeek !== 1 || data.kind !== 'seek' || typeof data.time !== 'number') return;
+        seekWithPageApi(data.time);
+    });
+
+    // Disney+'s <video> currentTime is blob-relative and its scrubber lags, so
+    // the isolated-world content script can't read an accurate position. Push
+    // the real playhead/duration (seconds) from the page's media player.
+    setInterval(() => {
+        try {
+            const match = currentMatch();
+            if (!match || match.provider !== 'disney') return;
+            const mp = disneyMediaPlayer();
+            const info = mp && mp.timeline && mp.timeline.info;
+            if (!info || typeof info.playheadPositionMs !== 'number' || typeof info.programDurationMs !== 'number') return;
+            if (info.programDurationMs <= 0) return;
+            window.postMessage({
+                __koalaPlayerTime: 1,
+                provider: 'disney',
+                position: info.playheadPositionMs / 1000,
+                duration: info.programDurationMs / 1000
+            }, '*');
+        } catch (_e) {
+            // Ignore transient errors (player teardown / element swap).
+        }
+    }, 250);
+}
+
+function setPageApiSeekEnabled(enabled) {
+    window.KOALA_PAGE_API_SEEK_ENABLED = enabled === true;
+}
+
+async function injectContentScript(tabId) {
+    let needsPageApiSeek = false;
+    let pageApiSeekReady = false;
+    try {
+        const tab = await chrome.tabs.get(tabId);
+        const url = tab?.url || '';
+        needsPageApiSeek = shouldUsePageApiSeek(url);
+    } catch (_e) {
+        // Fall through to the generic content script injection.
+    }
+
+    if (needsPageApiSeek) {
+        try {
+            await chrome.scripting.executeScript({
+                target: { tabId },
+                world: 'MAIN',
+                files: ['page-api-seek-overrides.js']
+            });
+            await chrome.scripting.executeScript({
+                target: { tabId },
+                world: 'MAIN',
+                func: installPageApiSeekBridge
+            });
+            pageApiSeekReady = true;
+        } catch (err) {
+            addLog(`Page API seek bridge injection failed: ${err.message}`, 'warn');
+        }
+    }
+
+    await chrome.scripting.executeScript({
+        target: { tabId },
+        files: ['page-api-seek-overrides.js']
+    });
+    await chrome.scripting.executeScript({
+        target: { tabId },
+        func: setPageApiSeekEnabled,
+        args: [pageApiSeekReady]
+    });
+    return chrome.scripting.executeScript({
+        target: { tabId },
+        files: ['content.js']
+    });
+}
+
 function _routeToContentInternal(tabId, action, payload, actionTimestamp, commandSenderId, retries) {
     chrome.tabs.sendMessage(tabId, { 
         type: 'SERVER_COMMAND',
@@ -1322,10 +1789,7 @@ function _routeToContentInternal(tabId, action, payload, actionTimestamp, comman
             return;
         }
         if (err.message.includes('Receiving end does not exist') || err.message.includes('Extension context invalidated')) {
-            chrome.scripting.executeScript({
-                target: { tabId },
-                files: ['content.js']
-            }).then(() => {
+            injectContentScript(tabId).then(() => {
                 setTimeout(() => _routeToContentInternal(tabId, action, payload, actionTimestamp, commandSenderId, retries + 1), 500);
             }).catch(_err => {
                 addLog(`Auto-reinject failed for tab ${tabId}`, 'warn');
@@ -1357,14 +1821,20 @@ chrome.alarms.onAlarm.addListener(async (alarm) => {
                 await leaveRoomAfterIdleGrace('Left room after 2 hours without a selected video heartbeat.');
                 return;
             }
-            // Heartbeat Logic: Always include identity metadata
-            const settings = await getSettings();
-            emit(EVENTS.PEER_STATUS, { 
-                peerId, 
-                status: 'heartbeat',
-                username: settings.username,
-                tabTitle: currentTabTitle
-            });
+            // Heartbeat — only broadcast when someone else is in the room.
+            // Recomputed live so a freshly joined peer is picked up immediately.
+            const otherCount = currentRoom && Array.isArray(currentRoom.peers) ? currentRoom.peers.filter(p => (typeof p === 'object' ? p.peerId : p) !== peerId).length : 0;
+            if (otherCount > 0) {
+                const settings = await getSettings();
+                const sharedTitles = getSharedTitleFields(settings);
+                emit(EVENTS.PEER_STATUS, {
+                    peerId,
+                    status: 'heartbeat',
+                    username: settings.username,
+                    tabTitle: sharedTitles.tabTitle,
+                    desynced: hcmDesynced
+                });
+            }
         }
     }
 });
@@ -1374,7 +1844,15 @@ function leaveOldRoomIfSwitching(newRoomId) {
         addLog(`Switching rooms: leaving ${currentRoom.roomId} to join ${newRoomId}`, 'info');
         forceDisconnect();
         currentRoom = null;
-        if (storageInitialized) chrome.storage.session.set({ currentRoom: null });
+        controlMode = CONTROL_MODES.EVERYONE;
+        hostPeerId = null;
+        controllers = [];
+        serverCapabilities = [];
+        hcmDesynced = false;
+        // Notify content.js/popup so they drop any guest-side HCM state from the
+        // previous room (badge/dialog/desync) — H-2/H-3.
+        broadcastControlMode();
+        if (storageInitialized) chrome.storage.session.set({ currentRoom: null, hcmDesynced: false });
         chrome.runtime.sendMessage({ type: 'PEER_UPDATE', peers: [] }).catch(() => {});
 
         // Reset force sync states
@@ -1401,14 +1879,8 @@ function resetAudioProcessingInTab(tabId) {
 
 async function applyAudioSettingsToTab(tabId) {
     if (!tabId) return;
-    let data = (await chrome.storage.local.get(['audioSettings']));
-    if (!data.audioSettings) {
-        const syncData = await chrome.storage.sync.get(['audioSettings']);
-        if (syncData.audioSettings) {
-            data = syncData;
-            await chrome.storage.local.set({ audioSettings: syncData.audioSettings });
-        }
-    }
+    // Local-only: audioSettings are never read from storage.sync.
+    const data = await chrome.storage.local.get(['audioSettings']);
     chrome.tabs.sendMessage(tabId, {
         action: 'APPLY_AUDIO_SETTINGS',
         settings: data.audioSettings
@@ -1452,12 +1924,13 @@ async function handleAsyncMessage(message, sender, sendResponse) {
             if (desiredUrl !== currentServerUrl) forceDisconnect();
             if (settings.roomId) connect();
         } else if (settings.roomId) {
+            const sharedTitles = getSharedTitleFields(settings);
             emit(EVENTS.JOIN_ROOM, { 
                 roomId: settings.roomId, 
                 password: settings.password,
                 peerId,
                 username: settings.username,
-                tabTitle: currentTabTitle,
+                tabTitle: sharedTitles.tabTitle,
                 protocolVersion: PROTOCOL_VERSION
             });
         }
@@ -1475,6 +1948,8 @@ async function handleAsyncMessage(message, sender, sendResponse) {
         const isConnected = socket && socket.readyState === WebSocket.OPEN && isNamespaceJoined;
         const isReconnecting = !isConnected && reconnectAttempts > 0;
         let status = isConnected ? 'connected' : (isConnecting || (socket && socket.readyState === WebSocket.CONNECTING) ? 'connecting' : (isReconnecting ? 'reconnecting' : 'disconnected'));
+        // Distinguish the normal "not in a room" resting state from a real drop.
+        if (status === 'disconnected' && !currentRoom && !connectIntent) status = 'idle';
         sendResponse({ 
             status, 
             peerId, 
@@ -1488,9 +1963,83 @@ async function handleAsyncMessage(message, sender, sendResponse) {
             serverUrl: currentServerUrl,
             version: chrome.runtime.getManifest().version,
             protocolVersion: PROTOCOL_VERSION,
-            roomPassword: currentRoom ? currentRoom.password : null,
-            ping: currentPingMs
+            ping: currentPingMs,
+            controlMode,
+            hostPeerId,
+            controllers,
+            amHost: amHost(),
+            amController: amController(),
+            hostControlSupported: serverSupports(CAPABILITIES.HOST_CONTROL),
+            coHostSupported: serverSupports(CAPABILITIES.CO_HOST)
         });
+    } else if (message.type === 'SET_CONTROL_MODE') {
+        // Popup (host) toggles the room control mode. Server validates host authority
+        // and broadcasts CONTROL_MODE back, which updates our local state + UI.
+        const mode = message.controlMode;
+        if (mode !== CONTROL_MODES.EVERYONE && mode !== CONTROL_MODES.HOST_ONLY) {
+            sendResponse({ status: 'invalid' });
+            return;
+        }
+        if (!amHost()) {
+            sendResponse({ status: 'not_host' });
+            return;
+        }
+        emit(EVENTS.SET_CONTROL_MODE, { controlMode: mode });
+        sendResponse({ status: 'ok' });
+    } else if (message.type === 'SET_PEER_ROLE') {
+        // Popup (owner) promotes/demotes a peer to/from controller. Server validates
+        // owner authority and broadcasts CONTROL_MODE back, refreshing all clients.
+        const targetPeerId = typeof message.peerId === 'string' ? message.peerId : null;
+        if (!targetPeerId) {
+            sendResponse({ status: 'invalid' });
+            return;
+        }
+        if (!amHost()) {
+            sendResponse({ status: 'not_owner' });
+            return;
+        }
+        emit(EVENTS.SET_PEER_ROLE, { peerId: targetPeerId, controller: message.controller === true });
+        sendResponse({ status: 'ok' });
+    } else if (message.type === 'GET_CONTROL_MODE') {
+        // content.js asks for current mode/role on (re)injection. Include the
+        // persisted desync state so a page reload re-adopts it — otherwise a fresh
+        // content script would start synced while background keeps relaying us as
+        // "Solo" to the host (stale-badge split-brain).
+        sendResponse({ controlMode, hostPeerId, controllers, amHost: amHost(), amController: amController(), desynced: hcmDesynced, hostControlSupported: serverSupports(CAPABILITIES.HOST_CONTROL), coHostSupported: serverSupports(CAPABILITIES.CO_HOST) });
+    } else if (message.type === 'REQUEST_HOST_SYNC') {
+        // content.js resync: hand back the host's extrapolated current position.
+        sendResponse({ target: getHostSyncTarget() });
+    } else if (message.type === 'GET_HCM_STRINGS') {
+        // Localized strings for the in-page host-control dialog/badge. content.js
+        // has no i18n loader of its own, so background resolves them here.
+        const settings = await chrome.storage.local.get(['locale']);
+        const lang = settings.locale || getSystemLanguage();
+        await loadLocale(lang);
+        // getMessage returns the key name itself if the dictionary failed to load.
+        // Return undefined in that case so content keeps its English fallback rather
+        // than rendering a raw key like "HCM_DIALOG_TITLE".
+        const m = (k) => { const v = getMessage(k); return v === k ? undefined : v; };
+        sendResponse({
+            title:  m('HCM_DIALOG_TITLE'),
+            body:   m('HCM_DIALOG_BODY'),
+            stay:   m('HCM_DIALOG_STAY'),
+            solo:   m('HCM_DIALOG_SOLO'),
+            badge:  m('HCM_BADGE_SOLO'),
+            resync: m('HCM_BADGE_RESYNC')
+        });
+    } else if (message.type === 'HCM_DESYNC_STATE') {
+        // content.js tells us whether the local user chose to watch on their own.
+        // Only accept from the currently selected tab.
+        if (sender.tab && currentTabId && currentTabId !== sender.tab.id) {
+            sendResponse({ status: 'ignored_unselected_tab' });
+            return;
+        }
+        // Mirrored into heartbeats so the host's UI can show "Solo" instead of
+        // silently waiting for ACKs that will never come. Persisted so the
+        // heartbeat survives SW restarts (idle timeout, crash).
+        hcmDesynced = !!message.desynced;
+        if (storageInitialized) chrome.storage.session.set({ hcmDesynced });
+        sendResponse({ status: 'ok' });
     } else if (message.type === 'LEAVE_ROOM') {
         connectIntent = false;
         reconnectFailed = false;
@@ -1499,6 +2048,14 @@ async function handleAsyncMessage(message, sender, sendResponse) {
         resetAudioProcessingInTab(currentTabId);
         emit(EVENTS.LEAVE_ROOM, { peerId });
         currentRoom = null;
+        controlMode = CONTROL_MODES.EVERYONE;
+        hostPeerId = null;
+        controllers = [];
+        serverCapabilities = [];
+        hcmDesynced = false;
+        // Notify content.js/popup BEFORE currentTabId is cleared so they drop any
+        // stale guest-side HCM state (dialog/badge/desync) — H-2/H-3.
+        broadcastControlMode();
         currentTabId = null;
         currentTabTitle = null;
         roomIdleSince = null;
@@ -1524,7 +2081,8 @@ async function handleAsyncMessage(message, sender, sendResponse) {
             forceSyncAcks: [],
             forceSyncDeadline: null,
             episodeLobby: null,
-            expectedAcksCount: 0
+            expectedAcksCount: 0,
+            hcmDesynced: false
         });
         chrome.storage.local.set({ roomId: '', password: '' }).catch(() => {});
         addLog('Left Room', 'info');
@@ -1584,12 +2142,13 @@ async function handleAsyncMessage(message, sender, sendResponse) {
                 if (desiredUrl !== currentServerUrl) forceDisconnect();
                 connect();
             } else if (roomId) {
+                const sharedTitles = getSharedTitleFields(settings);
                 emit(EVENTS.JOIN_ROOM, { 
                     roomId, 
                     password,
                     peerId,
                     username: settings.username,
-                    tabTitle: currentTabTitle,
+                    tabTitle: sharedTitles.tabTitle,
                     protocolVersion: PROTOCOL_VERSION
                 });
             }
@@ -1597,7 +2156,8 @@ async function handleAsyncMessage(message, sender, sendResponse) {
             sendResponse({ status: 'ok' });
         });
     } else if (message.type === 'REGENERATE_ID') {
-        const newId = self.crypto.randomUUID().substring(0, 8);
+        // Match getPeerId()'s 16-hex-char generation — see comment there.
+        const newId = self.crypto.randomUUID().replace(/-/g, '').substring(0, 16);
         chrome.storage.local.set({ peerId: newId }, () => {
             peerId = newId;
             addLog(`Identity regenerated: ${newId}`, 'success');
@@ -1617,14 +2177,90 @@ async function handleAsyncMessage(message, sender, sendResponse) {
                 sendResponse(res);
             }
         });
+    } else if (message.type === 'DEV_SIMULATE_REMOTE_SEEK') {
+        if (!(await devRemoteToolsAllowed())) {
+            sendResponse({ status: 'forbidden' });
+            return;
+        }
+        const delta = message.delta !== null && message.delta !== undefined ? Number(message.delta) : null;
+        const targetTime = message.targetTime !== null && message.targetTime !== undefined ? Number(message.targetTime) : null;
+
+        if (delta === null && targetTime === null) {
+            sendResponse({ status: 'invalid_params' });
+            return;
+        }
+        simulateRemoteSeek(delta, targetTime).then(sendResponse).catch(err => {
+            addLog(`Remote seek simulation failed: ${err.message}`, 'warn');
+            sendResponse({ status: 'error', message: err.message });
+        });
     } else if (message.type === 'CONTENT_EVENT') {
-        const processEvent = () => {
+        const processEvent = async () => {
+            // Host Control Mode (sender-side): a non-controller in host-only mode must
+            // not drive the room. Don't broadcast; hand the action back to content.js so
+            // it can snap the local player back / offer desync.
+            // Defensive: require a known hostPeerId (L-6) — otherwise the actual
+            // owner would gate themselves if state ever becomes inconsistent.
+            if (controlMode === CONTROL_MODES.HOST_ONLY && hostPeerId && !amController() &&
+                HOST_ONLY_GATED_ACTIONS.includes(message.action)) {
+                addLog(`Host-only: blocked local ${message.action} (you are a guest)`, 'warn');
+                if (sender.tab && sender.tab.id) {
+                    chrome.tabs.sendMessage(sender.tab.id, {
+                        type: 'HOST_BLOCKED',
+                        action: message.action,
+                        target: getHostSyncTarget()
+                    }).catch(() => {});
+                }
+                sendResponse({ status: 'blocked_host_only' });
+                return;
+            }
+
+            // Live solo check — recomputed from the current peer list on every
+            // event (the list is updated synchronously on PEER_STATUS join/leave),
+            // never cached, so the instant a peer joins we resume sending.
+            const otherCount = currentRoom && Array.isArray(currentRoom.peers) ? currentRoom.peers.filter(p => (typeof p === 'object' ? p.peerId : p) !== peerId).length : 0;
+            const hasOtherPeers = otherCount > 0;
+
+            // Force Sync only makes sense with other peers. Solo it is a no-op:
+            // skip the pause/seek + ACK-wait entirely (no freeze, no server traffic).
+            if (message.action === EVENTS.FORCE_SYNC_PREPARE && !hasOtherPeers) {
+                sendResponse({ status: 'ok_solo' });
+                return;
+            }
+
+            const payload = message.payload && typeof message.payload === 'object' ? message.payload : {};
+            const payloadNumber = (value) => value !== undefined && value !== null && value !== '' ? Number(value) : NaN;
+            if (message.action === EVENTS.FORCE_SYNC_PREPARE) {
+                const targetTime = payloadNumber(payload.targetTime);
+                if (!Number.isFinite(targetTime)) {
+                    sendResponse({ status: 'invalid_params' });
+                    return;
+                }
+                payload.targetTime = targetTime;
+            } else if (message.action === EVENTS.SEEK) {
+                const targetTime = payloadNumber(payload.targetTime !== undefined ? payload.targetTime : payload.currentTime);
+                if (!Number.isFinite(targetTime)) {
+                    sendResponse({ status: 'invalid_params' });
+                    return;
+                }
+                payload.currentTime = targetTime;
+                payload.targetTime = targetTime;
+            }
+
             const timestamp = Date.now();
             localSeq++;
             chrome.storage.session.set({ localSeq });
             updateLastAction(message.action, 'You', timestamp);
             
-            const payload = message.payload || {};
+            const hasPlaybackTime = Number.isFinite(payload.currentTime) || Number.isFinite(payload.targetTime);
+            if (!sender?.tab && (message.action === EVENTS.PLAY || message.action === EVENTS.PAUSE) && !hasPlaybackTime) {
+                const tabId = currentTabId ? parseInt(currentTabId) : NaN;
+                if (!isNaN(tabId)) {
+                    const state = await getReadyTabVideoState(tabId);
+                    if (state && !state.error && state.found && Number.isFinite(state.currentTime)) {
+                        payload.currentTime = state.currentTime;
+                    }
+                }
+            }
             lastActionState.targetTime = payload.targetTime !== undefined ? payload.targetTime : payload.currentTime;
             if (storageInitialized) chrome.storage.session.set({ lastActionState });
             
@@ -1637,6 +2273,10 @@ async function handleAsyncMessage(message, sender, sendResponse) {
                 playbackState: message.action === EVENTS.PLAY ? 'playing' : (message.action === EVENTS.PAUSE ? 'paused' : undefined),
                 currentTime: payload.currentTime !== undefined ? payload.currentTime : (payload.targetTime !== undefined ? payload.targetTime : undefined)
             });
+
+            if (!sender?.tab && (message.action === EVENTS.PLAY || message.action === EVENTS.PAUSE || message.action === EVENTS.SEEK)) {
+                routeToContent(message.action, message.payload);
+            }
 
             if (message.action === EVENTS.FORCE_SYNC_PREPARE) {
                 isForceSyncInitiator = true;
@@ -1662,17 +2302,16 @@ async function handleAsyncMessage(message, sender, sendResponse) {
                 }, FORCE_SYNC_TIMEOUT);
             }
             addToHistory(message.action, 'You');
-            
+
             const isNonEssentialEvent = message.action === EVENTS.PLAY || message.action === EVENTS.PAUSE || message.action === EVENTS.SEEK;
-            const otherCount = currentRoom && Array.isArray(currentRoom.peers) ? currentRoom.peers.filter(p => (typeof p === 'object' ? p.peerId : p) !== peerId).length : 0;
-            const hasOtherPeers = otherCount > 0;
-            
             if (isNonEssentialEvent && !hasOtherPeers) {
                 sendResponse({ status: 'ok_solo' });
                 return;
             }
             
-            emit(message.action, { ...message.payload, peerId });
+            const settings = await getSettings();
+            const outboundPayload = withTitlePrivacy(message.payload, settings, ['mediaTitle']);
+            emit(message.action, { ...outboundPayload, peerId });
             sendResponse({ status: 'ok' });
         };
 
@@ -1687,10 +2326,15 @@ async function handleAsyncMessage(message, sender, sendResponse) {
             currentTabTitle = sender.tab.title ? sender.tab.title.substring(0, 50) : null;
             chrome.storage.session.set({ currentTabTitle });
             updateBadgeStatus();
-            processEvent();
+            processEvent().catch(err => {
+                addLog('Content event privacy error: ' + err.message, 'error');
+                sendResponse({ status: 'error' });
+            });
         } else {
-            routeToContent(message.action, message.payload);
-            processEvent();
+            processEvent().catch(err => {
+                addLog('Content event privacy error: ' + err.message, 'error');
+                sendResponse({ status: 'error' });
+            });
         }
     } else if (message.type === 'FORCE_SYNC_ACK') {
         if (isForceSyncInitiator) {
@@ -1718,11 +2362,16 @@ async function handleAsyncMessage(message, sender, sendResponse) {
         sendResponse({ status: 'ok' });
     } else if (message.type === 'CMD_ACK') {
         const commandSenderId = message.commandSenderId;
-        if (commandSenderId && commandSenderId !== peerId) {
-            emit(EVENTS.EVENT_ACK, { 
-                senderId: peerId, 
+        // Only ACK if the command sender is still a known peer in our room.
+        // If we've already seen their PEER_STATUS 'left', skip the ACK — it would
+        // only be dropped server-side as an absent-peer ACK anyway.
+        const senderStillPresent = currentRoom && Array.isArray(currentRoom.peers) &&
+            currentRoom.peers.some(p => (typeof p === 'object' ? p.peerId : p) === commandSenderId);
+        if (commandSenderId && commandSenderId !== peerId && senderStillPresent) {
+            emit(EVENTS.EVENT_ACK, {
+                senderId: peerId,
                 targetId: commandSenderId,
-                actionTimestamp: message.actionTimestamp 
+                actionTimestamp: message.actionTimestamp
             });
         }
         sendResponse({ status: 'ok' });
@@ -1742,16 +2391,24 @@ async function handleAsyncMessage(message, sender, sendResponse) {
 
         markRoomUseful();
         getSettings().then(settings => {
-            const statusPayload = { ...message.payload, peerId, username: settings.username, tabTitle: currentTabTitle };
+            const sharedTitles = getSharedTitleFields(settings, message.payload?.mediaTitle);
+            const statusPayload = {
+                ...message.payload,
+                peerId,
+                username: settings.username,
+                tabTitle: sharedTitles.tabTitle,
+                mediaTitle: sharedTitles.mediaTitle,
+                desynced: hcmDesynced
+            };
             const otherCount = currentRoom && Array.isArray(currentRoom.peers) ? currentRoom.peers.filter(p => (typeof p === 'object' ? p.peerId : p) !== peerId).length : 0;
             if (otherCount > 0) emit(EVENTS.PEER_STATUS, statusPayload);
 
             if (currentRoom && Array.isArray(currentRoom.peers)) {
                 const me = currentRoom.peers.find(p => (p.peerId || p) === peerId);
                 if (me && typeof me === 'object') {
-                    me.tabTitle = currentTabTitle;
+                    me.tabTitle = sharedTitles.tabTitle;
                     me.username = settings.username;
-                    me.mediaTitle = message.payload?.mediaTitle;
+                    me.mediaTitle = sharedTitles.mediaTitle;
                     me.playbackState = message.payload?.playbackState;
                     me.currentTime = message.payload?.currentTime;
                     me.volume = message.payload?.volume;
@@ -1766,6 +2423,20 @@ async function handleAsyncMessage(message, sender, sendResponse) {
             addLog('Heartbeat settings error: ' + err.message, 'error');
             sendResponse({ status: 'ok' });
         });
+    } else if (message.type === 'INJECT_CONTENT_SCRIPT') {
+        const tabId = Number(message.tabId);
+        if (!Number.isInteger(tabId)) {
+            sendResponse({ status: 'invalid_tab' });
+            return true;
+        }
+
+        injectContentScript(tabId).then(() => {
+            sendResponse({ status: 'ok' });
+        }).catch(err => {
+            addLog(`Failed to inject into tab: ${err.message}`, 'warn');
+            sendResponse({ status: 'error', message: err.message });
+        });
+        return true;
     } else if (message.type === 'SET_TARGET_TAB') {
         const previousTabId = currentTabId;
         currentTabId = message.tabId;
@@ -1783,10 +2454,7 @@ async function handleAsyncMessage(message, sender, sendResponse) {
         
         if (currentTabId) {
             const selectedTabId = currentTabId;
-            chrome.scripting.executeScript({
-                target: { tabId: selectedTabId },
-                files: ['content.js']
-            })
+            injectContentScript(selectedTabId)
                 .then(() => applyAudioSettingsToTab(selectedTabId))
                 .catch(err => {
                     addLog(`Failed to inject into tab: ${err.message}`, 'warn');
@@ -1813,21 +2481,51 @@ async function handleAsyncMessage(message, sender, sendResponse) {
             return;
         }
 
+        const settings = await getSettings();
+        const lobbyTitle = sanitizeSharedTitle(newTitle, settings.mediaTitlePrivacyMode);
+        if (!lobbyTitle) {
+            addLog(`Episode change detected but media title sharing is ${settings.mediaTitlePrivacyMode}; not creating a lobby.`, 'info');
+            sendResponse({ status: 'title_privacy_no_lobby' });
+            return;
+        }
+
         // Check setting
         const epSettings = await chrome.storage.local.get(['autoSyncNextEpisode']);
         if (epSettings.autoSyncNextEpisode === false) {
-            addLog(`Episode change detected ("${newTitle}") but Auto-Sync is disabled.`, 'info');
+            addLog(`Episode change detected ("${lobbyTitle}") but Auto-Sync is disabled.`, 'info');
             sendResponse({ status: 'disabled' });
             return;
         }
 
+        // Host Control Mode: a gated guest must NOT initiate an episode lobby — the
+        // server drops the guest's EPISODE_LOBBY, so the lobby would never complete
+        // and the guest would self-pause (PAUSE_FOR_LOBBY) into a 60s freeze. In
+        // host-only the controllers (owner + co-hosts) drive episode sync; a plain
+        // guest just follows / snaps back. Use amController() for parity with the
+        // CONTENT_EVENT gate and the server's controllers-based check.
+        if (controlMode === CONTROL_MODES.HOST_ONLY && !amController()) {
+            addLog(`Episode change ("${lobbyTitle}") — host-only guest, not creating a lobby (controller drives).`, 'info');
+            sendResponse({ status: 'host_only_guest_skip' });
+            return;
+        }
+
+        // Variant A: alone in the room → no one to wait for. Skip the lobby
+        // entirely so the next episode just plays through (no pause, no traffic).
+        // Live peer check, so the moment someone joins the next transition syncs.
+        const otherCount = currentRoom && Array.isArray(currentRoom.peers) ? currentRoom.peers.filter(p => (typeof p === 'object' ? p.peerId : p) !== peerId).length : 0;
+        if (otherCount === 0) {
+            addLog(`Episode change ("${lobbyTitle}") — alone in room, playing through without a lobby.`, 'info');
+            sendResponse({ status: 'solo_no_lobby' });
+            return;
+        }
+
         // If lobby already exists for this title, just mark self ready
-        if (episodeLobby && sameEpisode(episodeLobby.expectedTitle, newTitle)) {
+        if (episodeLobby && sameEpisode(episodeLobby.expectedTitle, lobbyTitle)) {
             if (!episodeLobby.readyPeers.includes(peerId)) {
                 episodeLobby.readyPeers.push(peerId);
                 persistEpisodeLobby();
                 broadcastLobbyUpdate();
-                emit(EVENTS.EPISODE_READY, { peerId, title: newTitle });
+                emit(EVENTS.EPISODE_READY, { peerId, title: lobbyTitle });
                 checkEpisodeLobbyCompletion();
             }
             sendResponse({ status: 'ready_sent' });
@@ -1839,26 +2537,26 @@ async function handleAsyncMessage(message, sender, sendResponse) {
 
         // Create new lobby
         episodeLobby = {
-            expectedTitle: newTitle,
+            expectedTitle: lobbyTitle,
             initiatorPeerId: peerId,
             readyPeers: [peerId], // We are already ready
             createdAt: Date.now()
         };
         persistEpisodeLobby();
         broadcastLobbyUpdate();
-        addLog(`Episode lobby created: "${newTitle}"`, 'info');
+        addLog(`Episode lobby created: "${lobbyTitle}"`, 'info');
 
         // Tell content script to pause the video and start polling
         // (This is the only place we pause — after confirming the feature is enabled)
         if (sender.tab && sender.tab.id) {
             chrome.tabs.sendMessage(sender.tab.id, {
                 type: 'PAUSE_FOR_LOBBY',
-                expectedTitle: newTitle
+                expectedTitle: lobbyTitle
             }).catch(() => {});
         }
 
         // Broadcast to room
-        emit(EVENTS.EPISODE_LOBBY, { peerId, expectedTitle: newTitle });
+        emit(EVENTS.EPISODE_LOBBY, { peerId, expectedTitle: lobbyTitle });
 
         // Start timeout (Q1: Option B — cancel on timeout)
         episodeLobbyTimeout = setTimeout(() => cancelEpisodeLobby('Timeout — not all peers loaded the episode'), EPISODE_LOBBY_TIMEOUT);
@@ -1871,13 +2569,38 @@ async function handleAsyncMessage(message, sender, sendResponse) {
         // Content script confirmed it loaded the lobby episode
         if (episodeLobby && message.payload && sameEpisode(message.payload.title, episodeLobby.expectedTitle)) {
             if (!episodeLobby.readyPeers.includes(peerId)) {
+                const settings = await getSettings();
+                const readyTitle = sanitizeSharedTitle(message.payload.title, settings.mediaTitlePrivacyMode);
                 episodeLobby.readyPeers.push(peerId);
                 persistEpisodeLobby();
                 broadcastLobbyUpdate();
-                emit(EVENTS.EPISODE_READY, { peerId, title: message.payload.title });
-                addLog(`Local episode ready: "${message.payload.title}"`, 'success');
+                emit(EVENTS.EPISODE_READY, { peerId, title: readyTitle });
+                addLog(`Local episode ready: "${readyTitle || episodeLobby.expectedTitle}"`, 'success');
                 checkEpisodeLobbyCompletion();
             }
+        }
+        sendResponse({ status: 'ok' });
+    } else if (message.type === 'TITLE_PRIVACY_CHANGED') {
+        const settings = await getSettings();
+        if (episodeLobby && episodeLobby.initiatorPeerId === peerId) {
+            const nextLobbyTitle = sanitizeSharedTitle(episodeLobby.expectedTitle, settings.mediaTitlePrivacyMode);
+            if (!nextLobbyTitle || nextLobbyTitle !== episodeLobby.expectedTitle) {
+                cancelEpisodeLobby('Title privacy changed');
+            }
+        }
+        if (currentRoom) {
+            const sharedTitles = getSharedTitleFields(settings);
+            emit(EVENTS.PEER_STATUS, {
+                peerId,
+                status: 'heartbeat',
+                username: settings.username,
+                tabTitle: sharedTitles.tabTitle,
+                mediaTitle: sharedTitles.mediaTitle,
+                desynced: hcmDesynced
+            });
+        }
+        if (currentRoom && currentTabId) {
+            chrome.tabs.sendMessage(currentTabId, { type: 'REQUEST_HEARTBEAT' }).catch(() => {});
         }
         sendResponse({ status: 'ok' });
     } else if (message.type === 'CONTENT_BOOT') {
@@ -1914,6 +2637,7 @@ initTabManager({
     getSettings,
     emit,
     applyAudioSettingsToTab,
+    injectContentScript,
     ensureState,
     EVENTS
 });

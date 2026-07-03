@@ -8,7 +8,7 @@ A Manifest V3 Browser Extension (Chrome & Firefox) for synchronized video playba
 - **Smart Peer IDs**: Hexadecimal IDs combined with customizable Usernames for easy identification.
 - **On-Demand Connection**: The service worker only maintains a WebSocket connection while you're in a room. No persistent background connections — privacy-first architecture. Based on `connectIntent` flag that gates all reconnect attempts.
 - **Live Diagnostics**: Built-in "Dev" tab for real-time video state debugging (ReadyState, CurrentTime, etc.).
-- **Dynamic i18n (Multi-Language)**: Fully localized in 6 languages (`en`, `de`, `fr`, `es`, `pt-BR`, `ru`) with auto-detected fallback and dynamic on-the-fly language selectors.
+- **Dynamic i18n (Multi-Language)**: Fully localized in 13 languages (`en`, `de`, `fr`, `es`, `it`, `pl`, `tr`, `nl`, `ja`, `ko`, `pt-BR`, `pt`, `ru`) with auto-detected fallback and dynamic on-the-fly language selectors.
 
 ## Tab Overview
 1. **Room**: Manage connections, view active peers, and share invitation links.

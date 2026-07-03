@@ -4,6 +4,7 @@ import {
     checkEventRate,
     checkHealthRate,
     checkAdminMetricsAuthRate,
+    checkLeaveRoomRate,
     checkAuthRate,
     recordAuthFailure,
     clearRateLimitMaps,
@@ -13,9 +14,13 @@ import {
     healthCounts,
     adminMetricsAuthCounts,
     roomListCooldowns,
+    leaveRoomCounts,
     rateLimitDenied,
     startRateLimitCleanup,
-    stopRateLimitCleanup
+    stopRateLimitCleanup,
+    CONNECTION_RATE_LIMIT,
+    EVENT_RATE_LIMIT,
+    LEAVE_ROOM_RATE_LIMIT
 } from '../server/rate-limiter.js';
 
 // Helper: mock io for cleanup
@@ -24,15 +29,16 @@ const mockIo = { sockets: { sockets: new Map() } };
 // Reset state before each test group
 function reset() {
     clearRateLimitMaps();
-    Object.assign(rateLimitDenied, { connections: 0, events: 0, health: 0, adminMetricsAuth: 0, roomList: 0 });
+    Object.assign(rateLimitDenied, { connections: 0, events: 0, health: 0, adminMetricsAuth: 0, roomList: 0, leaveRoom: 0 });
     stopRateLimitCleanup();
 }
 
 // --- checkConnectionRate ---
 reset();
 assert.equal(checkConnectionRate('1.1.1.1'), true, 'first connection allowed');
-for (let i = 0; i < 9; i++) checkConnectionRate('1.1.1.1');
-assert.equal(checkConnectionRate('1.1.1.1'), false, '11th connection blocked');
+// Exhaust the rest of the budget (first call above counted as 1).
+for (let i = 0; i < CONNECTION_RATE_LIMIT - 1; i++) checkConnectionRate('1.1.1.1');
+assert.equal(checkConnectionRate('1.1.1.1'), false, `connection beyond ${CONNECTION_RATE_LIMIT}/window blocked`);
 assert.equal(rateLimitDenied.connections, 1, 'denial counter incremented');
 
 reset();
@@ -41,12 +47,23 @@ assert.equal(checkConnectionRate('2.2.2.2'), true, 'separate IP independent');
 // --- checkEventRate ---
 reset();
 assert.equal(checkEventRate('sock1'), true, 'first event allowed');
-for (let i = 0; i < 29; i++) checkEventRate('sock1');
-assert.equal(checkEventRate('sock1'), false, '31st event blocked');
+// Exhaust the rest of the budget (first call above counted as 1).
+for (let i = 0; i < EVENT_RATE_LIMIT - 1; i++) checkEventRate('sock1');
+assert.equal(checkEventRate('sock1'), false, `event beyond ${EVENT_RATE_LIMIT}/window blocked`);
 assert.equal(rateLimitDenied.events, 1);
 
 reset();
 assert.equal(checkEventRate('sock2'), true, 'separate socket independent');
+
+// --- checkLeaveRoomRate ---
+reset();
+assert.equal(checkLeaveRoomRate('sock-leave-1'), true, 'first leave-room event allowed');
+for (let i = 0; i < LEAVE_ROOM_RATE_LIMIT - 1; i++) checkLeaveRoomRate('sock-leave-1');
+assert.equal(checkLeaveRoomRate('sock-leave-1'), false, `leave-room beyond ${LEAVE_ROOM_RATE_LIMIT}/window blocked`);
+assert.equal(rateLimitDenied.leaveRoom, 1);
+
+reset();
+assert.equal(checkLeaveRoomRate('sock-leave-2'), true, 'separate leave-room socket independent');
 
 // --- checkHealthRate ---
 reset();
@@ -87,12 +104,14 @@ eventCounts.set('sock1', { count: 1, resetTime: Date.now() + 10000 });
 healthCounts.set('ip2', { count: 1, resetTime: Date.now() + 60000 });
 adminMetricsAuthCounts.set('ip3', { count: 1, resetTime: Date.now() + 60000 });
 roomListCooldowns.set('sock2', Date.now());
+leaveRoomCounts.set('sock3', { count: 1, resetTime: Date.now() + 60000 });
 clearRateLimitMaps();
 assert.equal(connectionCounts.size, 0, 'connectionCounts cleared');
 assert.equal(eventCounts.size, 0, 'eventCounts cleared');
 assert.equal(healthCounts.size, 0, 'healthCounts cleared');
 assert.equal(adminMetricsAuthCounts.size, 0, 'adminMetricsAuthCounts cleared');
 assert.equal(roomListCooldowns.size, 0, 'roomListCooldowns cleared');
+assert.equal(leaveRoomCounts.size, 0, 'leaveRoomCounts cleared');
 
 // --- startRateLimitCleanup / stopRateLimitCleanup ---
 reset();
@@ -104,7 +123,9 @@ assert.ok(true, 'cleanup start/stop does not throw');
 // --- rateLimitDenied reset ---
 reset();
 rateLimitDenied.connections = 5;
-Object.assign(rateLimitDenied, { connections: 0, events: 0, health: 0, adminMetricsAuth: 0, roomList: 0 });
+rateLimitDenied.leaveRoom = 5;
+Object.assign(rateLimitDenied, { connections: 0, events: 0, health: 0, adminMetricsAuth: 0, roomList: 0, leaveRoom: 0 });
 assert.equal(rateLimitDenied.connections, 0, 'denial counter resettable');
+assert.equal(rateLimitDenied.leaveRoom, 0, 'leave-room denial counter resettable');
 
 console.log('rate-limiter tests passed');

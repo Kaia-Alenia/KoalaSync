@@ -7,12 +7,14 @@ import path from 'node:path';
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
 const checks = [
+  ['vitest unit tests', 'npm', ['run', 'test:unit']],
   ['server ops', 'node', ['scripts/test-server-ops.mjs']],
   ['server routes', 'node', ['scripts/test-server-routes.mjs'], {
     env: { ADMIN_METRICS_TOKEN: 'verify-admin-token-with-more-than-32-chars' }
   }],
   ['rate-limiter unit tests', 'node', ['scripts/test-rate-limiter.mjs']],
   ['episode-utils unit tests', 'node', ['scripts/test-episode-utils.mjs']],
+  ['title privacy unit tests', 'node', ['scripts/test-title-privacy.mjs']],
   ['server WebSocket integration', 'node', ['scripts/test-server-ws.mjs']],
   ['names generator', 'node', ['scripts/test-names.mjs']],
   ['content video finder', 'node', ['scripts/test-content-video-finder.cjs']],

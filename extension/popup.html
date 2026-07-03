@@ -391,6 +391,7 @@
         <button class="tab-btn" data-tab="tab-sync" data-i18n="TAB_SYNC" data-i18n-title="TAB_SYNC_TOOLTIP" title="Video sync controls and remote actions">Sync</button>
         <button class="tab-btn" data-tab="tab-settings" data-i18n="TAB_SETTINGS" data-i18n-title="TAB_SETTINGS_TOOLTIP" title="Extension preferences">Settings</button>
         <button class="tab-btn" data-tab="tab-dev" data-i18n="TAB_STATUS" data-i18n-title="TAB_STATUS_TOOLTIP" title="Advanced Diagnostics & Logs">Status</button>
+        <button id="devToolsTabBtn" class="tab-btn" data-tab="tab-devtools" style="display:none;">Dev</button>
     </div>
 
     <!-- Room Tab -->
@@ -402,14 +403,18 @@
             <details style="margin-bottom: 12px; background: var(--card); border: 1px solid #334155; border-radius: 8px; padding: 8px;">
                 <summary style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; cursor: pointer; outline: none;" data-i18n="MANUAL_CONNECT_HEADER">Manual Connect / Advanced</summary>
                 <div style="margin-top: 12px;">
-            <div class="form-group">
-                <label title="Select which KoalaSync server to use" data-i18n="LABEL_SERVER">Server</label>
-                <div style="display:flex; gap:4px; margin-bottom:8px;">
-                    <button id="serverOfficial" class="tab-btn active" style="flex:1; padding:6px; font-size:11px;" data-i18n="BTN_SERVER_OFFICIAL" data-i18n-title="BTN_SERVER_OFFICIAL_TOOLTIP" title="Use the official reliable server">Official</button>
-                    <button id="serverCustom" class="tab-btn" style="flex:1; padding:6px; font-size:11px;" data-i18n="BTN_SERVER_CUSTOM" data-i18n-title="BTN_SERVER_CUSTOM_TOOLTIP" title="Connect to your own self-hosted server">Custom</button>
+            <!-- Server selection — its own concern, kept visually separate from the room fields. -->
+            <div style="background: var(--bg); border: 1px solid #334155; border-radius: 8px; padding: 10px; margin-bottom: 14px;">
+                <div class="form-group" style="margin-bottom:0;">
+                    <label title="Select which KoalaSync server to use" data-i18n="LABEL_SERVER">Server</label>
+                    <div style="display:flex; gap:4px; margin-bottom:0;">
+                        <button id="serverOfficial" class="tab-btn active" style="flex:1; padding:6px; font-size:11px;" data-i18n="BTN_SERVER_OFFICIAL" data-i18n-title="BTN_SERVER_OFFICIAL_TOOLTIP" title="Use the official reliable server">Official</button>
+                        <button id="serverCustom" class="tab-btn" style="flex:1; padding:6px; font-size:11px;" data-i18n="BTN_SERVER_CUSTOM" data-i18n-title="BTN_SERVER_CUSTOM_TOOLTIP" title="Connect to your own self-hosted server">Custom</button>
+                    </div>
+                    <input type="text" id="serverUrl" data-i18n-placeholder="PLACEHOLDER_SERVER_URL" placeholder="wss://your-server:3000" style="display:none; margin-top:8px;">
                 </div>
-                <input type="text" id="serverUrl" data-i18n-placeholder="PLACEHOLDER_SERVER_URL" placeholder="wss://your-server:3000" style="display:none;">
             </div>
+            <!-- Room credentials — distinct group below the server picker. -->
             <div class="form-group">
                 <label title="The unique identifier for your sync room" data-i18n="LABEL_ROOM_ID" data-i18n-title="LABEL_ROOM_ID_TOOLTIP">Room ID</label>
                 <input type="text" id="roomId" data-i18n-placeholder="PLACEHOLDER_ROOM_ID" data-i18n-title="PLACEHOLDER_ROOM_ID_TOOLTIP" placeholder="Enter Room ID" title="The unique ID of the room you want to join">
@@ -448,6 +453,22 @@
                     <input type="text" id="inviteLink" readonly>
                     <button id="copyInvite" class="secondary">📋</button>
                 </div>
+            </div>
+
+            <div id="hostControlCard" class="info-card" style="margin-bottom: 20px; display:none;">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <label style="margin:0;" title="Restrict who can control playback in this room" data-i18n="LABEL_HOST_CONTROL" data-i18n-title="LABEL_HOST_CONTROL_TOOLTIP">Host Control</label>
+                    <span id="hostRoleBadge" style="font-size:10px; font-weight:700; text-transform:uppercase; padding:2px 8px; border-radius:8px; background:var(--accent); color:#fff;"></span>
+                </div>
+                <div id="hostControlToggleRow" style="display:none; align-items:center; justify-content:space-between; gap:12px; margin-top:12px;">
+                    <span style="font-size:12px; color:var(--text); line-height:1.3;" data-i18n="LABEL_HOST_ONLY_TOGGLE">Only I can control playback</span>
+                    <label class="toggle-switch" style="flex:none;">
+                        <input type="checkbox" id="hostControlToggle">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                <div id="hostControlCohostHint" style="display:none; margin-top:10px; padding-top:10px; border-top:1px solid #334155; font-size:11px; color:var(--text-muted); line-height:1.4;" data-i18n="NOTICE_COHOST_HINT">Tip: grant control to individual viewers in the participant list below.</div>
+                <div id="hostControlGuestNote" style="display:none; margin-top:10px; font-size:12px; color:var(--text-muted);" data-i18n="NOTICE_HOST_CONTROLS">The host controls playback for everyone.</div>
             </div>
 
             <div style="margin-bottom: 20px;">
@@ -530,6 +551,25 @@
             <input type="text" id="username" data-i18n-placeholder="PLACEHOLDER_USERNAME" placeholder="Anonymous Koala" maxlength="20" style="width: 150px;">
         </div>
 
+        <details class="form-group" style="background: var(--card); padding: 10px; border-radius: 8px; margin-bottom: 12px; border: 1px solid #334155;">
+            <summary style="cursor: pointer; font-size: 12px; font-weight: 700; color: var(--text);" title="Choose which titles are sent to the room." data-i18n="LABEL_PRIVACY_SETTINGS" data-i18n-title="LABEL_PRIVACY_SETTINGS_TOOLTIP">Privacy Settings</summary>
+            <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 10px;">
+                <label style="margin-bottom: 0; cursor: help;" title="Send the selected browser tab title to the room." data-i18n="LABEL_SEND_TAB_TITLE" data-i18n-title="LABEL_SEND_TAB_TITLE_TOOLTIP">Send tab title</label>
+                <label class="toggle-switch">
+                    <input type="checkbox" id="sendTabTitle" checked>
+                    <span class="slider"></span>
+                </label>
+            </div>
+            <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 10px;">
+                <label style="margin-bottom: 0; cursor: help;" title="Choose how media titles are sent to the room." data-i18n="LABEL_MEDIA_TITLE_PRIVACY" data-i18n-title="LABEL_MEDIA_TITLE_PRIVACY_TOOLTIP">Media title</label>
+                <select id="mediaTitlePrivacyMode" style="width: 165px; background: var(--bg); border: 1px solid #334155; color: white; padding: 6px 10px; border-radius: 8px; font-size: 12px; cursor: pointer; outline: none; font-family: inherit;">
+                    <option value="full" data-i18n="OPTION_TITLE_PRIVACY_FULL">Send full title</option>
+                    <option value="episode" data-i18n="OPTION_TITLE_PRIVACY_EPISODE">Send episode ID</option>
+                    <option value="hidden" data-i18n="OPTION_TITLE_PRIVACY_HIDDEN">Do not send</option>
+                </select>
+            </div>
+        </details>
+
         <div class="form-group" style="display: flex; align-items: center; justify-content: space-between; background: var(--card); padding: 10px; border-radius: 8px; margin-bottom: 12px; border: 1px solid #334155;">
             <label style="margin-bottom: 0; cursor: help;" title="Filters out non-video tabs and unrelated domains to keep the list clean" data-i18n="LABEL_HIDE_CLUTTER" data-i18n-title="LABEL_HIDE_CLUTTER_TOOLTIP">Hide Clutter Tabs</label>
             <label class="toggle-switch">
@@ -584,6 +624,8 @@
                 <option value="nl">🇳🇱 Nederlands</option>
                 <option value="ja">🇯🇵 日本語</option>
                 <option value="ko">🇰🇷 한국어</option>
+                <option value="zh">🇨🇳 中文</option>
+                <option value="uk">🇺🇦 Українська</option>
                 <option value="pt">🇵🇹 Português (Portugal)</option>
             </select>
         </div>
@@ -600,7 +642,7 @@
             <div style="font-size: 9px; color: var(--text-muted); opacity: 0.6; margin-bottom: 6px; line-height: 1.3;" data-i18n="FOOTER_SUPPORT_PROMPT">Enjoying KoalaSync? Leave a review!</div>
             <a id="settingsReviewLink" href="#" target="_blank" data-i18n="FOOTER_REVIEW">★ Rate us</a>
             <span> · </span>
-            <a id="settingsSupportLink" href="#" target="_blank" data-i18n="FOOTER_SUPPORT">☕ Buy me a coffee</a>
+            <a id="settingsSupportLink" href="#" target="_blank" data-i18n="FOOTER_SUPPORT">Support KoalaSync</a>
             <span> · </span>
             <span id="settingsVersion">v0.0.0</span>
         </div>
@@ -611,7 +653,10 @@
         <label title="Current WebSocket connection state" data-i18n="LABEL_CONN_STATUS" data-i18n-title="LABEL_CONN_STATUS_TOOLTIP">Connection Status</label>
         <div id="connStatus" class="info-card" style="display:flex; align-items:center; gap: 10px;">
             <span id="connDot" class="status-dot status-offline"></span>
-            <span id="connText" style="flex:1;">Disconnected</span>
+            <span style="flex:1; display:flex; align-items:center; gap:6px; min-width:0;">
+                <span id="connText">Disconnected</span>
+                <span id="connInfo" data-i18n-title="STATUS_IDLE_TOOLTIP" title="KoalaSync is ready. Join or create a room to connect and start syncing." style="display:none; cursor:help; flex:none; width:15px; height:15px; line-height:14px; text-align:center; border-radius:50%; border:1px solid var(--text-muted); color:var(--text-muted); font-size:10px; font-weight:700; font-style:normal;">i</span>
+            </span>
             <span id="connPing" style="font-size:11px; font-family:monospace; font-weight:600; opacity:0.8;"></span>
             <button id="retryBtn" class="secondary" style="display:none; width: auto; padding: 4px 8px; font-size: 10px; margin: 0;" title="Attempt to reconnect to the server" data-i18n="BTN_RETRY" data-i18n-title="BTN_RETRY_TOOLTIP">RETRY</button>
             <button id="copyLogs" class="btn secondary" style="width: auto; padding: 4px 10px; font-size: 11px; margin: 0;" title="Copy logs to clipboard for sharing" data-i18n="BTN_COPY_LOGS" data-i18n-title="BTN_COPY_LOGS_TOOLTIP">Copy Logs</button>
@@ -641,10 +686,22 @@
                 <div style="font-size: 9px; color: var(--text-muted); opacity: 0.6; margin-bottom: 6px; line-height: 1.3;" data-i18n="FOOTER_SUPPORT_PROMPT">Enjoying KoalaSync? Leave a review!</div>
                 <a id="devReviewLink" href="#" target="_blank" data-i18n="FOOTER_REVIEW">★ Rate us</a>
                 <span> · </span>
-                <a id="devSupportLink" href="#" target="_blank" data-i18n="FOOTER_SUPPORT">☕ Buy me a coffee</a>
+                <a id="devSupportLink" href="#" target="_blank" data-i18n="FOOTER_SUPPORT">Support KoalaSync</a>
                 <span> · </span>
                 <span id="appVersion">v0.0.0</span>
             </div>
+        </div>
+    </div>
+
+    <div id="tab-devtools" class="tab-content">
+        <label>Remote Seek</label>
+        <div class="info-card" style="display:flex; gap:8px; margin-bottom:15px;">
+            <button id="remoteSeekBack" class="secondary" style="flex:1; font-size:12px;">-30s</button>
+            <button id="remoteSeekForward" class="secondary" style="flex:1; font-size:12px;">+30s</button>
+        </div>
+        <button id="remoteSeekFiveMin" class="secondary" style="width:100%; font-size:12px; margin-bottom:15px;">Seek 5:00</button>
+        <div style="font-size:10px; color:var(--text-muted); text-align:center; margin-top:10px; opacity:0.7;">
+            Build: <span id="buildIdentifier">__BUILD_TIMESTAMP__</span>
         </div>
     </div>
 
@@ -659,14 +716,14 @@
         <div id="onboarding-card" style="position:fixed; background:var(--card); padding:16px 20px; border-radius:12px; width:280px; box-shadow:0 8px 32px rgba(0,0,0,0.5); z-index:1002; transition:all 0.3s cubic-bezier(0.4, 0, 0.2, 1); box-sizing:border-box; border:1px solid #334155; opacity:0; transform: scale(0.9); display:none;">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
                 <span id="onboarding-icon" style="font-size:24px;">👋</span>
-                <span id="onboarding-step-indicator" style="font-size:10px; font-weight:700; color:var(--accent); text-transform:uppercase; letter-spacing:0.5px;">Step 1 of 3</span>
+                <span id="onboarding-step-indicator" style="font-size:10px; font-weight:700; color:var(--accent); text-transform:uppercase; letter-spacing:0.5px;">Step 1 of 5</span>
             </div>
             <h2 id="onboarding-title" style="color:var(--accent); margin:0 0 6px; font-size:14px; font-weight:700; text-align:left;">Welcome to KoalaSync!</h2>
             <p id="onboarding-text" style="color:var(--text-muted); font-size:12px; margin:0 0 16px; line-height:1.4; text-align:left;">Let's get you started.</p>
             
             <!-- Progress Bar -->
             <div id="onboarding-progress-container" style="height:4px; background:#334155; border-radius:2px; margin-bottom:16px; overflow:hidden;">
-                <div id="onboarding-progress-bar" style="height:100%; width:33%; background:var(--accent); transition:width 0.3s ease;"></div>
+                <div id="onboarding-progress-bar" style="height:100%; width:20%; background:var(--accent); transition:width 0.3s ease;"></div>
             </div>
             
             <div style="display:flex; gap:8px; justify-content:space-between; align-items:center;">

@@ -162,7 +162,7 @@ async function compile() {
     }
     const templateContent = fs.readFileSync(templatePath, 'utf8');
     const localesDir = path.join(websiteDir, 'locales');
-    const languages = ['en', 'de', 'fr', 'es', 'pt-BR', 'ru', 'it', 'pl', 'tr', 'nl', 'ja', 'ko', 'pt'];
+    const languages = ['en', 'de', 'fr', 'es', 'it', 'nl', 'pl', 'pt', 'pt-BR', 'tr', 'ru', 'ja', 'ko', 'zh', 'uk'];
 
     // Read version for build-time injection (SEO: crawlers see real version)
     const versionJson = JSON.parse(fs.readFileSync(path.join(websiteDir, 'version.json'), 'utf8'));
@@ -174,10 +174,59 @@ async function compile() {
         let compiled = templateContent;
         compiled = compiled.replace(/\{\{ASSET_PATH\}\}/g, assetPath);
         compiled = compiled.replace(/\{\{VERSION\}\}/g, buildVersion);
+        const langPrefix = lang === 'en' ? '' : `${lang}/`;
+        compiled = compiled.replace(/\{\{LANG_PREFIX\}\}/g, langPrefix);
         languages.forEach(l => {
             compiled = compiled.replace(new RegExp(`\\{\\{SELECTED_${l.toUpperCase()}\\}\\}`, 'g'), l === lang ? 'selected' : '');
         });
         for (const [key, value] of Object.entries(locale)) {
+            compiled = compiled.replace(new RegExp(`\\{\\{${key}\\}\\}`, 'g'), value);
+        }
+        return compiled;
+    }
+
+    // Read alternative page templates
+    const telepartyTemplatePath = path.join(websiteDir, 'alternatives/teleparty.html');
+    const screenSharingTemplatePath = path.join(websiteDir, 'alternatives/screen-sharing.html');
+    const overviewTemplatePath = path.join(websiteDir, 'alternatives/index.html');
+    const hasTelepartyTemplate = fs.existsSync(telepartyTemplatePath);
+    const hasScreenSharingTemplate = fs.existsSync(screenSharingTemplatePath);
+    const hasOverviewTemplate = fs.existsSync(overviewTemplatePath);
+    const telepartyTemplate = hasTelepartyTemplate ? fs.readFileSync(telepartyTemplatePath, 'utf8') : '';
+    const screenSharingTemplate = hasScreenSharingTemplate ? fs.readFileSync(screenSharingTemplatePath, 'utf8') : '';
+    const overviewTemplate = hasOverviewTemplate ? fs.readFileSync(overviewTemplatePath, 'utf8') : '';
+
+    // Preload English locale for fallback
+    const englishLocalePath = path.join(localesDir, 'en.json');
+    const englishLocale = JSON.parse(fs.readFileSync(englishLocalePath, 'utf8'));
+
+    function compileAlternativePage(templateContent, locale, lang, assetPath, langPrefix) {
+        let compiled = templateContent;
+        compiled = compiled.replace(/\{\{LANG_CODE\}\}/g, lang);
+        compiled = compiled.replace(/\{\{ASSET_PATH\}\}/g, assetPath);
+        compiled = compiled.replace(/\{\{LANG_PREFIX\}\}/g, langPrefix);
+        compiled = compiled.replace(/\{\{VERSION\}\}/g, buildVersion);
+
+        const indexTitle = lang === 'de' ? 'KoalaSync - Vergleiche & Anleitungen' : 'KoalaSync - Alternatives & Comparisons';
+        const indexDesc = lang === 'de' 
+            ? 'Entdecke ehrliche Vergleiche und detaillierte Leitfäden zwischen KoalaSync und anderen Watch-Party-Erweiterungen.' 
+            : 'Explore honest comparisons and detailed guides comparing KoalaSync with other watch party extensions and streaming solutions.';
+
+        compiled = compiled.replace(/\{\{ALT_INDEX_TITLE\}\}/g, indexTitle);
+        compiled = compiled.replace(/\{\{ALT_INDEX_META_DESC\}\}/g, indexDesc);
+
+        // og:locale mapping for Facebook
+        const ogLocales = {
+            en: 'en_US', de: 'de_DE', fr: 'fr_FR', es: 'es_ES',
+            'pt-BR': 'pt_BR', ru: 'ru_RU', it: 'it_IT', pl: 'pl_PL',
+            tr: 'tr_TR', nl: 'nl_NL', ja: 'ja_JP', ko: 'ko_KR',
+            zh: 'zh_CN', uk: 'uk_UA', pt: 'pt_PT'
+        };
+        compiled = compiled.replace(/\{\{OG_LOCALE\}\}/g, ogLocales[lang] || 'en_US');
+
+        // Merge locale with English fallback for keys not present in current locale
+        const mergedLocale = { ...englishLocale, ...locale };
+        for (const [key, value] of Object.entries(mergedLocale)) {
             compiled = compiled.replace(new RegExp(`\\{\\{${key}\\}\\}`, 'g'), value);
         }
         return compiled;
@@ -193,6 +242,26 @@ async function compile() {
             const html = compilePage(locale, '', lang);
             fs.writeFileSync(path.join(wwwDir, 'index.html'), html);
             englishHtml[''] = html;
+
+            // Compile alternatives for English (assets resolved using '../' prefix)
+            if (hasTelepartyTemplate) {
+                const altDir = path.join(wwwDir, 'alternatives');
+                fs.mkdirSync(altDir, { recursive: true });
+                const tpCompiled = compileAlternativePage(telepartyTemplate, locale, lang, '../', '');
+                fs.writeFileSync(path.join(altDir, 'teleparty.html'), tpCompiled);
+            }
+            if (hasScreenSharingTemplate) {
+                const altDir = path.join(wwwDir, 'alternatives');
+                fs.mkdirSync(altDir, { recursive: true });
+                const ssCompiled = compileAlternativePage(screenSharingTemplate, locale, lang, '../', '');
+                fs.writeFileSync(path.join(altDir, 'screen-sharing.html'), ssCompiled);
+            }
+            if (hasOverviewTemplate) {
+                const altDir = path.join(wwwDir, 'alternatives');
+                fs.mkdirSync(altDir, { recursive: true });
+                const ovCompiled = compileAlternativePage(overviewTemplate, locale, lang, '../', '');
+                fs.writeFileSync(path.join(altDir, 'index.html'), ovCompiled);
+            }
         } else {
             console.log(`Compiling ${lang.toUpperCase()} (${lang}/index.html)...`);
             const langDir = path.join(wwwDir, lang);
@@ -200,6 +269,26 @@ async function compile() {
             const html = compilePage(locale, '../', lang);
             fs.writeFileSync(path.join(langDir, 'index.html'), html);
             englishHtml[lang] = html;
+
+            // Compile alternatives for other languages (assets resolved using '../../' prefix)
+            if (hasTelepartyTemplate) {
+                const langAltDir = path.join(langDir, 'alternatives');
+                fs.mkdirSync(langAltDir, { recursive: true });
+                const tpCompiled = compileAlternativePage(telepartyTemplate, locale, lang, '../../', lang + '/');
+                fs.writeFileSync(path.join(langAltDir, 'teleparty.html'), tpCompiled);
+            }
+            if (hasScreenSharingTemplate) {
+                const langAltDir = path.join(langDir, 'alternatives');
+                fs.mkdirSync(langAltDir, { recursive: true });
+                const ssCompiled = compileAlternativePage(screenSharingTemplate, locale, lang, '../../', lang + '/');
+                fs.writeFileSync(path.join(langAltDir, 'screen-sharing.html'), ssCompiled);
+            }
+            if (hasOverviewTemplate) {
+                const langAltDir = path.join(langDir, 'alternatives');
+                fs.mkdirSync(langAltDir, { recursive: true });
+                const ovCompiled = compileAlternativePage(overviewTemplate, locale, lang, '../../', lang + '/');
+                fs.writeFileSync(path.join(langAltDir, 'index.html'), ovCompiled);
+            }
         }
     }
 
@@ -219,17 +308,35 @@ async function compile() {
         const src = path.join(websiteDir, mapping.src);
         const dest = path.join(wwwDir, mapping.dest);
         if (fs.existsSync(src)) {
+            fs.mkdirSync(path.dirname(dest), { recursive: true });
             fs.copyFileSync(src, dest);
             console.log(`  Copied: ${mapping.src} → ${mapping.dest}`);
         }
     }
 
-    // ── 5. Copy generic static files ──
-    const genericFiles = ['robots.txt', 'sitemap.xml', 'site.webmanifest', 'version.json'];
+    // ── 5. Copy generic static files and verification files ──
+    const genericFiles = ['robots.txt', 'sitemap.xml', 'site.webmanifest', 'version.json', 'llms.txt'];
     for (const file of genericFiles) {
         const src = path.join(websiteDir, file);
         const dest = path.join(wwwDir, file);
         if (fs.existsSync(src)) { fs.copyFileSync(src, dest); }
+    }
+
+    // Auto-copy Google verification files and IndexNow/txt key files from website source to www root
+    const websiteFiles = fs.readdirSync(websiteDir);
+    for (const file of websiteFiles) {
+        const filePath = path.join(websiteDir, file);
+        if (fs.statSync(filePath).isFile()) {
+            // Match google[hex/alphanumeric].html or any hex/uuid txt file (e.g. 4650678bb36b488d8f64343a67f1b931.txt)
+            const isGoogleVerification = /^google[a-zA-Z0-9_-]+\.html$/i.test(file);
+            const isIndexNowVerification = (/^[a-zA-Z0-9_-]{8,}\.txt$/i.test(file) || /^[a-f0-9-]{32,36}$/i.test(file)) && file !== 'robots.txt';
+            
+            if (isGoogleVerification || isIndexNowVerification) {
+                const dest = path.join(wwwDir, file);
+                fs.copyFileSync(filePath, dest);
+                console.log(`  Copied verification file: ${file} → ${file}`);
+            }
+        }
     }
 
     // ── 6. Copy assets ──
@@ -278,22 +385,14 @@ async function compile() {
         let html = fs.readFileSync(filePath, 'utf8');
 
         // 8a. Replace hashed asset refs
-        html = html.replace(/href="(?:\.\.\/)?style\.min\.css"/g, (m) => {
-            const prefix = m.includes('../') ? '../' : '';
+        html = html.replace(/href="((?:\.\.\/)*)style\.min\.css"/g, (m, prefix) => {
             return `href="${prefix}${styleName}"`;
         });
-        html = html.replace(/src="(?:\.\.\/)?app\.min\.js"/g, (m) => {
-            const prefix = m.includes('../') ? '../' : '';
+        html = html.replace(/src="((?:\.\.\/)*)app\.min\.js"/g, (m, prefix) => {
             return `src="${prefix}${appName}"`;
         });
-        html = html.replace(/src="(?:\.\.\/)?lang-init\.min\.js"/g, (m) => {
-            const prefix = m.includes('../') ? '../' : '';
+        html = html.replace(/src="((?:\.\.\/)*)lang-init\.min\.js"/g, (m, prefix) => {
             return `src="${prefix}${langName}"`;
-        });
-        // Also update preload directives
-        html = html.replace(/href="(?:\.\.\/)?style\.min\.css"/g, (m) => {
-            const prefix = m.includes('../') ? '../' : '';
-            return `href="${prefix}${styleName}"`;
         });
 
         // 8b. Inject AVIF <picture> wrappers

@@ -1,21 +1,26 @@
 {
   "name": "koalasync",
-  "version": "2.4.0",
+  "version": "2.5.3",
   "description": "KoalaSync Build Scripts",
   "private": true,
   "type": "module",
   "scripts": {
     "build:extension": "node scripts/build-extension.cjs",
+    "indexnow": "node website/submit-indexnow.cjs",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
+    "test": "npm run verify",
+    "test:unit": "vitest run",
     "verify": "node scripts/verify-release.mjs"
   },
   "devDependencies": {
+    "@vitest/coverage-v8": "^4.1.9",
     "archiver": "^7.0.1",
     "esbuild": "^0.28.1",
     "eslint": "^10.4.0",
     "fs-extra": "^11.2.0",
     "sharp": "^0.34.5",
-    "svgo": "^4.0.1"
+    "svgo": "^4.0.1",
+    "vitest": "^4.1.9"
   }
 }

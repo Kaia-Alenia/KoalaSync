@@ -2,18 +2,17 @@
  * KoalaSync Shared Constants & Protocol Definitions
  * 
  * ⚠️ WARNING: This is the SINGLE SOURCE OF TRUTH.
- * If you edit this file, you MUST run: node scripts/build-extension.js
+ * If you edit this file, you MUST run: node scripts/build-extension.cjs
  * to propagate changes to the extension and relay server.
  */
 
 export const PROTOCOL_VERSION = "1.0.0";
-export const APP_VERSION = "1.9.0";
+export const APP_VERSION = "2.5.3";
 
 export const OFFICIAL_SERVER_URL = 'wss://syncserver.koalastuff.net';
 export const OFFICIAL_LANDING_PAGE_URL = 'https://sync.koalastuff.net';
 export const OFFICIAL_SERVER_TOKEN = '62170b705234c4f4807a9b22420bb93cf1a2aacfa4c5d3b47804482babb8eb50';
 export const SUPPORT_URL = 'https://support.koalastuff.net';
-export const KOFI_URL = 'https://ko-fi.com/koaladev';
 export const GITHUB_URL = 'https://github.com/Shik3i/KoalaSync';
 
 export function isFirefox() {
@@ -33,6 +32,11 @@ export const EVENTS = {
     LEAVE_ROOM: "leave_room",
     ROOM_DATA: "room_data", // Server -> Client: current room state
     ERROR: "error",
+
+    // Host Control Mode
+    SET_CONTROL_MODE: "set_control_mode", // Client -> Server: host sets room control mode ('everyone' | 'host-only')
+    CONTROL_MODE: "control_mode",          // Server -> Client: control mode/role changed { controlMode, hostPeerId, controllers }
+    SET_PEER_ROLE: "set_peer_role",        // Client -> Server: owner promotes/demotes a peer { peerId, controller }
 
     // Media Control
     PLAY: "play",
@@ -56,6 +60,24 @@ export const EVENTS = {
     // Ping / Latency
     PING: "ping",  // { t: timestamp, target?: peerId } — empty target = server echo
     PONG: "pong"   // server responds with same { t } for client RTT calculation
+};
+
+// Room control modes (Host Control Mode feature).
+// NOTE: content.js does not import this module — it uses the string literals
+// 'everyone' / 'host-only' directly. Keep these values in sync there.
+export const CONTROL_MODES = {
+    EVERYONE: 'everyone',   // default: anyone can play/pause/seek for the room
+    HOST_ONLY: 'host-only'  // only the host drives the room
+};
+
+// Server feature capabilities, advertised to clients in ROOM_DATA. Lets a client
+// detect what the relay actually supports instead of inferring it from the
+// presence of a data field — so new server features degrade cleanly on older
+// relays (unknown/absent list → feature treated as unavailable) and old clients
+// simply ignore the field. Add a flag here as each server-gated feature lands.
+export const CAPABILITIES = {
+    HOST_CONTROL: 'host-control',
+    CO_HOST: 'co-host'  // owner promotes guests to additional controllers
 };
 
 export const HEARTBEAT_INTERVAL = 15000; // 15s

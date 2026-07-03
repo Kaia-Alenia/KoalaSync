@@ -1,6 +1,49 @@
 // KoalaSync Landing Page Logic
 
 document.addEventListener('DOMContentLoaded', () => {
+    // Mockup Video Title Randomization on Load
+    const SERIES_NAMES = [
+        'Stranger Things',
+        'Wednesday',
+        'The Boys',
+        'Loki',
+        'Arcane',
+        'Dark',
+        'One Piece',
+        'Lupin'
+    ];
+
+    try {
+        const chosenSeries = SERIES_NAMES[Math.floor(Math.random() * SERIES_NAMES.length)];
+        const startEp = Math.floor(Math.random() * 7) + 1; // Random episode between 1 and 7
+        const ep1 = `${chosenSeries} - S1E${startEp}`;
+        const ep2 = `${chosenSeries} - S1E${startEp + 1}`;
+
+        document.querySelectorAll('.demo-title-text-ep1').forEach(el => {
+            el.textContent = ep1;
+        });
+        document.querySelectorAll('.demo-title-text-ep2').forEach(el => {
+            el.textContent = ep2;
+        });
+    } catch (err) {
+        console.warn(err);
+    }
+
+    // Scroll Progress Indicator
+    try {
+        const progressBar = document.querySelector('.scroll-progress-bar');
+        if (progressBar) {
+            window.addEventListener('scroll', () => {
+                const winScroll = document.body.scrollTop || document.documentElement.scrollTop;
+                const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+                const scrolled = height > 0 ? (winScroll / height) * 100 : 0;
+                progressBar.style.width = scrolled + '%';
+            }, { passive: true });
+        }
+    } catch (err) {
+        console.warn(err);
+    }
+
     const safeGetLocalStorage = (key) => {
         try {
             return localStorage.getItem(key);
@@ -19,31 +62,39 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Scroll Reveal Logic (IntersectionObserver for performance)
     const revealElements = document.querySelectorAll('[data-reveal]');
-    
-    const revealObserver = new IntersectionObserver((entries) => {
-        entries.forEach(entry => {
-            if (entry.isIntersecting) {
-                entry.target.classList.add('revealed');
-                revealObserver.unobserve(entry.target);
-            }
-        });
-    }, {
-        rootMargin: '0px 0px -150px 0px',
-        threshold: 0.1
-    });
 
-    revealElements.forEach(el => revealObserver.observe(el));
+    if ('IntersectionObserver' in window) {
+        const revealObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('revealed');
+                    revealObserver.unobserve(entry.target);
+                }
+            });
+        }, {
+            rootMargin: '0px 0px -30px 0px',
+            threshold: 0.05
+        });
+
+        revealElements.forEach(el => revealObserver.observe(el));
+    } else {
+        // Fallback: without IntersectionObserver support, reveal everything
+        // immediately so no content can ever stay hidden.
+        revealElements.forEach(el => el.classList.add('revealed'));
+    }
 
     // Auto-update URL hash as user scrolls through sections
     // (preserves position across language switches)
-    const sectionObserver = new IntersectionObserver((entries) => {
-        entries.forEach(entry => {
-            if (entry.isIntersecting) {
-                history.replaceState(null, null, '#' + entry.target.id);
-            }
-        });
-    }, { threshold: 0.3 });
-    document.querySelectorAll('section[id], header[id]').forEach(el => sectionObserver.observe(el));
+    if ('IntersectionObserver' in window) {
+        const sectionObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    history.replaceState(null, null, '#' + entry.target.id);
+                }
+            });
+        }, { threshold: 0.3 });
+        document.querySelectorAll('section[id], header[id]').forEach(el => sectionObserver.observe(el));
+    }
 
     // Navbar scroll effect
     const nav = document.querySelector('nav');
@@ -323,7 +374,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const updateDynamicVersion = async () => {
         try {
-            const versionPath = document.documentElement.lang === 'en' ? 'version.json' : '../version.json';
+            const versionPath = '/version.json';
             const response = await fetch(versionPath);
             if (!response.ok) return;
             const data = await response.json();
@@ -397,6 +448,430 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     });
+
+    // --- Hero Live Demo (two synced video tabs + extension popup) ---
+    // Desktop only: on mobile the scene falls back to the classic static popup.
+    const initHeroDemo = () => {
+        const scene = document.getElementById('hero-demo');
+        if (!scene || !window.matchMedia('(min-width: 769px)').matches) return;
+
+        const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+        const launcher = scene.querySelector('#demo-launcher');
+        const chip = scene.querySelector('#demo-sync-chip');
+        const cursor = scene.querySelector('#demo-cursor');
+        const hint = document.getElementById('demo-hint');
+        const playBtn = scene.querySelector('#demo-play-btn');
+        const pauseBtn = scene.querySelector('#demo-pause-btn');
+        const forceSyncBtn = scene.querySelector('#demo-force-sync');
+        const syncTabBtn = scene.querySelector('.mock-tab[data-target="mock-sync"]');
+        const roomEmpty = scene.querySelector('#demo-room-empty');
+        const roomJoined = scene.querySelector('#demo-room-joined');
+        const createRoomBtn = scene.querySelector('#demo-create-room');
+        const inviteCopyBtn = scene.querySelector('#demo-invite-copy');
+        const videoSelect = scene.querySelector('#demo-video-select');
+        const peerBs = scene.querySelectorAll('.demo-peer-b');
+        const inviteFly = scene.querySelector('#demo-invite-fly');
+        const toastB = scene.querySelector('#demo-toast-b');
+        if (!launcher || !chip || !cursor || !playBtn || !pauseBtn) return;
+
+        const EP_LEN = 2537;   // fake 42:17 episode
+        const RATE = 1;        // realtime: 1 wall-clock second = 1 video second
+        const START_T = 754;   // 12:34
+
+        const tabs = {};
+        ['a', 'b'].forEach(k => {
+            const root = scene.querySelector('#demo-tab-' + k);
+            tabs[k] = {
+                root,
+                fill: root.querySelector('.demo-progress-fill'),
+                time: root.querySelector('.demo-time'),
+                t: START_T,
+                playing: false
+            };
+        });
+
+        const fmt = (s) => {
+            s = Math.floor(s);
+            return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0');
+        };
+
+        const renderTab = (tab) => {
+            tab.fill.style.width = ((tab.t / EP_LEN) * 100).toFixed(2) + '%';
+            tab.time.textContent = fmt(tab.t);
+            
+            // Frame-locked parallax offsets
+            const t = tab.t;
+            const backOffset = (t * -8) % 160;
+            const midOffset = (t * -24) % 160;
+            const foreOffset = (t * -48) % 160;
+            
+            // Bouncing ball logic (bounce Y is computed as parabolic arc)
+            const bouncePeriod = 0.8;
+            const bounceProgress = (t % bouncePeriod) / bouncePeriod;
+            const bounceHeight = 16;
+            const bounceY = 4 * bounceProgress * (1 - bounceProgress) * -bounceHeight;
+            
+            tab.root.style.setProperty('--scroll-back', backOffset.toFixed(2) + 'px');
+            tab.root.style.setProperty('--scroll-mid', midOffset.toFixed(2) + 'px');
+            tab.root.style.setProperty('--scroll-fore', foreOffset.toFixed(2) + 'px');
+            tab.root.style.setProperty('--bounce-y', bounceY.toFixed(2) + 'px');
+        };
+
+        const updateSyncUI = () => {
+            scene.classList.toggle('streaming', tabs.a.playing && tabs.b.playing);
+        };
+
+        // Playback clock (runs only while at least one tab is playing)
+        let rafId = null;
+        let lastTs = null;
+
+        const tick = (ts) => {
+            rafId = null;
+            const dt = lastTs === null ? 0 : Math.min((ts - lastTs) / 1000, 0.5);
+            lastTs = ts;
+            let anyPlaying = false;
+            ['a', 'b'].forEach(k => {
+                const tab = tabs[k];
+                if (!tab.playing) return;
+                anyPlaying = true;
+                tab.t = (tab.t + dt * RATE) % EP_LEN;
+                renderTab(tab);
+            });
+            updateSyncUI();
+            if (anyPlaying) rafId = requestAnimationFrame(tick);
+            else lastTs = null;
+        };
+
+        const ensureLoop = () => {
+            if (rafId === null && (tabs.a.playing || tabs.b.playing)) {
+                lastTs = null;
+                rafId = requestAnimationFrame(tick);
+            }
+        };
+
+        const setPlaying = (k, playing) => {
+            const tab = tabs[k];
+            tab.playing = playing;
+            tab.root.classList.toggle('playing', playing);
+            tab.root.setAttribute('aria-pressed', playing ? 'true' : 'false');
+            ensureLoop();
+            updateSyncUI();
+        };
+
+        const pulse = (key) => {
+            const el = tabs[key].root;
+            el.classList.remove('sync-pulse');
+            void el.offsetWidth; // restart the CSS animation
+            el.classList.add('sync-pulse');
+        };
+
+        const NAMES = { a: '🐱 ChillCat', b: '🐶 HappyDog' };
+        const chipEvent = chip.querySelector('.demo-chip-event');
+
+        let eventTimer = null;
+        const showEvent = (text) => {
+            if (!chipEvent) return;
+            chipEvent.textContent = text;
+            chip.classList.add('event');
+            clearTimeout(eventTimer);
+            eventTimer = setTimeout(() => chip.classList.remove('event'), 1600);
+        };
+
+        // Core of the demo: play/pause on EITHER side is broadcast to the peer
+        // tab — exactly what the extension does. The popup is just a remote
+        // control on top, never a requirement.
+        let broadcasting = false;
+        const broadcast = (sourceKey, playing) => {
+            if (broadcasting) return;
+            broadcasting = true;
+            const peerKey = sourceKey === 'a' ? 'b' : 'a';
+            setPlaying(sourceKey, playing);
+            showEvent((playing ? '▶ ' : '❚❚ ') + NAMES[sourceKey]);
+            // the peer follows near-instantly — that is the whole point
+            setTimeout(() => {
+                tabs[peerKey].t = tabs[sourceKey].t;
+                setPlaying(peerKey, playing);
+                renderTab(tabs[peerKey]);
+                pulse(peerKey);
+                broadcasting = false;
+            }, 90);
+        };
+
+        // Seeking works the same way: scrub one tab, the peer jumps along
+        const seekTo = (sourceKey, fraction) => {
+            if (broadcasting) return;
+            broadcasting = true;
+            const peerKey = sourceKey === 'a' ? 'b' : 'a';
+            tabs[sourceKey].t = fraction * EP_LEN;
+            renderTab(tabs[sourceKey]);
+            showEvent('» ' + NAMES[sourceKey]);
+            // visible "cut" so the jump reads as a real seek, not a silent update
+            flashSeek(tabs[sourceKey].root);
+            setTimeout(() => {
+                tabs[peerKey].t = tabs[sourceKey].t;
+                renderTab(tabs[peerKey]);
+                flashSeek(tabs[peerKey].root);
+                pulse(peerKey);
+                broadcasting = false;
+            }, 90);
+        };
+
+        // Restart the film animations mid-stride + trigger the sweep overlay
+        let seekFlashTimers = [];
+        const flashSeek = (root) => {
+            if (!root) return;
+            root.classList.remove('demo-seeking');
+            // Restart every animated layer from frame zero so the jump is visible
+            const film = root.querySelector('.demo-film');
+            if (film) {
+                film.classList.add('demo-reset');
+                void film.offsetWidth; // force reflow so the browser commits the reset
+                film.classList.remove('demo-reset');
+            }
+            void root.offsetWidth;
+            root.classList.add('demo-seeking');
+            const t = setTimeout(() => root.classList.remove('demo-seeking'), 360);
+            seekFlashTimers.push(t);
+        };
+
+        const setPopupOpen = (open) => {
+            scene.classList.toggle('popup-open', open);
+            launcher.setAttribute('aria-expanded', open ? 'true' : 'false');
+        };
+
+        // Manual controls (the automated walkthrough drives these same handlers)
+        launcher.addEventListener('click', () => setPopupOpen(!scene.classList.contains('popup-open')));
+
+        // The popup remote control acts as 🐱 ChillCat (tab A's user)
+        playBtn.addEventListener('click', () => {
+            if (tabs.a.playing && tabs.b.playing) { pulse('b'); return; }
+            broadcast('a', true);
+        });
+        pauseBtn.addEventListener('click', () => {
+            if (!tabs.a.playing && !tabs.b.playing) { pulse('b'); return; }
+            broadcast('a', false);
+        });
+        if (forceSyncBtn) forceSyncBtn.addEventListener('click', () => {
+            tabs.b.t = tabs.a.t = Math.max(tabs.a.t, tabs.b.t);
+            renderTab(tabs.a);
+            renderTab(tabs.b);
+            pulse('a');
+            pulse('b');
+        });
+
+        ['a', 'b'].forEach(k => {
+            const root = tabs[k].root;
+            const toggle = () => broadcast(k, !tabs[k].playing);
+            // the toolbar extension icon lives inside card A — its clicks
+            // toggle the popup, not playback
+            root.addEventListener('click', (e) => {
+                if (e.target.closest('.demo-ext-launcher')) return;
+                toggle();
+            });
+            root.addEventListener('keydown', (e) => {
+                if (e.target.closest('.demo-ext-launcher')) return;
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    toggle();
+                }
+            });
+
+            const progress = root.querySelector('.demo-progress');
+            if (progress) {
+                progress.addEventListener('click', (e) => {
+                    e.stopPropagation(); // a scrub must not toggle play/pause
+                    const r = progress.getBoundingClientRect();
+                    seekTo(k, Math.min(Math.max((e.clientX - r.left) / r.width, 0), 1));
+                });
+            }
+        });
+
+        chip.addEventListener('click', pulse);
+
+        // --- Story state (room creation -> invite -> connected) ---
+        const setRoomJoined = (joined) => {
+            if (roomEmpty) roomEmpty.style.display = joined ? 'none' : 'flex';
+            if (roomJoined) roomJoined.style.display = joined ? '' : 'none';
+        };
+
+        const setConnected = (connected) => {
+            scene.classList.toggle('connected', connected);
+            peerBs.forEach(el => { el.style.display = connected ? '' : 'none'; });
+        };
+
+        let toastTimer = null;
+        const showToastB = (text) => {
+            if (!toastB || !text) return;
+            toastB.textContent = '✓ ' + text;
+            toastB.classList.add('show');
+            clearTimeout(toastTimer);
+            toastTimer = setTimeout(() => toastB.classList.remove('show'), 1700);
+        };
+
+        // The invite link visibly travels from the popup to the friend's window
+        const flyInvite = () => new Promise((resolve) => {
+            if (!inviteFly || !inviteCopyBtn) { resolve(); return; }
+            const sr = scene.getBoundingClientRect();
+            const from = inviteCopyBtn.getBoundingClientRect();
+            const to = tabs.b.root.querySelector('.demo-tab-titlebar').getBoundingClientRect();
+            inviteFly.style.transition = 'none';
+            inviteFly.style.left = (from.left - sr.left) + 'px';
+            inviteFly.style.top = (from.top - sr.top) + 'px';
+            inviteFly.style.opacity = '1';
+            void inviteFly.offsetWidth;
+            inviteFly.style.transition = '';
+            inviteFly.style.left = (to.left - sr.left + to.width / 2 - 40) + 'px';
+            inviteFly.style.top = (to.top - sr.top + 2) + 'px';
+            setTimeout(() => {
+                inviteFly.style.opacity = '0';
+                resolve();
+            }, 800);
+        });
+
+        const flashSelect = () => {
+            if (!videoSelect) return;
+            // Actually pick the Stranger Things tab so the placeholder reads as chosen
+            if (videoSelect.options.length > 1) {
+                videoSelect.selectedIndex = 1;
+            }
+            videoSelect.classList.remove('demo-attn');
+            void videoSelect.offsetWidth;
+            videoSelect.classList.add('demo-attn');
+        };
+
+        if (createRoomBtn) createRoomBtn.addEventListener('click', () => setRoomJoined(true));
+
+        renderTab(tabs.a);
+        renderTab(tabs.b);
+        updateSyncUI();
+
+        // JS is active: start with the popup tucked away and, if the scripted
+        // story is going to run, rewind to the "before" state (no transitions
+        // on load).
+        scene.classList.add('demo-no-anim');
+        if (!reduceMotion) {
+            setPopupOpen(false);
+            setConnected(false);
+            setRoomJoined(false);
+        }
+        void scene.offsetWidth;
+        scene.classList.remove('demo-no-anim');
+
+        const showHint = () => {
+            if (hint) hint.classList.add('show');
+        };
+
+        // Automated one-time walkthrough; any interaction aborts it and jumps
+        // straight to the finished end state, then the user's click applies.
+        let userTookOver = false;
+        let demoStarted = false;
+        let demoFinished = false;
+        const finishDemo = () => {
+            if (demoFinished) return;
+            demoFinished = true;
+            setRoomJoined(true);
+            setConnected(true);
+            cursor.classList.remove('visible');
+            scene.classList.add('demo-complete');
+            showHint();
+        };
+
+        const takeOver = (e) => {
+            userTookOver = true;
+            finishDemo();
+            // Clicks outside the popup (and not on its launcher icon) always collapse the popup
+            if (e && e.target &&
+                !e.target.closest('.extension-mockup') &&
+                !e.target.closest('.demo-ext-launcher')) {
+                setPopupOpen(false);
+            }
+        };
+        scene.addEventListener('pointerdown', takeOver, true);
+        scene.addEventListener('keydown', takeOver, true);
+
+        const runDemo = async () => {
+            if (demoStarted || userTookOver || reduceMotion) return;
+            demoStarted = true;
+
+            const wait = (ms) => new Promise(r => setTimeout(r, ms));
+            const moveTo = async (el, fx) => {
+                const sr = scene.getBoundingClientRect();
+                const er = el.getBoundingClientRect();
+                cursor.style.left = (er.left - sr.left + er.width * (fx || 0.5)) + 'px';
+                cursor.style.top = (er.top - sr.top + er.height / 2) + 'px';
+                await wait(700);
+            };
+            const step = async (el, pause, action, fx) => {
+                if (userTookOver || !el) return false;
+                await moveTo(el, fx);
+                if (userTookOver) return false;
+                cursor.classList.remove('clicking');
+                void cursor.offsetWidth;
+                cursor.classList.add('clicking');
+                await wait(180);
+                if (userTookOver) return false;
+                if (action) action(); else el.click();
+                await wait(320 + (pause || 0));
+                return !userTookOver;
+            };
+
+            await wait(500);
+            if (userTookOver) return;
+            cursor.classList.add('visible');
+            await wait(400);
+
+            const progressA = tabs.a.root.querySelector('.demo-progress');
+
+            // Act 1: open the extension and create a room
+            if (!await step(launcher, 300)) return;
+            if (!await step(createRoomBtn, 500)) return;
+
+            // Act 2: the invite link travels to the friend's browser
+            if (!await step(inviteCopyBtn, 0)) return;
+            await flyInvite();
+            if (userTookOver) return;
+            setConnected(true);
+            showToastB(toastB ? toastB.dataset.joined : '');
+            pulse('b');
+            await wait(900);
+            if (userTookOver) return;
+
+            // Act 3: both sides pick the video tab to sync
+            if (!await step(syncTabBtn, 250)) return;
+            if (!await step(videoSelect, 150, flashSelect)) return;
+            showToastB(toastB ? toastB.dataset.selected : '');
+            await wait(700);
+            if (userTookOver) return;
+
+            // Act 4: play for everyone, then tuck the popup away
+            if (!await step(playBtn, 1800)) return;
+            if (!await step(launcher, 500)) return;
+
+            // Act 5: any side can control — pause there, seek here, play again
+            if (!await step(tabs.b.root, 1000)) return;
+            if (!await step(progressA, 1300, () => seekTo('a', 0.62), 0.62)) return;
+            if (!await step(tabs.a.root, 700)) return;
+
+            finishDemo();
+        };
+
+        if ('IntersectionObserver' in window && !reduceMotion) {
+            const demoObserver = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        demoObserver.disconnect();
+                        setTimeout(runDemo, 900);
+                    }
+                });
+            }, { threshold: 0.45 });
+            demoObserver.observe(scene);
+        } else {
+            finishDemo();
+        }
+    };
+
+    initHeroDemo();
 
     // Terminal Tab Switcher
     const termTabBtns = document.querySelectorAll('.terminal-tab-btn');
@@ -472,13 +947,21 @@ document.addEventListener('DOMContentLoaded', () => {
         const activeLang = safeGetLocalStorage('koala_lang') || (navigator.language.startsWith('de') ? 'de' : 'en');
         const path = window.location.pathname;
         const pathSegments = path.split('/');
-        const isSubdir = pathSegments.some(seg => ['de', 'fr', 'es', 'pt-BR', 'ru', 'it', 'pl', 'tr', 'nl', 'ja', 'ko', 'pt'].includes(seg));
+        const isSubdir = pathSegments.some(seg => ['de', 'fr', 'es', 'it', 'nl', 'pl', 'pt', 'pt-BR', 'tr', 'ru', 'ja', 'ko', 'zh', 'uk'].includes(seg));
 
         // Only need to do this dynamic rewrite if we are NOT already inside a localized subdirectory
         if (!isSubdir) {
-            const homeLinks = document.querySelectorAll('a[href="./"], a[href="de/"], a[href="fr/"], a[href="es/"], a[href="pt-BR/"], a[href="ru/"], a[href="it/"], a[href="pl/"], a[href="tr/"], a[href="nl/"], a[href="ja/"], a[href="ko/"], a[href="pt/"]');
+            const homeLinks = document.querySelectorAll('a[href="./"], a[href="de/"], a[href="fr/"], a[href="es/"], a[href="it/"], a[href="nl/"], a[href="pl/"], a[href="pt/"], a[href="pt-BR/"], a[href="tr/"], a[href="ru/"], a[href="ja/"], a[href="ko/"], a[href="zh/"], a[href="uk/"]');
             homeLinks.forEach(link => {
                 link.href = (activeLang === 'en') ? './' : `${activeLang}/`;
+            });
+
+            const altLinks = document.querySelectorAll('a[href*="alternatives"]');
+            altLinks.forEach(link => {
+                const attr = link.getAttribute('href');
+                if (attr === 'alternatives' || attr === 'alternatives/teleparty' || attr.endsWith('/alternatives')) {
+                    link.href = (activeLang === 'en') ? 'alternatives' : `${activeLang}/alternatives`;
+                }
             });
         }
     };
@@ -521,13 +1004,36 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
         
+        const pathSegments = path.split('/');
+        const isAlternative = pathSegments.includes('alternatives');
+        if (isAlternative) {
+            let target;
+            const firstSeg = pathSegments[1];
+            const isLangSubdir = ['de', 'fr', 'es', 'it', 'nl', 'pl', 'pt', 'pt-BR', 'tr', 'ru', 'ja', 'ko', 'zh', 'uk'].includes(firstSeg);
+            
+            if (newLang === 'en') {
+                if (isLangSubdir) {
+                    pathSegments.splice(1, 1);
+                }
+            } else {
+                if (isLangSubdir) {
+                    pathSegments[1] = newLang;
+                } else {
+                    pathSegments.splice(1, 0, newLang);
+                }
+            }
+            target = pathSegments.join('/');
+            window.location.href = target + window.location.hash;
+            return;
+        }
+        
         // Determine if we are on a static landing page versus a dynamic utility page
         const isIndex = !path.includes('join');
         
         if (isIndex) {
             // Static navigation: Route to correct subdirectory
             const pathSegments = path.split('/');
-            const isSubdir = pathSegments.some(seg => ['de', 'fr', 'es', 'pt-BR', 'ru', 'it', 'pl', 'tr', 'nl', 'ja', 'ko', 'pt'].includes(seg));
+            const isSubdir = pathSegments.some(seg => ['de', 'fr', 'es', 'it', 'nl', 'pl', 'pt', 'pt-BR', 'tr', 'ru', 'ja', 'ko', 'zh', 'uk'].includes(seg));
             
             let targetPath;
             if (newLang === 'en') {
@@ -550,7 +1056,7 @@ document.addEventListener('DOMContentLoaded', () => {
         } else {
             // Dynamic page: Toggle classes and update elements dynamically without navigating away
             const html = document.documentElement;
-            html.classList.remove('lang-en', 'lang-de', 'lang-fr', 'lang-es', 'lang-pt-br', 'lang-ru', 'lang-it', 'lang-pl', 'lang-tr', 'lang-nl', 'lang-ja', 'lang-ko', 'lang-pt');
+            html.classList.remove('lang-en', 'lang-de', 'lang-fr', 'lang-es', 'lang-it', 'lang-nl', 'lang-pl', 'lang-pt', 'lang-pt-br', 'lang-tr', 'lang-ru', 'lang-ja', 'lang-ko', 'lang-zh', 'lang-uk');
             
             // Fallback dynamic pages to 'en' if 'de' is not chosen (since fr/es markup is not present)
             const activeDisplayLang = (newLang === 'de') ? 'de' : 'en';
@@ -736,4 +1242,64 @@ document.addEventListener('DOMContentLoaded', () => {
     updateDynamicVersion();
     localizeHomeLinks();
     initLanguageSelectorValue();
+    // FAQ Accordion Transition (Web Animations API for smooth vertical spring height collapse/expand)
+    try {
+        document.querySelectorAll('.faq-item').forEach(details => {
+            const summary = details.querySelector('summary');
+            let isAnimating = false;
+
+            summary.addEventListener('click', (e) => {
+                e.preventDefault();
+                if (isAnimating) return;
+
+                const startHeight = details.offsetHeight;
+
+                if (details.hasAttribute('open')) {
+                    isAnimating = true;
+                    const computed = window.getComputedStyle(details);
+                    const padY = parseInt(computed.paddingTop) + parseInt(computed.paddingBottom);
+                    const borderY = parseInt(computed.borderTopWidth) + parseInt(computed.borderBottomWidth);
+                    const closedHeight = summary.offsetHeight + padY + (isNaN(borderY) ? 0 : borderY);
+
+                    const animation = details.animate([
+                        { height: startHeight + 'px' },
+                        { height: closedHeight + 'px' }
+                    ], {
+                        duration: 250,
+                        easing: 'cubic-bezier(0.16, 1, 0.3, 1)'
+                    });
+
+                    animation.onfinish = () => {
+                        details.removeAttribute('open');
+                        details.style.height = '';
+                        isAnimating = false;
+                    };
+                } else {
+                    isAnimating = true;
+                    details.setAttribute('open', '');
+                    const openHeight = details.offsetHeight;
+
+                    const computed = window.getComputedStyle(details);
+                    const padY = parseInt(computed.paddingTop) + parseInt(computed.paddingBottom);
+                    const borderY = parseInt(computed.borderTopWidth) + parseInt(computed.borderBottomWidth);
+                    const closedHeight = summary.offsetHeight + padY + (isNaN(borderY) ? 0 : borderY);
+
+                    const animation = details.animate([
+                        { height: closedHeight + 'px' },
+                        { height: openHeight + 'px' }
+                    ], {
+                        duration: 250,
+                        easing: 'cubic-bezier(0.16, 1, 0.3, 1)'
+                    });
+
+                    animation.onfinish = () => {
+                        details.style.height = '';
+                        isAnimating = false;
+                    };
+                }
+            });
+        });
+    } catch (err) {
+        console.warn(err);
+    }
 });

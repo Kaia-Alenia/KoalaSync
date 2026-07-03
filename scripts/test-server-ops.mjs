@@ -52,7 +52,7 @@ const basicHealth = buildHealthPayload({
   now: 1234,
   uptime: 99,
   memoryUsage: () => ({ rss: 10, heapUsed: 5, heapTotal: 8 }),
-  rateLimitSizes: { connections: 1, events: 2, health: 3, adminMetricsAuth: 4, authFailures: 5, roomList: 6 }
+  rateLimitSizes: { connections: 1, events: 2, health: 3, adminMetricsAuth: 4, authFailures: 5, roomList: 6, leaveRoom: 7 }
 });
 
 assert.deepEqual(
@@ -68,7 +68,8 @@ const adminHealth = buildHealthPayload({
   now: 1234,
   uptime: 99,
   memoryUsage: () => ({ rss: 10, heapUsed: 5, heapTotal: 8 }),
-  rateLimitSizes: { connections: 1, events: 2, health: 3, adminMetricsAuth: 4, authFailures: 5, roomList: 6 }
+  rateLimitSizes: { connections: 1, events: 2, health: 3, adminMetricsAuth: 4, authFailures: 5, roomList: 6, leaveRoom: 7 },
+  rateLimitDenied: { leaveRoom: 8 }
 });
 
 assert.equal(adminHealth.peers, 5, 'admin metrics should include aggregate peer count');
@@ -79,8 +80,8 @@ assert.deepEqual(adminHealth.memory, { rss: 10, heapUsed: 5, heapTotal: 8 }, 'ad
 assert.deepEqual(
   adminHealth.rateLimits,
   {
-    trackedClients: { connections: 1, events: 2, health: 3, adminMetricsAuth: 4, authFailures: 5, roomList: 6 },
-    denied: { connections: 0, events: 0, health: 0, adminMetricsAuth: 0, roomList: 0 }
+    trackedClients: { connections: 1, events: 2, health: 3, adminMetricsAuth: 4, authFailures: 5, roomList: 6, leaveRoom: 7 },
+    denied: { connections: 0, events: 0, health: 0, adminMetricsAuth: 0, roomList: 0, leaveRoom: 8 }
   },
   'admin metrics should expose rate-limit tracking and denial counts'
 );

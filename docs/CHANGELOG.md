@@ -4,6 +4,104 @@ All notable changes to the KoalaSync browser extension and relay server.
 
 ---
 
+## Unreleased
+
+---
+
+## [v2.5.3] — 2026-07-02
+
+### Fixed
+- **Extension: Disney+ force sync and seeking** — Fixed force sync on Disney+ failing or jumping to wrong positions. The extension now relies solely on accurate player-API time and fails cleanly when it isn't available yet, instead of falling back to unreliable raw video data.
+- **Extension: Force-sync accuracy** — When syncing to the group, peers whose current position isn't known yet (e.g. a Disney+ peer that just loaded) no longer pull the sync target toward the start of the video.
+- **Extension: Disney+ Host Control Mode** — Regular Disney+ content is no longer misclassified as a live stream, which had silently disabled the desync dialog and snap-back for guests in host-controlled rooms. YouTube and Twitch live detection is unchanged.
+- **Extension: Disney+ episode auto-sync** — Episode transitions and the "waiting for peers" lobby flow now work reliably on Disney+ again.
+
+---
+
+## [v2.5.2] — 2026-07-02
+
+### Added
+- **Extension: Privacy title controls** - Advanced users can now disable sending browser tab titles separately from media titles. Media titles can still be sent in full, reduced to detected episode identifiers such as `S01E04`, or hidden entirely. Defaults remain full titles for backwards compatibility.
+- **Relay: Cleaner restart handling** — Connected clients are now disconnected explicitly during relay shutdown so reconnects recover more predictably.
+- **Relay: Stronger abuse protection** — Rapid room-leave spam is now rate-limited.
+- **Extension: Hidden remote seek diagnostics** — KoalaDev can use the hidden Dev tab to simulate remote seeks and inspect precise native/page-API timing while debugging playback integrations.
+
+### Changed
+- **Extension: Shared page-API seek bridge** — Netflix and Disney+ now use a common page-level seek bridge so private player APIs can be invoked from the page context while the default HTML5 path stays unchanged.
+- **Build: Release build timestamp** — Extension builds now inject a build timestamp into the hidden Dev tab for easier local package verification.
+
+### Fixed
+- **Extension: Disney+ precise sync** — Disney+ now reads time and seeks through the real page media-player API, and the temporary DOM timeline/button scraping fallback has been removed.
+- **Extension: Netflix seek reliability** — Netflix seeking keeps using the page player API with a safer session lookup path.
+- **Extension: Tab-title counter cleanup** — Leading browser notification counters such as `(14)` or `[7]` are removed from shared tab titles and matching logic without changing the existing privacy controls.
+- **Extension: Tab navigation reinjection** — Reinjecting the content script after selected-tab navigation now uses the same page-API-aware injection path.
+
+---
+
+## [v2.5.0] — 2026-06-29
+
+### Added
+- **Extension + Relay: Host Control Mode** — Room owners can now switch a room between open playback control and host-controlled playback. In host-only mode, guests stay synchronized but their local play, pause, and seek actions are not rebroadcast to the room.
+- **Backward-compatible Host Control rollout** — The extension only shows Host Control when the connected relay supports it, so users on older self-hosted servers do not see controls that cannot work yet.
+- **Extension: Clear host and guest states** — The popup shows the current control mode, host status, peer roles, and localized guest guidance so participants understand when playback is controlled by the host.
+- **Website: FAQ clarification for streaming access** — The landing page and FAQ structured data now state clearly that KoalaSync does not stream, host, share, or bypass access to video content. Every participant watches locally and needs their own access to services such as Netflix.
+
+### Changed
+- **Playback sync now follows the room's control setting** — When Host Control is enabled, only the host can drive room-wide playback changes; guests can still watch in sync without accidentally changing playback for everyone.
+
+---
+
+## [v2.4.6] — 2026-06-23
+
+### Fixed
+- **Room and settings are no longer stored in `chrome.storage.sync`** — Room ID, password, and username were being resurrected from synced storage on a fresh install (sync survives an uninstall in the user's Google account), which made the extension silently auto-connect to a dead room and appear permanently connected. `getSettings()` and all settings reads are now local-only, and legacy keys are actively purged from sync on install/update/startup. Only `onboardingComplete` and `dismissedHints` remain in sync.
+- **No server traffic while alone in a room** — When you are the only peer, heartbeats, force-sync, and episode auto-sync are now fully suppressed (previously the keepAlive heartbeat, force-sync, and episode lobby were still broadcast to an empty room). The solo state is re-evaluated live on every event — never cached — so the instant another peer joins, syncing resumes immediately, including an instant state push so the newcomer sees your current position without waiting for the next heartbeat.
+
+## [v2.4.4] — 2026-06-23
+
+### Changed
+- **Server: Event rate limit raised 30 → 50 per 10s**, and all connection/event/health rate-limit thresholds and windows extracted into named constants.
+- **Extension: Reconnect backoff tuned and jittered** — capped at ~8 attempts/60s (under the per-IP connection limit) with ±20% jitter to de-synchronize reconnect herds after a server blip.
+- **CI: Added a verification workflow** running lint, tests, audits, and builds on every push/PR; the release build now uses `npm ci`.
+
+### Fixed
+- **Extension: Offline event-queue flush is now paced** (small batches instead of one synchronous burst) so a reconnect after a long outage no longer trips the server event limit and gets disconnected on rejoin.
+- **Extension: Ping liveness tolerates one missed PONG** — a reconnect is forced only after 2 consecutive misses (~20s) instead of a single 5s timeout, avoiding spurious drops under transient load.
+- **Extension: `socket.send()` failures are caught and re-queued** instead of losing the event on a disconnect race.
+
+## [v2.4.3] — 2026-06-19
+
+### Added
+- **Two new languages: Ukrainian (`uk`) and Chinese (`zh`, Simplified)** — added across the extension (UI strings + Chrome `_locales`) and the website (localized pages, hreflang/Open Graph/schema tags, language selector), bringing the total to 15 languages.
+
+### Changed
+- **Play/pause sync coalescing** — The content script now collapses rapid bursts of native play/pause events (source swaps, ABR/quality switches, ad transitions, page teardown) into a single relayed command: the first event is sent instantly and a short 150ms window absorbs the rest. This cuts redundant relay traffic and stops bursts from tripping the server's per-socket event rate limit.
+
+### Fixed
+- **zh/uk translation quality** — Corrected systematic machine-translation word-sense errors in the two new locales (e.g. "Play", "Status", "Leave Room", "Clear", "Open", "peers", and audio compressor terms) and translated the remaining English leftovers.
+- **Relay logging** — An `EVENT_ACK` aimed at a peer that already left is now logged quietly instead of as a `[SECURITY]` cross-room event, so genuine cross-room attempts stand out in the logs.
+
+## [v2.4.2] — 2026-06-19
+
+### Changed
+- **Extension: Optimized uninstall URL registration** — Extracted registration into a reusable, race-condition-protected `initUninstallURL()` helper. It registers the uninstall feedback URL with browser context on both extension installation/update and browser startup to prevent state loss, without storing or sending an installation token.
+
+## [v2.4.1] — 2026-06-19
+
+### Added
+- **Extension: Onboarding tour now has a closing step** — The first-run tour ends on a dedicated "You're all set!" card (the `ONBOARDING_5` copy that already existed in all 13 locales but was never shown). The tour no longer stops abruptly on the username step.
+- **Extension: One-click invite from the empty peer list** — The "No peers yet" state now shows a **📋 Invite Link** button that copies the invite link to the clipboard, so users can share it without hunting for the field.
+
+### Changed
+- **Extension: Cleaner onboarding welcome** — Step 1 is now a centered welcome card instead of spotlighting the logo title. Added a guard so target-less tour steps center cleanly.
+- **Website: Mobile comparison table** — The KoalaSync vs Teleparty table stacks into per-feature cards on phones instead of forcing horizontal scrolling; feature descriptions are shown again on mobile.
+
+### Fixed
+- **Extension: Onboarding step counter/progress placeholders** — Static `Step 1 of 3` / 33% fallbacks in `popup.html` corrected to match the actual 5-step tour (`Step 1 of 5` / 20%).
+- **Website: Mobile navigation restored** — The header hamburger menu was hidden by a `display:none !important` rule, leaving the nav links unreachable on phones. Re-enabled, with spacing kept comfortable down to ~320px.
+- **Website: Hero alignment on mobile** — A fixed-width extension mockup forced the hero grid column wider than the container, shifting all hero content off-center (larger left margin than right). The mockup is now responsive (`width:100%/max-width` + `minmax(0,1fr)` grid track).
+- **Website: Reveal-animation fallback** — Added a `<noscript>` style fallback and `IntersectionObserver` feature guards so scroll-revealed content can never stay invisible if JavaScript is disabled or unsupported.
+
 ## [v2.4.0] — 2026-06-16
 
 ### Added
@@ -128,7 +226,7 @@ All notable changes to the KoalaSync browser extension and relay server.
 - **Feature Hint System**: Generic `dismissedHints` array in sync storage for announcing new features. First hint highlights the Audio Options entry in Settings. Extensible for future features.
 
 ### Changed
-- **Ko-Fi Support Links**: Static footer badges on the Settings and Status tabs linking to the developer's support page. README and website footer updated with Ko-Fi badge.
+- **Support Links**: Static footer badges on the Settings and Status tabs linking to the developer's support page. README and website footer updated with a Support KoalaSync badge.
 
 ### Fixed
 - **Portuguese (PT) locale**: Removed Italian contamination — "sincronizzazione" → "sincronização", "tempo reale" → "tempo real", "Link di Invito" → "Link de Convite", "Sair della Sala" → "Sair da Sala".

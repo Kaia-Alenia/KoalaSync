@@ -6,7 +6,7 @@
 
 <p align="center">
   <a href="https://github.com/Shik3i/KoalaSync/actions/workflows/release.yml"><img src="https://github.com/Shik3i/KoalaSync/actions/workflows/release.yml/badge.svg" alt="Release Status"></a>
-  <a href="https://github.com/Shik3i/KoalaSync/releases"><img src="https://img.shields.io/badge/Release-v2.4.0-blue?logo=github" alt="GitHub release"></a>
+  <a href="https://github.com/Shik3i/KoalaSync/releases"><img src="https://img.shields.io/badge/Release-v2.5.3-blue?logo=github" alt="GitHub release"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue" alt="License"></a>
   <a href="https://addons.mozilla.org/de/firefox/addon/koalasync/"><img src="https://img.shields.io/badge/Firefox-Download-orange?logo=firefoxbrowser&logoColor=white" alt="Firefox Add-on"></a>
   <a href="https://chromewebstore.google.com/detail/koalasync/obbnmkmlaaddodakcbdljknjpagklifc"><img src="https://img.shields.io/badge/Chrome-Download-blue?logo=googlechrome&logoColor=white" alt="Chrome Extension"></a>
@@ -14,7 +14,7 @@
 
 <p align="center"><i>KoalaSync is a lightweight Browser Extension and Relay Server for synchronized video playback on almost any website with a video element—YouTube, Twitch, Netflix, Emby, Jellyfin, and beyond. Built with a focus on <b>Data Sovereignty</b> and <b>Performance</b>.</i></p>
 
-<p align="center"><a href="docs/CHANGELOG.md"><b>New v2.4.0 Release!</b> — See what's changed</a></p>
+<p align="center"><a href="docs/CHANGELOG.md"><b>New v2.5.3 Release!</b> — See what's changed</a></p>
 
 ### 🌟 Why KoalaSync?
 
@@ -59,7 +59,7 @@ The easiest and safest way to install KoalaSync is directly through the official
 ### 🌐 Localization & Translations
 
 Both the official KoalaSync website and the **v2.0 Browser Extension** feature full dynamic localization:
-- **Available Languages**: Support is included for 13 languages: English (`en`), German (`de`), French (`fr`), Spanish (`es`), Portuguese (Brazil) (`pt-BR`), Russian (`ru`), Italian (`it`), Polish (`pl`), Turkish (`tr`), Dutch (`nl`), Japanese (`ja`), Korean (`ko`), and European Portuguese (`pt`).
+- **Available Languages**: Support is included for 15 languages: English (`en`), German (`de`), French (`fr`), Spanish (`es`), Portuguese (Brazil) (`pt-BR`), Russian (`ru`), Italian (`it`), Polish (`pl`), Turkish (`tr`), Dutch (`nl`), Japanese (`ja`), Korean (`ko`), Chinese (Simplified) (`zh`), Ukrainian (`uk`), and European Portuguese (`pt`).
 - **Real-Time Extension Localization**: Inside the extension Settings panel, users can swap languages instantly. The entire interface, notifications, Empty States, and onboarding guides re-translate dynamically in real-time.
 - **Contributing**: We welcome community translations for both the website and the extension! Please refer directly to the [TRANSLATION.md](docs/TRANSLATION.md) guide for step-by-step instructions on how to audit, refine, or add new languages.
 
@@ -103,7 +103,7 @@ To connect your extension to a self-hosted server, open the popup → **Room** t
 
 To verify your relay is reachable from outside, visit `https://your-domain.com` in a browser — it should return `{"status":"online","service":"KoalaSync Relay"}`.
 
-#### Supply Chain Security (v2.4.0+)
+#### Supply Chain Security (v2.2.2+)
 
 All official release artifacts (Docker images and extension binaries) are published with signed [artifact attestations](https://docs.github.com/en/actions/how-tos/secure-your-work/use-artifact-attestations) to prove they were built from this repository's source code.
 
@@ -131,6 +131,7 @@ gh attestation verify dist/koalasync-chrome.zip \
 - **[CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md)**: Our community standards and expectations.
 - **[HOW_IT_WORKS.md](docs/HOW_IT_WORKS.md)**: Step-by-step walkthrough of the complete user flow.
 - **[ARCHITECTURE.md](docs/ARCHITECTURE.md)**: Deep-dive into the two-phase sync and heartbeat logic.
+- **[PROTOCOL.md](docs/PROTOCOL.md)**: WebSocket protocol specification and event reference.
 - **[ROADMAP.md](docs/ROADMAP.md)**: Planned features, backlog, and rejected ideas.
 - **[SECURITY.md](SECURITY.md)**: Disclosure policy and security practices.
 - **[Caddyfile.example](examples/Caddyfile.example)**: Production Caddy configuration for website and relay.
@@ -138,7 +139,7 @@ gh attestation verify dist/koalasync-chrome.zip \
 ---
 
 <div align="center">
-  <sub><a href="https://ko-fi.com/koaladev"><img src="https://img.shields.io/badge/Ko--Fi-Support-FF5E5B?logo=ko-fi&logoColor=white" alt="Ko-Fi"></a></sub>
+  <sub><a href="https://support.koalastuff.net"><img src="https://img.shields.io/badge/Support-KoalaSync-FF5E5B" alt="Support KoalaSync"></a></sub>
   <sub><a href="https://gitgem.org/github/Shik3i/KoalaSync"><img src="https://gitgem.org/api/badge/github/Shik3i/KoalaSync.svg" alt="GitGem Badge" /></a></sub>
 
   <sub>Built with ❤️ by <a href="https://github.com/Shik3i">Shik3i</a>. KoalaSync is Open Source under the <a href="LICENSE">MIT License</a>.</sub>
