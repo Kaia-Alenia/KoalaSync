@@ -232,6 +232,22 @@ nav {
     width: 100%;
 }
 
+@media (min-width: 1024px) {
+    .container {
+        max-width: 1200px;
+    }
+    .hero-grid {
+        grid-template-columns: 1.35fr 1fr;
+        gap: 3.5rem;
+    }
+    .cta-group {
+        gap: 0.75rem;
+    }
+    .cta-group .btn {
+        padding: 0.8rem 1.35rem;
+    }
+}
+
 .hero-text h1 {
     font-size: 4.5rem;
     font-weight: 800;
@@ -577,6 +593,43 @@ nav {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+}
+
+.demo-room-empty {
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    padding: 34px 10px;
+    text-align: center;
+}
+.demo-room-empty img {
+    border-radius: 10px;
+    opacity: 0.85;
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.2);
+}
+.demo-room-empty-text {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    font-weight: 600;
+}
+.demo-create-room-btn {
+    background: var(--accent);
+    border: none;
+    color: white;
+    font-weight: 700;
+    padding: 10px 18px;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+.demo-create-room-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
+}
+.demo-create-room-btn:active {
+    transform: scale(0.96);
 }
 
 .mock-peer-list {
@@ -3529,18 +3582,6 @@ header[id] {
     animation-play-state: paused;
 }
 
-/* Tiny abstract "movie": a walker strolls across, a ball bounces ahead.
-   Pausing freezes every element mid-frame — on both tabs at once. */
-.demo-film {
-    position: absolute;
-    inset: 0;
-    width: 100%;
-    height: 100%;
-}
-
-/* Cinematic "movie" scene: a moonlit landscape with parallax mountains,
-   twinkling stars, a glowing moon, and a drifting firefly. Every layer
-   freezes when playback pauses — on both tabs at once. */
 .demo-film {
     position: absolute;
     inset: 0;
@@ -3578,54 +3619,63 @@ header[id] {
     to { transform: translate(-6px, 3px); filter: drop-shadow(0 0 10px rgba(241,245,249,0.95)); }
 }
 
-/* Mountain layers: subtle parallax sway (oscillates so it never runs off-edge) */
-.film-mtn-back {
-    transform-box: fill-box;
-    animation: filmMtnBack 24s ease-in-out infinite alternate;
+/* Parallax Forest Scroll Layers */
+@keyframes scrollBack {
+    0% { transform: translateX(0); }
+    100% { transform: translateX(-160px); }
+}
+@keyframes scrollMid {
+    0% { transform: translateX(0); }
+    100% { transform: translateX(-160px); }
+}
+@keyframes scrollFore {
+    0% { transform: translateX(0); }
+    100% { transform: translateX(-160px); }
+}
+@keyframes ballBounce {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-16px); }
 }
 
-@keyframes filmMtnBack {
-    from { transform: translateX(-3px); }
-    to { transform: translateX(3px); }
+.film-mtn-scroll {
+    animation: scrollBack 12s linear infinite;
+    animation-play-state: paused;
+}
+.film-mid-scroll {
+    animation: scrollMid 6s linear infinite;
+    animation-play-state: paused;
+}
+.film-fore-scroll {
+    animation: scrollFore 3s linear infinite;
+    animation-play-state: paused;
+}
+.film-bounce-ball {
+    transform-origin: bottom center;
+    animation: ballBounce 0.8s ease-in-out infinite;
+    animation-play-state: paused;
+    filter: drop-shadow(0 0 4px #fde047);
 }
 
-.film-mtn-front {
-    transform-box: fill-box;
-    animation: filmMtnFront 16s ease-in-out infinite alternate;
+/* Playback state bindings for all animation layers */
+.demo-tab-card.playing .film-mtn-scroll,
+.demo-tab-card.playing .film-mid-scroll,
+.demo-tab-card.playing .film-fore-scroll,
+.demo-tab-card.playing .film-bounce-ball {
+    animation-play-state: running;
 }
 
-@keyframes filmMtnFront {
-    from { transform: translateX(-5px); }
-    to { transform: translateX(5px); }
+/* Play button pulsing indicator at the end of the walkthrough */
+.hero-demo-scene.demo-complete #demo-tab-a:not(.playing) .demo-icon-wrap {
+    animation: playButtonPulse 1.6s ease-in-out infinite;
+    border-color: #6366f1;
+    box-shadow: 0 0 15px rgba(99, 102, 241, 0.8);
+}
+@keyframes playButtonPulse {
+    0%, 100% { transform: scale(1); box-shadow: 0 0 10px rgba(99, 102, 241, 0.5); }
+    50% { transform: scale(1.12); box-shadow: 0 0 20px rgba(99, 102, 241, 0.9); }
 }
 
-/* Firefly: warm dot floating across the foreground */
-.film-firefly {
-    animation: filmFireflyX 11s linear infinite;
-}
-
-@keyframes filmFireflyX {
-    from { transform: translate(15px, 0); }
-    to { transform: translate(145px, 0); }
-}
-
-.film-firefly-light {
-    transform-box: fill-box;
-    transform-origin: center;
-    animation: filmFireflyBob 2.6s ease-in-out infinite alternate;
-    filter: drop-shadow(0 0 5px rgba(253, 224, 71, 0.95));
-}
-
-@keyframes filmFireflyBob {
-    from { transform: translateY(-4px) scale(0.9); opacity: 0.7; }
-    to { transform: translateY(4px) scale(1.15); opacity: 1; }
-}
-
-.demo-film * { animation-play-state: paused; }
-.demo-tab-card.playing .demo-film * { animation-play-state: running; }
-
-/* Seek-reset: scrubbing restarts every film layer from frame zero so the
-   jump reads as a real cut, not a silent time update. */
+/* Seek-reset: scrubbing restarts animations from frame zero */
 .demo-film.demo-reset * {
     animation: none !important;
 }

@@ -716,6 +716,7 @@ document.addEventListener('DOMContentLoaded', () => {
             setRoomJoined(true);
             setConnected(true);
             cursor.classList.remove('visible');
+            scene.classList.add('demo-complete');
             showHint();
         };
 
