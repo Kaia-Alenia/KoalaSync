@@ -43,7 +43,7 @@
   "WHY_TITLE": "Dlaczego KoalaSync?",
   "WHY_SUBTITLE": "Stworzony z myślą o niezawodnej synchronizacji, prywatności i łatwej konfiguracji.",
   "FEATURE_1_TITLE": "Kontrola hosta i synchronizacja",
-  "FEATURE_1_DESC": "Decydujesz, kto kontroluje odtwarzanie. Wybierz wyłączną kontrolę hosta, uprawnienia współhostów lub tryb wolny dla wszystkich.",
+  "FEATURE_1_DESC": "Decydujesz, kto steruje odtwarzaniem. Włącz kontrolę hosta, aby tylko Ty mógł wstrzymywać i przewijać, lub mianuj współhostów.",
   "FEATURE_2_TITLE": "Niekończące się oglądanie",
   "FEATURE_2_DESC": "Autoodtwarzanie w synchronizacji. KoalaSync automatycznie wykrywa zmiany odcinków i wstrzymuje odtwarzanie, dopóki wszyscy uczestnicy nie załadują następnego filmu.",
   "FEATURE_3_TITLE": "Zero kont / Czysta prywatność",
@@ -212,5 +212,7 @@
   "ALT_SCREEN_LIMITS_BODY": "KoalaSync nie zastępuje rozmowy głosowej. Jeśli chcesz rozmawiać podczas oglądania, nadal możesz korzystać z Discorda, TeamSpeaka, Signala, WhatsAppa lub innych narzędzi, których używasz na co dzień.<br><br>Każda osoba musi również mieć dostęp do filmu lub strony na własnym urządzeniu. KoalaSync nie omija subskrypcji, konieczności logowania, zabezpieczeń DRM, ograniczeń regionalnych ani regulaminów platform.<br><br>Obecnie rozwiązanie to działa tylko w przeglądarkach na komputerach stacjonarnych i nie posiada wbudowanego czatu ani funkcji komunikacji głosowej, a kompatybilność zależy od używanej przeglądarki oraz odtwarzacza wideo.",
   "ALT_SCREEN_SUMMARY_TITLE": "Podsumowanie",
   "ALT_SCREEN_SUMMARY_BODY": "Udostępnianie ekranu to najprostsze rozwiązanie, gdy zależy Ci na szybkości, a kwestie jakości, prywatności czy indywidualnej kontroli nad odtwarzaniem nie są priorytetem. KoalaSync sprawdza się lepiej, gdy uczestnicy oglądają materiał lokalnie we własnych przeglądarkach, a sesja ma bardziej przypominać wspólny seans.",
-  "ALT_TRY_KOALASYNC": "Wypróbuj KoalaSync"
+  "ALT_TRY_KOALASYNC": "Wypróbuj KoalaSync",
+  "MOCK_HOST_CONTROL_LABEL": "Kontrola hosta",
+  "MOCK_HOST_CONTROL_TOGGLE": "Tylko ja mogę sterować odtwarzaniem"
 }

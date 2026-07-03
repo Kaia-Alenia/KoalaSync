@@ -43,7 +43,7 @@
   "WHY_TITLE": "¿Por qué KoalaSync?",
   "WHY_SUBTITLE": "Diseñado para una sincronización confiable, con la privacidad como prioridad y una configuración sencilla.",
   "FEATURE_1_TITLE": "Control del host y sincronización",
-  "FEATURE_1_DESC": "Tú decides quién controla la reproducción. Elige entre control exclusivo del host, permisos para cohosts o acceso libre para todos.",
+  "FEATURE_1_DESC": "Tú decides quién controla la reproducción. Activa el control del anfitrión para que solo tú puedas pausar y avanzar, o asigna coanfitriones.",
   "FEATURE_2_TITLE": "Maratones sin fin",
   "FEATURE_2_DESC": "Reproducción automática sincronizada. KoalaSync detecta automáticamente los cambios de episodio y detiene la reproducción hasta que todos los participantes hayan cargado el siguiente video.",
   "FEATURE_3_TITLE": "Sin cuentas / Privacidad absoluta",
@@ -212,5 +212,7 @@
   "ALT_SCREEN_LIMITS_BODY": "KoalaSync no sustituye a una llamada de voz. Si quieres hablar mientras ves el contenido, puedes seguir usando Discord, Teamspeak, Signal, WhatsApp o cualquier otra herramienta que utilices habitualmente.<br><br>Además, cada participante necesita acceder al vídeo o a la página web desde su propio dispositivo. KoalaSync no elude suscripciones, inicios de sesión, DRM, restricciones regionales ni las normas de las plataformas.<br><br>Actualmente solo funciona en navegadores de escritorio, no incluye funciones de chat o voz, y la compatibilidad depende siempre del navegador y del reproductor de vídeo.",
   "ALT_SCREEN_SUMMARY_TITLE": "Resumen",
   "ALT_SCREEN_SUMMARY_BODY": "Compartir pantalla es la opción más sencilla cuando buscas algo rápido y no te preocupa demasiado la calidad, la privacidad o el control individual. KoalaSync es una mejor alternativa cuando cada persona debe ver el contenido localmente en su propio navegador y se busca una experiencia que realmente se asemeje a verlo juntos.",
-  "ALT_TRY_KOALASYNC": "Prueba KoalaSync"
+  "ALT_TRY_KOALASYNC": "Prueba KoalaSync",
+  "MOCK_HOST_CONTROL_LABEL": "Control del anfitrión",
+  "MOCK_HOST_CONTROL_TOGGLE": "Solo yo puedo controlar la reproducción"
 }

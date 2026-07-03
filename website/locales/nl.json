@@ -43,7 +43,7 @@
   "WHY_TITLE": "Waarom KoalaSync?",
   "WHY_SUBTITLE": "Gebouwd voor betrouwbare synchronisatie, privacy-first ontwerp en eenvoudige installatie.",
   "FEATURE_1_TITLE": "Host-controle & synchronisatie",
-  "FEATURE_1_DESC": "Jij bepaalt wie het afspelen bedient. Kies uit exclusieve host-controle, machtigingen voor co-hosts of vrije bediening voor iedereen.",
+  "FEATURE_1_DESC": "Jij bepaalt wie het afspelen bedient. Schakel hostbeheer in zodat alleen jij kunt pauzeren en spoelen, of wijs co-hosts aan.",
   "FEATURE_2_TITLE": "Eindeloos binge-watchen",
   "FEATURE_2_DESC": "Automatisch afspelen in sync. KoalaSync detecteert automatisch afleveringsovergangen en houdt het afspelen vast totdat alle deelnemers de volgende video succesvol hebben geladen.",
   "FEATURE_3_TITLE": "Geen accounts / Pure privacy",
@@ -212,5 +212,7 @@
   "ALT_SCREEN_LIMITS_BODY": "KoalaSync is geen vervanging voor een spraakgesprek. Als je tijdens het kijken wilt praten, gebruik je gewoon Discord, Teamspeak, Signal, WhatsApp of wat je normaal ook gebruikt.<br><br>Iedereen heeft ook toegang tot de video of pagina op het eigen apparaat nodig. KoalaSync omzeilt geen abonnementen, inloggegevens, DRM, regionale beperkingen of platformregels.<br><br>Het werkt momenteel alleen in desktopbrowsers, heeft geen ingebouwde chat- of spraakfunctie en de compatibiliteit hangt altijd af van de browser en de videospeler.",
   "ALT_SCREEN_SUMMARY_TITLE": "Samenvatting",
   "ALT_SCREEN_SUMMARY_BODY": "Scherm delen is de eenvoudigste optie als je snel iets wilt doen en niet veel waarde hecht aan kwaliteit, privacy of individuele controle. KoalaSync is een betere keuze wanneer iedereen lokaal in de eigen browser moet kijken en de sessie meer moet aanvoelen als echt samen kijken.",
-  "ALT_TRY_KOALASYNC": "Probeer KoalaSync"
+  "ALT_TRY_KOALASYNC": "Probeer KoalaSync",
+  "MOCK_HOST_CONTROL_LABEL": "Hostbeheer",
+  "MOCK_HOST_CONTROL_TOGGLE": "Alleen ik mag de weergave bedienen"
 }

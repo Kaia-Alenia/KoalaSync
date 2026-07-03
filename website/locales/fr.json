@@ -43,7 +43,7 @@
   "WHY_TITLE": "Pourquoi KoalaSync ?",
   "WHY_SUBTITLE": "Conçu pour une synchronisation fiable, le respect de la vie privée et une configuration facile.",
   "FEATURE_1_TITLE": "Contrôle de l'hôte et synchronisation",
-  "FEATURE_1_DESC": "Vous décidez qui contrôle la lecture. Choisissez entre le contrôle exclusif de l'hôte, les droits de co-hôte ou l'accès libre pour tous.",
+  "FEATURE_1_DESC": "Vous décidez qui contrôle la lecture. Activez le contrôle de l'hôte pour être le seul à pouvoir mettre en pause et avancer, ou nommez des co-hôtes.",
   "FEATURE_2_TITLE": "Binge-watching sans fin",
   "FEATURE_2_DESC": "Lecture automatique synchronisée. KoalaSync détecte automatiquement les transitions d'épisodes et suspend la lecture jusqu'à ce que tous les participants aient chargé la vidéo suivante.",
   "FEATURE_3_TITLE": "Aucun compte / Vie privée garantie",
@@ -212,5 +212,7 @@
   "ALT_SCREEN_LIMITS_BODY": "KoalaSync ne remplace pas un appel vocal. Si vous souhaitez discuter tout en regardant, vous continuez à utiliser Discord, Teamspeak, Signal, WhatsApp ou tout autre outil habituel.<br><br>Chacun doit également pouvoir accéder à la vidéo ou à la page depuis son propre appareil. KoalaSync ne contourne ni les abonnements, ni les identifiants, ni les DRM, ni les restrictions géographiques ou les règles des plateformes.<br><br>L'outil fonctionne actuellement uniquement sur les navigateurs de bureau, ne dispose pas de fonction de chat ou de voix intégrée, et la compatibilité dépend toujours du navigateur et du lecteur vidéo utilisé.",
   "ALT_SCREEN_SUMMARY_TITLE": "Résumé",
   "ALT_SCREEN_SUMMARY_BODY": "Le partage d'écran est la solution la plus simple si vous cherchez une méthode rapide sans accorder une grande importance à la qualité, à la confidentialité ou au contrôle individuel. KoalaSync est plus adapté lorsque chaque participant doit visionner le contenu localement dans son propre navigateur, pour une expérience se rapprochant davantage d'un véritable visionnage en commun.",
-  "ALT_TRY_KOALASYNC": "Essayer KoalaSync"
+  "ALT_TRY_KOALASYNC": "Essayer KoalaSync",
+  "MOCK_HOST_CONTROL_LABEL": "Contrôle de l'hôte",
+  "MOCK_HOST_CONTROL_TOGGLE": "Seul moi peut contrôler la lecture"
 }

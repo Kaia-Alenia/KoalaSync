@@ -43,7 +43,7 @@
   "WHY_TITLE": "Neden KoalaSync?",
   "WHY_SUBTITLE": "Güvenilir eşitleme, önce gizlilik ilkesi ve kolay kurulum için tasarlandı.",
   "FEATURE_1_TITLE": "Oturum Sahibi Kontrolü ve Senkronizasyon",
-  "FEATURE_1_DESC": "Oynatmayı kimin kontrol edeceğine siz karar verin. Yalnızca oturum sahibi kontrolü, ortak yönetici izinleri veya herkes için serbest mod seçeneklerinden birini seçin.",
+  "FEATURE_1_DESC": "Oynatmayı kimin kontrol edeceğine siz karar verin. Yalnızca sizin durdurup sarabilmeniz için sunucu kontrolünü etkinleştirin veya ortak sunucular atayın.",
   "FEATURE_2_TITLE": "Kesintisiz İzleme Keyfi",
   "FEATURE_2_DESC": "Senkronize otomatik oynatma. KoalaSync, bölüm geçişlerini otomatik olarak algılar ve tüm bağlantılar bir sonraki videoyu başarıyla yükleyene kadar oynatmayı bekletir.",
   "FEATURE_3_TITLE": "Sıfır Hesap / Saf Gizlilik",
@@ -212,5 +212,7 @@
   "ALT_SCREEN_LIMITS_BODY": "KoalaSync, sesli görüşmenin yerini tutmaz. İzleme sırasında konuşmak isterseniz, yine Discord, Teamspeak, Signal, WhatsApp veya normalde kullandığınız herhangi bir aracı kullanmaya devam edebilirsiniz.<br><br>Ayrıca herkesin ilgili videoya veya sayfaya kendi cihazından erişebilmesi gerekir. KoalaSync; abonelikleri, oturum açma işlemlerini, DRM korumalarını, bölgesel kısıtlamaları veya platform kurallarını devre dışı bırakmaz.<br><br>Şu anda yalnızca masaüstü tarayıcılarında çalışır; yerleşik bir sohbet veya sesli görüşme özelliği yoktur ve uyumluluk her zaman kullanılan tarayıcıya ve video oynatıcıya bağlıdır.",
   "ALT_SCREEN_SUMMARY_TITLE": "Özet",
   "ALT_SCREEN_SUMMARY_BODY": "Hızlı bir çözüm aradığınızda ve kalite, gizlilik ya da bireysel kontrol konularına çok önem vermediğinizde, ekran paylaşımı en basit seçenektir. Herkesin içeriği kendi tarayıcısında yerel olarak izlemesi gereken ve oturumun gerçekten birlikte izliyormuş hissi verdiği durumlarda ise KoalaSync daha uygun bir tercihtir.",
-  "ALT_TRY_KOALASYNC": "KoalaSync'i Deneyin"
+  "ALT_TRY_KOALASYNC": "KoalaSync'i Deneyin",
+  "MOCK_HOST_CONTROL_LABEL": "Sunucu Kontrolü",
+  "MOCK_HOST_CONTROL_TOGGLE": "Oynatmayı yalnızca ben kontrol edebilirim"
 }

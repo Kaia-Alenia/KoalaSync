@@ -43,7 +43,7 @@
   "WHY_TITLE": "Por que o KoalaSync?",
   "WHY_SUBTITLE": "Sincronização confiável, máxima privacidade e uso simples.",
   "FEATURE_1_TITLE": "Controle do host e sincronização",
-  "FEATURE_1_DESC": "Você decide quem controla a reprodução. Escolha entre controle exclusivo do host, permissões para co-hosts ou acesso livre para todos.",
+  "FEATURE_1_DESC": "Você decide quem controla a reprodução. Ative o controle do anfitrião para que apenas você possa pausar e avançar, ou nomeie coanfitriões.",
   "FEATURE_2_TITLE": "Maratonas Sem Interrupções",
   "FEATURE_2_DESC": "O KoalaSync detecta a mudança de episódios e pausa automaticamente até que todos tenham carregado o vídeo seguinte.",
   "FEATURE_3_TITLE": "Sem Contas / Privacidade Absoluta",
@@ -212,5 +212,7 @@
   "ALT_SCREEN_LIMITS_BODY": "O KoalaSync não substitui uma chamada de voz. Se você quiser conversar enquanto assiste, continue usando Discord, Teamspeak, Signal, WhatsApp ou qualquer ferramenta que utilize normalmente.<br><br>Todos também precisam ter acesso ao vídeo ou à página em seus próprios dispositivos. O KoalaSync não contorna assinaturas, logins, DRM, restrições regionais ou regras da plataforma.<br><br>Atualmente, funciona apenas em navegadores para desktop, não possui recursos integrados de chat ou voz, e a compatibilidade depende sempre do navegador e do reprodutor de vídeo.",
   "ALT_SCREEN_SUMMARY_TITLE": "Resumo",
   "ALT_SCREEN_SUMMARY_BODY": "O compartilhamento de tela é a opção mais simples quando você quer algo rápido e não se preocupa muito com qualidade, privacidade ou controle individual. O KoalaSync é mais adequado quando todos devem assistir localmente em seus próprios navegadores e a sessão deve proporcionar uma experiência mais próxima de realmente assistir juntos.",
-  "ALT_TRY_KOALASYNC": "Experimente o KoalaSync"
+  "ALT_TRY_KOALASYNC": "Experimente o KoalaSync",
+  "MOCK_HOST_CONTROL_LABEL": "Controle do anfitrião",
+  "MOCK_HOST_CONTROL_TOGGLE": "Apenas eu posso controlar a reprodução"
 }

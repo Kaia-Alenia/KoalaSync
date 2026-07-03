@@ -43,7 +43,7 @@
   "WHY_TITLE": "왜 KoalaSync인가요?",
   "WHY_SUBTITLE": "신뢰할 수 있는 동기화, 개인정보 보호 중심 설계, 쉬운 설정을 위해 구축되었습니다.",
   "FEATURE_1_TITLE": "방장 제어 및 동기화",
-  "FEATURE_1_DESC": "누가 재생을 제어할지 직접 결정하세요. 방장 전용 제어, 공동 방장 권한부여, 또는 누구나 제어 가능한 자유 모드 중에서 선택할 수 있습니다.",
+  "FEATURE_1_DESC": "누가 재생을 제어할지 직접 결정하세요. 호스트 제어를 활성화하여 자신만 일시중지 및 탐색을 수행하거나 공동 호스트를 지정합니다.",
   "FEATURE_2_TITLE": "끊임없는 몰아보기",
   "FEATURE_2_DESC": "동기화된 자동 재생. KoalaSync는 에피소드 전환을 자동으로 감지하고 모든 참여자가 다음 비디오를 로드할 때까지 재생을 대기시킵니다.",
   "FEATURE_3_TITLE": "계정 없음 / 완전한 개인정보 보호",
@@ -212,5 +212,7 @@
   "ALT_SCREEN_LIMITS_BODY": "KoalaSync는 음성 통화를 대체하는 서비스가 아닙니다. 영상을 보면서 대화하고 싶다면 평소처럼 Discord, Teamspeak, Signal, WhatsApp 등을 그대로 사용하면 됩니다.<br><br>또한 모든 참가자가 각자의 기기에서 해당 영상이나 페이지에 접속할 수 있어야 합니다. KoalaSync는 구독, 로그인, DRM, 지역 제한 또는 플랫폼 규정을 우회하지 않습니다.<br><br>현재 데스크톱 브라우저에서만 지원되며, 자체 채팅이나 음성 기능은 없습니다. 호환성은 항상 브라우저 및 동영상 플레이어의 영향을 받습니다.",
   "ALT_SCREEN_SUMMARY_TITLE": "요약",
   "ALT_SCREEN_SUMMARY_BODY": "화질, 개인정보 보호, 개별 제어 기능 등을 크게 신경 쓰지 않고 간편하게 진행하고 싶을 때는 화면 공유가 가장 간단한 방법입니다. 반면, 모든 참가자가 각자의 브라우저에서 직접 영상을 시청하며 실제로 함께 보는 듯한 느낌을 원한다면 KoalaSync가 더 적합합니다.",
-  "ALT_TRY_KOALASYNC": "KoalaSync 사용해 보기"
+  "ALT_TRY_KOALASYNC": "KoalaSync 사용해 보기",
+  "MOCK_HOST_CONTROL_LABEL": "호스트 제어",
+  "MOCK_HOST_CONTROL_TOGGLE": "나만 재생을 제어할 수 있음"
 }

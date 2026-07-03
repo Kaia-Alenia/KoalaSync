@@ -43,7 +43,7 @@
   "WHY_TITLE": "Warum KoalaSync?",
   "WHY_SUBTITLE": "Entwickelt für zuverlässigen Sync, Datenschutz und einfache Einrichtung.",
   "FEATURE_1_TITLE": "Raum-Kontrolle & Sync",
-  "FEATURE_1_DESC": "Du bestimmst, wer die Wiedergabe steuert. Wähle zwischen Host-Kontrolle, Co-Host-Freigaben oder freiem Zugriff für alle. Jeder Klick bleibt perfekt synchron.",
+  "FEATURE_1_DESC": "Du bestimmst, wer die Wiedergabe steuert. Aktiviere die Host-Steuerung, damit nur du pausieren und spulen darfst, oder ernenne Co-Hosts in der Teilnehmerliste.",
   "FEATURE_2_TITLE": "Grenzenloses Bingen",
   "FEATURE_2_DESC": "Nächste Episode startet für jeden zeitgleich. KoalaSync erkennt den Episodenwechsel und pausiert, bis jeder Teilnehmer das neue Video fertig geladen hat.",
   "FEATURE_3_TITLE": "Keine Accounts / Datenschutz",
@@ -212,5 +212,7 @@
   "ALT_SCREEN_LIMITS_BODY": "KoalaSync ersetzt keinen Voice-Call. Wenn ihr beim Schauen reden wollt, nutzt ihr weiterhin Discord, Teamspeak, Signal, WhatsApp oder was auch immer ihr normalerweise verwendet.<br><br>Außerdem braucht jede Person selbst Zugriff auf das Video oder die jeweilige Seite. KoalaSync umgeht keine Abos, Logins, DRM, regionale Einschränkungen oder Plattformregeln.<br><br>KoalaSync ist aktuell Desktop-Browser-only, hat keinen eingebauten Chat oder Voice-Chat und die Funktion hängt immer vom jeweiligen Browser und Videoplayer ab.",
   "ALT_SCREEN_SUMMARY_TITLE": "Kurz gesagt",
   "ALT_SCREEN_SUMMARY_BODY": "Bildschirmübertragung ist die einfachste Lösung, wenn es schnell gehen soll und Qualität, Privatsphäre oder individuelle Kontrolle nicht so wichtig sind. KoalaSync passt besser, wenn jeder lokal im eigenen Browser schauen soll und sich der Filmabend mehr wie wirklich gemeinsames Schauen anfühlen soll.",
-  "ALT_TRY_KOALASYNC": "KoalaSync ausprobieren"
+  "ALT_TRY_KOALASYNC": "KoalaSync ausprobieren",
+  "MOCK_HOST_CONTROL_LABEL": "Host-Steuerung",
+  "MOCK_HOST_CONTROL_TOGGLE": "Nur ich darf die Wiedergabe steuern"
 }

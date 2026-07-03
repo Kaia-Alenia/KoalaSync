@@ -43,7 +43,7 @@
   "WHY_TITLE": "Perché KoalaSync?",
   "WHY_SUBTITLE": "Sincronizzazione affidabile, massima privacy e configurazione immediata.",
   "FEATURE_1_TITLE": "Controllo dell'host e sincronizzazione",
-  "FEATURE_1_DESC": "Decidi tu chi controlla la riproduzione. Scegli tra controllo esclusivo dell'host, permessi per co-host o accesso libero per tutti.",
+  "FEATURE_1_DESC": "Decidi tu chi controlla la riproduzione. Attiva il controllo host per consentire solo a te di mettere in pausa e avanzare, o nomina co-host.",
   "FEATURE_2_TITLE": "Maratone senza interruzioni",
   "FEATURE_2_DESC": "Riproduzione automatica sincronizzata. KoalaSync attende che tutti abbiano caricato l'episodio successivo prima di farlo partire.",
   "FEATURE_3_TITLE": "Senza Account / Privacy Totale",
@@ -212,5 +212,7 @@
   "ALT_SCREEN_LIMITS_BODY": "KoalaSync non sostituisce una chiamata vocale. Se volete parlare mentre guardate il contenuto, potete continuare a usare Discord, Teamspeak, Signal, WhatsApp o qualsiasi altro strumento abituale.<br><br>Ciascun partecipante deve inoltre poter accedere al video o alla pagina dal proprio dispositivo. KoalaSync non aggira abbonamenti, accessi, DRM, restrizioni geografiche o regole delle piattaforme.<br><br>Al momento è utilizzabile solo tramite browser desktop, non dispone di funzioni di chat o voce integrate e la compatibilità dipende sempre dal browser e dal lettore video.",
   "ALT_SCREEN_SUMMARY_TITLE": "Riepilogo",
   "ALT_SCREEN_SUMMARY_BODY": "La condivisione dello schermo è l'opzione più semplice quando si cerca una soluzione rapida e non si dà molta importanza alla qualità, alla privacy o al controllo individuale. KoalaSync è la scelta ideale quando tutti devono guardare il contenuto localmente sul proprio browser, offrendo un'esperienza che ricorda più da vicino la visione condivisa reale.",
-  "ALT_TRY_KOALASYNC": "Prova KoalaSync"
+  "ALT_TRY_KOALASYNC": "Prova KoalaSync",
+  "MOCK_HOST_CONTROL_LABEL": "Controllo host",
+  "MOCK_HOST_CONTROL_TOGGLE": "Solo io posso controllare la riproduzione"
 }

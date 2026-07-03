@@ -43,7 +43,7 @@
   "WHY_TITLE": "为什么是KoalaSync？",
   "WHY_SUBTITLE": "专为可靠的同步、隐私优先的设计和轻松的设置而打造。",
   "FEATURE_1_TITLE": "房主控制与同步",
-  "FEATURE_1_DESC": "您可以自主决定谁来控制播放。在房主独占控制、协同房主权限或所有人自由操作模式之间进行选择。",
+  "FEATURE_1_DESC": "您可以自主决定谁来控制播放。启用主持人控制以仅允许您进行暂停和快进，或在成员列表中指定共同主持人。",
   "FEATURE_2_TITLE": "无尽的狂欢",
   "FEATURE_2_DESC": "自动同步播放。 KoalaSync 自动检测剧集转换并保持播放，直到所有对等方都成功加载下一个视频。",
   "FEATURE_3_TITLE": "零账户/纯粹隐私",
@@ -212,5 +212,7 @@
   "ALT_SCREEN_LIMITS_BODY": "KoalaSync 无法替代语音通话。如果您想在观看的同时进行交流，仍可使用 Discord、Teamspeak、Signal、WhatsApp 或您常用的任何通讯工具。<br><br>此外，每位参与者都需要在各自的设备上访问相应的视频或网页。KoalaSync 无法绕过订阅、登录验证、DRM（数字版权管理）、地域限制或平台规则。<br><br>该工具目前仅支持桌面端浏览器，不包含内置聊天或语音功能；其兼容性取决于具体的浏览器和视频播放器。",
   "ALT_SCREEN_SUMMARY_TITLE": "摘要",
   "ALT_SCREEN_SUMMARY_BODY": "如果您追求快速便捷，且不太在意画质、隐私或个性化控制，那么屏幕共享是最简单的选择。而当您希望每位参与者都在各自的浏览器中观看，并营造出一种真正“共同观看”的氛围时，KoalaSync 则是更理想的方案。",
-  "ALT_TRY_KOALASYNC": "试用 KoalaSync"
+  "ALT_TRY_KOALASYNC": "试用 KoalaSync",
+  "MOCK_HOST_CONTROL_LABEL": "主持人控制",
+  "MOCK_HOST_CONTROL_TOGGLE": "只有我可以控制播放"
 }

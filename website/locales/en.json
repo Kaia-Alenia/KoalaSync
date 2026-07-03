@@ -43,7 +43,7 @@
   "WHY_TITLE": "Why KoalaSync?",
   "WHY_SUBTITLE": "Built for reliable sync, privacy-first design, and easy setup.",
   "FEATURE_1_TITLE": "Host Control & Sync",
-  "FEATURE_1_DESC": "You decide who controls playback. Choose between Host-only control, Co-host permissions, or Free-for-all mode. Every seek and pause stays perfectly frame-locked.",
+  "FEATURE_1_DESC": "You decide who controls playback. Turn on Host Control to lock playback actions to yourself, or promote individual peers to co-hosts in the participant list.",
   "FEATURE_2_TITLE": "Endless Binge-Watching",
   "FEATURE_2_DESC": "Autoplay in sync. KoalaSync automatically detects episode transitions and holds playback until all peers have successfully loaded the next video.",
   "FEATURE_3_TITLE": "Zero Accounts / Pure Privacy",
@@ -212,5 +212,7 @@
   "ALT_SCREEN_LIMITS_BODY": "KoalaSync is not a replacement for a voice call. If you want to talk while watching, you still use Discord, Teamspeak, Signal, WhatsApp or whatever you normally use.<br><br>Everyone also needs access to the video or page on their own device. KoalaSync does not bypass subscriptions, logins, DRM, regional restrictions or platform rules.<br><br>It is currently desktop-browser only, has no built-in chat or voice feature, and compatibility always depends on the browser and the video player.",
   "ALT_SCREEN_SUMMARY_TITLE": "Summary",
   "ALT_SCREEN_SUMMARY_BODY": "Screen sharing is the simplest option when you just want something quick and do not care much about quality, privacy or individual control. KoalaSync is a better fit when everyone should watch locally in their own browser and the session should feel more like actually watching together.",
-  "ALT_TRY_KOALASYNC": "Try KoalaSync"
+  "ALT_TRY_KOALASYNC": "Try KoalaSync",
+  "MOCK_HOST_CONTROL_LABEL": "Host Control",
+  "MOCK_HOST_CONTROL_TOGGLE": "Only I can control playback"
 }
