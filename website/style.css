@@ -3150,6 +3150,12 @@ header[id] {
     z-index: 3;
 }
 
+.demo-tab-a:hover {
+    z-index: 4;
+    transform: rotate(1.2deg) scale(1.02);
+    box-shadow: 0 25px 50px rgba(0, 0, 0, 0.65), 0 0 20px rgba(99, 102, 241, 0.2);
+}
+
 /* Card B = the friend's window, lower left, tucked behind */
 .demo-tab-b {
     top: 142px;
@@ -3160,13 +3166,31 @@ header[id] {
     z-index: 2;
 }
 
+.demo-tab-b:hover {
+    z-index: 4;
+    transform: rotate(-1.6deg) scale(1.02);
+    box-shadow: 0 25px 50px rgba(0, 0, 0, 0.65), 0 0 20px rgba(99, 102, 241, 0.2);
+}
+
 /* When the popup slides in from the right edge, the tabs step aside */
 .hero-demo-scene.popup-open .demo-tab-a {
     transform: rotate(1deg) translate(-48%, 2%) scale(0.88);
 }
 
+.hero-demo-scene.popup-open .demo-tab-a:hover {
+    z-index: 4;
+    transform: rotate(1deg) translate(-48%, 2%) scale(0.92);
+    box-shadow: 0 25px 50px rgba(0, 0, 0, 0.65), 0 0 20px rgba(99, 102, 241, 0.2);
+}
+
 .hero-demo-scene.popup-open .demo-tab-b {
     transform: rotate(-1.6deg) scale(0.94);
+}
+
+.hero-demo-scene.popup-open .demo-tab-b:hover {
+    z-index: 4;
+    transform: rotate(-1.6deg) scale(0.98);
+    box-shadow: 0 25px 50px rgba(0, 0, 0, 0.65), 0 0 20px rgba(99, 102, 241, 0.2);
 }
 
 .demo-tab-titlebar {
