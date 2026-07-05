@@ -3475,18 +3475,12 @@ header[id] {
     container-type: inline-size;
 }
 
-/* The scene is sized for the two cascading tab cards; opening the popup
-   grows it. (Without JS the popup-open class is set in the markup, so the
-   static fallback always has room for the popup.) */
+/* The scene always reserves the height of the open-popup state, so the
+   walkthrough toggling the popup never changes layout height (no vertical
+   jumping of the hero or the content below). */
 .hero-demo-scene {
     position: relative;
     width: 100%;
-    height: 390px;
-    height: calc(66cqw + 78px);
-    transition: height 0.45s cubic-bezier(0.22, 1, 0.36, 1);
-}
-
-.hero-demo-scene.popup-open {
     height: 600px;
 }
 
