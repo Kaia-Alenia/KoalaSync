@@ -36,7 +36,10 @@
     <meta property="og:url" content="https://sync.koalastuff.net/{{CANONICAL_PATH}}">
     <meta property="og:title" content="{{OG_TITLE}}">
     <meta property="og:description" content="{{OG_DESCRIPTION}}">
-    <meta property="og:image" content="https://sync.koalastuff.net/assets/PlatformJuggler_New.webp">
+    <meta property="og:image" content="https://sync.koalastuff.net/assets/og-image.png">
+    <meta property="og:image:width" content="1280">
+    <meta property="og:image:height" content="640">
+    <meta property="og:image:type" content="image/png">
     <meta property="og:locale" content="{{OG_LOCALE}}">
     <meta property="og:locale:alternate" content="en_US">
     <meta property="og:locale:alternate" content="de_DE">
@@ -59,7 +62,7 @@
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="{{TWITTER_TITLE}}">
     <meta name="twitter:description" content="{{TWITTER_DESCRIPTION}}">
-    <meta name="twitter:image" content="https://sync.koalastuff.net/assets/PlatformJuggler_New.webp">
+    <meta name="twitter:image" content="https://sync.koalastuff.net/assets/og-image.png">
 
     <!-- Mobile Browser Theme Styling -->
     <meta name="theme-color" content="#0f172a">
@@ -106,7 +109,7 @@
         "priceCurrency": "EUR"
       },
       "description": "{{SCHEMA_APP_DESC}}",
-      "softwareVersion": "2.5.3",
+      "softwareVersion": "{{VERSION}}",
       "license": "https://opensource.org/licenses/MIT",
       "sameAs": "https://github.com/Shik3i/KoalaSync",
       "image": "https://sync.koalastuff.net/assets/NewLogoIcon.webp",
@@ -247,6 +250,10 @@
                 </nav>
             </div>
             <div class="nav-right">
+                <button class="theme-toggle" id="theme-toggle" type="button" aria-label="{{THEME_TOGGLE_LABEL}}" title="{{THEME_TOGGLE_LABEL}}">
+                    <svg class="theme-icon-sun" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+                    <svg class="theme-icon-moon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18" aria-hidden="true"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>
+                </button>
                 <div class="lang-select-container">
                     <select class="lang-dropdown" aria-label="Select Language">
                         <option value="en" {{SELECTED_EN}}>🇬🇧 English</option>
@@ -281,6 +288,16 @@
                 <p class="hero-subtitle">{{HERO_SUBTITLE}}</p>
                 <div class="hero-mascot-container">
                     <img src="{{ASSET_PATH}}assets/LookDownKoala-1x.webp" srcset="{{ASSET_PATH}}assets/LookDownKoala-1x.webp 90w, {{ASSET_PATH}}assets/LookDownKoala.webp 205w" sizes="90px" alt="{{HERO_MASCOT_ALT}}" class="hero-lookdown-mascot" width="90" height="132" loading="eager" fetchpriority="high" decoding="async">
+                    <a href="https://github.com/Shik3i/KoalaSync/blob/main/docs/CHANGELOG.md" target="_blank" rel="noopener" class="koala-speech-bubble" data-release="{{VERSION_DATE}}" title="View Changelog">
+                        <span class="version-text-en" lang="en">
+                            <strong class="bubble-title">v{{VERSION}} is out!&nbsp;🎉</strong>
+                            <span class="bubble-sub"><span class="bubble-ago"></span>See what's new →</span>
+                        </span>
+                        <span class="version-text-de" lang="de">
+                            <strong class="bubble-title">v{{VERSION}} ist da!&nbsp;🎉</strong>
+                            <span class="bubble-sub"><span class="bubble-ago"></span>Was ist neu? →</span>
+                        </span>
+                    </a>
                 </div>
                 <div class="cta-group">
                     <a href="https://chromewebstore.google.com/detail/koalasync/obbnmkmlaaddodakcbdljknjpagklifc" class="btn btn-primary">
@@ -296,10 +313,7 @@
                         GitHub Releases
                     </a>
                 </div>
-                <a href="https://github.com/Shik3i/KoalaSync/blob/main/docs/CHANGELOG.md" target="_blank" rel="noopener" class="version-badge version-badge-below" style="text-decoration: none; display: inline-block; transition: transform 0.2s, box-shadow 0.2s;" title="View Changelog">
-                    <span class="version-text-en" lang="en">v2.2.1 OUT NOW</span>
-                    <span class="version-text-de" lang="de">v2.2.1 JETZT VERFÜGBAR</span>
-                </a>
+                <p class="cta-trust">{{HERO_TRUST}}</p>
             </div>
 
             <!-- Interactive Live Demo: two synced video tabs + the extension popup -->
@@ -311,7 +325,7 @@
                         <span class="demo-chip-event"></span>
                     </button>
 
-                    <div class="demo-tab-card demo-tab-a" id="demo-tab-a" role="button" tabindex="0" aria-pressed="false" aria-label="Press play or pause as 🐱 ChillCat — KoalaSync mirrors it to the other tab" title="Press play/pause here — KoalaSync mirrors it to the other tab">
+                    <div class="demo-tab-card demo-tab-a" id="demo-tab-a" role="button" tabindex="0" aria-pressed="false" aria-label="Press play or pause as 🐱 ChillCat. KoalaSync mirrors it to the other tab" title="Press play/pause here. KoalaSync mirrors it to the other tab">
                         <div class="demo-tab-titlebar">
                             <span class="demo-tab-dots" aria-hidden="true"><i></i><i></i><i></i></span>
                             <span class="demo-tab-title"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="11" height="11" aria-hidden="true"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg> <span class="demo-title-text-ep1">Stranger Things - S4E1</span></span>
@@ -363,12 +377,12 @@
                             </div>
                             <div class="demo-video-controls">
                                 <span class="demo-time">12:34</span>
-                                <div class="demo-progress" title="Seek — KoalaSync jumps the other tab to the same spot"><div class="demo-progress-fill"></div></div>
+                                <div class="demo-progress" title="Seek: KoalaSync jumps the other tab to the same spot"><div class="demo-progress-fill"></div></div>
                             </div>
                         </div>
                     </div>
 
-                    <div class="demo-tab-card demo-tab-b" id="demo-tab-b" role="button" tabindex="0" aria-pressed="false" aria-label="Press play or pause as 🐶 HappyDog — KoalaSync mirrors it to the other tab" title="Press play/pause here — KoalaSync mirrors it to the other tab">
+                    <div class="demo-tab-card demo-tab-b" id="demo-tab-b" role="button" tabindex="0" aria-pressed="false" aria-label="Press play or pause as 🐶 HappyDog. KoalaSync mirrors it to the other tab" title="Press play/pause here. KoalaSync mirrors it to the other tab">
                         <div class="demo-tab-titlebar">
                             <span class="demo-tab-dots" aria-hidden="true"><i></i><i></i><i></i></span>
                             <span class="demo-tab-title"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="11" height="11" aria-hidden="true"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg> <span class="demo-title-text-ep1">Stranger Things - S4E1</span></span>
@@ -417,7 +431,7 @@
                             </div>
                             <div class="demo-video-controls">
                                 <span class="demo-time">12:34</span>
-                                <div class="demo-progress" title="Seek — KoalaSync jumps the other tab to the same spot"><div class="demo-progress-fill"></div></div>
+                                <div class="demo-progress" title="Seek: KoalaSync jumps the other tab to the same spot"><div class="demo-progress-fill"></div></div>
                             </div>
                         </div>
                         <div class="demo-tab-toast" id="demo-toast-b" data-joined="{{DEMO_JOINED}}" data-selected="{{DEMO_TAB_SELECTED}}" aria-hidden="true"></div>
@@ -764,10 +778,10 @@
     <section id="use-cases" class="use-cases-section">
         <div class="container">
             <h2 class="section-title" data-reveal style="text-align: center; font-size: 2.2rem; margin-bottom: 1rem;">
-                <span>{{USE_CASES_TITLE}}</span>
+                <span>{{WHY_TITLE}}</span>
             </h2>
             <p class="section-subtitle" data-reveal style="text-align: center; color: var(--text-muted); margin-bottom: 3.5rem; max-width: 600px; margin-left: auto; margin-right: auto;">
-                <span>{{USE_CASES_SUBTITLE}}</span>
+                <span>{{WHY_SUBTITLE}}</span>
             </p>
             <div class="use-cases-grid">
                 <div class="use-case-card" data-reveal>
@@ -792,82 +806,10 @@
                     <p>{{USE_CASE_3_DESC}}</p>
                 </div>
             </div>
-        </div>
-    </section>
 
-    <section id="features">
-        <div class="container">
-            <img src="{{ASSET_PATH}}assets/KoalaQuestions-1x.webp" srcset="{{ASSET_PATH}}assets/KoalaQuestions-1x.webp 250w, {{ASSET_PATH}}assets/KoalaQuestions.webp 355w" sizes="(max-width: 768px) calc(100vw - 2rem), 250px" alt="A cute koala with a question mark above its head wondering why to choose KoalaSync" class="features-questions-mascot" width="250" height="211" loading="lazy" fetchpriority="low" data-reveal>
-            <h2 style="font-size: 2.5rem; text-align: center; margin-bottom: 1rem;">
-                <span>{{WHY_TITLE}}</span>
-            </h2>
-            <p style="text-align: center; color: var(--text-muted); margin-bottom: 4rem;">
-                <span>{{WHY_SUBTITLE}}</span>
-            </p>
-            
-            <div class="features-grid">
-                <!-- Card 1: Full Control / Instant Sync (Bento Large) -->
-                <div class="feature-card bento-large" data-reveal>
-                    <h3>
-                        <span class="feature-icon-svg">
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="bento-icon"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
-                        </span>
-                        <span>{{FEATURE_1_TITLE}}</span>
-                    </h3>
-                    <div class="bento-content-wrap">
-                        <p>{{FEATURE_1_DESC}}</p>
-                        <div class="bento-host-control-mockup">
-                            <div class="bento-mockup-header">{{MOCK_HOST_CONTROL_LABEL}}</div>
-                            <div class="bento-mockup-row">
-                                <span>{{MOCK_HOST_CONTROL_TOGGLE}}</span>
-                                <label class="bento-switch-wrap">
-                                    <input type="checkbox" checked disabled>
-                                    <span class="bento-switch-slider"></span>
-                                </label>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Card 2: Endless Binge-Watching (Bento Standard) -->
+            <div id="features" class="features-grid features-grid-combined">
+                <!-- Tile 1: Instant Invites / 1-Click Join -->
                 <div class="feature-card" data-reveal>
-                    <h3>
-                        <span class="feature-icon-svg">
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="bento-icon"><rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18"/><line x1="7" y1="2" x2="7" y2="22"/><line x1="17" y1="2" x2="17" y2="22"/><line x1="2" y1="12" x2="22" y2="12"/><line x1="2" y1="7" x2="7" y2="7"/><line x1="2" y1="17" x2="7" y2="17"/><line x1="17" y1="17" x2="22" y2="17"/><line x1="17" y1="7" x2="22" y2="7"/></svg>
-                        </span>
-                        <span>{{FEATURE_2_TITLE}}</span>
-                    </h3>
-                    <p>{{FEATURE_2_DESC}}</p>
-                </div>
-
-                <!-- Card 3: Zero Accounts / Pure Privacy (Bento Standard) -->
-                <div class="feature-card" data-reveal>
-                    <h3>
-                        <span class="feature-icon-svg">
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="bento-icon"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-                        </span>
-                        <span>{{FEATURE_3_TITLE}}</span>
-                    </h3>
-                    <p>{{FEATURE_3_DESC}}</p>
-                    <div class="bento-visual-architecture" style="margin-top: 15px; padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.05); font-size: 0.7rem; font-family: monospace; display: flex; align-items: center; justify-content: space-between; color: var(--accent);">
-                        <span>STATE: VOLATILE</span>
-                        <span style="background: rgba(99, 102, 241, 0.15); padding: 2px 6px; border-radius: 4px; font-weight: 700; font-size: 0.6rem;">RAM-ONLY</span>
-                    </div>
-                </div>
-
-                <!-- Card 4: Universal HTML5 Support (Bento Large) -->
-                <div class="feature-card bento-large" data-reveal>
-                    <h3>
-                        <span class="feature-icon-svg">
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="bento-icon"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
-                        </span>
-                        <span>{{FEATURE_4_TITLE}}</span>
-                    </h3>
-                    <p>{{FEATURE_4_DESC}}</p>
-                </div>
-
-                <!-- Card 5: Instant Invites / 1-Click Join (Bento Large) -->
-                <div class="feature-card bento-large" data-reveal>
                     <h3>
                         <span class="feature-icon-svg">
                             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="bento-icon"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
@@ -877,40 +819,33 @@
                     <p>{{FEATURE_6_DESC}}</p>
                 </div>
 
-                <!-- Card 6: Self-Hostable & Docker-Ready (Bento Standard) -->
+                <!-- Tile 2: Zero Accounts / Pure Privacy -->
                 <div class="feature-card" data-reveal>
                     <h3>
                         <span class="feature-icon-svg">
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="bento-icon"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="bento-icon"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
                         </span>
-                        <span>{{FEATURE_5_TITLE}}</span>
+                        <span>{{FEATURE_3_TITLE}}</span>
                     </h3>
-                    <p>{{FEATURE_5_DESC}}</p>
+                    <p>{{FEATURE_3_DESC}}</p>
+                    <div class="bento-visual-architecture" style="margin-top: 15px; padding-top: 10px; border-top: 1px solid var(--glass-border); font-size: 0.7rem; font-family: monospace; display: flex; align-items: center; justify-content: space-between; color: var(--accent);">
+                        <span>STATE: VOLATILE</span>
+                        <span style="background: rgba(99, 102, 241, 0.15); padding: 2px 6px; border-radius: 4px; font-weight: 700; font-size: 0.6rem;">RAM-ONLY</span>
+                    </div>
                 </div>
 
-                <!-- Card 7: Open Source / MIT License (Bento Standard) -->
+                <!-- Tile 3: Universal HTML5 Support -->
                 <div class="feature-card" data-reveal>
                     <h3>
                         <span class="feature-icon-svg">
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="bento-icon"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="bento-icon"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
                         </span>
-                        <span>{{FEATURE_8_TITLE}}</span>
+                        <span>{{FEATURE_4_TITLE}}</span>
                     </h3>
-                    <p>{{FEATURE_8_DESC}}</p>
+                    <p>{{FEATURE_4_DESC}}</p>
                 </div>
 
-                <!-- Card 8: Volume Leveling / Audio Compressor (Bento Large) -->
-                <div class="feature-card bento-large" data-reveal>
-                    <h3>
-                        <span class="feature-icon-svg">
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="bento-icon"><path d="M11 5 6 9H2v6h4l5 4V5z"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
-                        </span>
-                        <span>{{FEATURE_7_TITLE}}</span>
-                    </h3>
-                    <p>{{FEATURE_7_DESC}}</p>
-                </div>
             </div>
-
         </div>
     </section>
 
@@ -1034,7 +969,7 @@
         </div>
     </section>
 
-    <section id="how-it-works" style="background: rgba(255,255,255,0.02)">
+    <section id="how-it-works" style="background: var(--section-tint)">
         <div class="container">
             <h2 style="font-size: 2.5rem; text-align: center; margin-bottom: 4rem;">
                 <span>{{STEPS_TITLE}}</span>
@@ -1244,7 +1179,7 @@
     </section>
 
     <!-- Self Hosters Paradise Section -->
-    <section id="self-hosting" style="background: rgba(15, 23, 42, 0.4); border-top: 1px solid var(--glass-border); border-bottom: 1px solid var(--glass-border);">
+    <section id="self-hosting" style="background: var(--section-tint-strong); border-top: 1px solid var(--glass-border); border-bottom: 1px solid var(--glass-border);">
         <div class="container">
             <h2 style="font-size: 2.5rem; text-align: center; margin-bottom: 1rem;">
                 <span>{{SELF_TITLE}}</span>
@@ -1258,7 +1193,13 @@
                 <img src="{{ASSET_PATH}}assets/KoalaDeploy-1x.webp" srcset="{{ASSET_PATH}}assets/KoalaDeploy-1x.webp 300w, {{ASSET_PATH}}assets/KoalaDeploy.webp 600w" sizes="(max-width: 768px) calc(100vw - 2rem), 300px" alt="{{SELF_MASCOT_ALT}}" class="selfhost-mascot" width="300" height="201" loading="lazy" fetchpriority="low">
             </div>
 
-            <div class="terminal-container" data-reveal>
+            <details class="section-collapse" id="selfhost-collapse">
+                <summary class="collapse-summary" data-reveal>
+                    <span class="collapse-label-show"><span>{{SELF_SHOW_SETUP}}</span></span>
+                    <span class="collapse-label-hide"><span>{{SELF_HIDE_SETUP}}</span></span>
+                    <svg class="collapse-chevron" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
+                </summary>
+                <div class="terminal-container collapse-content">
                 <div class="terminal-header">
                     <div class="terminal-dots">
                         <span class="terminal-dot red"></span>
@@ -1360,52 +1301,61 @@
 }</code></pre>
                     </div>
                 </div>
-            </div>
+                </div>
+            </details>
         </div>
     </section>
 
     <section id="faq" style="border-top: 1px solid var(--glass-border);">
         <div class="container">
+            <img src="{{ASSET_PATH}}assets/KoalaQuestions-1x.webp" srcset="{{ASSET_PATH}}assets/KoalaQuestions-1x.webp 250w, {{ASSET_PATH}}assets/KoalaQuestions.webp 355w" sizes="(max-width: 768px) calc(100vw - 2rem), 250px" alt="A cute koala holding a question mark wondering about KoalaSync" class="features-questions-mascot" width="250" height="211" loading="lazy" fetchpriority="low" data-reveal>
             <h2 data-reveal style="font-size: 2.2rem; text-align: center; margin-bottom: 1rem;">
                 <span>{{FAQ_TITLE}}</span>
             </h2>
-            <p data-reveal style="text-align: center; color: var(--text-muted); margin-bottom: 3rem; max-width: 600px; margin-left: auto; margin-right: auto;">
+            <p data-reveal style="text-align: center; color: var(--text-muted); margin-bottom: 2rem; max-width: 600px; margin-left: auto; margin-right: auto;">
                 <span>{{FAQ_SUBTITLE}}</span>
             </p>
-            <div class="faq-grid">
-                <details class="faq-item" data-reveal>
-                    <summary><span>{{FAQ_Q1}}</span></summary>
-                    <p><span>{{FAQ_A1}}</span></p>
-                </details>
-                <details class="faq-item" data-reveal>
-                    <summary><span>{{FAQ_Q_VIDEO_ACCESS}}</span></summary>
-                    <p><span>{{FAQ_A_VIDEO_ACCESS}}</span></p>
-                </details>
-                <details class="faq-item" data-reveal>
-                    <summary><span>{{FAQ_Q2}}</span></summary>
-                    <p><span>{{FAQ_A2}}</span></p>
-                </details>
-                <details class="faq-item" data-reveal>
-                    <summary><span>{{FAQ_Q3}}</span></summary>
-                    <p><span>{{FAQ_A3}}</span></p>
-                </details>
-                <details class="faq-item" data-reveal>
-                    <summary><span>{{FAQ_Q4}}</span></summary>
-                    <p><span>{{FAQ_A4}}</span></p>
-                </details>
-                <details class="faq-item" data-reveal>
-                    <summary><span>{{FAQ_Q5}}</span></summary>
-                    <p><span>{{FAQ_A5}}</span></p>
-                </details>
-                <details class="faq-item" data-reveal>
-                    <summary><span>{{FAQ_Q6}}</span></summary>
-                    <p><span>{{FAQ_A6}}</span></p>
-                </details>
-                <details class="faq-item" data-reveal>
-                    <summary><span>{{FAQ_Q7}}</span></summary>
-                    <p><span>{{FAQ_A7}}</span></p>
-                </details>
-            </div>
+            <details class="section-collapse faq-section-collapse" id="faq-collapse">
+                <summary class="collapse-summary" data-reveal>
+                    <span class="collapse-label-show"><span>{{FAQ_SHOW_ALL}}</span></span>
+                    <span class="collapse-label-hide"><span>{{FAQ_HIDE_ALL}}</span></span>
+                    <svg class="collapse-chevron" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
+                </summary>
+                <div class="faq-grid collapse-content">
+                    <details class="faq-item">
+                        <summary><span>{{FAQ_Q1}}</span></summary>
+                        <p><span>{{FAQ_A1}}</span></p>
+                    </details>
+                    <details class="faq-item">
+                        <summary><span>{{FAQ_Q_VIDEO_ACCESS}}</span></summary>
+                        <p><span>{{FAQ_A_VIDEO_ACCESS}}</span></p>
+                    </details>
+                    <details class="faq-item">
+                        <summary><span>{{FAQ_Q2}}</span></summary>
+                        <p><span>{{FAQ_A2}}</span></p>
+                    </details>
+                    <details class="faq-item">
+                        <summary><span>{{FAQ_Q3}}</span></summary>
+                        <p><span>{{FAQ_A3}}</span></p>
+                    </details>
+                    <details class="faq-item">
+                        <summary><span>{{FAQ_Q4}}</span></summary>
+                        <p><span>{{FAQ_A4}}</span></p>
+                    </details>
+                    <details class="faq-item">
+                        <summary><span>{{FAQ_Q5}}</span></summary>
+                        <p><span>{{FAQ_A5}}</span></p>
+                    </details>
+                    <details class="faq-item">
+                        <summary><span>{{FAQ_Q6}}</span></summary>
+                        <p><span>{{FAQ_A6}}</span></p>
+                    </details>
+                    <details class="faq-item">
+                        <summary><span>{{FAQ_Q7}}</span></summary>
+                        <p><span>{{FAQ_A7}}</span></p>
+                    </details>
+                </div>
+            </details>
         </div>
     </section>
 

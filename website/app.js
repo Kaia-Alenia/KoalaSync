@@ -60,6 +60,32 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
+    // Theme toggle (dark is default; light mode via html.theme-light,
+    // pre-paint class is applied by lang-init.js to avoid a flash)
+    const themeToggle = document.getElementById('theme-toggle');
+    const themeMeta = document.querySelector('meta[name="theme-color"]');
+    const syncThemeMeta = () => {
+        if (themeMeta) {
+            themeMeta.setAttribute('content', document.documentElement.classList.contains('theme-light') ? '#f1f5f9' : '#0f172a');
+        }
+    };
+    syncThemeMeta();
+    if (themeToggle) {
+        themeToggle.addEventListener('click', () => {
+            const isLight = document.documentElement.classList.toggle('theme-light');
+            safeSetLocalStorage('koala_theme', isLight ? 'light' : 'dark');
+            syncThemeMeta();
+        });
+    }
+
+    // Open collapsed section blocks when the URL directly targets them
+    const hashCollapseMap = { '#faq': 'faq-collapse', '#self-hosting': 'selfhost-collapse' };
+    const collapseId = hashCollapseMap[window.location.hash];
+    if (collapseId) {
+        const collapseEl = document.getElementById(collapseId);
+        if (collapseEl) collapseEl.open = true;
+    }
+
     // Scroll Reveal Logic (IntersectionObserver for performance)
     const revealElements = document.querySelectorAll('[data-reveal]');
 
@@ -96,17 +122,11 @@ document.addEventListener('DOMContentLoaded', () => {
         document.querySelectorAll('section[id], header[id]').forEach(el => sectionObserver.observe(el));
     }
 
-    // Navbar scroll effect
+    // Navbar scroll effect (class-based so it follows the active theme)
     const nav = document.querySelector('nav');
     window.addEventListener('scroll', () => {
-        if (window.scrollY > 50) {
-            nav.style.padding = '0.75rem 0';
-            nav.style.background = 'rgba(15, 23, 42, 0.9)';
-        } else {
-            nav.style.padding = '1rem 0';
-            nav.style.background = 'rgba(30, 41, 59, 0.7)';
-        }
-    });
+        nav.classList.toggle('nav-scrolled', window.scrollY > 50);
+    }, { passive: true });
 
     // Invite Detection & Bridge
     const checkInvite = () => {
@@ -372,63 +392,42 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    const updateDynamicVersion = async () => {
-        try {
-            const versionPath = '/version.json';
-            const response = await fetch(versionPath);
-            if (!response.ok) return;
-            const data = await response.json();
-            const { version, date } = data;
-            if (!version || !date) return;
+    // Version and release date are baked in at build time; only the relative
+    // "x days ago" needs to be computed at view time so it never goes stale.
+    const updateDynamicVersion = () => {
+        const bubble = document.querySelector('.koala-speech-bubble');
+        if (!bubble || !bubble.dataset.release) return;
+        const releaseDate = new Date(bubble.dataset.release);
+        if (isNaN(releaseDate)) return;
 
-            const releaseDate = new Date(date);
-            const now = new Date();
-            const diffMs = now - releaseDate;
-            const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-            const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
-            const diffMins = Math.floor(diffMs / (1000 * 60));
+        const diffMs = Date.now() - releaseDate.getTime();
+        const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+        const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+        const diffMins = Math.floor(diffMs / (1000 * 60));
 
-            let relativeTimeEn = '';
-            let relativeTimeDe = '';
-
-            if (diffDays > 0) {
-                relativeTimeEn = `${diffDays} ${diffDays === 1 ? 'day' : 'days'} ago`;
-                relativeTimeDe = `vor ${diffDays} ${diffDays === 1 ? 'Tag' : 'Tagen'}`;
-            } else if (diffHours > 0) {
-                relativeTimeEn = `${diffHours} ${diffHours === 1 ? 'hour' : 'hours'} ago`;
-                relativeTimeDe = `vor ${diffHours} ${diffHours === 1 ? 'Stunde' : 'Stunden'}`;
-            } else if (diffMins > 0) {
-                relativeTimeEn = `${diffMins} ${diffMins === 1 ? 'minute' : 'minutes'} ago`;
-                relativeTimeDe = `vor ${diffMins} ${diffMins === 1 ? 'Minute' : 'Minuten'}`;
-            } else {
-                relativeTimeEn = 'just now';
-                relativeTimeDe = 'gerade eben';
-            }
-
-            const badgeEn = document.querySelector('.version-text-en');
-            const badgeDe = document.querySelector('.version-text-de');
-
-            if (badgeEn) {
-                badgeEn.textContent = `v${version} OUT NOW • ${relativeTimeEn}`;
-            }
-            if (badgeDe) {
-                badgeDe.textContent = `v${version} JETZT VERFÜGBAR • ${relativeTimeDe}`;
-            }
-
-            // Update Schema.org structured data dynamically
-            const schemaScript = document.getElementById('schema-software');
-            if (schemaScript) {
-                try {
-                    const schema = JSON.parse(schemaScript.textContent);
-                    schema.softwareVersion = version;
-                    schemaScript.textContent = JSON.stringify(schema, null, 2);
-                } catch (err) {
-                    console.warn('Failed to dynamically update schema version:', err);
-                }
-            }
-        } catch (e) {
-            console.warn('Failed to fetch dynamic version info:', e);
+        let relativeTimeEn;
+        let relativeTimeDe;
+        if (diffDays > 0) {
+            relativeTimeEn = `${diffDays} ${diffDays === 1 ? 'day' : 'days'} ago`;
+            relativeTimeDe = `vor ${diffDays} ${diffDays === 1 ? 'Tag' : 'Tagen'}`;
+        } else if (diffHours > 0) {
+            relativeTimeEn = `${diffHours} ${diffHours === 1 ? 'hour' : 'hours'} ago`;
+            relativeTimeDe = `vor ${diffHours} ${diffHours === 1 ? 'Stunde' : 'Stunden'}`;
+        } else if (diffMins > 0) {
+            relativeTimeEn = `${diffMins} ${diffMins === 1 ? 'minute' : 'minutes'} ago`;
+            relativeTimeDe = `vor ${diffMins} ${diffMins === 1 ? 'Minute' : 'Minuten'}`;
+        } else {
+            relativeTimeEn = 'just now';
+            relativeTimeDe = 'gerade eben';
         }
+
+        bubble.querySelectorAll('.bubble-ago').forEach(el => {
+            // Nearest [lang] ancestor is the bubble's own language wrapper span
+            // (not the <html> element, which also carries a lang attribute).
+            const langWrap = el.closest('[lang]');
+            const isDe = !!langWrap && langWrap.getAttribute('lang') === 'de';
+            el.textContent = (isDe ? relativeTimeDe : relativeTimeEn) + ' \u00b7 ';
+        });
     };
 
     // Extension Mockup Tab Switcher

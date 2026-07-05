@@ -117,6 +117,18 @@ async function compile() {
     }
     console.log('  ✓ Favicons/touch icons successfully synced to website/assets/');
 
+    // Social link preview image (og:image / twitter:image), same artwork as the
+    // GitHub repository OpenGraph card. PNG kept for maximum scraper support.
+    const ogSrc = path.join(websiteDir, '..', 'assets', 'StoreAssets', 'RepositoryOpenGraph.png');
+    if (fs.existsSync(ogSrc)) {
+        await sharp(ogSrc)
+            .png({ quality: 80, palette: true })
+            .toFile(path.join(targetAssetsDir, 'og-image.png'));
+        console.log('  ✓ og-image.png generated from RepositoryOpenGraph.png');
+    } else {
+        console.warn(`  ⚠️ Warning: ${ogSrc} not found. Skipping og-image generation.`);
+    }
+
     // ── 1. Minify CSS/JS (must happen first so hashes go into HTML) ──
     console.log('Minifying CSS/JS...');
     const styleRaw = fs.readFileSync(path.join(websiteDir, 'style.css'), 'utf8');
@@ -174,6 +186,7 @@ async function compile() {
         let compiled = templateContent;
         compiled = compiled.replace(/\{\{ASSET_PATH\}\}/g, assetPath);
         compiled = compiled.replace(/\{\{VERSION\}\}/g, buildVersion);
+        compiled = compiled.replace(/\{\{VERSION_DATE\}\}/g, versionJson.date || '');
         const langPrefix = lang === 'en' ? '' : `${lang}/`;
         compiled = compiled.replace(/\{\{LANG_PREFIX\}\}/g, langPrefix);
         languages.forEach(l => {

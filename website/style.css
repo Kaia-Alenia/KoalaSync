@@ -17,6 +17,11 @@
     --success: #22c55e;
     --glass: rgba(30, 41, 59, 0.4);
     --glass-border: rgba(255, 255, 255, 0.05);
+    --section-tint: rgba(255, 255, 255, 0.02);
+    --section-tint-strong: rgba(15, 23, 42, 0.4);
+    --card-surface: rgba(30, 41, 59, 0.45);
+    --card-border: rgba(255, 255, 255, 0.08);
+    color-scheme: dark;
 }
 
 .invite-banner {
@@ -138,6 +143,16 @@ nav {
     backdrop-filter: blur(12px);
     border-bottom: 1px solid var(--glass-border);
     padding: 1rem 0;
+    transition: padding 0.3s ease, background 0.3s ease;
+}
+
+nav.nav-scrolled {
+    padding: 0.75rem 0;
+    background: rgba(15, 23, 42, 0.9);
+}
+
+html.theme-light nav.nav-scrolled {
+    background: rgba(241, 245, 249, 0.92);
 }
 
 .nav-content {
@@ -214,6 +229,150 @@ nav {
     flex-shrink: 0;
 }
 
+/* --- Theme Toggle (sun/moon) --- */
+.theme-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    background: transparent;
+    border: 1px solid var(--glass-border);
+    border-radius: 10px;
+    color: var(--text-muted);
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: color 0.3s, border-color 0.3s, background 0.3s, transform 0.3s;
+}
+
+.theme-toggle:hover {
+    color: var(--accent);
+    border-color: rgba(99, 102, 241, 0.4);
+    transform: rotate(15deg);
+}
+
+.theme-toggle .theme-icon-sun { display: block; }
+.theme-toggle .theme-icon-moon { display: none; }
+html.theme-light .theme-toggle .theme-icon-sun { display: none; }
+html.theme-light .theme-toggle .theme-icon-moon { display: block; }
+
+/* --- Light Theme --- */
+html.theme-light {
+    --bg: #f1f5f9;
+    --card: #ffffff;
+    --accent: #5b5de8;
+    --accent-glow: rgba(91, 93, 232, 0.25);
+    --text: #0f172a;
+    --text-muted: #475569;
+    --glass: rgba(255, 255, 255, 0.7);
+    --glass-border: rgba(15, 23, 42, 0.08);
+    --section-tint: rgba(15, 23, 42, 0.025);
+    --section-tint-strong: rgba(15, 23, 42, 0.05);
+    --card-surface: rgba(255, 255, 255, 0.75);
+    --card-border: rgba(15, 23, 42, 0.08);
+    color-scheme: light;
+}
+
+html.theme-light .bg-blobs {
+    background: radial-gradient(circle at 50% 50%, #e0e7ff 0%, #f1f5f9 100%);
+}
+
+html.theme-light .blob {
+    opacity: 0.35;
+}
+
+html.theme-light .feature-card,
+html.theme-light .faq-item {
+    background: var(--card-surface);
+    border-color: var(--card-border);
+    box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
+}
+
+html.theme-light .feature-card::before {
+    background: linear-gradient(to bottom right, rgba(15, 23, 42, 0.08), transparent);
+}
+
+html.theme-light .use-case-card {
+    background: var(--card-surface);
+}
+
+html.theme-light .use-case-card h3 {
+    color: var(--text);
+}
+
+html.theme-light .use-case-card:hover {
+    box-shadow: 0 12px 30px rgba(15, 23, 42, 0.12);
+    border-color: rgba(15, 23, 42, 0.15);
+}
+
+html.theme-light .faq-item[open] {
+    background: #ffffff;
+}
+
+html.theme-light .faq-item p {
+    border-top-color: rgba(15, 23, 42, 0.08);
+}
+
+html.theme-light .btn-secondary {
+    background: #ffffff;
+    border-color: rgba(15, 23, 42, 0.12);
+}
+
+html.theme-light .btn-secondary:hover {
+    background: #e2e8f0;
+}
+
+html.theme-light .comparison-section {
+    background: rgba(15, 23, 42, 0.02);
+}
+
+html.theme-light .comparison-table-wrapper {
+    background: rgba(255, 255, 255, 0.75);
+    box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+}
+
+html.theme-light .comparison-table th {
+    background: rgba(15, 23, 42, 0.06);
+    color: var(--text);
+}
+
+html.theme-light .comparison-table th,
+html.theme-light .comparison-table td {
+    border-bottom-color: rgba(15, 23, 42, 0.08);
+}
+
+html.theme-light .comparison-table tbody tr:hover {
+    background: rgba(15, 23, 42, 0.03);
+}
+
+html.theme-light .feat-name strong {
+    color: var(--text);
+}
+
+html.theme-light .table-footnotes {
+    background: rgba(15, 23, 42, 0.04);
+    border-top-color: rgba(15, 23, 42, 0.06);
+}
+
+@media (max-width: 900px) {
+    html.theme-light .comparison-table tbody tr {
+        background: rgba(255, 255, 255, 0.85);
+        box-shadow: 0 6px 18px rgba(15, 23, 42, 0.08);
+    }
+    html.theme-light .comparison-table td.feat-name {
+        background: rgba(15, 23, 42, 0.05);
+    }
+    html.theme-light .comparison-table td {
+        border-bottom-color: rgba(15, 23, 42, 0.08);
+    }
+}
+
+html.theme-light .compat-logo img,
+html.theme-light .compat-logo {
+    filter: none;
+}
+
 /* --- Hero Section --- */
 .hero {
     min-height: 100vh;
@@ -250,19 +409,39 @@ nav {
 }
 
 .hero-text h1 {
-    font-size: clamp(3.3rem, 4.35vw, 4.4rem);
+    font-size: clamp(2.9rem, 4.1vw, 4rem);
     font-weight: 800;
-    line-height: 1.1;
+    line-height: 1.12;
     margin-bottom: 1.4rem;
     padding-bottom: 0.1em;
-    background: linear-gradient(to bottom, #fff 40%, #6366f1);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
+    color: var(--text);
+    letter-spacing: -0.02em;
 }
 
-.hero-text h1 .hero-line2 {
-    display: block;
-    margin-top: 0.2em;
+.hero-text h1 .hero-highlight {
+    background: linear-gradient(90deg, #6366f1, #a855f7, #38bdf8, #6366f1);
+    background-size: 300% 100%;
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    white-space: nowrap;
+    animation: hero-gradient-pan 10s linear infinite;
+    /* background-clip: text only paints inside the layout box; with the
+       negative h1 letter-spacing the last glyph overhangs it and gets cut
+       off. Invisible padding extends the paint area without moving text. */
+    padding-right: 0.08em;
+    margin-right: -0.08em;
+}
+
+@keyframes hero-gradient-pan {
+    from { background-position: 0% 50%; }
+    to { background-position: 300% 50%; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .hero-text h1 .hero-highlight {
+        animation: none;
+    }
 }
 
 .hero-text p, .hero-subtitle {
@@ -275,6 +454,7 @@ nav {
 }
 
 .hero-mascot-container {
+    position: relative;
     display: block;
     margin-bottom: -0.5rem;
     margin-left: 2.2rem;
@@ -286,11 +466,126 @@ nav {
     height: auto;
 }
 
+/* Changelog link as the koala's comic speech bubble. Absolutely positioned
+   so it never moves the koala out of its spot above the install buttons. */
+.koala-speech-bubble {
+    position: absolute;
+    left: 108px;
+    top: 0.2rem;
+    width: max-content;
+    max-width: min(240px, calc(100% - 120px));
+    display: block;
+    text-decoration: none;
+    text-align: left;
+    background: rgba(30, 41, 59, 0.95);
+    border: 1px solid rgba(99, 102, 241, 0.45);
+    border-radius: 14px;
+    border-bottom-left-radius: 4px;
+    padding: 0.6rem 0.9rem;
+    line-height: 1.35;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+    animation: bubble-float 4s ease-in-out infinite;
+    transition: border-color 0.25s ease, box-shadow 0.25s ease;
+}
+
+/* Tail: outline triangle + fill triangle so it reads as part of the bubble */
+.koala-speech-bubble::before,
+.koala-speech-bubble::after {
+    content: '';
+    position: absolute;
+    width: 0;
+    height: 0;
+}
+
+.koala-speech-bubble::before {
+    left: -11px;
+    bottom: 10px;
+    border-top: 8px solid transparent;
+    border-bottom: 4px solid transparent;
+    border-right: 11px solid rgba(99, 102, 241, 0.45);
+}
+
+.koala-speech-bubble::after {
+    left: -9px;
+    bottom: 11px;
+    border-top: 7px solid transparent;
+    border-bottom: 3px solid transparent;
+    border-right: 10px solid rgba(30, 41, 59, 0.95);
+}
+
+.koala-speech-bubble:hover {
+    border-color: rgba(99, 102, 241, 0.85);
+    box-shadow: 0 8px 28px rgba(99, 102, 241, 0.35);
+}
+
+.koala-speech-bubble .version-text-en,
+.koala-speech-bubble .version-text-de {
+    display: block;
+}
+
+.koala-speech-bubble .bubble-title {
+    display: block;
+    font-size: 0.85rem;
+    font-weight: 800;
+    color: var(--text);
+    letter-spacing: 0;
+    white-space: nowrap;
+}
+
+.koala-speech-bubble .bubble-sub {
+    display: block;
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: var(--accent);
+    margin-top: 2px;
+}
+
+html.theme-light .koala-speech-bubble {
+    background: rgba(255, 255, 255, 0.96);
+    box-shadow: 0 8px 24px rgba(15, 23, 42, 0.12);
+}
+
+html.theme-light .koala-speech-bubble::after {
+    border-right-color: rgba(255, 255, 255, 0.96);
+}
+
+@keyframes bubble-float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-4px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .koala-speech-bubble {
+        animation: none;
+    }
+}
+
 @media (max-width: 768px) {
+    /* The koala keeps standing on the CTA button (nudged just slightly left
+       to give the bubble room); the bubble is absolute and wraps its text. */
     .hero-mascot-container {
         margin-left: 0;
         display: flex;
         justify-content: center;
+    }
+    .hero-lookdown-mascot {
+        transform: translateX(-32px);
+    }
+    .koala-speech-bubble {
+        left: calc(50% + 18px);
+        top: 0.3rem;
+        max-width: min(240px, calc(50% - 26px));
+        padding: 0.5rem 0.75rem;
+    }
+    .koala-speech-bubble .bubble-title {
+        font-size: 0.8rem;
+    }
+    .koala-speech-bubble .bubble-sub {
+        font-size: 0.68rem;
+    }
+    /* The relative release time is too much text for the small mobile bubble */
+    .koala-speech-bubble .bubble-ago {
+        display: none;
     }
 }
 
@@ -298,6 +593,19 @@ nav {
     display: flex;
     gap: 1rem;
     flex-wrap: wrap;
+}
+
+/* Quiet trust line under the install buttons; answers "is it free, is it
+   legit, do I need an account" right at the moment of the click decision. */
+.hero-text .cta-trust {
+    margin-top: 0.85rem;
+    margin-bottom: 0;
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: var(--text-muted);
+    opacity: 0.75;
+    letter-spacing: 0.01em;
+    max-width: none;
 }
 
 .btn {
@@ -832,6 +1140,25 @@ input:checked + .mock-slider:before {
     grid-template-columns: repeat(3, 1fr);
     gap: 1.5rem;
     margin-top: 4rem;
+}
+
+/* Combined use-cases + feature tiles grid */
+.features-grid-combined {
+    margin-top: 2rem;
+    scroll-margin-top: 100px;
+}
+
+.features-grid-combined .feature-card {
+    padding: 1.8rem;
+}
+
+.features-grid-combined .feature-card h3 {
+    font-size: 1.1rem;
+    margin-bottom: 0.75rem;
+}
+
+.features-grid-combined .feature-card p {
+    font-size: 0.9rem;
 }
 
 .feature-card {
@@ -2224,16 +2551,16 @@ html:not(.lang-de) [lang="de"] {
 
 /* --- Compatibility Section --- */
 .compat-section {
-    padding: 1rem 0 3.5rem 0;
+    padding: 0.5rem 0 2.5rem 0;
     text-align: center;
-    background: rgba(255,255,255,0.01);
+    background: var(--section-tint);
     border-bottom: 1px solid var(--glass-border);
 }
 
 .compat-mascot {
     display: block;
-    margin: 0 auto 0.5rem auto;
-    max-width: 368px;
+    margin: 0 auto 0.3rem auto;
+    max-width: 270px;
     width: 100%;
     height: auto;
     transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
@@ -2249,7 +2576,7 @@ html:not(.lang-de) [lang="de"] {
     color: var(--text-muted);
     letter-spacing: 0.08em;
     text-transform: uppercase;
-    margin-bottom: 2rem;
+    margin-bottom: 1.4rem;
 }
 
 .compat-row {
@@ -2902,7 +3229,78 @@ html:not(.lang-de) [lang="de"] {
     box-shadow: 0 20px 25px -5px rgba(34, 197, 94, 0.4);
 }
 
+/* --- Section collapse (FAQ, self-hosting): closed by default to keep the page short --- */
+.section-collapse {
+    margin: 0 auto;
+}
+
+.faq-section-collapse {
+    max-width: 800px;
+}
+
+.collapse-summary {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.6rem;
+    list-style: none;
+    cursor: pointer;
+    font-weight: 700;
+    font-size: 1rem;
+    color: var(--accent);
+    background: rgba(99, 102, 241, 0.08);
+    border: 1px solid rgba(99, 102, 241, 0.3);
+    border-radius: 99px;
+    padding: 0.85rem 2rem;
+    max-width: 360px;
+    margin: 0 auto;
+    transition: background 0.3s, box-shadow 0.3s, transform 0.3s;
+}
+
+.collapse-summary::-webkit-details-marker {
+    display: none;
+}
+
+.collapse-summary:hover {
+    background: rgba(99, 102, 241, 0.16);
+    box-shadow: 0 0 20px rgba(99, 102, 241, 0.25);
+    transform: translateY(-2px);
+}
+
+.collapse-summary .collapse-chevron {
+    flex-shrink: 0;
+    transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.section-collapse[open] .collapse-chevron {
+    transform: rotate(180deg);
+}
+
+.collapse-label-hide { display: none; }
+.section-collapse[open] .collapse-label-show { display: none; }
+.section-collapse[open] .collapse-label-hide { display: inline; }
+
+.section-collapse[open] .collapse-summary {
+    margin-bottom: 2rem;
+}
+
+.section-collapse[open] .collapse-content {
+    animation: collapse-content-in 0.4s ease-out;
+}
+
+@keyframes collapse-content-in {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .section-collapse[open] .collapse-content {
+        animation: none;
+    }
+}
+
 /* --- FAQ Section --- */
+
 .faq-grid {
     display: flex;
     flex-direction: column;
