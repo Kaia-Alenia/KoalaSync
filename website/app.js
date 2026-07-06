@@ -78,6 +78,23 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // Highlight the CTA for the visitor's browser: it expands to the full
+    // "Add to X" label while the others stay compact. Unknown browsers keep
+    // all three compact.
+    try {
+        const ua = navigator.userAgent;
+        let detected = null;
+        if (/Firefox\//.test(ua) && !/Seamonkey\//.test(ua)) {
+            detected = 'firefox';
+        } else if (/Chrome\//.test(ua) || /Chromium\//.test(ua) || /Edg\//.test(ua) || /OPR\//.test(ua)) {
+            detected = 'chrome';
+        }
+        if (detected) {
+            const btn = document.querySelector('.btn-install[data-browser="' + detected + '"]');
+            if (btn) btn.classList.add('is-detected');
+        }
+    } catch (_) { /* leave all buttons compact */ }
+
     // Open collapsed section blocks when the URL directly targets them
     const hashCollapseMap = { '#faq': 'faq-collapse', '#self-hosting': 'selfhost-collapse' };
     const collapseId = hashCollapseMap[window.location.hash];
@@ -808,6 +825,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 setPopupOpen(false);
             });
         }
+
+        // Escape closes the popup as well
+        document.addEventListener('keydown', (e) => {
+            if (e.key !== 'Escape') return;
+            if (!scene.classList.contains('popup-open')) return;
+            userTookOver = true;
+            finishDemo();
+            setPopupOpen(false);
+        });
 
         const runDemo = async () => {
             if (demoStarted || userTookOver || reduceMotion) return;

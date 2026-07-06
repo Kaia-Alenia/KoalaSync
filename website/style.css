@@ -653,6 +653,21 @@ html.theme-light .koala-speech-bubble::after {
     transform: translateY(-2px);
 }
 
+/* Install buttons: compact by default (just the browser name) so all three
+   CTAs fit one line; the detected browser expands to the full call to action.
+   The GitHub button stays compact always. */
+.btn-label-full { display: none; }
+
+.btn-install:not(.is-detected),
+.btn-compact {
+    padding: 0.62rem 1.05rem;
+    font-size: 0.9rem;
+    gap: 0.4rem;
+}
+
+.btn-install.is-detected .btn-label-short { display: none; }
+.btn-install.is-detected .btn-label-full { display: inline; }
+
 .version-badge {
     display: inline-block;
     background: rgba(99, 102, 241, 0.1);
@@ -3078,6 +3093,28 @@ html:not(.lang-de) [lang="de"] {
     transition: opacity 0.2s ease;
 }
 
+/* Link from the comparison table to the fuller guides/alternatives hub */
+.comparison-guides-link {
+    text-align: center;
+    margin: 2rem 0 0;
+}
+
+.comparison-guides-link a {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    color: var(--accent);
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 0.95rem;
+    transition: gap 0.2s ease, opacity 0.2s ease;
+}
+
+.comparison-guides-link a:hover {
+    gap: 0.7rem;
+    opacity: 0.85;
+}
+
 .table-footnotes:hover {
     opacity: 0.95;
 }
@@ -3504,14 +3541,14 @@ header[id] {
     container-type: inline-size;
 }
 
-/* Fixed scene height: stays below the left hero column's height so it never
-   drives the grid row, and never changes when the popup toggles (no vertical
-   jumping). The popup is bottom-anchored and simply grows upwards on open. */
+/* Fixed height that already fits the open popup, so toggling it never changes
+   layout (the vertically centered hero never jumps). The caption is absolutely
+   positioned right under the cards instead of after the tall scene, and the
+   empty lower area is the invisible room the popup drops into. */
 .hero-demo-scene {
     position: relative;
     width: 100%;
-    height: 500px;
-    height: max(calc(66cqw + 78px), 500px);
+    height: max(calc(59cqw + 100px), 548px);
 }
 
 /* While initializing, suppress all transitions so the popup can start closed
@@ -3755,10 +3792,22 @@ header[id] {
     transition: opacity 0.3s;
 }
 
-.hero-demo-scene:not(.popup-open) .demo-ext-launcher::after {
+.hero-demo-scene:not(.popup-open) .demo-ext-launcher:not(.demo-ext-static)::after {
     opacity: 1;
     animation: demoBlink 1.4s ease-in-out infinite;
 }
+
+/* Card B shows the same extension icon, purely to signal the friend has it
+   installed too. It is not interactive and does not blink or glow. */
+.demo-ext-static,
+.demo-ext-static:hover {
+    cursor: default;
+    border-color: rgba(255, 255, 255, 0.12);
+    transform: none;
+    box-shadow: none;
+}
+
+.demo-ext-static::after { display: none; }
 
 /* Abstract "video" artwork with a slow cinematic pan/zoom while playing */
 .demo-video {
@@ -4023,7 +4072,14 @@ header[id] {
 }
 
 /* Caption below the scene */
+/* Caption sits absolutely right below the card cascade (matching the cards'
+   bottom edge, which scales with the container width), so the tall scene that
+   reserves popup room does not push it far away. */
 .demo-hint {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: calc(59cqw + 82px);
     margin: 0;
     text-align: center;
     font-size: 0.82rem;
