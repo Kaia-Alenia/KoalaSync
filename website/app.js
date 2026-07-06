@@ -789,6 +789,26 @@ document.addEventListener('DOMContentLoaded', () => {
         scene.addEventListener('pointerdown', takeOver, true);
         scene.addEventListener('keydown', takeOver, true);
 
+        // Clicking anywhere else on the page also closes the popup, like a
+        // real browser extension popup would.
+        document.addEventListener('pointerdown', (e) => {
+            if (!scene.classList.contains('popup-open')) return;
+            if (scene.contains(e.target)) return; // in-scene clicks are handled by takeOver
+            userTookOver = true;
+            finishDemo();
+            setPopupOpen(false);
+        }, true);
+
+        // Explicit close button in the popup header
+        const popupCloseBtn = scene.querySelector('#demo-popup-close');
+        if (popupCloseBtn) {
+            popupCloseBtn.addEventListener('click', () => {
+                userTookOver = true;
+                finishDemo();
+                setPopupOpen(false);
+            });
+        }
+
         const runDemo = async () => {
             if (demoStarted || userTookOver || reduceMotion) return;
             demoStarted = true;
