@@ -478,10 +478,11 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // --- Hero Live Demo (two synced video tabs + extension popup) ---
-    // Desktop only: on mobile the scene falls back to the classic static popup.
+    // The same scene is used inline on desktop and mounted into a modal on
+    // mobile, so the demo behavior stays in one place.
     const initHeroDemo = () => {
         const scene = document.getElementById('hero-demo');
-        if (!scene || !window.matchMedia('(min-width: 769px)').matches) return;
+        if (!scene) return;
 
         const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
@@ -715,7 +716,10 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
 
-        chip.addEventListener('click', pulse);
+        chip.addEventListener('click', () => {
+            pulse('a');
+            pulse('b');
+        });
 
         // --- Story state (room creation -> invite -> connected) ---
         const setRoomJoined = (joined) => {
@@ -913,6 +917,9 @@ document.addEventListener('DOMContentLoaded', () => {
             finishDemo();
         };
 
+        scene.__koalaStartDemo = reduceMotion ? finishDemo : runDemo;
+        scene.__koalaFinishDemo = finishDemo;
+
         if ('IntersectionObserver' in window && !reduceMotion) {
             const demoObserver = new IntersectionObserver((entries) => {
                 entries.forEach(entry => {
@@ -929,6 +936,68 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     initHeroDemo();
+
+    const initMobileDemoModal = () => {
+        const openBtn = document.getElementById('mobile-demo-open');
+        const modal = document.getElementById('mobile-demo-modal');
+        const stage = document.getElementById('mobile-demo-stage');
+        const closeBtn = document.getElementById('mobile-demo-close');
+        const wrapper = document.querySelector('.hero-grid > .hero-mockup-wrapper');
+        if (!openBtn || !modal || !stage || !closeBtn || !wrapper) return;
+
+        const originalParent = wrapper.parentNode;
+        const originalNext = wrapper.nextSibling;
+        let previousFocus = null;
+
+        const openModal = () => {
+            previousFocus = document.activeElement && typeof document.activeElement.focus === 'function'
+                ? document.activeElement
+                : null;
+            modal.hidden = false;
+            document.body.classList.add('mobile-demo-open');
+            openBtn.setAttribute('aria-expanded', 'true');
+            stage.appendChild(wrapper);
+            requestAnimationFrame(() => {
+                closeBtn.focus({ preventScroll: true });
+                const scene = wrapper.querySelector('#hero-demo');
+                if (scene && typeof scene.__koalaStartDemo === 'function') {
+                    scene.__koalaStartDemo();
+                }
+            });
+        };
+
+        const closeModal = () => {
+            if (modal.hidden) return;
+            modal.hidden = true;
+            document.body.classList.remove('mobile-demo-open');
+            openBtn.setAttribute('aria-expanded', 'false');
+            if (originalNext && originalNext.parentNode === originalParent) {
+                originalParent.insertBefore(wrapper, originalNext);
+            } else {
+                originalParent.appendChild(wrapper);
+            }
+            if (previousFocus && typeof previousFocus.focus === 'function') {
+                previousFocus.focus({ preventScroll: true });
+            }
+        };
+
+        openBtn.setAttribute('aria-expanded', 'false');
+        openBtn.addEventListener('click', openModal);
+        closeBtn.addEventListener('click', closeModal);
+        modal.querySelectorAll('[data-mobile-demo-close]').forEach(el => {
+            el.addEventListener('click', closeModal);
+        });
+        document.addEventListener('keydown', (e) => {
+            if (modal.hidden) return;
+            if (e.key === 'Escape') closeModal();
+            if (e.key === 'Tab') {
+                e.preventDefault();
+                closeBtn.focus({ preventScroll: true });
+            }
+        });
+    };
+
+    initMobileDemoModal();
 
     // Terminal Tab Switcher
     const termTabBtns = document.querySelectorAll('.terminal-tab-btn');

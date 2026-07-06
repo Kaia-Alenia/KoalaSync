@@ -126,7 +126,6 @@ section {
 
 /* Content-visibility for offscreen sections to improve INP */
 .use-cases-section,
-#features,
 #self-hosting,
 .comparison-section {
     content-visibility: auto;
@@ -238,17 +237,17 @@ html.theme-light nav.nav-scrolled {
     height: 36px;
     padding: 0;
     background: transparent;
-    border: 1px solid var(--glass-border);
+    border: 1px solid transparent;
     border-radius: 10px;
     color: var(--text-muted);
     cursor: pointer;
     flex-shrink: 0;
-    transition: color 0.3s, border-color 0.3s, background 0.3s, transform 0.3s;
+    transition: color 0.3s, background 0.3s, transform 0.3s;
 }
 
 .theme-toggle:hover {
     color: var(--accent);
-    border-color: rgba(99, 102, 241, 0.4);
+    background: rgba(99, 102, 241, 0.1);
     transform: rotate(15deg);
 }
 
@@ -388,6 +387,9 @@ html.theme-light .compat-logo {
        headline gets the full width (the three CTAs always fit one row) and the
        demo stacks underneath, matching the demo's own 1024px breakpoint. */
     grid-template-columns: minmax(0, 1fr);
+    align-content: center;
+    /* Keep the whole hero vertically centered. Do not use grid alignment to fix
+       the demo top edge; that moves the headline and breaks the hero balance. */
     align-items: center;
     gap: 3rem;
     text-align: left;
@@ -654,6 +656,17 @@ html.theme-light .koala-speech-bubble::after {
 .btn-secondary:hover {
     background: #2d3748;
     transform: translateY(-2px);
+}
+
+.btn-demo-mobile {
+    display: none;
+    border: 1px solid rgba(99, 102, 241, 0.34);
+    cursor: pointer;
+    font: inherit;
+}
+
+.btn-demo-mobile svg {
+    flex-shrink: 0;
 }
 
 /* Install buttons: compact by default (just the browser name) so all three
@@ -1214,22 +1227,21 @@ input:checked + .mock-slider:before {
     margin-top: 4rem;
 }
 
-/* Combined use-cases + feature tiles grid */
-.features-grid-combined {
-    margin-top: 2rem;
-    scroll-margin-top: 100px;
-}
-
-.features-grid-combined .feature-card {
+.feature-card.feature-card-compact {
     padding: 1.8rem;
+    border-radius: 16px;
 }
 
-.features-grid-combined .feature-card h3 {
+.feature-card.feature-card-compact::before {
+    border-radius: 16px;
+}
+
+.feature-card.feature-card-compact h3 {
     font-size: 1.1rem;
     margin-bottom: 0.75rem;
 }
 
-.features-grid-combined .feature-card p {
+.feature-card.feature-card-compact p {
     font-size: 0.9rem;
 }
 
@@ -2612,7 +2624,7 @@ html:not(.lang-de) [lang="de"] {
 .feature-card:nth-child(8) { --card-accent: rgba(16, 185, 129, 0.06); }
 
 .feature-card {
-    background: linear-gradient(135deg, var(--card-accent, transparent), var(--card));
+    background: linear-gradient(135deg, var(--card-accent, transparent), rgba(30, 41, 59, 0.45));
 }
 
 /* --- Compatibility Section --- */
@@ -2673,6 +2685,37 @@ html:not(.lang-de) [lang="de"] {
     width: 28px;
     height: 28px;
     display: block;
+}
+
+.compat-logo img.compat-logo-wide {
+    width: 52px;
+    height: 28px;
+    object-fit: contain;
+}
+
+.compat-logo-disneyplus {
+    opacity: 0.82;
+}
+
+.compat-logo-disneyplus:hover {
+    opacity: 1;
+}
+
+.compat-logo-disneyplus span {
+    color: var(--text);
+}
+
+.compat-logo img.compat-logo-disneyplus-mark {
+    width: 76px;
+    height: 36px;
+    object-fit: contain;
+    filter: brightness(0) invert(1) drop-shadow(0 0 10px rgba(255, 255, 255, 0.18));
+    opacity: 0.94;
+}
+
+html.theme-light .compat-logo img.compat-logo-disneyplus-mark {
+    filter: none;
+    opacity: 1;
 }
 
 .compat-more {
@@ -2783,6 +2826,24 @@ html:not(.lang-de) [lang="de"] {
     grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
     gap: 2rem;
     margin-top: 1rem;
+}
+
+.use-cases-feature-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+@media (max-width: 900px) {
+    .use-cases-feature-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 1.25rem;
+    }
+}
+
+@media (max-width: 600px) {
+    .use-cases-feature-grid {
+        grid-template-columns: minmax(0, 1fr);
+        gap: 1rem;
+    }
 }
 
 .use-case-card {
@@ -3566,7 +3627,11 @@ header[id] {
 /* Fixed height that already fits the open popup, so toggling it never changes
    layout (the vertically centered hero never jumps). The caption is absolutely
    positioned right under the cards instead of after the tall scene, and the
-   empty lower area is the invisible room the popup drops into. */
+   empty lower area is the invisible room the popup drops into.
+
+   Do not move .hero-mockup-wrapper down to align the headline and demo tops:
+   the extension popup is bottom-anchored inside this scene, so moving the whole
+   wrapper destroys the vertical balance and leaves no breathing room below. */
 .hero-demo-scene {
     position: relative;
     width: 100%;
@@ -3655,7 +3720,7 @@ header[id] {
 /* Card A = the foreground window at the top right ("your" browser,
    hosts the extension icon in its toolbar) */
 .demo-tab-a {
-    top: 22px;
+    top: 49px;
     right: -3%;
     transform: rotate(1.2deg);
     transform-origin: top right;
@@ -3671,7 +3736,7 @@ header[id] {
 /* Card B = the friend's window, lower left, tucked behind */
 .demo-tab-b {
     top: 142px;
-    top: calc(20cqw + 40px);
+    top: calc(20cqw + 67px);
     left: -3%;
     transform: rotate(-1.6deg);
     transform-origin: top left;
@@ -3686,6 +3751,7 @@ header[id] {
 
 /* When the popup slides in from the right edge, the tabs step aside */
 .hero-demo-scene.popup-open .demo-tab-a {
+    top: 22px;
     transform: rotate(1deg) translate(-44%, 20%) scale(0.88);
 }
 
@@ -3696,6 +3762,7 @@ header[id] {
 }
 
 .hero-demo-scene.popup-open .demo-tab-b {
+    top: calc(20cqw + 40px);
     transform: rotate(-1.6deg) translate(0, 14%) scale(0.94);
 }
 
@@ -4040,6 +4107,14 @@ header[id] {
     margin: 0;
     transform-origin: top right;
     transition: transform 0.45s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.35s, visibility 0.45s;
+}
+
+@media (min-width: 1025px) {
+    .hero-demo-scene .extension-mockup {
+        /* Keep the opened extension panel vertically balanced in the hero.
+           Move the popup itself, never the whole hero/demo wrapper. */
+        bottom: 3.375rem;
+    }
 }
 
 .hero-demo-scene:not(.popup-open) .extension-mockup {
@@ -4688,9 +4763,157 @@ header[id] {
     background: #ef4444;
 }
 
-/* Mobile & Tablet Stacked: completely hide the extension demo mockup when it wraps below the text */
-@media (max-width: 768px) {
-    .hero-mockup-wrapper {
+/* Phone and portrait-tablet widths: keep the full hero demo out of the page
+   flow. The demo modal mounts the same node in its own fixed layer. */
+@media (max-width: 900px) {
+    .hero-grid > .hero-mockup-wrapper {
         display: none !important;
+    }
+}
+
+@media (max-width: 900px) {
+    .btn-demo-mobile {
+        display: inline-flex;
+    }
+}
+
+body.mobile-demo-open {
+    overflow: hidden;
+}
+
+.mobile-demo-modal[hidden] {
+    display: none;
+}
+
+.mobile-demo-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 2400;
+    display: grid;
+    place-items: end center;
+    padding: 0.75rem;
+}
+
+.mobile-demo-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(2, 6, 23, 0.78);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+}
+
+.mobile-demo-panel {
+    position: relative;
+    z-index: 1;
+    width: min(100%, 760px);
+    max-height: min(calc(100dvh - 0.75rem), 760px);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    background: rgba(15, 23, 42, 0.96);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 18px 18px 12px 12px;
+    box-shadow: 0 28px 80px rgba(0, 0, 0, 0.55);
+}
+
+.mobile-demo-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.85rem 0.95rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    flex-shrink: 0;
+}
+
+.mobile-demo-header h2 {
+    margin: 0;
+    font-size: 0.95rem;
+    line-height: 1.2;
+    color: var(--text);
+}
+
+.mobile-demo-close {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 38px;
+    height: 38px;
+    padding: 0;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 10px;
+    background: rgba(30, 41, 59, 0.72);
+    color: var(--text);
+    cursor: pointer;
+    flex-shrink: 0;
+}
+
+.mobile-demo-stage {
+    position: relative;
+    flex: 1;
+    min-height: 0;
+    overflow: auto;
+    padding: 1rem 0.75rem 1.25rem;
+    overscroll-behavior: contain;
+}
+
+.mobile-demo-stage .hero-mockup-wrapper {
+    display: flex !important;
+    width: min(100%, 560px);
+    margin: 0 auto;
+    transform: none;
+    will-change: auto;
+}
+
+.mobile-demo-stage .hero-demo-scene,
+.mobile-demo-stage .hero-demo-scene.popup-open {
+    position: relative;
+    width: 100%;
+    height: max(calc(59cqw + 100px), 548px);
+    max-width: none;
+    margin: 0 auto;
+}
+
+.mobile-demo-stage .demo-tab-card {
+    display: block !important;
+}
+
+.mobile-demo-stage .demo-sync-chip {
+    display: inline-flex !important;
+}
+
+.mobile-demo-stage .demo-cursor {
+    display: block !important;
+}
+
+.mobile-demo-stage .demo-hint {
+    display: block !important;
+}
+
+.mobile-demo-stage .hero-demo-scene .extension-mockup,
+.mobile-demo-stage .hero-demo-scene:not(.popup-open) .extension-mockup {
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    z-index: 5;
+    width: min(320px, 66cqw);
+    transform-origin: top right;
+    transition: transform 0.45s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.35s, visibility 0.45s;
+}
+
+.mobile-demo-stage .hero-demo-scene:not(.popup-open) .extension-mockup {
+    transform: translate(2%, -3%) scale(0.5);
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+}
+
+@media (max-width: 380px) {
+    .mobile-demo-modal {
+        padding: 0.4rem;
+    }
+
+    .mobile-demo-stage {
+        padding-inline: 0.45rem;
     }
 }
