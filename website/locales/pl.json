@@ -49,7 +49,7 @@
   "FEATURE_3_TITLE": "Zero kont / Czysta prywatność",
   "FEATURE_3_DESC": "Bez rejestracji, bez śledzenia, bez trwałych śladów. Serwer działa w całości w pamięci RAM i czyści Twój pokój, gdy go opuszczasz.",
   "FEATURE_4_TITLE": "Uniwersalne wsparcie HTML5",
-  "FEATURE_4_DESC": "Działa na YouTube, Twitch, Netflix, Jellyfin, Emby i prawie każdej standardowej stronie z elementem wideo HTML5. Kompatybilny również z własnymi serwerami. Żadne dane wideo nigdy nie są wysyłane na nasze serwery, jedynie metadane synchronizacji.",
+  "FEATURE_4_DESC": "Netflix, YouTube, Twitch, Jellyfin, Emby i niemal każda strona z wideo HTML5. Przeglądarkę opuszczają tylko sygnały synchronizacji, nigdy wideo.",
   "FEATURE_5_TITLE": "Możliwość własnego hostowania i wsparcie Docker",
   "FEATURE_5_DESC": "Nasze oficjalne serwery są darmowe i szybkie, ale możesz przejąć pełną kontrolę, jeśli chcesz. Uruchom własny serwer w kilka sekund za pomocą Dockera.",
   "FEATURE_6_TITLE": "Natychmiastowe zaproszenia / Dołączanie 1 kliknięciem",

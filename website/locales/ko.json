@@ -49,7 +49,7 @@
   "FEATURE_3_TITLE": "계정 없음 / 완전한 개인정보 보호",
   "FEATURE_3_DESC": "회원가입 없음, 추적 없음, 흔적을 남기지 않습니다. 서버는 휘발성 RAM에서만 완전히 실행되며 방을 나가면 영구히 삭제됩니다.",
   "FEATURE_4_TITLE": "범용 HTML5 지원",
-  "FEATURE_4_DESC": "YouTube, Twitch, Netflix, Jellyfin, Emby 및 HTML5 비디오 요소가 포함된 거의 모든 웹 페이지에서 작동합니다. 사용자 정의 자체 호스팅 설정과도 호환됩니다. 비디오 데이터는 당사 서버로 절대 전송되지 않으며, 동기화 메타데이터만 전송됩니다.",
+  "FEATURE_4_DESC": "Netflix, YouTube, Twitch, Jellyfin, Emby 등 HTML5 영상이 있는 거의 모든 페이지에서 작동합니다. 브라우저를 떠나는 것은 동기화 신호뿐, 영상은 아닙니다.",
   "FEATURE_5_TITLE": "자체 호스팅 가능 및 Docker 지원",
   "FEATURE_5_DESC": "공식 서버는 무료이며 빠르지만, 원하는 경우 직접 호스팅할 수도 있습니다. Docker를 통해 몇 초 만에 나만의 개인 릴레이 서버를 구축해 보세요.",
   "FEATURE_6_TITLE": "즉시 초대 / 클릭 한 번으로 참여",

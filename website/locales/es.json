@@ -49,7 +49,7 @@
   "FEATURE_3_TITLE": "Sin cuentas / Privacidad absoluta",
   "FEATURE_3_DESC": "Sin registros, sin seguimiento y sin dejar huella. El servidor funciona completamente en RAM efímera y elimina tu sala en cuanto te vas.",
   "FEATURE_4_TITLE": "Soporte universal HTML5",
-  "FEATURE_4_DESC": "Funciona en YouTube, Twitch, Netflix, Jellyfin, Emby y casi cualquier página web estándar con un reproductor HTML5. También es compatible con configuraciones propias. Nunca enviamos datos de vídeo a nuestros servidores, solo metadatos de sincronización.",
+  "FEATURE_4_DESC": "Netflix, YouTube, Twitch, Jellyfin, Emby y casi cualquier página con vídeo HTML5. Solo salen las señales de sincronización, nunca el vídeo.",
   "FEATURE_5_TITLE": "Auto-alojable y listo para Docker",
   "FEATURE_5_DESC": "Nuestros servidores oficiales son gratuitos y rápidos, pero puedes tomar el control total si lo deseas. Inicia tu propio servidor de retransmisión privado en segundos mediante Docker.",
   "FEATURE_6_TITLE": "Invitaciones al instante / Unirse con un clic",

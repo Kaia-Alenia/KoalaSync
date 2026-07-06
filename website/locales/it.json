@@ -49,7 +49,7 @@
   "FEATURE_3_TITLE": "Senza Account / Privacy Totale",
   "FEATURE_3_DESC": "Niente registrazioni o tracciamenti. Il server non salva nulla e cancella la tua stanza appena te ne vai.",
   "FEATURE_4_TITLE": "Supporto HTML5 Universale",
-  "FEATURE_4_DESC": "Funziona su YouTube, Twitch, Netflix, Jellyfin, Emby e quasi ogni pagina web. Nessun dato video viene inviato ai nostri server.",
+  "FEATURE_4_DESC": "Netflix, YouTube, Twitch, Jellyfin, Emby e quasi ogni pagina con video HTML5. Escono solo i segnali di sync, mai il video.",
   "FEATURE_5_TITLE": "Ospitabile in Proprio (Docker)",
   "FEATURE_5_DESC": "I nostri server sono veloci, ma puoi gestire il tuo server privato in pochi secondi tramite Docker.",
   "FEATURE_6_TITLE": "Inviti Rapidi / Un clic per entrare",

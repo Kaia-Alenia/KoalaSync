@@ -49,7 +49,7 @@
   "FEATURE_3_TITLE": "Geen accounts / Pure privacy",
   "FEATURE_3_DESC": "Geen registratie, geen tracking, geen permanente voetafdruk. De server draait volledig in het tijdelijke RAM en wist uw kamer wanneer u vertrekt.",
   "FEATURE_4_TITLE": "Universele HTML5-ondersteuning",
-  "FEATURE_4_DESC": "Werkt op YouTube, Twitch, Netflix, Jellyfin, Emby en bijna elke standaard webpagina met een HTML5-video-element. Ook compatibel met aangepaste zelfgehoste installaties. Er worden nooit videogegevens naar onze servers verzonden, alleen synchronisatiemetagegevens.",
+  "FEATURE_4_DESC": "Netflix, YouTube, Twitch, Jellyfin, Emby en vrijwel elke pagina met HTML5-video. Alleen sync-signalen verlaten je browser, nooit de video.",
   "FEATURE_5_TITLE": "Zelf te hosten & Docker-ready",
   "FEATURE_5_DESC": "Onze officiële servers zijn gratis en snel, maar u kunt de volledige controle nemen als u dat wilt. Start uw eigen privé-relayserver in seconden via Docker.",
   "FEATURE_6_TITLE": "Directe uitnodigingen / 1-klik deelname",

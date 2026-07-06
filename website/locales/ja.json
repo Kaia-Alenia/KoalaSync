@@ -49,7 +49,7 @@
   "FEATURE_3_TITLE": "アカウント不要 / 純粋なプライバシー",
   "FEATURE_3_DESC": "登録不要、追跡なし、履歴も残りません。サーバーは一時的なメモリ（RAM）上でのみ動作し、退出時にルームを完全に消去します。",
   "FEATURE_4_TITLE": "ユニバーサルHTML5サポート",
-  "FEATURE_4_DESC": "YouTube、Twitch、Netflix、Jellyfin、Emby、およびHTML5ビデオ要素を含むほぼすべての標準的なWebページで動作します。独自のセルフホスト設定とも互換性があります。動画データがサーバーに送信されることはなく、同期用のメタデータのみが送信されます。",
+  "FEATURE_4_DESC": "Netflix、YouTube、Twitch、Jellyfin、Emby、そしてHTML5動画があるほぼすべてのページに対応。ブラウザから出るのは同期信号だけで、動画自体は送信されません。",
   "FEATURE_5_TITLE": "セルフホスト可能＆Docker対応",
   "FEATURE_5_DESC": "公式サーバーは無料で高速ですが、必要に応じて独自のサーバーを構築できます。Dockerを使用して、数秒でプライベートリレーサーバーを起動できます。",
   "FEATURE_6_TITLE": "インスタント招待 / 1クリック参加",

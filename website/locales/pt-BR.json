@@ -49,7 +49,7 @@
   "FEATURE_3_TITLE": "Sem Contas / Privacidade Absoluta",
   "FEATURE_3_DESC": "Sem cadastros ou rastreio. O servidor roda apenas na RAM e apaga sua sala assim que você sai.",
   "FEATURE_4_TITLE": "Suporte HTML5 Universal",
-  "FEATURE_4_DESC": "Funciona no YouTube, Twitch, Netflix, Jellyfin, Emby e em qualquer site web. Nenhum dado de vídeo é enviado a nós.",
+  "FEATURE_4_DESC": "Netflix, YouTube, Twitch, Jellyfin, Emby e quase qualquer página com vídeo HTML5. Só saem os sinais de sincronização, nunca o vídeo.",
   "FEATURE_5_TITLE": "Servidores Próprios (Docker)",
   "FEATURE_5_DESC": "Nossos servidores são gratuitos, mas você pode assumir o controle total e iniciar seu próprio servidor privado em segundos com Docker.",
   "FEATURE_6_TITLE": "Convites Rápidos / Entrar com 1 Clique",

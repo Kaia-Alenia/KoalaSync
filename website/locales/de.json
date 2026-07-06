@@ -49,7 +49,7 @@
   "FEATURE_3_TITLE": "Keine Accounts / Datenschutz",
   "FEATURE_3_DESC": "Kein Login. Keine Daten. Einfach Link teilen und schauen. Der Server läuft flüchtig im RAM und löscht deinen Raum komplett nach dem Verlassen.",
   "FEATURE_4_TITLE": "Universeller HTML5-Support",
-  "FEATURE_4_DESC": "Unterstützt YouTube, Twitch, Netflix, Jellyfin, Emby und fast jede beliebige Webseite mit einem HTML5-Video-Tag. Ideal auch für eigene Medienbibliotheken. Es werden keinerlei Videodaten an unsere Server gesendet, nur Synchronisations-Metadaten.",
+  "FEATURE_4_DESC": "Netflix, YouTube, Twitch, Jellyfin, Emby und fast jede Seite mit HTML5-Video. Nur Sync-Signale verlassen deinen Browser, nie das Video.",
   "FEATURE_5_TITLE": "Self-Hostable & Docker-Ready",
   "FEATURE_5_DESC": "Unsere Server sind kostenlos und schnell, aber du kannst auch die volle Kontrolle übernehmen, wenn du willst. Starte dein eigenes privates Relay in Sekunden via Docker.",
   "FEATURE_6_TITLE": "Direkte Einladungen & 1-Klick Beitritt",

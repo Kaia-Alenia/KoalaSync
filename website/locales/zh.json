@@ -49,7 +49,7 @@
   "FEATURE_3_TITLE": "零账户/纯粹隐私",
   "FEATURE_3_DESC": "没有注册，没有跟踪，没有持久性足迹。服务器完全在临时 RAM 中运行，并在您离开时清理您的房间。",
   "FEATURE_4_TITLE": "通用 HTML5 支持",
-  "FEATURE_4_DESC": "适用于 YouTube、Twitch、Netflix、Jellyfin、Emby 以及几乎任何包含 HTML5 视频元素的标准网页。还与自定义自托管设置兼容。不会将任何视频数据发送到我们的服务器，仅发送同步元数据。",
+  "FEATURE_4_DESC": "支持 Netflix、YouTube、Twitch、Jellyfin、Emby 以及几乎任何含 HTML5 视频的页面。离开浏览器的只有同步信号，绝不包含视频本身。",
   "FEATURE_5_TITLE": "自托管和 Docker 就绪",
   "FEATURE_5_DESC": "我们的官方服务器是免费且快速的，但如果您愿意，您可以完全拥有所有权。通过 Docker 在几秒钟内启动您自己的私有中继服务器。",
   "FEATURE_6_TITLE": "即时邀请/一键加入",

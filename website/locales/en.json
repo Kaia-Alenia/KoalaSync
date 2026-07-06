@@ -49,7 +49,7 @@
   "FEATURE_3_TITLE": "Zero Accounts / Pure Privacy",
   "FEATURE_3_DESC": "No registration, no tracking, no persistency footprints. The server runs entirely in ephemeral RAM and purges your room when you leave.",
   "FEATURE_4_TITLE": "Universal HTML5 Support",
-  "FEATURE_4_DESC": "Works on YouTube, Twitch, Netflix, Jellyfin, Emby, and almost any standard webpage containing a HTML5 video element. Also compatible with custom self-hosted setups. No video data is ever sent to our servers, only synchronization metadata.",
+  "FEATURE_4_DESC": "Netflix, YouTube, Twitch, Jellyfin, Emby and almost any page with an HTML5 video. Only sync signals leave your browser, never the video.",
   "FEATURE_5_TITLE": "Self-Hostable & Docker-Ready",
   "FEATURE_5_DESC": "Our official servers are free and fast, but you can take full ownership if you want to. Launch your own private relay server in seconds via Docker.",
   "FEATURE_6_TITLE": "Instant Invites / 1-Click Join",

@@ -49,7 +49,7 @@
   "FEATURE_3_TITLE": "Aucun compte / Vie privée garantie",
   "FEATURE_3_DESC": "Pas d'inscription, pas de suivi, pas de stockage de données. Le serveur fonctionne entièrement dans une RAM éphémère et supprime votre salon dès votre départ.",
   "FEATURE_4_TITLE": "Support HTML5 universel",
-  "FEATURE_4_DESC": "Fonctionne sur YouTube, Twitch, Netflix, Jellyfin, Emby et presque n'importe quelle page web standard contenant un élément vidéo HTML5. Également compatible avec les installations personnalisées. Aucune donnée vidéo n'est envoyée à nos serveurs, seules les métadonnées de synchronisation.",
+  "FEATURE_4_DESC": "Netflix, YouTube, Twitch, Jellyfin, Emby et presque toute page avec une vidéo HTML5. Seuls les signaux de sync quittent le navigateur, jamais la vidéo.",
   "FEATURE_5_TITLE": "Hébergeable soi-même & prêt pour Docker",
   "FEATURE_5_DESC": "Nos serveurs officiels sont gratuits et rapides, mais vous pouvez prendre le contrôle total si vous le souhaitez. Lancez votre propre serveur relais privé en quelques secondes via Docker.",
   "FEATURE_6_TITLE": "Invitations instantanées / Rejoindre en 1 clic",
