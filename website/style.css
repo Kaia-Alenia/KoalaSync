@@ -384,7 +384,10 @@ html.theme-light .compat-logo {
 
 .hero-grid {
     display: grid;
-    grid-template-columns: 1.55fr 0.75fr;
+    /* Single column until the interactive demo appears (1024px). Below that the
+       headline gets the full width (the three CTAs always fit one row) and the
+       demo stacks underneath, matching the demo's own 1024px breakpoint. */
+    grid-template-columns: minmax(0, 1fr);
     align-items: center;
     gap: 3rem;
     text-align: left;
@@ -2459,12 +2462,6 @@ footer a:hover {
     }
     .legal-card {
         padding: 1.5rem;
-    }
-}
-
-@media (min-width: 769px) and (max-width: 1200px) {
-    .hero-grid {
-        grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
     }
 }
 
