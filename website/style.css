@@ -3475,13 +3475,14 @@ header[id] {
     container-type: inline-size;
 }
 
-/* The scene always reserves the height of the open-popup state, so the
-   walkthrough toggling the popup never changes layout height (no vertical
-   jumping of the hero or the content below). */
+/* Fixed scene height: stays below the left hero column's height so it never
+   drives the grid row, and never changes when the popup toggles (no vertical
+   jumping). The popup is bottom-anchored and simply grows upwards on open. */
 .hero-demo-scene {
     position: relative;
     width: 100%;
-    height: 600px;
+    height: 500px;
+    height: max(calc(66cqw + 78px), 500px);
 }
 
 /* While initializing, suppress all transitions so the popup can start closed
@@ -3931,7 +3932,7 @@ header[id] {
    the toolbar icon of the foreground window */
 .hero-demo-scene .extension-mockup {
     position: absolute;
-    top: 64px;
+    bottom: 0;
     right: 0;
     z-index: 5;
     width: 292px;
