@@ -465,6 +465,18 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
+    // The hero demo is a decorative, self-playing illustration; the real,
+    // accessible walkthrough is the #how-it-works section. Hide the fake
+    // extension UI from the accessibility tree and drop its controls from the
+    // tab order so screen readers are not confused and it does not trip
+    // contrast/label audits. Mouse interaction is unaffected.
+    const heroDemoScene = document.getElementById('hero-demo');
+    if (heroDemoScene) {
+        heroDemoScene.setAttribute('aria-hidden', 'true');
+        heroDemoScene.querySelectorAll('a[href], button, input, select, textarea, [tabindex]')
+            .forEach(el => el.setAttribute('tabindex', '-1'));
+    }
+
     // --- Hero Live Demo (two synced video tabs + extension popup) ---
     // Desktop only: on mobile the scene falls back to the classic static popup.
     const initHeroDemo = () => {

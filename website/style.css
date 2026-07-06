@@ -1060,6 +1060,31 @@ html.theme-light .koala-speech-bubble::after {
 .mock-btn-pause:hover { background: #dc2626; }
 .mock-btn-force { background: var(--accent); grid-column: span 2; }
 
+/* Contrast-safe palette for the decorative hero demo. Lighthouse/axe audits
+   sighted text contrast even inside aria-hidden, so every walkthrough state
+   must meet WCAG AA. Accent shown as text gets a lighter indigo; buttons that
+   put white text on a colour get a darker shade (these beat inline styles). */
+.hero-demo-scene {
+    --accent: #a5b4fc;
+}
+.hero-demo-scene .mock-tab.active,
+.hero-demo-scene .mock-btn-force,
+.hero-demo-scene #demo-force-sync,
+.hero-demo-scene .demo-create-room-btn {
+    background: #4338ca !important;
+    color: #fff;
+}
+.hero-demo-scene .mock-btn-play {
+    background: #15803d !important;
+}
+.hero-demo-scene .mock-btn-pause,
+.hero-demo-scene #demo-room-joined > button.mock-btn {
+    background: #b91c1c !important;
+}
+.hero-demo-scene .mock-version-link {
+    opacity: 0.85;
+}
+
 .mock-status-display {
     display: flex;
     align-items: center;
