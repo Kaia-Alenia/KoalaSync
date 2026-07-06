@@ -55,7 +55,7 @@
   "FEATURE_6_TITLE": "Invitaciones al instante / Unirse con un clic",
   "FEATURE_6_DESC": "Sin intercambio de direcciones IP o contraseñas. Comparte un enlace de invitación generado para que tus amigos se unan automáticamente a tu sala con un solo clic.",
   "FEATURE_7_TITLE": "Nivelación de volumen / Compresor de audio",
-  "FEATURE_7_DESC": "Se acabó el tener que ajustar el volumen constantemente. El compresor de audio integrado realza los diálogos bajos y suaviza las explosiones fuertes. Funciona en Netflix, Prime Video, Disney+, YouTube y cualquier video HTML5. Funciona de forma local: ningún dato de audio sale de tu equipo.",
+  "FEATURE_7_DESC": "Se acabó ajustar el volumen. Un compresor integrado sube los diálogos bajos y suaviza las explosiones fuertes, todo procesado localmente en tu navegador.",
   "FEATURE_8_TITLE": "Código Abierto (Licencia MIT)",
   "FEATURE_8_DESC": "Todo el código fuente es público y auditable en GitHub. Sin cajas negras ni software propietario: transparencia total desde el servidor de retransmisión hasta la extensión del navegador.",
   "COMP_TITLE": "KoalaSync vs Teleparty",

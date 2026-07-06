@@ -55,7 +55,7 @@
   "FEATURE_6_TITLE": "Direkte Einladungen & 1-Klick Beitritt",
   "FEATURE_6_DESC": "Keine lästigen IPs oder Passwörter austauschen. Teile einfach einen Einladungslink mit deinen Freunden, um sie mit einem Klick in den Raum zu holen.",
   "FEATURE_7_TITLE": "Lautstärke Angleichen / Audio Compressor",
-  "FEATURE_7_DESC": "Nie wieder am Lautstärkeregler spielen. Der eingebaute Audio Compressor verstärkt leise Dialoge und zähmt laute Explosionen. Funktioniert auf Netflix, Prime Video, Disney+, YouTube und jedem HTML5-Video. Komplett lokal, keine Audiodaten verlassen deinen Computer.",
+  "FEATURE_7_DESC": "Nie wieder am Lautstärkeregler spielen. Ein eingebauter Kompressor hebt leise Dialoge an und dämpft laute Explosionen, alles lokal im Browser verarbeitet.",
   "FEATURE_8_TITLE": "Open Source (MIT-Lizenz)",
   "FEATURE_8_DESC": "Der gesamte Quellcode ist auf GitHub öffentlich einsehbar. Keine Black Boxes, keine proprietären Teile. 100 % Transparenz vom Relay-Server bis zur Browser-Erweiterung.",
   "COMP_TITLE": "KoalaSync vs. Teleparty",

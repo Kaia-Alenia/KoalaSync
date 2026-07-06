@@ -55,7 +55,7 @@
   "FEATURE_6_TITLE": "Natychmiastowe zaproszenia / Dołączanie 1 kliknięciem",
   "FEATURE_6_DESC": "Bez wymiany adresów IP czy haseł. Udostępnij wygenerowany link zaproszenia znajomym, aby mogli automatycznie dołączyć do pokoju jednym kliknięciem.",
   "FEATURE_7_TITLE": "Wyrównywanie głośności / Kompresor audio",
-  "FEATURE_7_DESC": "Koniec z ciągłym regulowaniem głośności. Wbudowany kompresor audio wzmacnia ciche dialogi i łagodzi głośne eksplozje. Działa na Netflix, Prime Video, Disney+, YouTube i każdym filmie HTML5. W pełni lokalny, żadne dane audio nie opuszczają twojego komputera.",
+  "FEATURE_7_DESC": "Koniec z ciągłym regulowaniem głośności. Wbudowany kompresor podbija ciche dialogi i wycisza głośne wybuchy, a wszystko przetwarzane lokalnie w przeglądarce.",
   "FEATURE_8_TITLE": "Open Source (Licencja MIT)",
   "FEATURE_8_DESC": "Cały kod źródłowy jest publicznie dostępny i możliwy do zweryfikowania na GitHubie. Żadnych czarnych skrzynek, żadnych własnościowych obiektów blob. 100% przejrzystości od serwera przekaźnikowego (relay server) po rozszerzenie przeglądarki.",
   "COMP_TITLE": "KoalaSync vs. Teleparty",

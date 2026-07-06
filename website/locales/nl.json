@@ -55,7 +55,7 @@
   "FEATURE_6_TITLE": "Directe uitnodigingen / 1-klik deelname",
   "FEATURE_6_DESC": "Geen IP-adressen of wachtwoorden om uit te wisselen. Deel een gegenereerde uitnodigingslink met uw vrienden om ze met een enkele klik automatisch deel te laten nemen.",
   "FEATURE_7_TITLE": "Volume egaliseren / Audiocompressor",
-  "FEATURE_7_DESC": "Niet langer aan de volumeknop zitten. De ingebouwde audiocompressor versterkt stille dialogen en dempt harde explosies. Werkt op Netflix, Prime Video, Disney+, YouTube en elke HTML5-video. Volledig lokaal, geen audiogegevens verlaten uw computer.",
+  "FEATURE_7_DESC": "Nooit meer aan de volumeknop draaien. Een ingebouwde compressor tilt stille dialogen op en temt luide explosies, allemaal lokaal in je browser verwerkt.",
   "FEATURE_8_TITLE": "Open Source (MIT License)",
   "FEATURE_8_DESC": "De volledige codebase is openbaar controleerbaar op GitHub. Geen zwarte dozen, geen propri?taire blobs - 100% transparantie van de relayserver tot de browserextensie.",
   "COMP_TITLE": "KoalaSync vs. Teleparty",

@@ -55,7 +55,7 @@
   "FEATURE_6_TITLE": "Instant Invites / 1-Click Join",
   "FEATURE_6_DESC": "No IP addresses or passwords to exchange. Share a generated invite link with your friends to let them join your room automatically with a single click.",
   "FEATURE_7_TITLE": "Volume Leveling / Audio Compressor",
-  "FEATURE_7_DESC": "No more riding the volume knob. Built-in audio compressor boosts quiet dialogue and tames loud explosions. Works on Netflix, Prime Video, Disney+, YouTube, and any HTML5 video. Completely local, no audio data leaves your computer.",
+  "FEATURE_7_DESC": "No more riding the volume knob. A built-in compressor lifts quiet dialogue and tames loud explosions, all processed locally in your browser.",
   "FEATURE_8_TITLE": "Open Source (MIT License)",
   "FEATURE_8_DESC": "The entire codebase is publicly auditable on GitHub. No black boxes, no proprietary blobs. 100% transparency from the relay server to the browser extension.",
   "COMP_TITLE": "KoalaSync vs. Teleparty",

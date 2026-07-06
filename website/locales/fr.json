@@ -55,7 +55,7 @@
   "FEATURE_6_TITLE": "Invitations instantanées / Rejoindre en 1 clic",
   "FEATURE_6_DESC": "Pas d'adresses IP ou de mots de passe à échanger. Partagez un lien d'invitation généré pour permettre à vos amis de rejoindre automatiquement votre salon en un seul clic.",
   "FEATURE_7_TITLE": "Égalisation du volume / Compresseur audio",
-  "FEATURE_7_DESC": "Fini de jouer avec le bouton du volume. Le compresseur audio intégré booste les dialogues discrets et adoucit les explosions. Fonctionne sur Netflix, Prime Video, Disney+, YouTube et toute vidéo HTML5. Entièrement local, aucune donnée audio ne quitte votre ordinateur.",
+  "FEATURE_7_DESC": "Fini de jouer avec le bouton du volume. Un compresseur intégré rehausse les dialogues discrets et adoucit les explosions, le tout traité localement.",
   "FEATURE_8_TITLE": "Open Source (MIT License)",
   "FEATURE_8_DESC": "Tout le code source est publiquement auditable sur GitHub. Pas de boite noire, pas de blob proprietaire - transparence totale du serveur relais a l'extension de navigateur.",
   "COMP_TITLE": "KoalaSync vs Teleparty",

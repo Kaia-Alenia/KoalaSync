@@ -55,7 +55,7 @@
   "FEATURE_6_TITLE": "即时邀请/一键加入",
   "FEATURE_6_DESC": "无需交换 IP 地址或密码。与您的朋友分享生成的邀请链接，让他们只需单击一下即可自动加入您的房间。",
   "FEATURE_7_TITLE": "音量调节/音频压缩器",
-  "FEATURE_7_DESC": "不再需要调节音量旋钮。内置音频压缩器可增强安静的对话并抑制大声的爆炸声。适用于 Netflix、Prime Video、Disney+、YouTube 和任何 HTML5 视频。完全本地化处理，音频数据不会离开您的计算机。",
+  "FEATURE_7_DESC": "不用再调音量了。内置压缩器会提升安静的对话、抑制响亮的爆炸声，全部在浏览器本地处理。",
   "FEATURE_8_TITLE": "开源（MIT 许可证）",
   "FEATURE_8_DESC": "整个代码库可在 GitHub 上公开审核。没有黑匣子，没有专有 blob，从中继服务器到浏览器扩展 100% 透明。",
   "COMP_TITLE": "KoalaSync 与 Teleparty",

@@ -55,7 +55,7 @@
   "FEATURE_6_TITLE": "Anında Davetler / Tek Tıkla Katılım",
   "FEATURE_6_DESC": "Takas edilecek IP adresi veya şifre yok. Arkadaşlarınızın tek bir tıklamayla odanıza otomatik olarak katılması için oluşturulan bir davet bağlantısını paylaşın.",
   "FEATURE_7_TITLE": "Ses Seviyesi Dengeleme / Ses Sıkıştırıcı",
-  "FEATURE_7_DESC": "Ses düğmesiyle sürekli oynamak yok. Dahili ses sıkıştırıcı, sessiz diyalogları güçlendirir ve yüksek patlamaları yumuşatır. Netflix, Prime Video, Disney+, YouTube ve herhangi bir HTML5 videosunda çalışır. Tamamen yerel, hiçbir ses verisi bilgisayarınızı terk etmez.",
+  "FEATURE_7_DESC": "Ses düğmesiyle uğraşmak yok. Yerleşik bir kompresör kısık diyalogları yükseltir, gürültülü patlamaları yumuşatır; hepsi tarayıcında yerel olarak işlenir.",
   "FEATURE_8_TITLE": "Açık Kaynak (MIT Lisansı)",
   "FEATURE_8_DESC": "Tüm kod tabanı GitHub'da herkese açık olarak incelenebilir. Kapalı kutular yok, tescilli blob'lar yok, aktarma sunucusundan (relay server) tarayıcı eklentisine kadar %100 şeffaflık.",
   "COMP_TITLE": "KoalaSync vs. Teleparty",
