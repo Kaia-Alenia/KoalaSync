@@ -150,7 +150,7 @@
   "HOWTO_STEP_3_NAME": "Teilen und synchronisieren",
   "HOWTO_STEP_3_TEXT": "Sende den Einladungslink an deine Freunde. Wähle einen Video-Tab aus und genieße synchronisierte Wiedergabe in Echtzeit.",
   "FOOTER_MIT": "Open Source unter der MIT-Lizenz.",
-  "FOOTER_RAM": "Keine Daten werden auf unseren Servern gespeichert. Reines RAM-basiertes Relay.",
+  "FOOTER_RAM": "Keine Relay-Logs. Kein Tracking. Website-Access-Logs werden nach 7 Tagen gelöscht.",
   "FOOTER_LEGAL": "Impressum",
   "FOOTER_PRIVACY": "Datenschutz",
   "MOCK_01": "Aktiver Raum",
