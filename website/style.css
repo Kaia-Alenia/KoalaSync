@@ -326,6 +326,25 @@ html.theme-light .btn-secondary:hover {
     background: #e2e8f0;
 }
 
+html.theme-light .btn-firefox {
+    background: #f97316;
+    color: #ffffff;
+    box-shadow: 0 10px 18px rgba(249, 115, 22, 0.24);
+}
+
+html.theme-light .btn-firefox:hover {
+    background: #ea580c;
+    box-shadow: 0 18px 26px rgba(249, 115, 22, 0.28);
+}
+
+html.theme-light .btn-firefox img {
+    filter: brightness(0) saturate(100%) invert(13%) sepia(38%) saturate(1084%) hue-rotate(177deg) brightness(89%) contrast(96%);
+}
+
+html.theme-light .btn-firefox-secondary img {
+    filter: brightness(0) saturate(100%) invert(13%) sepia(38%) saturate(1084%) hue-rotate(177deg) brightness(89%) contrast(96%);
+}
+
 html.theme-light .comparison-section {
     background: rgba(15, 23, 42, 0.02);
 }
@@ -3217,6 +3236,34 @@ html.theme-light .compat-logo img.compat-logo-disneyplus-mark {
     /* Keep the KoalaSync row subtly highlighted, like on desktop. */
     .comparison-table td.check.highlight {
         background: rgba(99, 102, 241, 0.08);
+    }
+}
+
+@media (max-width: 600px) {
+    html.theme-light .comparison-section {
+        background: transparent;
+    }
+
+    html.theme-light .comparison-table tbody tr {
+        background: #ffffff;
+        border-color: rgba(15, 23, 42, 0.1);
+        box-shadow: 0 8px 20px rgba(15, 23, 42, 0.08);
+    }
+
+    html.theme-light .comparison-table tbody tr:hover {
+        background: #ffffff;
+    }
+
+    html.theme-light .comparison-table td {
+        border-bottom-color: rgba(15, 23, 42, 0.08);
+    }
+
+    html.theme-light .comparison-table td.feat-name {
+        background: #ffffff;
+    }
+
+    html.theme-light .comparison-table td.check.highlight {
+        background: rgba(91, 93, 232, 0.07);
     }
 }
 

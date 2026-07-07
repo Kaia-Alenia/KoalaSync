@@ -1291,7 +1291,7 @@ document.addEventListener('DOMContentLoaded', () => {
             // User is on Chrome: Make Firefox secondary
             firefoxBtns.forEach(btn => {
                 btn.classList.remove('btn-firefox');
-                btn.classList.add('btn-secondary');
+                btn.classList.add('btn-secondary', 'btn-firefox-secondary');
                 btn.style.color = 'var(--text)';
                 btn.style.background = 'var(--card)';
                 btn.style.border = '1px solid var(--glass-border)';
