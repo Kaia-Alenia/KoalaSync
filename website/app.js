@@ -64,16 +64,27 @@ document.addEventListener('DOMContentLoaded', () => {
     // pre-paint class is applied by lang-init.js to avoid a flash)
     const themeToggle = document.getElementById('theme-toggle');
     const themeMeta = document.querySelector('meta[name="theme-color"]');
+    const themeStorageKey = 'koala_theme';
+    const getCurrentTheme = () => document.documentElement.classList.contains('theme-light') ? 'light' : 'dark';
+    const savedTheme = safeGetLocalStorage(themeStorageKey);
+
+    if (savedTheme === 'light') {
+        document.documentElement.classList.add('theme-light');
+    } else if (savedTheme === 'dark') {
+        document.documentElement.classList.remove('theme-light');
+    }
+
     const syncThemeMeta = () => {
         if (themeMeta) {
             themeMeta.setAttribute('content', document.documentElement.classList.contains('theme-light') ? '#f1f5f9' : '#0f172a');
         }
     };
     syncThemeMeta();
+    safeSetLocalStorage(themeStorageKey, getCurrentTheme());
     if (themeToggle) {
         themeToggle.addEventListener('click', () => {
             const isLight = document.documentElement.classList.toggle('theme-light');
-            safeSetLocalStorage('koala_theme', isLight ? 'light' : 'dark');
+            safeSetLocalStorage(themeStorageKey, isLight ? 'light' : 'dark');
             syncThemeMeta();
         });
     }

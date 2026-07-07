@@ -1124,6 +1124,104 @@ html.theme-light .koala-speech-bubble::after {
     opacity: 0.85;
 }
 
+html.theme-light .hero-demo-scene {
+    --accent: #4f46e5;
+}
+
+html.theme-light .hero-demo-scene .extension-mockup {
+    background: #ffffff;
+    border-color: rgba(15, 23, 42, 0.1);
+    box-shadow: 0 22px 52px rgba(15, 23, 42, 0.16), 0 0 0 1px rgba(255, 255, 255, 0.72) inset;
+}
+
+html.theme-light .hero-demo-scene .mock-tabs {
+    background: #eef2ff;
+}
+
+html.theme-light .hero-demo-scene .mock-tab {
+    color: #64748b;
+}
+
+html.theme-light .hero-demo-scene .mock-tab:hover {
+    color: #0f172a;
+}
+
+html.theme-light .hero-demo-scene .mock-tab.active {
+    background: #4f46e5 !important;
+    color: #ffffff;
+}
+
+html.theme-light .hero-demo-scene .mock-card,
+html.theme-light .hero-demo-scene .mock-joined-room,
+html.theme-light .hero-demo-scene .mock-settings-row,
+html.theme-light .hero-demo-scene .mock-diag-box,
+html.theme-light .hero-demo-scene [style*="background: var(--card)"] {
+    background: #f8fafc !important;
+    border-color: #dbe3ef !important;
+}
+
+html.theme-light .hero-demo-scene .mock-input,
+html.theme-light .hero-demo-scene .mock-input[style],
+html.theme-light .hero-demo-scene .popup-select-mock {
+    background: #ffffff !important;
+    border-color: #cbd5e1 !important;
+    color: #0f172a !important;
+}
+
+html.theme-light .hero-demo-scene .mock-peer-item {
+    background: #ffffff;
+    border-color: #e2e8f0;
+}
+
+html.theme-light .hero-demo-scene .mock-server-badge {
+    background: #eef2ff;
+    color: #4f46e5 !important;
+}
+
+html.theme-light .hero-demo-scene #demo-invite-copy,
+html.theme-light .hero-demo-scene .mock-btn[style*="#334155"] {
+    background: #e2e8f0 !important;
+    border: 1px solid #cbd5e1 !important;
+    color: #0f172a !important;
+}
+
+html.theme-light .hero-demo-scene .mock-btn[style*="background:transparent"] {
+    border-color: #cbd5e1 !important;
+    color: #475569 !important;
+}
+
+html.theme-light .hero-demo-scene .mock-close-btn:hover {
+    color: #0f172a;
+    background: #e2e8f0;
+}
+
+html.theme-light .hero-demo-scene .demo-tab-card {
+    background: #ffffff;
+    border-color: rgba(15, 23, 42, 0.1);
+    box-shadow: 0 18px 38px rgba(15, 23, 42, 0.14);
+}
+
+html.theme-light .hero-demo-scene .demo-tab-titlebar {
+    background: #f8fafc;
+    border-bottom-color: #e2e8f0;
+    color: #475569;
+}
+
+html.theme-light .hero-demo-scene .demo-tab-dots i {
+    background: #cbd5e1;
+}
+
+html.theme-light .hero-demo-scene .demo-ext-launcher {
+    background: #ffffff;
+    border-color: #cbd5e1;
+}
+
+html.theme-light .hero-demo-scene .demo-sync-chip {
+    background: rgba(22, 163, 74, 0.1);
+    border-color: rgba(22, 163, 74, 0.26);
+    color: #166534;
+}
+
 .mock-status-display {
     display: flex;
     align-items: center;
@@ -4989,6 +5087,30 @@ body.mobile-demo-open {
     overflow: auto;
     padding: 1rem 0.75rem 1.25rem;
     overscroll-behavior: contain;
+}
+
+html.theme-light .mobile-demo-backdrop {
+    background: rgba(241, 245, 249, 0.82);
+}
+
+html.theme-light .mobile-demo-panel {
+    background: rgba(255, 255, 255, 0.97);
+    border-color: rgba(15, 23, 42, 0.12);
+    box-shadow: 0 28px 80px rgba(15, 23, 42, 0.18);
+}
+
+html.theme-light .mobile-demo-header {
+    border-bottom-color: rgba(15, 23, 42, 0.1);
+}
+
+html.theme-light .mobile-demo-close {
+    background: #f8fafc;
+    border-color: #cbd5e1;
+    color: #0f172a;
+}
+
+html.theme-light .mobile-demo-close:hover {
+    background: #e2e8f0;
 }
 
 .mobile-demo-stage .hero-mockup-wrapper {
