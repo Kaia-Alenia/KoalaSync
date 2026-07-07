@@ -106,6 +106,41 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     } catch (_) { /* leave all buttons compact */ }
 
+    // Keep the look-down koala anchored above the highlighted install button
+    // when the CTA row wraps on tablet/mobile.
+    const syncHeroMascotAnchor = () => {
+        const heroText = document.querySelector('.hero-text');
+        const mascot = heroText ? heroText.querySelector('.hero-mascot-container') : null;
+        const ctaGroup = heroText ? heroText.querySelector('.cta-group') : null;
+        if (!heroText || !mascot || !ctaGroup) return;
+
+        const target = ctaGroup.querySelector('.btn-install.is-detected') ||
+            ctaGroup.querySelector('.btn-install[data-browser="chrome"]') ||
+            ctaGroup.querySelector('.btn-install');
+        if (!target) return;
+
+        const mascotRect = mascot.getBoundingClientRect();
+        const targetRect = target.getBoundingClientRect();
+        if (!mascotRect.width || !targetRect.width) return;
+
+        const mascotCenter = mascotRect.left + mascotRect.width / 2;
+        const targetCenter = targetRect.left + targetRect.width / 2;
+        mascot.style.setProperty('--hero-mascot-offset', Math.round(targetCenter - mascotCenter) + 'px');
+    };
+
+    const scheduleHeroMascotAnchor = () => requestAnimationFrame(syncHeroMascotAnchor);
+    scheduleHeroMascotAnchor();
+    window.addEventListener('load', scheduleHeroMascotAnchor, { once: true });
+    window.addEventListener('resize', scheduleHeroMascotAnchor, { passive: true });
+    if ('ResizeObserver' in window) {
+        const heroText = document.querySelector('.hero-text');
+        const ctaGroup = heroText ? heroText.querySelector('.cta-group') : null;
+        const mascot = heroText ? heroText.querySelector('.hero-mascot-container') : null;
+        const mascotObserver = new ResizeObserver(scheduleHeroMascotAnchor);
+        if (ctaGroup) mascotObserver.observe(ctaGroup);
+        if (mascot) mascotObserver.observe(mascot);
+    }
+
     // Open collapsed section blocks when the URL directly targets them
     const hashCollapseMap = { '#faq': 'faq-collapse', '#self-hosting': 'selfhost-collapse' };
     const collapseId = hashCollapseMap[window.location.hash];
@@ -599,6 +634,21 @@ document.addEventListener('DOMContentLoaded', () => {
             updateSyncUI();
         };
 
+        const sceneLocalPoint = (rect, fx, fy) => {
+            const sceneRect = scene.getBoundingClientRect();
+            const scaleX = scene.offsetWidth ? sceneRect.width / scene.offsetWidth : 1;
+            const scaleY = scene.offsetHeight ? sceneRect.height / scene.offsetHeight : scaleX;
+            const safeScaleX = scaleX || 1;
+            const safeScaleY = scaleY || safeScaleX;
+            const xFactor = typeof fx === 'number' ? fx : 0.5;
+            const yFactor = typeof fy === 'number' ? fy : 0.5;
+
+            return {
+                x: (rect.left - sceneRect.left) / safeScaleX + (rect.width / safeScaleX) * xFactor,
+                y: (rect.top - sceneRect.top) / safeScaleY + (rect.height / safeScaleY) * yFactor
+            };
+        };
+
         const pulse = (key) => {
             const el = tabs[key].root;
             el.classList.remove('sync-pulse');
@@ -755,17 +805,18 @@ document.addEventListener('DOMContentLoaded', () => {
         // The invite link visibly travels from the popup to the friend's window
         const flyInvite = () => new Promise((resolve) => {
             if (!inviteFly || !inviteCopyBtn) { resolve(); return; }
-            const sr = scene.getBoundingClientRect();
             const from = inviteCopyBtn.getBoundingClientRect();
             const to = tabs.b.root.querySelector('.demo-tab-titlebar').getBoundingClientRect();
+            const fromPoint = sceneLocalPoint(from, 0, 0);
+            const toPoint = sceneLocalPoint(to, 0.5, 0);
             inviteFly.style.transition = 'none';
-            inviteFly.style.left = (from.left - sr.left) + 'px';
-            inviteFly.style.top = (from.top - sr.top) + 'px';
+            inviteFly.style.left = fromPoint.x + 'px';
+            inviteFly.style.top = fromPoint.y + 'px';
             inviteFly.style.opacity = '1';
             void inviteFly.offsetWidth;
             inviteFly.style.transition = '';
-            inviteFly.style.left = (to.left - sr.left + to.width / 2 - 40) + 'px';
-            inviteFly.style.top = (to.top - sr.top + 2) + 'px';
+            inviteFly.style.left = (toPoint.x - 40) + 'px';
+            inviteFly.style.top = (toPoint.y + 2) + 'px';
             setTimeout(() => {
                 inviteFly.style.opacity = '0';
                 resolve();
@@ -805,11 +856,49 @@ document.addEventListener('DOMContentLoaded', () => {
             if (hint) hint.classList.add('show');
         };
 
-        // Automated one-time walkthrough; any interaction aborts it and jumps
+        // Automated walkthrough; any interaction aborts it and jumps
         // straight to the finished end state, then the user's click applies.
         let userTookOver = false;
         let demoStarted = false;
         let demoFinished = false;
+        let demoRunId = 0;
+
+        const resetDemo = () => {
+            demoStarted = false;
+            demoFinished = false;
+            userTookOver = false;
+            demoRunId++;
+
+            // Reset DOM states:
+            scene.classList.add('demo-no-anim');
+            setPopupOpen(false);
+            setConnected(false);
+            setRoomJoined(false);
+            cursor.classList.remove('visible', 'clicking');
+            scene.classList.remove('demo-complete', 'streaming');
+            if (hint) hint.classList.remove('show');
+
+            // Rewind tab playback times to START_T, paused:
+            ['a', 'b'].forEach(k => {
+                const tab = tabs[k];
+                tab.t = START_T;
+                setPlaying(k, false);
+                renderTab(tab);
+            });
+
+            // Clear any sync-pulse or seeking classes:
+            ['a', 'b'].forEach(k => {
+                tabs[k].root.classList.remove('sync-pulse', 'demo-seeking');
+            });
+
+            // Clean up any pending flash timers:
+            seekFlashTimers.forEach(clearTimeout);
+            seekFlashTimers = [];
+
+            // Force reflow and remove demo-no-anim:
+            void scene.offsetWidth;
+            scene.classList.remove('demo-no-anim');
+        };
         const finishDemo = () => {
             if (demoFinished) return;
             demoFinished = true;
@@ -864,72 +953,93 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const runDemo = async () => {
             if (demoStarted || userTookOver || reduceMotion) return;
+            // Prevent inline demo animations from running on tablet/mobile if windows are hidden:
+            if (window.innerWidth < 1024 && !scene.closest('.mobile-demo-stage')) {
+                finishDemo();
+                return;
+            }
+            demoRunId++;
+            const myRunId = demoRunId;
             demoStarted = true;
 
             const wait = (ms) => new Promise(r => setTimeout(r, ms));
+            const cursorHotspot = { x: 5, y: 2 };
             const moveTo = async (el, fx) => {
-                const sr = scene.getBoundingClientRect();
+                if (demoRunId !== myRunId) return;
                 const er = el.getBoundingClientRect();
-                cursor.style.left = (er.left - sr.left + er.width * (fx || 0.5)) + 'px';
-                cursor.style.top = (er.top - sr.top + er.height / 2) + 'px';
+                const point = sceneLocalPoint(er, fx, 0.5);
+                cursor.style.left = (point.x - cursorHotspot.x) + 'px';
+                cursor.style.top = (point.y - cursorHotspot.y) + 'px';
                 await wait(700);
             };
             const step = async (el, pause, action, fx) => {
-                if (userTookOver || !el) return false;
+                if (userTookOver || demoRunId !== myRunId || !el) return false;
                 await moveTo(el, fx);
-                if (userTookOver) return false;
+                if (userTookOver || demoRunId !== myRunId) return false;
                 cursor.classList.remove('clicking');
                 void cursor.offsetWidth;
                 cursor.classList.add('clicking');
                 await wait(180);
-                if (userTookOver) return false;
+                if (userTookOver || demoRunId !== myRunId) return false;
                 if (action) action(); else el.click();
                 await wait(320 + (pause || 0));
-                return !userTookOver;
+                return !userTookOver && demoRunId === myRunId;
             };
 
             await wait(500);
-            if (userTookOver) return;
+            if (userTookOver || demoRunId !== myRunId) return;
             cursor.classList.add('visible');
             await wait(400);
+            if (userTookOver || demoRunId !== myRunId) return;
 
             const progressA = tabs.a.root.querySelector('.demo-progress');
 
             // Act 1: open the extension and create a room
             if (!await step(launcher, 300)) return;
+            if (demoRunId !== myRunId) return;
             if (!await step(createRoomBtn, 500)) return;
+            if (demoRunId !== myRunId) return;
 
             // Act 2: the invite link travels to the friend's browser
             if (!await step(inviteCopyBtn, 0)) return;
+            if (demoRunId !== myRunId) return;
             await flyInvite();
-            if (userTookOver) return;
+            if (userTookOver || demoRunId !== myRunId) return;
             setConnected(true);
             showToastB(toastB ? toastB.dataset.joined : '');
             pulse('b');
             await wait(900);
-            if (userTookOver) return;
+            if (userTookOver || demoRunId !== myRunId) return;
 
             // Act 3: both sides pick the video tab to sync
             if (!await step(syncTabBtn, 250)) return;
+            if (demoRunId !== myRunId) return;
             if (!await step(videoSelect, 150, flashSelect)) return;
+            if (demoRunId !== myRunId) return;
             showToastB(toastB ? toastB.dataset.selected : '');
             await wait(700);
-            if (userTookOver) return;
+            if (userTookOver || demoRunId !== myRunId) return;
 
             // Act 4: play for everyone, then tuck the popup away
             if (!await step(playBtn, 1800)) return;
+            if (demoRunId !== myRunId) return;
             if (!await step(launcher, 500)) return;
+            if (demoRunId !== myRunId) return;
 
             // Act 5: any side can control — pause there, seek here, play again
             if (!await step(tabs.b.root, 1000)) return;
+            if (demoRunId !== myRunId) return;
             if (!await step(progressA, 1300, () => seekTo('a', 0.62), 0.62)) return;
+            if (demoRunId !== myRunId) return;
             if (!await step(tabs.a.root, 700)) return;
+            if (demoRunId !== myRunId) return;
 
             finishDemo();
         };
 
         scene.__koalaStartDemo = reduceMotion ? finishDemo : runDemo;
         scene.__koalaFinishDemo = finishDemo;
+        scene.__koalaResetDemo = resetDemo;
 
         if ('IntersectionObserver' in window && !reduceMotion) {
             const demoObserver = new IntersectionObserver((entries) => {
@@ -971,8 +1081,13 @@ document.addEventListener('DOMContentLoaded', () => {
             requestAnimationFrame(() => {
                 closeBtn.focus({ preventScroll: true });
                 const scene = wrapper.querySelector('#hero-demo');
-                if (scene && typeof scene.__koalaStartDemo === 'function') {
-                    scene.__koalaStartDemo();
+                if (scene) {
+                    if (typeof scene.__koalaResetDemo === 'function') {
+                        scene.__koalaResetDemo();
+                    }
+                    if (typeof scene.__koalaStartDemo === 'function') {
+                        scene.__koalaStartDemo();
+                    }
                 }
             });
         };
@@ -982,6 +1097,11 @@ document.addEventListener('DOMContentLoaded', () => {
             modal.hidden = true;
             document.body.classList.remove('mobile-demo-open');
             openBtn.setAttribute('aria-expanded', 'false');
+
+            const scene = wrapper.querySelector('#hero-demo');
+            if (scene && typeof scene.__koalaResetDemo === 'function') {
+                scene.__koalaResetDemo();
+            }
             if (originalNext && originalNext.parentNode === originalParent) {
                 originalParent.insertBefore(wrapper, originalNext);
             } else {

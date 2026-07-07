@@ -24,6 +24,25 @@
     color-scheme: dark;
 }
 
+.extension-mockup,
+.illus-popup-card,
+.illus-player-card {
+    --bg: #0f172a !important;
+    --card: #1e293b !important;
+    --accent: #6366f1 !important;
+    --accent-glow: rgba(99, 102, 241, 0.3) !important;
+    --text: #f8fafc !important;
+    --text-muted: #cbd5e1 !important;
+    --success: #22c55e !important;
+    --error: #ef4444 !important;
+    --glass: rgba(30, 41, 59, 0.4) !important;
+    --glass-border: rgba(255, 255, 255, 0.05) !important;
+    --section-tint: rgba(255, 255, 255, 0.02) !important;
+    --section-tint-strong: rgba(15, 23, 42, 0.4) !important;
+    --card-surface: rgba(30, 41, 59, 0.45) !important;
+    --card-border: rgba(255, 255, 255, 0.08) !important;
+}
+
 .invite-banner {
     background: var(--accent);
     color: white;
@@ -234,6 +253,7 @@ html.theme-light nav.nav-scrolled {
 
 /* --- Theme Toggle (sun/moon) --- */
 .theme-toggle {
+    position: relative;
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -241,24 +261,52 @@ html.theme-light nav.nav-scrolled {
     height: 36px;
     padding: 0;
     background: transparent;
-    border: 1px solid transparent;
+    border: none;
     border-radius: 10px;
     color: var(--text-muted);
     cursor: pointer;
     flex-shrink: 0;
-    transition: color 0.3s, background 0.3s, transform 0.3s;
+    transition: color 0.3s, transform 0.3s;
+    overflow: hidden;
 }
 
 .theme-toggle:hover {
     color: var(--accent);
-    background: rgba(99, 102, 241, 0.1);
-    transform: rotate(15deg);
+    transform: scale(1.15);
 }
 
-.theme-toggle .theme-icon-sun { display: block; }
-.theme-toggle .theme-icon-moon { display: none; }
-html.theme-light .theme-toggle .theme-icon-sun { display: none; }
-html.theme-light .theme-toggle .theme-icon-moon { display: block; }
+.theme-toggle:active {
+    transform: scale(0.9);
+}
+
+.theme-toggle svg {
+    position: absolute;
+    width: 18px;
+    height: 18px;
+    transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.4s ease;
+}
+
+/* Default (Dark mode): Sun visible, Moon hidden & rotated */
+.theme-toggle .theme-icon-sun {
+    opacity: 1;
+    transform: scale(1) rotate(0deg);
+}
+
+.theme-toggle .theme-icon-moon {
+    opacity: 0;
+    transform: scale(0) rotate(-90deg);
+}
+
+/* Light mode: Moon visible, Sun hidden & rotated */
+html.theme-light .theme-toggle .theme-icon-sun {
+    opacity: 0;
+    transform: scale(0) rotate(90deg);
+}
+
+html.theme-light .theme-toggle .theme-icon-moon {
+    opacity: 1;
+    transform: scale(1) rotate(0deg);
+}
 
 /* --- Light Theme --- */
 html.theme-light {
@@ -589,20 +637,22 @@ html.theme-light .koala-speech-bubble::after {
 }
 
 @media (max-width: 768px) {
-    /* The koala keeps standing on the CTA button (nudged just slightly left
-       to give the bubble room); the bubble is absolute and wraps its text. */
+    /* The koala keeps standing on the active install CTA; app.js updates the
+       offset from the real button geometry when the row wraps. */
     .hero-mascot-container {
+        --hero-mascot-offset: 0px;
         margin-left: 0;
         display: flex;
         justify-content: center;
     }
     .hero-lookdown-mascot {
-        transform: translateX(-32px);
+        transform: translateX(var(--hero-mascot-offset));
     }
     .koala-speech-bubble {
-        left: calc(50% + 18px);
+        left: calc(50% + var(--hero-mascot-offset) + 50px);
+        right: 0.75rem;
         top: 0.3rem;
-        max-width: min(240px, calc(50% - 26px));
+        max-width: 240px;
         padding: 0.5rem 0.75rem;
     }
     .koala-speech-bubble .bubble-title {
@@ -1128,72 +1178,6 @@ html.theme-light .hero-demo-scene {
     --accent: #4f46e5;
 }
 
-html.theme-light .hero-demo-scene .extension-mockup {
-    background: #ffffff;
-    border-color: rgba(15, 23, 42, 0.1);
-    box-shadow: 0 22px 52px rgba(15, 23, 42, 0.16), 0 0 0 1px rgba(255, 255, 255, 0.72) inset;
-}
-
-html.theme-light .hero-demo-scene .mock-tabs {
-    background: #eef2ff;
-}
-
-html.theme-light .hero-demo-scene .mock-tab {
-    color: #64748b;
-}
-
-html.theme-light .hero-demo-scene .mock-tab:hover {
-    color: #0f172a;
-}
-
-html.theme-light .hero-demo-scene .mock-tab.active {
-    background: #4f46e5 !important;
-    color: #ffffff;
-}
-
-html.theme-light .hero-demo-scene .mock-card,
-html.theme-light .hero-demo-scene .mock-joined-room,
-html.theme-light .hero-demo-scene .mock-settings-row,
-html.theme-light .hero-demo-scene .mock-diag-box,
-html.theme-light .hero-demo-scene [style*="background: var(--card)"] {
-    background: #f8fafc !important;
-    border-color: #dbe3ef !important;
-}
-
-html.theme-light .hero-demo-scene .mock-input,
-html.theme-light .hero-demo-scene .mock-input[style],
-html.theme-light .hero-demo-scene .popup-select-mock {
-    background: #ffffff !important;
-    border-color: #cbd5e1 !important;
-    color: #0f172a !important;
-}
-
-html.theme-light .hero-demo-scene .mock-peer-item {
-    background: #ffffff;
-    border-color: #e2e8f0;
-}
-
-html.theme-light .hero-demo-scene .mock-server-badge {
-    background: #eef2ff;
-    color: #4f46e5 !important;
-}
-
-html.theme-light .hero-demo-scene #demo-invite-copy,
-html.theme-light .hero-demo-scene .mock-btn[style*="#334155"] {
-    background: #e2e8f0 !important;
-    border: 1px solid #cbd5e1 !important;
-    color: #0f172a !important;
-}
-
-html.theme-light .hero-demo-scene .mock-btn[style*="background:transparent"] {
-    border-color: #cbd5e1 !important;
-    color: #475569 !important;
-}
-
-html.theme-light .hero-demo-scene .mock-close-btn:hover {
-    color: #0f172a;
-    background: #e2e8f0;
-}
 
 html.theme-light .hero-demo-scene .demo-tab-card {
     background: #ffffff;
@@ -2558,9 +2542,10 @@ footer a:hover {
 
 @media (max-width: 768px) {
     .hero {
-        align-items: flex-start;
+        align-items: center;
         padding-top: 5.5rem;
-        padding-bottom: 2.5rem;
+        padding-bottom: 3.5rem;
+        min-height: 100svh;
     }
 
     .hero-grid {
@@ -2907,6 +2892,16 @@ html.theme-light .compat-logo img.compat-logo-disneyplus-mark {
     .compat-logo img.compat-logo-disneyplus-mark {
         width: 56px;
         height: 28px;
+    }
+
+    .compat-logo-jellyfin {
+        display: none;
+    }
+
+    .compat-more {
+        grid-column: 1 / -1;
+        justify-self: center;
+        white-space: nowrap;
     }
 }
 
@@ -4416,7 +4411,7 @@ header[id] {
 .demo-hint.show { opacity: 0.75; }
 
 /* Tablet/Small Desktop: fall back to the classic static popup mockup */
-@media (max-width: 1024px) {
+@media (max-width: 1023px) {
     .hero-demo-scene,
     .hero-demo-scene.popup-open {
         height: auto;
@@ -5021,31 +5016,34 @@ body.mobile-demo-open {
     position: fixed;
     inset: 0;
     z-index: 2400;
-    display: grid;
-    place-items: end center;
-    padding: 0.75rem;
+    display: flex;
+    flex-direction: column;
+    padding: 0 !important;
 }
 
 .mobile-demo-backdrop {
     position: absolute;
     inset: 0;
-    background: rgba(2, 6, 23, 0.78);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
+    background: rgba(2, 6, 23, 0.25);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
 }
 
 .mobile-demo-panel {
     position: relative;
     z-index: 1;
-    width: min(100%, 760px);
-    max-height: min(calc(100dvh - 0.75rem), 760px);
+    width: 100% !important;
+    height: 100% !important;
+    max-height: none !important;
     display: flex;
     flex-direction: column;
     overflow: hidden;
-    background: rgba(15, 23, 42, 0.96);
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    border-radius: 18px 18px 12px 12px;
-    box-shadow: 0 28px 80px rgba(0, 0, 0, 0.55);
+    background: transparent !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    border: none !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
 }
 
 .mobile-demo-header {
@@ -5054,7 +5052,7 @@ body.mobile-demo-open {
     justify-content: space-between;
     gap: 1rem;
     padding: 0.85rem 0.95rem;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    border-bottom: none !important;
     flex-shrink: 0;
 }
 
@@ -5062,7 +5060,7 @@ body.mobile-demo-open {
     margin: 0;
     font-size: 0.95rem;
     line-height: 1.2;
-    color: var(--text);
+    color: #f8fafc;
 }
 
 .mobile-demo-close {
@@ -5075,7 +5073,7 @@ body.mobile-demo-open {
     border: 1px solid rgba(255, 255, 255, 0.12);
     border-radius: 10px;
     background: rgba(30, 41, 59, 0.72);
-    color: var(--text);
+    color: #e2e8f0;
     cursor: pointer;
     flex-shrink: 0;
 }
@@ -5084,48 +5082,95 @@ body.mobile-demo-open {
     position: relative;
     flex: 1;
     min-height: 0;
-    overflow: auto;
+    overflow: hidden !important;
     padding: 1rem 0.75rem 1.25rem;
     overscroll-behavior: contain;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: center !important;
+    align-items: center !important;
 }
 
+/* Ensure the demo scene canvas is transparent inside the modal to let the glass backdrop blend */
+.mobile-demo-stage .hero-demo-scene {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+}
+
+/* Ensure the close button hover stays consistent in dark glass theme */
+.mobile-demo-close:hover {
+    background: rgba(51, 65, 85, 0.85) !important;
+}
+
+/* Light Mode Frosted Glass overrides */
 html.theme-light .mobile-demo-backdrop {
-    background: rgba(241, 245, 249, 0.82);
+    background: rgba(241, 245, 249, 0.2) !important;
 }
 
 html.theme-light .mobile-demo-panel {
-    background: rgba(255, 255, 255, 0.97);
-    border-color: rgba(15, 23, 42, 0.12);
-    box-shadow: 0 28px 80px rgba(15, 23, 42, 0.18);
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
 }
 
 html.theme-light .mobile-demo-header {
-    border-bottom-color: rgba(15, 23, 42, 0.1);
+    border-bottom: none !important;
+}
+
+html.theme-light .mobile-demo-header h2 {
+    color: var(--text) !important;
 }
 
 html.theme-light .mobile-demo-close {
-    background: #f8fafc;
-    border-color: #cbd5e1;
-    color: #0f172a;
+    background: rgba(255, 255, 255, 0.4) !important;
+    border-color: rgba(15, 23, 42, 0.1) !important;
+    color: var(--text) !important;
 }
 
 html.theme-light .mobile-demo-close:hover {
-    background: #e2e8f0;
+    background: rgba(255, 255, 255, 0.75) !important;
 }
 
 .mobile-demo-stage .hero-mockup-wrapper {
     display: flex !important;
     width: min(100%, 560px);
     margin: 0 auto;
-    transform: none;
-    will-change: auto;
+    will-change: transform;
+}
+
+/* Mobile S / short screens */
+@media (max-height: 600px) {
+    .mobile-demo-stage .hero-mockup-wrapper {
+        transform: scale(0.68) !important;
+        transform-origin: top center !important;
+        height: 380px !important;
+    }
+}
+
+/* Mobile M/L / medium screens */
+@media (min-height: 601px) and (max-height: 740px) {
+    .mobile-demo-stage .hero-mockup-wrapper {
+        transform: scale(0.82) !important;
+        transform-origin: top center !important;
+        height: 460px !important;
+    }
+}
+
+/* Default / tall screens */
+@media (min-height: 741px) {
+    .mobile-demo-stage .hero-mockup-wrapper {
+        transform: scale(1) !important;
+        transform-origin: top center !important;
+        height: 550px !important;
+    }
 }
 
 .mobile-demo-stage .hero-demo-scene,
 .mobile-demo-stage .hero-demo-scene.popup-open {
     position: relative;
     width: 100%;
-    height: max(calc(59cqw + 100px), 548px);
+    height: 100% !important;
     max-width: none;
     margin: 0 auto;
 }
@@ -5144,21 +5189,31 @@ html.theme-light .mobile-demo-close:hover {
 
 .mobile-demo-stage .demo-hint {
     display: block !important;
+    position: absolute !important;
+    left: 0 !important;
+    right: 0 !important;
+    top: auto !important;
+    bottom: 12px !important;
+    margin: 0 auto !important;
+    padding-inline: 1rem;
+    max-width: 90%;
+    z-index: 10;
 }
 
-.mobile-demo-stage .hero-demo-scene .extension-mockup,
-.mobile-demo-stage .hero-demo-scene:not(.popup-open) .extension-mockup {
+.mobile-demo-stage .hero-demo-scene .extension-mockup {
     position: absolute;
-    bottom: 0;
+    bottom: 0 !important;
     right: 0;
-    z-index: 5;
+    z-index: 15 !important;
     width: min(320px, 66cqw);
-    transform-origin: top right;
+    transform: none !important;
+    transform-origin: top right !important;
     transition: transform 0.45s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.35s, visibility 0.45s;
 }
 
 .mobile-demo-stage .hero-demo-scene:not(.popup-open) .extension-mockup {
-    transform: translate(2%, -3%) scale(0.5);
+    bottom: 0 !important;
+    transform: translate(2%, -3%) scale(0.5) !important;
     opacity: 0;
     visibility: hidden;
     pointer-events: none;
@@ -5166,10 +5221,10 @@ html.theme-light .mobile-demo-close:hover {
 
 @media (max-width: 380px) {
     .mobile-demo-modal {
-        padding: 0.4rem;
+        padding: 0 !important;
     }
 
     .mobile-demo-stage {
-        padding-inline: 0.45rem;
+        padding-inline: 0.45rem !important;
     }
 }
