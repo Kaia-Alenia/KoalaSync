@@ -136,7 +136,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const heroText = document.querySelector('.hero-text');
         const ctaGroup = heroText ? heroText.querySelector('.cta-group') : null;
         const mascot = heroText ? heroText.querySelector('.hero-mascot-container') : null;
-        const mascotObserver = new ResizeObserver(scheduleHeroMascotAnchor);
+        const mascotObserver = new window.ResizeObserver(scheduleHeroMascotAnchor);
         if (ctaGroup) mascotObserver.observe(ctaGroup);
         if (mascot) mascotObserver.observe(mascot);
     }
