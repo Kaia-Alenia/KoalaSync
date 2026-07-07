@@ -2706,7 +2706,7 @@ html:not(.lang-de) [lang="de"] {
     display: flex;
     justify-content: center;
     align-items: center;
-    gap: 3rem;
+    gap: 2.4rem 3rem;
     flex-wrap: wrap;
 }
 
@@ -2738,29 +2738,59 @@ html:not(.lang-de) [lang="de"] {
     object-fit: contain;
 }
 
-.compat-logo-disneyplus {
-    opacity: 0.82;
-}
-
-.compat-logo-disneyplus:hover {
-    opacity: 1;
-}
-
-.compat-logo-disneyplus span {
-    color: var(--text);
-}
-
 .compat-logo img.compat-logo-disneyplus-mark {
-    width: 76px;
-    height: 36px;
+    width: 60px;
+    height: 30px;
     object-fit: contain;
-    filter: brightness(0) invert(1) drop-shadow(0 0 10px rgba(255, 255, 255, 0.18));
-    opacity: 0.94;
+    filter: brightness(0) saturate(100%) invert(63%) sepia(12%) saturate(621%) hue-rotate(203deg) brightness(92%) contrast(88%);
 }
 
 html.theme-light .compat-logo img.compat-logo-disneyplus-mark {
     filter: none;
-    opacity: 1;
+}
+
+@media (max-width: 700px) {
+    .compat-section {
+        padding: 0 0 1.6rem;
+    }
+
+    .compat-mascot {
+        max-width: 220px;
+        margin-bottom: 0.1rem;
+    }
+
+    .compat-heading {
+        font-size: 0.92rem;
+        line-height: 1.55;
+        margin-bottom: 1rem;
+    }
+
+    .compat-row {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 1.55rem 0.75rem;
+        align-items: start;
+    }
+
+    .compat-logo {
+        gap: 0.35rem;
+        font-size: 0.72rem;
+    }
+
+    .compat-logo img {
+        width: 26px;
+        height: 26px;
+    }
+
+    .compat-logo img.compat-logo-wide {
+        width: 48px;
+        height: 26px;
+    }
+
+    .compat-logo img.compat-logo-disneyplus-mark {
+        width: 56px;
+        height: 28px;
+    }
 }
 
 .compat-more {
