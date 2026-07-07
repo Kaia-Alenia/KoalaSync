@@ -1382,11 +1382,13 @@ input:checked + .mock-slider:before {
 
 @media (max-width: 900px) {
     .features-grid {
-        grid-template-columns: repeat(2, 1fr);
+        /* Keep the Why KoalaSync grid at either three columns or one column.
+           The two-column in-between makes compact cards stretch unevenly. */
+        grid-template-columns: 1fr;
         gap: 1.25rem;
     }
     .feature-card.bento-large {
-        grid-column: span 2;
+        grid-column: span 1;
         padding: 2.5rem;
         gap: 2rem;
     }
@@ -3633,9 +3635,18 @@ header[id] {
    the extension popup is bottom-anchored inside this scene, so moving the whole
    wrapper destroys the vertical balance and leaves no breathing room below. */
 .hero-demo-scene {
+    --demo-content-y: 0px;
     position: relative;
     width: 100%;
     height: max(calc(59cqw + 100px), 548px);
+}
+
+@media (min-width: 1025px) {
+    .hero-demo-scene {
+        /* Balance the demo inside the visible hero area below the fixed navbar.
+           Shift the scene content, not the hero text or grid. */
+        --demo-content-y: 2.75rem;
+    }
 }
 
 /* While initializing, suppress all transitions so the popup can start closed
@@ -3648,7 +3659,7 @@ header[id] {
 /* Sync status chip: green "in sync" at rest, flashes the broadcast event */
 .demo-sync-chip {
     position: absolute;
-    top: 0;
+    top: var(--demo-content-y);
     left: 2px;
     z-index: 8;
     display: inline-flex;
@@ -3720,7 +3731,7 @@ header[id] {
 /* Card A = the foreground window at the top right ("your" browser,
    hosts the extension icon in its toolbar) */
 .demo-tab-a {
-    top: 49px;
+    top: calc(49px + var(--demo-content-y));
     right: -3%;
     transform: rotate(1.2deg);
     transform-origin: top right;
@@ -3736,7 +3747,7 @@ header[id] {
 /* Card B = the friend's window, lower left, tucked behind */
 .demo-tab-b {
     top: 142px;
-    top: calc(20cqw + 67px);
+    top: calc(20cqw + 67px + var(--demo-content-y));
     left: -3%;
     transform: rotate(-1.6deg);
     transform-origin: top left;
@@ -3751,7 +3762,7 @@ header[id] {
 
 /* When the popup slides in from the right edge, the tabs step aside */
 .hero-demo-scene.popup-open .demo-tab-a {
-    top: 22px;
+    top: calc(22px + var(--demo-content-y));
     transform: rotate(1deg) translate(-44%, 20%) scale(0.88);
 }
 
@@ -3762,7 +3773,7 @@ header[id] {
 }
 
 .hero-demo-scene.popup-open .demo-tab-b {
-    top: calc(20cqw + 40px);
+    top: calc(20cqw + 40px + var(--demo-content-y));
     transform: rotate(-1.6deg) translate(0, 14%) scale(0.94);
 }
 
@@ -4111,9 +4122,8 @@ header[id] {
 
 @media (min-width: 1025px) {
     .hero-demo-scene .extension-mockup {
-        /* Keep the opened extension panel vertically balanced in the hero.
-           Move the popup itself, never the whole hero/demo wrapper. */
-        bottom: 3.375rem;
+        /* Counter the content shift so the opened panel is balanced below nav. */
+        bottom: 0.625rem;
     }
 }
 
