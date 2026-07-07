@@ -220,14 +220,6 @@ async function compile() {
         compiled = compiled.replace(/\{\{LANG_PREFIX\}\}/g, langPrefix);
         compiled = compiled.replace(/\{\{VERSION\}\}/g, buildVersion);
 
-        const indexTitle = lang === 'de' ? 'KoalaSync - Vergleiche & Anleitungen' : 'KoalaSync - Alternatives & Comparisons';
-        const indexDesc = lang === 'de' 
-            ? 'Entdecke ehrliche Vergleiche und detaillierte Leitfäden zwischen KoalaSync und anderen Watch-Party-Erweiterungen.' 
-            : 'Explore honest comparisons and detailed guides comparing KoalaSync with other watch party extensions and streaming solutions.';
-
-        compiled = compiled.replace(/\{\{ALT_INDEX_TITLE\}\}/g, indexTitle);
-        compiled = compiled.replace(/\{\{ALT_INDEX_META_DESC\}\}/g, indexDesc);
-
         // og:locale mapping for Facebook
         const ogLocales = {
             en: 'en_US', de: 'de_DE', fr: 'fr_FR', es: 'es_ES',
