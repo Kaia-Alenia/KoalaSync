@@ -18,6 +18,11 @@
         }
     };
 
+    // Apply saved theme before first paint (dark is the default, no class needed)
+    if (safeGetLocalStorage('koala_theme') === 'light') {
+        html.classList.add('theme-light');
+    }
+
     // Mapping of browser language codes to KoalaSync locale directories
     var langMap = {
         'de': 'de',
@@ -97,8 +102,8 @@
 
     if (isIndex) {
         var titles = {
-            en: 'KoalaSync | Real-time Video Synchronization for Friends',
-            de: 'KoalaSync | Echtzeit-Video-Synchronisation für Freunde'
+            en: 'KoalaSync | Watch Party for Netflix, YouTube & Any Video',
+            de: 'KoalaSync | Watch Party für Netflix, YouTube & jedes Video'
         };
         document.title = titles[activeLang] || titles.en;
     } else if (isJoin) {
