@@ -1,18 +1,18 @@
 /**
  * KoalaSync Locale Translation Script
  * 
- * This script is stored in `.agents/examples/translate-locales-tool.cjs`
+ * This script is stored in `scripts/translate-locales-tool.cjs`
  * so future LLM agents can easily reuse and adapt it to translate new keys.
  * 
  * Usage:
- *   node .agents/examples/translate-locales-tool.cjs
+ *   node scripts/translate-locales-tool.cjs
  */
 
 const fs = require('fs');
 const path = require('path');
 const http = require('https');
 
-const localesDir = path.join(__dirname, '../../website/locales');
+const localesDir = path.join(__dirname, '../website/locales');
 const enFile = path.join(localesDir, 'en.json');
 const enLocale = JSON.parse(fs.readFileSync(enFile, 'utf8'));
 
