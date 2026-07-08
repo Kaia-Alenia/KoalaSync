@@ -203,16 +203,19 @@ async function compile() {
     const screenSharingTemplatePath = path.join(websiteDir, 'alternatives/screen-sharing.html');
     const watch2getherTemplatePath = path.join(websiteDir, 'alternatives/watch2gether.html');
     const scenerTemplatePath = path.join(websiteDir, 'alternatives/scener.html');
+    const kosmiTemplatePath = path.join(websiteDir, 'alternatives/kosmi.html');
     const overviewTemplatePath = path.join(websiteDir, 'alternatives/index.html');
     const hasTelepartyTemplate = fs.existsSync(telepartyTemplatePath);
     const hasScreenSharingTemplate = fs.existsSync(screenSharingTemplatePath);
     const hasWatch2getherTemplate = fs.existsSync(watch2getherTemplatePath);
     const hasScenerTemplate = fs.existsSync(scenerTemplatePath);
+    const hasKosmiTemplate = fs.existsSync(kosmiTemplatePath);
     const hasOverviewTemplate = fs.existsSync(overviewTemplatePath);
     const telepartyTemplate = hasTelepartyTemplate ? fs.readFileSync(telepartyTemplatePath, 'utf8') : '';
     const screenSharingTemplate = hasScreenSharingTemplate ? fs.readFileSync(screenSharingTemplatePath, 'utf8') : '';
     const watch2getherTemplate = hasWatch2getherTemplate ? fs.readFileSync(watch2getherTemplatePath, 'utf8') : '';
     const scenerTemplate = hasScenerTemplate ? fs.readFileSync(scenerTemplatePath, 'utf8') : '';
+    const kosmiTemplate = hasKosmiTemplate ? fs.readFileSync(kosmiTemplatePath, 'utf8') : '';
     const overviewTemplate = hasOverviewTemplate ? fs.readFileSync(overviewTemplatePath, 'utf8') : '';
 
     // Preload English locale for fallback
@@ -279,6 +282,12 @@ async function compile() {
                 const scCompiled = compileAlternativePage(scenerTemplate, locale, lang, '../', '');
                 fs.writeFileSync(path.join(altDir, 'scener.html'), scCompiled);
             }
+            if (hasKosmiTemplate) {
+                const altDir = path.join(wwwDir, 'alternatives');
+                fs.mkdirSync(altDir, { recursive: true });
+                const koCompiled = compileAlternativePage(kosmiTemplate, locale, lang, '../', '');
+                fs.writeFileSync(path.join(altDir, 'kosmi.html'), koCompiled);
+            }
             if (hasOverviewTemplate) {
                 const altDir = path.join(wwwDir, 'alternatives');
                 fs.mkdirSync(altDir, { recursive: true });
@@ -317,6 +326,12 @@ async function compile() {
                 fs.mkdirSync(langAltDir, { recursive: true });
                 const scCompiled = compileAlternativePage(scenerTemplate, locale, lang, '../../', lang + '/');
                 fs.writeFileSync(path.join(langAltDir, 'scener.html'), scCompiled);
+            }
+            if (hasKosmiTemplate) {
+                const langAltDir = path.join(langDir, 'alternatives');
+                fs.mkdirSync(langAltDir, { recursive: true });
+                const koCompiled = compileAlternativePage(kosmiTemplate, locale, lang, '../../', lang + '/');
+                fs.writeFileSync(path.join(langAltDir, 'kosmi.html'), koCompiled);
             }
             if (hasOverviewTemplate) {
                 const langAltDir = path.join(langDir, 'alternatives');
