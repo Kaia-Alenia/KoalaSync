@@ -117,7 +117,6 @@ export const BLACKLIST_DOMAINS = [
     'status.koalastuff.net',
     'sync.koalastuff.net',
     'timer.koalastuff.net',
-    'localhost',
     'zoom.us',
     'teams.microsoft.com',
     'meet.google.com',
