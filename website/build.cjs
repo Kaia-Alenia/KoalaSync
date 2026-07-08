@@ -380,12 +380,15 @@ async function compile() {
     }
 
     // ── 5. Copy generic static files and verification files ──
-    const genericFiles = ['robots.txt', 'sitemap.xml', 'site.webmanifest', 'version.json', 'llms.txt'];
+    const genericFiles = ['robots.txt', 'site.webmanifest', 'version.json', 'llms.txt'];
     for (const file of genericFiles) {
         const src = path.join(websiteDir, file);
         const dest = path.join(wwwDir, file);
         if (fs.existsSync(src)) { fs.copyFileSync(src, dest); }
     }
+
+    // ── 5.5 Generate dynamic sitemap ──
+    generateSitemap(wwwDir, websiteDir);
 
     // Auto-copy Google verification files and IndexNow/txt key files from website source to www root
     const websiteFiles = fs.readdirSync(websiteDir);
@@ -470,6 +473,101 @@ async function compile() {
     });
 
     console.log('KoalaSync build finished successfully! Output: website/www/');
+}
+
+function generateSitemap(wwwDir, websiteDir) {
+    const languages = [
+      { code: 'en', prefix: '', hreflang: 'en' },
+      { code: 'de', prefix: 'de/', hreflang: 'de' },
+      { code: 'fr', prefix: 'fr/', hreflang: 'fr' },
+      { code: 'es', prefix: 'es/', hreflang: 'es' },
+      { code: 'pt-BR', prefix: 'pt-BR/', hreflang: 'pt-br' },
+      { code: 'ru', prefix: 'ru/', hreflang: 'ru' },
+      { code: 'it', prefix: 'it/', hreflang: 'it' },
+      { code: 'pl', prefix: 'pl/', hreflang: 'pl' },
+      { code: 'tr', prefix: 'tr/', hreflang: 'tr' },
+      { code: 'nl', prefix: 'nl/', hreflang: 'nl' },
+      { code: 'ja', prefix: 'ja/', hreflang: 'ja' },
+      { code: 'ko', prefix: 'ko/', hreflang: 'ko' },
+      { code: 'zh', prefix: 'zh/', hreflang: 'zh' },
+      { code: 'uk', prefix: 'uk/', hreflang: 'uk' },
+      { code: 'pt', prefix: 'pt/', hreflang: 'pt' }
+    ];
+
+    const today = new Date().toISOString().split('T')[0];
+
+    let xml = `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:xhtml="http://www.w3.org/1999/xhtml">`;
+
+    // Static legal pages
+    xml += `
+  <url>
+    <loc>https://sync.koalastuff.net/imprint</loc>
+    <lastmod>${today}</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.3</priority>
+  </url>
+  <url>
+    <loc>https://sync.koalastuff.net/privacy</loc>
+    <lastmod>${today}</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.3</priority>
+  </url>
+  <url>
+    <loc>https://sync.koalastuff.net/de/impressum</loc>
+    <lastmod>${today}</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.3</priority>
+  </url>
+  <url>
+    <loc>https://sync.koalastuff.net/de/datenschutz</loc>
+    <lastmod>${today}</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.3</priority>
+  </url>`;
+
+    function addPage(relativePath, changefreq, priority) {
+      for (const lang of languages) {
+        const loc = `https://sync.koalastuff.net/${lang.prefix}${relativePath}`;
+        xml += `
+  <url>
+    <loc>${loc}</loc>
+    <lastmod>${today}</lastmod>
+    <changefreq>${changefreq}</changefreq>
+    <priority>${priority}</priority>`;
+        for (const alt of languages) {
+          const altHref = `https://sync.koalastuff.net/${alt.prefix}${relativePath}`;
+          xml += `
+    <xhtml:link rel="alternate" hreflang="${alt.hreflang}" href="${altHref}"/>`;
+        }
+        const defaultHref = `https://sync.koalastuff.net/${relativePath}`;
+        xml += `
+    <xhtml:link rel="alternate" hreflang="x-default" href="${defaultHref}"/>
+  </url>`;
+      }
+    }
+
+    addPage('', 'weekly', '1.0');
+    addPage('alternatives', 'weekly', '0.7');
+
+    const subpages = [
+      'alternatives/teleparty',
+      'alternatives/screen-sharing',
+      'alternatives/watch2gether',
+      'alternatives/scener',
+      'alternatives/kosmi',
+      'alternatives/twoseven'
+    ];
+    for (const sub of subpages) {
+      addPage(sub, 'weekly', '0.7');
+    }
+
+    xml += `\n</urlset>\n`;
+
+    fs.writeFileSync(path.join(websiteDir, 'sitemap.xml'), xml.trim() + '\n', 'utf8');
+    fs.writeFileSync(path.join(wwwDir, 'sitemap.xml'), xml.trim() + '\n', 'utf8');
+    console.log('  ✓ Dynamically generated sitemap.xml with current date');
 }
 
 compile().catch(err => { console.error('Build failed:', err); process.exit(1); });
