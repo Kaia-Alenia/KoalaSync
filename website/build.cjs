@@ -204,18 +204,21 @@ async function compile() {
     const watch2getherTemplatePath = path.join(websiteDir, 'alternatives/watch2gether.html');
     const scenerTemplatePath = path.join(websiteDir, 'alternatives/scener.html');
     const kosmiTemplatePath = path.join(websiteDir, 'alternatives/kosmi.html');
+    const twosevenTemplatePath = path.join(websiteDir, 'alternatives/twoseven.html');
     const overviewTemplatePath = path.join(websiteDir, 'alternatives/index.html');
     const hasTelepartyTemplate = fs.existsSync(telepartyTemplatePath);
     const hasScreenSharingTemplate = fs.existsSync(screenSharingTemplatePath);
     const hasWatch2getherTemplate = fs.existsSync(watch2getherTemplatePath);
     const hasScenerTemplate = fs.existsSync(scenerTemplatePath);
     const hasKosmiTemplate = fs.existsSync(kosmiTemplatePath);
+    const hasTwosevenTemplate = fs.existsSync(twosevenTemplatePath);
     const hasOverviewTemplate = fs.existsSync(overviewTemplatePath);
     const telepartyTemplate = hasTelepartyTemplate ? fs.readFileSync(telepartyTemplatePath, 'utf8') : '';
     const screenSharingTemplate = hasScreenSharingTemplate ? fs.readFileSync(screenSharingTemplatePath, 'utf8') : '';
     const watch2getherTemplate = hasWatch2getherTemplate ? fs.readFileSync(watch2getherTemplatePath, 'utf8') : '';
     const scenerTemplate = hasScenerTemplate ? fs.readFileSync(scenerTemplatePath, 'utf8') : '';
     const kosmiTemplate = hasKosmiTemplate ? fs.readFileSync(kosmiTemplatePath, 'utf8') : '';
+    const twosevenTemplate = hasTwosevenTemplate ? fs.readFileSync(twosevenTemplatePath, 'utf8') : '';
     const overviewTemplate = hasOverviewTemplate ? fs.readFileSync(overviewTemplatePath, 'utf8') : '';
 
     // Preload English locale for fallback
@@ -288,6 +291,12 @@ async function compile() {
                 const koCompiled = compileAlternativePage(kosmiTemplate, locale, lang, '../', '');
                 fs.writeFileSync(path.join(altDir, 'kosmi.html'), koCompiled);
             }
+            if (hasTwosevenTemplate) {
+                const altDir = path.join(wwwDir, 'alternatives');
+                fs.mkdirSync(altDir, { recursive: true });
+                const tsCompiled = compileAlternativePage(twosevenTemplate, locale, lang, '../', '');
+                fs.writeFileSync(path.join(altDir, 'twoseven.html'), tsCompiled);
+            }
             if (hasOverviewTemplate) {
                 const altDir = path.join(wwwDir, 'alternatives');
                 fs.mkdirSync(altDir, { recursive: true });
@@ -332,6 +341,12 @@ async function compile() {
                 fs.mkdirSync(langAltDir, { recursive: true });
                 const koCompiled = compileAlternativePage(kosmiTemplate, locale, lang, '../../', lang + '/');
                 fs.writeFileSync(path.join(langAltDir, 'kosmi.html'), koCompiled);
+            }
+            if (hasTwosevenTemplate) {
+                const langAltDir = path.join(langDir, 'alternatives');
+                fs.mkdirSync(langAltDir, { recursive: true });
+                const tsCompiled = compileAlternativePage(twosevenTemplate, locale, lang, '../../', lang + '/');
+                fs.writeFileSync(path.join(langAltDir, 'twoseven.html'), tsCompiled);
             }
             if (hasOverviewTemplate) {
                 const langAltDir = path.join(langDir, 'alternatives');
