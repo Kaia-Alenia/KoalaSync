@@ -148,12 +148,23 @@
             </p>
 
             <!-- Cards Grid Layout -->
-            <div class="guides-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-top: 2rem; margin-bottom: 2rem;">
+            <div class="guides-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1.5rem; margin-top: 2rem; margin-bottom: 2rem;">
                 <!-- Teleparty Card -->
                 <a href="{{ASSET_PATH}}{{LANG_PREFIX}}alternatives/teleparty" class="guide-card" style="text-decoration: none; background: rgba(255, 255, 255, 0.03); border: 1px solid var(--glass-border); border-radius: 12px; padding: 1.5rem; display: flex; flex-direction: column; justify-content: space-between;">
                     <div>
                         <h3 style="margin-top: 0; margin-bottom: 0.75rem; color: #fff; font-size: 1.25rem;">{{ALT_TELEPARTY_TITLE}}</h3>
                         <p style="font-size: 0.9rem; line-height: 1.5; color: var(--text-muted); margin-bottom: 1.5rem;">{{ALT_TELEPARTY_META_DESC}}</p>
+                    </div>
+                    <div class="btn btn-primary" style="align-self: flex-start; padding: 0.5rem 1rem; font-size: 0.85rem; border-radius: 6px;">
+                        {{ALT_INDEX_READ_COMPARISON}}
+                    </div>
+                </a>
+
+                <!-- Watch2Gether Card -->
+                <a href="{{ASSET_PATH}}{{LANG_PREFIX}}alternatives/watch2gether" class="guide-card" style="text-decoration: none; background: rgba(255, 255, 255, 0.03); border: 1px solid var(--glass-border); border-radius: 12px; padding: 1.5rem; display: flex; flex-direction: column; justify-content: space-between;">
+                    <div>
+                        <h3 style="margin-top: 0; margin-bottom: 0.75rem; color: #fff; font-size: 1.25rem;">{{ALT_W2G_TITLE}}</h3>
+                        <p style="font-size: 0.9rem; line-height: 1.5; color: var(--text-muted); margin-bottom: 1.5rem;">{{ALT_W2G_META_DESC}}</p>
                     </div>
                     <div class="btn btn-primary" style="align-self: flex-start; padding: 0.5rem 1rem; font-size: 0.85rem; border-radius: 6px;">
                         {{ALT_INDEX_READ_COMPARISON}}

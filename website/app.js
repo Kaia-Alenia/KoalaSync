@@ -1216,8 +1216,8 @@ document.addEventListener('DOMContentLoaded', () => {
             const altLinks = document.querySelectorAll('a[href*="alternatives"]');
             altLinks.forEach(link => {
                 const attr = link.getAttribute('href');
-                if (attr === 'alternatives' || attr === 'alternatives/teleparty' || attr.endsWith('/alternatives')) {
-                    link.href = (activeLang === 'en') ? 'alternatives' : `${activeLang}/alternatives`;
+                if (attr === 'alternatives' || attr.startsWith('alternatives/') || attr.endsWith('/alternatives')) {
+                    link.href = (activeLang === 'en') ? attr : `${activeLang}/${attr}`;
                 }
             });
         }
