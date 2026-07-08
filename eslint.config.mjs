@@ -1,6 +1,6 @@
 export default [
   {
-    ignores: ["coverage/**", "dist/**", "node_modules/**", "scratch/**", "website/www/**"]
+    ignores: ["coverage/**", "dist/**", "node_modules/**", "scratch/**", "website/www/**", ".agents/**"]
   },
   {
     languageOptions: {
