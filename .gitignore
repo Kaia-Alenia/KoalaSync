@@ -47,5 +47,17 @@ website/www/
 # Temporary scratch files
 scratch/
 
-# Agent customizations
+# AI Assistants and Agents
 .agents/
+.antigravity/
+.gemini/
+.claude/
+.codex/
+.opencode/
+.cursor/
+.cursorrules
+.copilot/
+.cline/
+.clinerules
+.windsurfrules
+.codeium/
