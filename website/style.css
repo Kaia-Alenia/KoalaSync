@@ -3840,9 +3840,8 @@ header[id] {
 }
 
 /* Fixed height that already fits the open popup, so toggling it never changes
-   layout (the vertically centered hero never jumps). The caption is absolutely
-   positioned right under the cards instead of after the tall scene, and the
-   empty lower area is the invisible room the popup drops into.
+   layout (the vertically centered hero never jumps). The empty lower area is
+   the invisible room the popup drops into.
 
    Do not move .hero-mockup-wrapper down to align the headline and demo tops:
    the extension popup is bottom-anchored inside this scene, so moving the whole
@@ -3852,6 +3851,12 @@ header[id] {
     position: relative;
     width: 100%;
     height: max(calc(59cqw + 100px), 548px);
+}
+
+.demo-tab-stack {
+    position: relative;
+    width: 100%;
+    height: calc(59cqw + 100px + var(--demo-content-y));
 }
 
 @media (min-width: 1025px) {
@@ -4392,17 +4397,12 @@ header[id] {
 }
 
 /* Caption below the scene */
-/* Caption sits absolutely right below the card cascade (matching the cards'
-   bottom edge, which scales with the container width), so the tall scene that
-   reserves popup room does not push it far away. */
 .demo-hint {
-    position: absolute;
-    left: 0;
-    right: 0;
-    top: calc(59cqw + 82px);
-    margin: 0;
+    margin: 0.75rem auto 0;
+    max-width: min(100%, 34rem);
     text-align: center;
     font-size: 0.82rem;
+    line-height: 1.45;
     color: var(--text-muted);
     opacity: 0;
     transition: opacity 0.6s;
@@ -4420,6 +4420,7 @@ header[id] {
     }
 
     .demo-tab-card,
+    .demo-tab-stack,
     .demo-sync-chip,
     .demo-cursor,
     .demo-hint {
@@ -5134,6 +5135,7 @@ html.theme-light .mobile-demo-close:hover {
 
 .mobile-demo-stage .hero-mockup-wrapper {
     display: flex !important;
+    position: relative;
     width: min(100%, 560px);
     margin: 0 auto;
     will-change: transform;
@@ -5173,6 +5175,12 @@ html.theme-light .mobile-demo-close:hover {
     height: 100% !important;
     max-width: none;
     margin: 0 auto;
+}
+
+.mobile-demo-stage .demo-tab-stack {
+    display: block !important;
+    position: static !important;
+    height: auto !important;
 }
 
 .mobile-demo-stage .demo-tab-card {
