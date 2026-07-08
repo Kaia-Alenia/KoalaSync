@@ -26,7 +26,13 @@ KoalaSync is a privacy-first peer-to-peer video synchronization tool. It uses We
 
 ## Optional
 
-- [Alternatives hub](https://sync.koalastuff.net/alternatives/): Comparison with Teleparty, Scener, other sync tools
+- [Alternatives hub](https://sync.koalastuff.net/alternatives/): Overview of watch party guide and comparisons
+  - [Teleparty alternative guide](https://sync.koalastuff.net/alternatives/teleparty): Comparison with Teleparty / Netflix Party
+  - [Watch2Gether alternative guide](https://sync.koalastuff.net/alternatives/watch2gether): Comparison with Watch2Gether
+  - [Scener alternative guide](https://sync.koalastuff.net/alternatives/scener): Comparison with Scener
+  - [Kosmi alternative guide](https://sync.koalastuff.net/alternatives/kosmi): Comparison with Kosmi
+  - [TwoSeven alternative guide](https://sync.koalastuff.net/alternatives/twoseven): Comparison with TwoSeven
+  - [Screen sharing guide](https://sync.koalastuff.net/alternatives/screen-sharing): Guide on browser-based screen sharing
 - [Privacy policy](https://sync.koalastuff.net/privacy.html): Data handling and privacy information
 - [Imprint](https://sync.koalastuff.net/imprint.html): Legal notice
 - [Sitemap](https://sync.koalastuff.net/sitemap.xml): Full site index
