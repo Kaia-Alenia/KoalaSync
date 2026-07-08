@@ -193,7 +193,7 @@ async function compile() {
             compiled = compiled.replace(new RegExp(`\\{\\{SELECTED_${l.toUpperCase()}\\}\\}`, 'g'), l === lang ? 'selected' : '');
         });
         for (const [key, value] of Object.entries(locale)) {
-            compiled = compiled.replace(new RegExp(`\\{\\{${key}\\}\\}`, 'g'), value);
+            compiled = compiled.replace(new RegExp(`\\{\\{${key}\\}\\}`, 'g'), () => value);
         }
         return compiled;
     }
@@ -244,7 +244,7 @@ async function compile() {
         // Merge locale with English fallback for keys not present in current locale
         const mergedLocale = { ...englishLocale, ...locale };
         for (const [key, value] of Object.entries(mergedLocale)) {
-            compiled = compiled.replace(new RegExp(`\\{\\{${key}\\}\\}`, 'g'), value);
+            compiled = compiled.replace(new RegExp(`\\{\\{${key}\\}\\}`, 'g'), () => value);
         }
         return compiled;
     }
@@ -569,5 +569,4 @@ function generateSitemap(wwwDir, websiteDir) {
     fs.writeFileSync(path.join(wwwDir, 'sitemap.xml'), xml.trim() + '\n', 'utf8');
     console.log('  ✓ Dynamically generated sitemap.xml with current date');
 }
-
 compile().catch(err => { console.error('Build failed:', err); process.exit(1); });
