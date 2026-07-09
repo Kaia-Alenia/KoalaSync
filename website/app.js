@@ -60,19 +60,29 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    // Theme toggle (dark is default; light mode via html.theme-light,
+    // Theme toggle (saved preference wins; otherwise follows system preference,
     // pre-paint class is applied by lang-init.js to avoid a flash)
     const themeToggle = document.getElementById('theme-toggle');
     const themeMeta = document.querySelector('meta[name="theme-color"]');
     const themeStorageKey = 'koala_theme';
+    const systemThemeQuery = (() => {
+        try {
+            return window.matchMedia ? window.matchMedia('(prefers-color-scheme: light)') : null;
+        } catch (_) {
+            return null;
+        }
+    })();
+    const getSystemTheme = () => systemThemeQuery && systemThemeQuery.matches ? 'light' : 'dark';
+    const getSavedTheme = () => {
+        const savedTheme = safeGetLocalStorage(themeStorageKey);
+        return savedTheme === 'light' || savedTheme === 'dark' ? savedTheme : null;
+    };
     const getCurrentTheme = () => document.documentElement.classList.contains('theme-light') ? 'light' : 'dark';
-    const savedTheme = safeGetLocalStorage(themeStorageKey);
+    const applyTheme = (theme) => {
+        document.documentElement.classList.toggle('theme-light', theme === 'light');
+    };
 
-    if (savedTheme === 'light') {
-        document.documentElement.classList.add('theme-light');
-    } else if (savedTheme === 'dark') {
-        document.documentElement.classList.remove('theme-light');
-    }
+    applyTheme(getSavedTheme() || getSystemTheme());
 
     const syncThemeMeta = () => {
         if (themeMeta) {
@@ -80,11 +90,23 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
     syncThemeMeta();
-    safeSetLocalStorage(themeStorageKey, getCurrentTheme());
+    const syncSystemTheme = () => {
+        if (getSavedTheme()) return;
+        applyTheme(getSystemTheme());
+        syncThemeMeta();
+    };
+    if (systemThemeQuery) {
+        if (typeof systemThemeQuery.addEventListener === 'function') {
+            systemThemeQuery.addEventListener('change', syncSystemTheme);
+        } else if (typeof systemThemeQuery.addListener === 'function') {
+            systemThemeQuery.addListener(syncSystemTheme);
+        }
+    }
     if (themeToggle) {
         themeToggle.addEventListener('click', () => {
-            const isLight = document.documentElement.classList.toggle('theme-light');
-            safeSetLocalStorage(themeStorageKey, isLight ? 'light' : 'dark');
+            const nextTheme = getCurrentTheme() === 'light' ? 'dark' : 'light';
+            applyTheme(nextTheme);
+            safeSetLocalStorage(themeStorageKey, nextTheme);
             syncThemeMeta();
         });
     }

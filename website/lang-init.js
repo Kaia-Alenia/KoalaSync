@@ -18,9 +18,22 @@
         }
     };
 
-    // Apply saved theme before first paint (dark is the default, no class needed)
-    if (safeGetLocalStorage('koala_theme') === 'light') {
+    var getSystemTheme = function() {
+        try {
+            return window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+        } catch (_) {
+            return 'dark';
+        }
+    };
+
+    // Apply the effective theme before first paint. A saved preference wins;
+    // otherwise first-time visitors follow their browser/system setting.
+    var savedTheme = safeGetLocalStorage('koala_theme');
+    var effectiveTheme = savedTheme === 'light' || savedTheme === 'dark' ? savedTheme : getSystemTheme();
+    if (effectiveTheme === 'light') {
         html.classList.add('theme-light');
+    } else {
+        html.classList.remove('theme-light');
     }
 
     // Mapping of browser language codes to KoalaSync locale directories
