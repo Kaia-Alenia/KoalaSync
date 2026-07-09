@@ -17,8 +17,8 @@
     --success: #22c55e;
     --glass: rgba(30, 41, 59, 0.4);
     --glass-border: rgba(255, 255, 255, 0.05);
-    --section-tint: rgba(255, 255, 255, 0.02);
-    --section-tint-strong: rgba(15, 23, 42, 0.4);
+    --section-tint: transparent;
+    --section-tint-strong: rgba(15, 23, 42, 0.28);
     --card-surface: rgba(30, 41, 59, 0.45);
     --card-border: rgba(255, 255, 255, 0.08);
     color-scheme: dark;
@@ -107,7 +107,10 @@ body {
     height: 100%;
     z-index: -1;
     overflow: hidden;
-    background: radial-gradient(circle at 50% 50%, #1e1b4b 0%, #0f172a 100%);
+    background:
+        radial-gradient(circle at 18% 10%, rgba(99, 102, 241, 0.18), transparent 34rem),
+        radial-gradient(circle at 78% 68%, rgba(168, 85, 247, 0.12), transparent 38rem),
+        linear-gradient(180deg, #0f172a 0%, #111827 45%, #0f172a 100%);
 }
 
 .blob {
@@ -117,8 +120,8 @@ body {
     background: radial-gradient(circle, var(--accent-glow) 0%, transparent 70%);
     filter: blur(80px);
     border-radius: 50%;
-    opacity: 0.5;
-    animation: move 25s infinite alternate ease-in-out;
+    opacity: 0.22;
+    animation: move 40s infinite alternate ease-in-out;
 }
 
 .blob-1 { top: -100px; left: -100px; animation-delay: 0s; }
@@ -318,19 +321,22 @@ html.theme-light {
     --text-muted: #475569;
     --glass: rgba(255, 255, 255, 0.7);
     --glass-border: rgba(15, 23, 42, 0.08);
-    --section-tint: rgba(15, 23, 42, 0.025);
-    --section-tint-strong: rgba(15, 23, 42, 0.05);
+    --section-tint: transparent;
+    --section-tint-strong: rgba(226, 232, 240, 0.5);
     --card-surface: rgba(255, 255, 255, 0.75);
     --card-border: rgba(15, 23, 42, 0.08);
     color-scheme: light;
 }
 
 html.theme-light .bg-blobs {
-    background: radial-gradient(circle at 50% 50%, #e0e7ff 0%, #f1f5f9 100%);
+    background:
+        radial-gradient(circle at 16% 10%, rgba(99, 102, 241, 0.16), transparent 34rem),
+        radial-gradient(circle at 78% 68%, rgba(168, 85, 247, 0.1), transparent 38rem),
+        linear-gradient(180deg, #f8fafc 0%, #eef2ff 46%, #f8fafc 100%);
 }
 
 html.theme-light .blob {
-    opacity: 0.35;
+    opacity: 0.16;
 }
 
 html.theme-light .feature-card,
@@ -394,7 +400,7 @@ html.theme-light .btn-firefox-secondary img {
 }
 
 html.theme-light .comparison-section {
-    background: rgba(15, 23, 42, 0.02);
+    background: transparent;
 }
 
 html.theme-light .comparison-table-wrapper {
@@ -2453,7 +2459,7 @@ input:checked + .mock-slider:before {
 /* --- Footer --- */
 footer {
     padding: 4rem 0;
-    border-top: 1px solid var(--glass-border);
+    border-top: 0;
     text-align: center;
     color: var(--text-muted);
 }
@@ -2778,8 +2784,8 @@ html:not(.lang-de) [lang="de"] {
 .compat-section {
     padding: 0.5rem 0 2.5rem 0;
     text-align: center;
-    background: var(--section-tint);
-    border-bottom: 1px solid var(--glass-border);
+    background: transparent;
+    border-bottom: 0;
 }
 
 .compat-mascot {
@@ -3005,7 +3011,7 @@ html.theme-light .compat-logo img.compat-logo-disneyplus-mark {
 .use-cases-section {
     padding: 6rem 0;
     position: relative;
-    border-bottom: 1px solid var(--glass-border);
+    border-bottom: 0;
 }
 
 .use-cases-grid {
@@ -3145,8 +3151,19 @@ html.theme-light .compat-logo img.compat-logo-disneyplus-mark {
 /* --- Comparison Section --- */
 .comparison-section {
     padding: 6rem 0;
-    background: rgba(255, 255, 255, 0.01);
-    border-bottom: 1px solid var(--glass-border);
+    background: transparent;
+    border-bottom: 0;
+}
+
+#self-hosting,
+#faq,
+#faq + section,
+footer {
+    background: var(--section-tint-strong);
+}
+
+#self-hosting {
+    border-top: 1px solid var(--glass-border);
 }
 
 .comparison-table-wrapper {
@@ -5275,4 +5292,3 @@ html.theme-light .mobile-demo-close:hover {
         contain-intrinsic-block-size: auto 700px;
     }
 }
-
