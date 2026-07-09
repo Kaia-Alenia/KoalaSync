@@ -129,7 +129,6 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     const scheduleHeroMascotAnchor = () => requestAnimationFrame(syncHeroMascotAnchor);
-    scheduleHeroMascotAnchor();
     window.addEventListener('load', scheduleHeroMascotAnchor, { once: true });
     window.addEventListener('resize', scheduleHeroMascotAnchor, { passive: true });
     if ('ResizeObserver' in window) {

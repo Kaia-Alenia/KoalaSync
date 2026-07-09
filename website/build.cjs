@@ -428,7 +428,7 @@ async function compile() {
         console.log('  ✓ Apple touch icons copied to www root.');
     }
 
-    // ── 7. Convert all WebP to AVIF (quality 70) ──
+    // ── 7. Convert all WebP to AVIF (quality 65) ──
     console.log('Converting WebP → AVIF...');
     let avifCount = 0;
     const webpFiles = fs.readdirSync(destAssets).filter(f => f.endsWith('.webp'));
@@ -438,7 +438,7 @@ async function compile() {
         if (stat.size < MIN_AVIF_KB * 1024) continue;
         const dest = path.join(destAssets, f.replace(/\.webp$/, '.avif'));
         if (fs.existsSync(dest) && fs.statSync(dest).mtimeMs >= stat.mtimeMs) continue;
-        await sharp(src).avif({ quality: 80, speed: 4 }).toFile(dest);
+        await sharp(src).avif({ quality: 65, speed: 4 }).toFile(dest);
         avifCount++;
     }
     console.log(`  ${avifCount} AVIF files generated.`);
