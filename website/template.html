@@ -80,6 +80,7 @@
       "name": "KoalaSync",
       "url": "https://sync.koalastuff.net/",
       "logo": "https://sync.koalastuff.net/assets/NewLogoIcon_128.webp",
+      "description": "{{SCHEMA_APP_DESC}}",
       "sameAs": [
         "https://github.com/Shik3i/KoalaSync",
         "https://mastodon.social/@koalastuff"
@@ -92,6 +93,7 @@
       "@type": "WebSite",
       "name": "KoalaSync",
       "url": "https://sync.koalastuff.net/",
+      "description": "{{SCHEMA_APP_DESC}}",
       "inLanguage": ["en", "de", "fr", "es", "it", "nl", "pl", "pt", "pt-BR", "tr", "ru", "ja", "ko", "zh", "uk"]
     }
     </script>
@@ -789,7 +791,7 @@
         </div>
     </section>
 
-    <section id="use-cases" class="use-cases-section">
+    <section id="use-cases" class="use-cases-section lazy-section">
         <div class="container">
             <h2 class="section-title" data-reveal style="text-align: center; font-size: 2.2rem; margin-bottom: 1rem;">
                 <span>{{WHY_TITLE}}</span>
@@ -855,7 +857,7 @@
         </div>
     </section>
 
-    <section id="comparison" class="comparison-section">
+    <section id="comparison" class="comparison-section lazy-section">
         <div class="container">
             <img src="{{ASSET_PATH}}assets/ProContraKoala-1x.webp" srcset="{{ASSET_PATH}}assets/ProContraKoala-1x.webp 260w, {{ASSET_PATH}}assets/ProContraKoala.webp 423w" sizes="(max-width: 768px) calc(100vw - 2rem), 260px" alt="A cute koala weighing options in both hands to compare KoalaSync vs Teleparty" class="comparison-mascot" width="260" height="184" loading="lazy" fetchpriority="low" data-reveal>
             <h2 class="section-title" data-reveal style="text-align: center; font-size: 2.2rem; margin-bottom: 1rem;">
@@ -1191,7 +1193,7 @@
     </section>
 
     <!-- Self Hosters Paradise Section -->
-    <section id="self-hosting" style="background: var(--section-tint-strong); border-top: 1px solid var(--glass-border); border-bottom: 1px solid var(--glass-border);">
+    <section id="self-hosting" class="lazy-section" style="background: var(--section-tint-strong); border-top: 1px solid var(--glass-border); border-bottom: 1px solid var(--glass-border);">
         <div class="container">
             <h2 style="font-size: 2.5rem; text-align: center; margin-bottom: 1rem;">
                 <span>{{SELF_TITLE}}</span>
@@ -1318,7 +1320,7 @@
         </div>
     </section>
 
-    <section id="faq" style="border-top: 1px solid var(--glass-border);">
+    <section id="faq" class="lazy-section" style="border-top: 1px solid var(--glass-border);">
         <div class="container">
             <img src="{{ASSET_PATH}}assets/KoalaQuestions-1x.webp" srcset="{{ASSET_PATH}}assets/KoalaQuestions-1x.webp 250w, {{ASSET_PATH}}assets/KoalaQuestions.webp 355w" sizes="(max-width: 768px) calc(100vw - 2rem), 250px" alt="A cute koala holding a question mark wondering about KoalaSync" class="features-questions-mascot" width="250" height="211" loading="lazy" fetchpriority="low" data-reveal>
             <h2 data-reveal style="font-size: 2.2rem; text-align: center; margin-bottom: 1rem;">

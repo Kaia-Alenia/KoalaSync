@@ -5236,3 +5236,43 @@ html.theme-light .mobile-demo-close:hover {
         padding-inline: 0.45rem !important;
     }
 }
+
+/* Performance optimization for off-screen sections (below the fold) */
+.lazy-section {
+    content-visibility: auto;
+}
+
+.use-cases-section {
+    contain-intrinsic-block-size: auto 600px;
+}
+
+.comparison-section {
+    contain-intrinsic-block-size: auto 800px;
+}
+
+#self-hosting {
+    contain-intrinsic-block-size: auto 400px;
+}
+
+#faq {
+    contain-intrinsic-block-size: auto 450px;
+}
+
+@media (max-width: 768px) {
+    .use-cases-section {
+        contain-intrinsic-block-size: auto 900px;
+    }
+
+    .comparison-section {
+        contain-intrinsic-block-size: auto 1100px;
+    }
+
+    #self-hosting {
+        contain-intrinsic-block-size: auto 550px;
+    }
+
+    #faq {
+        contain-intrinsic-block-size: auto 700px;
+    }
+}
+

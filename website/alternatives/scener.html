@@ -71,6 +71,23 @@
     }
     </script>
 
+    <!-- Structured Data (Schema.org) for WebPage -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebPage",
+      "name": "{{ALT_SCENER_TITLE}}",
+      "url": "https://sync.koalastuff.net/{{LANG_PREFIX}}alternatives/scener",
+      "description": "{{ALT_SCENER_META_DESC}}",
+      "inLanguage": "{{LANG_CODE}}",
+      "isPartOf": {
+        "@type": "WebSite",
+        "name": "KoalaSync",
+        "url": "https://sync.koalastuff.net/{{LANG_PREFIX}}"
+      }
+    }
+    </script>
+
     <!-- Organization Schema -->
     <script type="application/ld+json">
     {
