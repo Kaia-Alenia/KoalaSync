@@ -1598,12 +1598,12 @@ input:checked + .mock-slider:before {
     font-size: 1.65rem;
     margin-bottom: 0.75rem;
     font-weight: 850;
-    color: white;
+    color: var(--text-main);
     letter-spacing: 0;
 }
 
 .step-text p {
-    color: #94a3b8;
+    color: var(--text-muted);
     font-size: 1rem;
     line-height: 1.55;
 }
