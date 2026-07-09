@@ -10,14 +10,6 @@
         }
     };
 
-    var safeSetLocalStorage = function(key, val) {
-        try {
-            localStorage.setItem(key, val);
-        } catch (_) {
-            return;
-        }
-    };
-
     var getSystemTheme = function() {
         try {
             return window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
@@ -90,10 +82,8 @@
     }
 
     if (hasStaticLang) {
-        var isLegal = path.indexOf('impressum') !== -1 || path.indexOf('datenschutz') !== -1 || path.indexOf('imprint') !== -1 || path.indexOf('privacy') !== -1;
-        if (!isLegal) {
-            safeSetLocalStorage('koala_lang', activeLang);
-        }
+        // Do not persist a static page language merely because the visitor landed
+        // there. The explicit dropdown handler in app.js owns language preference.
     } else {
         var savedLang = safeGetLocalStorage('koala_lang');
         var browserLang = getBrowserLang();
