@@ -30,6 +30,7 @@ function copyDirSync(src, dest) {
 }
 
 function sha8(buf) { return crypto.createHash('sha256').update(buf).digest('hex').slice(0, 8); }
+function sha384(buf) { return 'sha384-' + crypto.createHash('sha384').update(buf).digest('base64'); }
 
 async function minifyJS(raw) {
     const result = await esbuild.transform(raw, {
@@ -135,16 +136,19 @@ async function compile() {
     const styleMin = minifyCSS(styleRaw);
     const styleHash = sha8(styleMin);
     const styleName = `style.${styleHash}.min.css`;
+    const styleSRI = sha384(styleMin);
 
     const appRaw = fs.readFileSync(path.join(websiteDir, 'app.js'), 'utf8');
     const appMin = await minifyJS(appRaw);
     const appHash = sha8(appMin);
     const appName = `app.${appHash}.min.js`;
+    const appSRI = sha384(appMin);
 
     const langRaw = fs.readFileSync(path.join(websiteDir, 'lang-init.js'), 'utf8');
     const langMin = await minifyJS(langRaw);
     const langHash = sha8(langMin);
     const langName = `lang-init.${langHash}.min.js`;
+    const langSRI = sha384(langMin);
 
     const stylePct = ((1 - styleMin.length / styleRaw.length) * 100).toFixed(0);
     const appPct   = ((1 - appMin.length / appRaw.length) * 100).toFixed(0);
@@ -452,15 +456,15 @@ async function compile() {
     walkHtml(wwwDir, (filePath) => {
         let html = fs.readFileSync(filePath, 'utf8');
 
-        // 8a. Replace hashed asset refs
-        html = html.replace(/href="((?:\.\.\/)*)style\.min\.css"/g, (m, prefix) => {
-            return `href="${prefix}${styleName}"`;
+        // 8a. Replace hashed asset refs and inject SRI (Subresource Integrity)
+        html = html.replace(/(<link\b[^>]*?\bhref=")((?:\.\.\/)*)style\.min\.css"/g, (m, before, prefix) => {
+            return `${before}${prefix}${styleName}" integrity="${styleSRI}" crossorigin="anonymous"`;
         });
-        html = html.replace(/src="((?:\.\.\/)*)app\.min\.js"/g, (m, prefix) => {
-            return `src="${prefix}${appName}"`;
+        html = html.replace(/(<script\b[^>]*?\bsrc=")((?:\.\.\/)*)app\.min\.js"/g, (m, before, prefix) => {
+            return `${before}${prefix}${appName}" integrity="${appSRI}" crossorigin="anonymous"`;
         });
-        html = html.replace(/src="((?:\.\.\/)*)lang-init\.min\.js"/g, (m, prefix) => {
-            return `src="${prefix}${langName}"`;
+        html = html.replace(/(<script\b[^>]*?\bsrc=")((?:\.\.\/)*)lang-init\.min\.js"/g, (m, before, prefix) => {
+            return `${before}${prefix}${langName}" integrity="${langSRI}" crossorigin="anonymous"`;
         });
 
         // 8b. Inject AVIF <picture> wrappers

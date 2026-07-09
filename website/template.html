@@ -6,8 +6,12 @@
     <title>{{META_TITLE}}</title>
     <meta name="description" content="{{META_DESCRIPTION}}">
     
+    <link rel="dns-prefetch" href="https://chromewebstore.google.com">
+    <link rel="dns-prefetch" href="https://addons.mozilla.org">
+    <link rel="dns-prefetch" href="https://github.com">
+    
     <link rel="preload" href="{{ASSET_PATH}}style.min.css" as="style">
-    <link rel="preload" as="image" href="{{ASSET_PATH}}assets/LookDownKoala.webp" imagesrcset="{{ASSET_PATH}}assets/LookDownKoala-1x.webp 90w, {{ASSET_PATH}}assets/LookDownKoala.webp 205w" imagesizes="90px" fetchpriority="high">
+    <link rel="preload" as="image" href="{{ASSET_PATH}}assets/LookDownKoala.avif" imagesrcset="{{ASSET_PATH}}assets/LookDownKoala-1x.avif 90w, {{ASSET_PATH}}assets/LookDownKoala.avif 205w" imagesizes="90px" type="image/avif" fetchpriority="high">
     <link rel="stylesheet" href="{{ASSET_PATH}}style.min.css">
     <link rel="icon" type="image/png" sizes="16x16" href="{{ASSET_PATH}}assets/favicon-16x16.png">
     <link rel="icon" type="image/png" sizes="32x32" href="{{ASSET_PATH}}assets/favicon-32x32.png">
