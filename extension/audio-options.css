@@ -1,12 +1,27 @@
 :root {
-    --bg: #0f172a;
-    --card: #1e293b;
-    --panel: #172033;
-    --accent: #6366f1;
-    --accent-hover: #818cf8;
-    --text: #f8fafc;
-    --text-muted: #94a3b8;
-    --border: #334155;
+    /* v3.0.0 "The Greens Update" nature palette (shared with the website) */
+    --bg-base: oklch(0.20 0.025 140);
+    --surface: oklch(0.27 0.035 130);
+    --surface-deep: oklch(0.16 0.025 135);
+    --surface-alt: oklch(0.23 0.03 130);
+    --border-soft: rgba(255, 255, 255, 0.06);
+    --border-strong: oklch(0.32 0.03 125);
+    --text-primary: oklch(0.96 0.01 90);
+    --text-secondary: oklch(0.78 0.02 90);
+    --accent-green: oklch(0.68 0.13 150);
+    --accent-green-hover: oklch(0.75 0.13 150);
+    --accent-terracotta: oklch(0.62 0.14 45);
+    --danger: oklch(0.55 0.15 25);
+    --text-on-green: oklch(0.14 0.02 90);
+
+    --bg: var(--bg-base);
+    --card: var(--surface);
+    --panel: var(--surface-alt);
+    --accent: var(--accent-green);
+    --accent-hover: var(--accent-green-hover);
+    --text: var(--text-primary);
+    --text-muted: var(--text-secondary);
+    --border: var(--border-strong);
     --radius: 8px;
 }
 
@@ -125,12 +140,12 @@ h2 {
     transition: border-color 0.2s, box-shadow 0.2s;
 }
 .preset-card:hover {
-    border-color: rgba(99, 102, 241, 0.4);
+    border-color: rgba(86, 174, 108, 0.4);
 }
 
 .preset-card:has(input:checked) {
     border-color: var(--accent);
-    box-shadow: 0 0 0 1px rgba(99, 102, 241, 0.35);
+    box-shadow: 0 0 0 1px rgba(86, 174, 108, 0.35);
 }
 
 .preset-card input {
@@ -141,8 +156,8 @@ h2 {
     display: grid;
     gap: 12px;
     padding: 16px;
-    background: rgba(15, 23, 42, 0.58);
-    border: 1px solid rgba(148, 163, 184, 0.16);
+    background: rgba(16, 25, 14, 0.58);
+    border: 1px solid rgba(163, 162, 148, 0.16);
     border-radius: var(--radius);
     transition: opacity 0.3s;
 }
@@ -204,7 +219,7 @@ input[type="number"]:focus {
     position: absolute;
     cursor: pointer;
     inset: 0;
-    background-color: #334155;
+    background-color: var(--border-strong);
     transition: .3s;
     border-radius: 22px;
 }
@@ -216,7 +231,7 @@ input[type="number"]:focus {
     width: 16px;
     left: 3px;
     bottom: 3px;
-    background-color: #94a3b8;
+    background-color: var(--text-secondary);
     transition: .3s;
     border-radius: 50%;
 }

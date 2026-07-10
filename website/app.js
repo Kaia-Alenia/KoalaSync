@@ -86,7 +86,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const syncThemeMeta = () => {
         if (themeMeta) {
-            themeMeta.setAttribute('content', document.documentElement.classList.contains('theme-light') ? '#f1f5f9' : '#0f172a');
+            themeMeta.setAttribute('content', document.documentElement.classList.contains('theme-light') ? '#f0efe7' : '#10190e');
         }
     };
     syncThemeMeta();
@@ -211,6 +211,17 @@ document.addEventListener('DOMContentLoaded', () => {
     window.addEventListener('scroll', () => {
         nav.classList.toggle('nav-scrolled', window.scrollY > 50);
     }, { passive: true });
+
+    // Bamboo forest scroll parallax (background layers only)
+    const bambooFar = document.getElementById('bamboo-far');
+    const bambooNear = document.getElementById('bamboo-near');
+    if (bambooFar && bambooNear && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        window.addEventListener('scroll', () => {
+            const scrollY = window.scrollY;
+            bambooFar.style.transform = `translateY(${scrollY * 0.04}px)`;
+            bambooNear.style.transform = `translateY(${-scrollY * 0.06}px)`;
+        }, { passive: true });
+    }
 
     // Invite Detection & Bridge
     const checkInvite = () => {
@@ -1499,7 +1510,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (heroBtns && heroBtns.length > 0) {
                     heroBtns.forEach(btn => {
                         const isFF = btn.classList.contains('btn-firefox');
-                        const glowColor = isFF ? 'rgba(249, 115, 22, ' : 'rgba(99, 102, 241, ';
+                        const glowColor = isFF ? 'rgba(201, 103, 54, ' : 'rgba(86, 174, 108, ';
                         btn.animate([
                             { transform: 'scale(1)', boxShadow: `0 0 15px ${glowColor}0.2)` },
                             { transform: 'scale(1.05)', boxShadow: `0 0 25px ${glowColor}0.5)` },

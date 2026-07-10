@@ -12,14 +12,29 @@
         }
 
         :root {
-            --bg: #0f172a;
-            --card: #1e293b;
-            --accent: #6366f1;
-            --accent-hover: #818cf8;
-            --text: #f8fafc;
-            --text-muted: #94a3b8;
-            --success: #22c55e;
-            --error: #ef4444;
+            /* v3.0.0 "The Greens Update" nature palette (shared with the website) */
+            --bg-base: oklch(0.20 0.025 140);
+            --surface: oklch(0.27 0.035 130);
+            --surface-deep: oklch(0.16 0.025 135);
+            --surface-alt: oklch(0.23 0.03 130);
+            --border-soft: rgba(255, 255, 255, 0.06);
+            --border-strong: oklch(0.32 0.03 125);
+            --text-primary: oklch(0.96 0.01 90);
+            --text-secondary: oklch(0.78 0.02 90);
+            --accent-green: oklch(0.68 0.13 150);
+            --accent-green-hover: oklch(0.75 0.13 150);
+            --accent-terracotta: oklch(0.62 0.14 45);
+            --danger: oklch(0.55 0.15 25);
+            --text-on-green: oklch(0.14 0.02 90);
+
+            --bg: var(--surface-deep);
+            --card: var(--surface);
+            --accent: var(--accent-green);
+            --accent-hover: var(--accent-green-hover);
+            --text: var(--text-primary);
+            --text-muted: var(--text-secondary);
+            --success: var(--accent-green);
+            --error: var(--danger);
             --radius: 12px;
             --star: #fbbf24;
         }
@@ -103,7 +118,7 @@
 
         .tab-btn.active {
             background: var(--accent);
-            color: white;
+            color: var(--text-on-green);
         }
 
         .tab-content {
@@ -138,7 +153,7 @@
             width: 100%;
             box-sizing: border-box;
             background: var(--card);
-            border: 1px solid #334155;
+            border: 1px solid var(--border-strong);
             color: white;
             padding: 10px;
             border-radius: 8px;
@@ -153,7 +168,7 @@
             }
             #langSelector::picker(select) {
                 background-color: var(--bg);
-                border: 1px solid #334155;
+                border: 1px solid var(--border-strong);
                 border-radius: 8px;
                 padding: 4px;
                 font-family: 'Twemoji Country Flags', inherit;
@@ -162,7 +177,7 @@
 
         input:focus {
             border-color: var(--accent);
-            box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
+            box-shadow: 0 0 0 2px rgba(86, 174, 108, 0.2);
         }
 
         button.primary {
@@ -170,7 +185,7 @@
             padding: 12px;
             background: var(--accent);
             border: none;
-            color: white;
+            color: var(--text-on-green);
             font-weight: 700;
             border-radius: 8px;
             cursor: pointer;
@@ -186,7 +201,7 @@
         button.secondary {
             width: 100%;
             padding: 10px;
-            background: #334155;
+            background: var(--border-strong);
             border: none;
             color: white;
             font-weight: 600;
@@ -201,12 +216,12 @@
             padding: 12px;
             border-radius: 8px;
             margin-bottom: 12px;
-            border: 1px solid #334155;
+            border: 1px solid var(--border-strong);
         }
 
         .peer-item {
             padding: 8px 0;
-            border-bottom: 1px solid #334155;
+            border-bottom: 1px solid var(--border-strong);
         }
 
         .peer-item:last-child { border: 0; }
@@ -271,9 +286,9 @@
             animation: toastSlideIn 0.3s ease-out, toastFadeOut 0.3s ease-in 2.7s forwards;
             box-shadow: 0 4px 12px rgba(0,0,0,0.3);
         }
-        .toast-success { background: var(--success); color: white; }
+        .toast-success { background: var(--success); color: var(--text-on-green); }
         .toast-error { background: var(--error); color: white; }
-        .toast-info { background: var(--accent); color: white; }
+        .toast-info { background: var(--accent); color: var(--text-on-green); }
         .toast-warning { background: #f59e0b; color: white; }
 
         @keyframes toastSlideIn {
@@ -309,7 +324,7 @@
             position: absolute;
             cursor: pointer;
             top: 0; left: 0; right: 0; bottom: 0;
-            background-color: #334155;
+            background-color: var(--border-strong);
             transition: .3s;
             border-radius: 20px;
         }
@@ -320,7 +335,7 @@
             width: 14px;
             left: 3px;
             bottom: 3px;
-            background-color: #94a3b8;
+            background-color: #a3a294;
             transition: .3s;
             border-radius: 50%;
         }
@@ -365,8 +380,8 @@
             50% { opacity: 1; transform: scale(1.3); }
         }
         @keyframes spotlightPulse {
-            0%, 100% { box-shadow: 0 0 0 9999px rgba(15, 23, 42, 0.65), 0 0 0 0px var(--accent); }
-            50% { box-shadow: 0 0 0 9999px rgba(15, 23, 42, 0.65), 0 0 0 6px var(--accent); }
+            0%, 100% { box-shadow: 0 0 0 9999px rgba(16, 25, 14, 0.65), 0 0 0 0px var(--accent); }
+            50% { box-shadow: 0 0 0 9999px rgba(16, 25, 14, 0.65), 0 0 0 6px var(--accent); }
         }
         @keyframes floatHint {
             0%, 100% { transform: translateY(0); }
@@ -399,12 +414,12 @@
 
         <!-- JOIN SECTION: Visible when not in a room -->
         <div id="section-join">
-            <button id="createRoomBtn" class="primary" style="margin-bottom: 16px; padding: 14px; font-size: 15px; background: linear-gradient(135deg, #6366f1, #a855f7); box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);" data-i18n="BTN_CREATE_ROOM">+ Create New Room</button>
-            <details style="margin-bottom: 12px; background: var(--card); border: 1px solid #334155; border-radius: 8px; padding: 8px;">
+            <button id="createRoomBtn" class="primary" style="margin-bottom: 16px; padding: 14px; font-size: 15px; background: linear-gradient(135deg, var(--accent-green), var(--accent-terracotta)); color: var(--text-on-green); box-shadow: 0 4px 12px rgba(86, 174, 108, 0.4);" data-i18n="BTN_CREATE_ROOM">+ Create New Room</button>
+            <details style="margin-bottom: 12px; background: var(--card); border: 1px solid var(--border-strong); border-radius: 8px; padding: 8px;">
                 <summary style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; cursor: pointer; outline: none;" data-i18n="MANUAL_CONNECT_HEADER">Manual Connect / Advanced</summary>
                 <div style="margin-top: 12px;">
             <!-- Server selection — its own concern, kept visually separate from the room fields. -->
-            <div style="background: var(--bg); border: 1px solid #334155; border-radius: 8px; padding: 10px; margin-bottom: 14px;">
+            <div style="background: var(--bg); border: 1px solid var(--border-strong); border-radius: 8px; padding: 10px; margin-bottom: 14px;">
                 <div class="form-group" style="margin-bottom:0;">
                     <label title="Select which KoalaSync server to use" data-i18n="LABEL_SERVER">Server</label>
                     <div style="display:flex; gap:4px; margin-bottom:0;">
@@ -458,7 +473,7 @@
             <div id="hostControlCard" class="info-card" style="margin-bottom: 20px; display:none;">
                 <div style="display:flex; justify-content:space-between; align-items:center;">
                     <label style="margin:0;" title="Restrict who can control playback in this room" data-i18n="LABEL_HOST_CONTROL" data-i18n-title="LABEL_HOST_CONTROL_TOOLTIP">Host Control</label>
-                    <span id="hostRoleBadge" style="font-size:10px; font-weight:700; text-transform:uppercase; padding:2px 8px; border-radius:8px; background:var(--accent); color:#fff;"></span>
+                    <span id="hostRoleBadge" style="font-size:10px; font-weight:700; text-transform:uppercase; padding:2px 8px; border-radius:8px; background:var(--accent); color:var(--text-on-green);"></span>
                 </div>
                 <div id="hostControlToggleRow" style="display:none; align-items:center; justify-content:space-between; gap:12px; margin-top:12px;">
                     <span style="font-size:12px; color:var(--text); line-height:1.3;" data-i18n="LABEL_HOST_ONLY_TOGGLE">Only I can control playback</span>
@@ -467,7 +482,7 @@
                         <span class="slider"></span>
                     </label>
                 </div>
-                <div id="hostControlCohostHint" style="display:none; margin-top:10px; padding-top:10px; border-top:1px solid #334155; font-size:11px; color:var(--text-muted); line-height:1.4;" data-i18n="NOTICE_COHOST_HINT">Tip: grant control to individual viewers in the participant list below.</div>
+                <div id="hostControlCohostHint" style="display:none; margin-top:10px; padding-top:10px; border-top:1px solid var(--border-strong); font-size:11px; color:var(--text-muted); line-height:1.4;" data-i18n="NOTICE_COHOST_HINT">Tip: grant control to individual viewers in the participant list below.</div>
                 <div id="hostControlGuestNote" style="display:none; margin-top:10px; font-size:12px; color:var(--text-muted);" data-i18n="NOTICE_HOST_CONTROLS">The host controls playback for everyone.</div>
             </div>
 
@@ -492,7 +507,7 @@
                 <option value="" data-i18n="OPTION_SELECT_TAB">-- Select a Tab --</option>
             </select>
             <!-- Hint Tooltip -->
-            <div id="targetTabHint" style="display: none; position: absolute; top: -25px; right: 0; background: var(--accent); color: white; padding: 4px 8px; border-radius: 6px; font-size: 11px; font-weight: bold; pointer-events: none; animation: floatHint 2s ease-in-out infinite; box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4); z-index: 10;" data-i18n="HINT_SELECT_VIDEO">
+            <div id="targetTabHint" style="display: none; position: absolute; top: -25px; right: 0; background: var(--accent); color: var(--text-on-green); padding: 4px 8px; border-radius: 6px; font-size: 11px; font-weight: bold; pointer-events: none; animation: floatHint 2s ease-in-out infinite; box-shadow: 0 4px 12px rgba(86, 174, 108, 0.4); z-index: 10;" data-i18n="HINT_SELECT_VIDEO">
                 Select your video here!
                 <div style="position: absolute; bottom: -4px; right: 20px; width: 8px; height: 8px; background: var(--accent); transform: rotate(45deg);"></div>
             </div>
@@ -500,16 +515,16 @@
         
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
             <label style="margin: 0;" data-i18n="LABEL_REMOTE_CONTROL">Remote Control</label>
-            <button id="syncTabCopyInvite" title="Copy Invite Link" style="background:transparent; border: 1px solid #334155; border-radius: 6px; padding: 4px 8px; font-size: 11px; cursor:pointer; opacity:0.8; transition: opacity 0.2s; color: var(--text-muted); display: flex; align-items: center; gap: 4px; white-space: nowrap;" data-i18n="BTN_COPY_INVITE" data-i18n-title="BTN_COPY_INVITE_TOOLTIP">📋 Invite Link</button>
+            <button id="syncTabCopyInvite" title="Copy Invite Link" style="background:transparent; border: 1px solid var(--border-strong); border-radius: 6px; padding: 4px 8px; font-size: 11px; cursor:pointer; opacity:0.8; transition: opacity 0.2s; color: var(--text-muted); display: flex; align-items: center; gap: 4px; white-space: nowrap;" data-i18n="BTN_COPY_INVITE" data-i18n-title="BTN_COPY_INVITE_TOOLTIP">📋 Invite Link</button>
         </div>
         <div style="display: flex; gap: 8px; margin-bottom: 12px;">
             <button id="playBtn" class="primary" style="flex:1; background: var(--success);" title="Send a Play command to everyone" data-i18n="BTN_PLAY" data-i18n-title="BTN_PLAY_TOOLTIP">▶ Play</button>
-            <button id="pauseBtn" class="primary" style="flex:1; background: var(--error);" title="Send a Pause command to everyone" data-i18n="BTN_PAUSE" data-i18n-title="BTN_PAUSE_TOOLTIP">⏸ Pause</button>
+            <button id="pauseBtn" class="primary" style="flex:1; background: var(--error); color: #fff;" title="Send a Pause command to everyone" data-i18n="BTN_PAUSE" data-i18n-title="BTN_PAUSE_TOOLTIP">⏸ Pause</button>
         </div>
 
         <div style="display: flex; gap: 8px; margin-bottom: 15px; align-items: stretch;">
-            <button id="forceSyncBtn" class="primary" style="background: linear-gradient(135deg, #6366f1, #a855f7); flex: 1;" title="Force all users to sync up" data-i18n="BTN_SYNC" data-i18n-title="BTN_SYNC_TOOLTIP">⚡ SYNC</button>
-            <select id="forceSyncMode" style="flex: 1; background: var(--card); border: 1px solid #334155; color: white; padding: 10px 8px; border-radius: 8px; font-size: 11px; font-family: inherit; cursor: pointer; align-self: stretch;" title="Choose sync target" data-i18n-title="OPTION_JUMP_MODE_TOOLTIP">
+            <button id="forceSyncBtn" class="primary" style="background: linear-gradient(135deg, var(--accent-green), var(--accent-terracotta)); color: var(--text-on-green); flex: 1;" title="Force all users to sync up" data-i18n="BTN_SYNC" data-i18n-title="BTN_SYNC_TOOLTIP">⚡ SYNC</button>
+            <select id="forceSyncMode" style="flex: 1; background: var(--card); border: 1px solid var(--border-strong); color: white; padding: 10px 8px; border-radius: 8px; font-size: 11px; font-family: inherit; cursor: pointer; align-self: stretch;" title="Choose sync target" data-i18n-title="OPTION_JUMP_MODE_TOOLTIP">
                 <option value="jump-to-others" data-i18n="OPTION_JUMP_TO_OTHERS">Jump to Others</option>
                 <option value="jump-to-me" data-i18n="OPTION_JUMP_TO_ME">Jump to Me</option>
             </select>
@@ -540,18 +555,18 @@
             <div style="font-size: 32px; margin-bottom: 12px;">🔒</div>
             <h3 style="margin: 0 0 8px 0; color: var(--accent); font-size: 15px;" data-i18n="LOBBY_CONNECT_FIRST">Connect to a room first</h3>
             <p style="color: var(--text-muted); font-size: 12px; margin-bottom: 20px;" data-i18n="LOBBY_CONNECT_FIRST_DESC">You need to join a room via an invite link or create a new one to sync videos.</p>
-            <button id="syncTabCreateRoomBtn" class="primary" style="padding: 12px; font-size: 14px; background: linear-gradient(135deg, #6366f1, #a855f7); box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);" title="Create a new random room and join it" data-i18n="BTN_CREATE_ROOM_ALT" data-i18n-title="BTN_CREATE_ROOM_ALT_TOOLTIP">Create New Room</button>
+            <button id="syncTabCreateRoomBtn" class="primary" style="padding: 12px; font-size: 14px; background: linear-gradient(135deg, var(--accent-green), var(--accent-terracotta)); color: var(--text-on-green); box-shadow: 0 4px 12px rgba(86, 174, 108, 0.4);" title="Create a new random room and join it" data-i18n="BTN_CREATE_ROOM_ALT" data-i18n-title="BTN_CREATE_ROOM_ALT_TOOLTIP">Create New Room</button>
         </div>
     </div>
     
     <!-- Settings Tab -->
     <div id="tab-settings" class="tab-content">
-        <div class="form-group" style="display: flex; align-items: center; justify-content: space-between; background: var(--card); padding: 10px; border-radius: 8px; margin-bottom: 12px; border: 1px solid #334155;">
+        <div class="form-group" style="display: flex; align-items: center; justify-content: space-between; background: var(--card); padding: 10px; border-radius: 8px; margin-bottom: 12px; border: 1px solid var(--border-strong);">
             <label style="margin-bottom: 0;" title="Username helps others identify you." data-i18n="LABEL_USERNAME" data-i18n-title="LABEL_USERNAME_TOOLTIP">Your Username</label>
             <input type="text" id="username" data-i18n-placeholder="PLACEHOLDER_USERNAME" placeholder="Anonymous Koala" maxlength="20" style="width: 150px;">
         </div>
 
-        <details class="form-group" style="background: var(--card); padding: 10px; border-radius: 8px; margin-bottom: 12px; border: 1px solid #334155;">
+        <details class="form-group" style="background: var(--card); padding: 10px; border-radius: 8px; margin-bottom: 12px; border: 1px solid var(--border-strong);">
             <summary style="cursor: pointer; font-size: 12px; font-weight: 700; color: var(--text);" title="Choose which titles are sent to the room." data-i18n="LABEL_PRIVACY_SETTINGS" data-i18n-title="LABEL_PRIVACY_SETTINGS_TOOLTIP">Privacy Settings</summary>
             <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 10px;">
                 <label style="margin-bottom: 0; cursor: help;" title="Send the selected browser tab title to the room." data-i18n="LABEL_SEND_TAB_TITLE" data-i18n-title="LABEL_SEND_TAB_TITLE_TOOLTIP">Send tab title</label>
@@ -562,7 +577,7 @@
             </div>
             <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 10px;">
                 <label style="margin-bottom: 0; cursor: help;" title="Choose how media titles are sent to the room." data-i18n="LABEL_MEDIA_TITLE_PRIVACY" data-i18n-title="LABEL_MEDIA_TITLE_PRIVACY_TOOLTIP">Media title</label>
-                <select id="mediaTitlePrivacyMode" style="width: 165px; background: var(--bg); border: 1px solid #334155; color: white; padding: 6px 10px; border-radius: 8px; font-size: 12px; cursor: pointer; outline: none; font-family: inherit;">
+                <select id="mediaTitlePrivacyMode" style="width: 165px; background: var(--bg); border: 1px solid var(--border-strong); color: white; padding: 6px 10px; border-radius: 8px; font-size: 12px; cursor: pointer; outline: none; font-family: inherit;">
                     <option value="full" data-i18n="OPTION_TITLE_PRIVACY_FULL">Send full title</option>
                     <option value="episode" data-i18n="OPTION_TITLE_PRIVACY_EPISODE">Send episode ID</option>
                     <option value="hidden" data-i18n="OPTION_TITLE_PRIVACY_HIDDEN">Do not send</option>
@@ -570,7 +585,7 @@
             </div>
         </details>
 
-        <div class="form-group" style="display: flex; align-items: center; justify-content: space-between; background: var(--card); padding: 10px; border-radius: 8px; margin-bottom: 12px; border: 1px solid #334155;">
+        <div class="form-group" style="display: flex; align-items: center; justify-content: space-between; background: var(--card); padding: 10px; border-radius: 8px; margin-bottom: 12px; border: 1px solid var(--border-strong);">
             <label style="margin-bottom: 0; cursor: help;" title="Filters out non-video tabs and unrelated domains to keep the list clean" data-i18n="LABEL_HIDE_CLUTTER" data-i18n-title="LABEL_HIDE_CLUTTER_TOOLTIP">Hide Clutter Tabs</label>
             <label class="toggle-switch">
                 <input type="checkbox" id="filterNoise" checked>
@@ -578,7 +593,7 @@
             </label>
         </div>
 
-        <div class="form-group" style="display: flex; align-items: center; justify-content: space-between; background: var(--card); padding: 10px; border-radius: 8px; margin-bottom: 12px; border: 1px solid #334155;">
+        <div class="form-group" style="display: flex; align-items: center; justify-content: space-between; background: var(--card); padding: 10px; border-radius: 8px; margin-bottom: 12px; border: 1px solid var(--border-strong);">
             <label style="margin-bottom: 0; cursor: help;" title="Pauses automatically and waits for all peers when an episode changes, then sync-starts together." data-i18n="LABEL_AUTO_SYNC_NEXT" data-i18n-title="LABEL_AUTO_SYNC_NEXT_TOOLTIP">Auto-Sync Next Episode</label>
             <label class="toggle-switch">
                 <input type="checkbox" id="autoSyncNextEpisode">
@@ -586,7 +601,7 @@
             </label>
         </div>
 
-        <div class="form-group" style="display: flex; align-items: center; justify-content: space-between; background: var(--card); padding: 10px; border-radius: 8px; margin-bottom: 12px; border: 1px solid #334155;">
+        <div class="form-group" style="display: flex; align-items: center; justify-content: space-between; background: var(--card); padding: 10px; border-radius: 8px; margin-bottom: 12px; border: 1px solid var(--border-strong);">
             <label style="margin-bottom: 0; cursor: help;" title="Automatically copies the invite link to your clipboard when creating a new room." data-i18n="LABEL_AUTO_COPY_INVITE" data-i18n-title="LABEL_AUTO_COPY_INVITE_TOOLTIP">Auto-Copy Invite Link</label>
             <label class="toggle-switch">
                 <input type="checkbox" id="autoCopyInvite" checked>
@@ -594,7 +609,7 @@
             </label>
         </div>
 
-        <div class="form-group" style="display: flex; align-items: center; justify-content: space-between; background: var(--card); padding: 10px; border-radius: 8px; margin-bottom: 12px; border: 1px solid #334155;">
+        <div class="form-group" style="display: flex; align-items: center; justify-content: space-between; background: var(--card); padding: 10px; border-radius: 8px; margin-bottom: 12px; border: 1px solid var(--border-strong);">
             <label style="margin-bottom: 0; cursor: help;" title="Shows native system notifications when someone joins/leaves or plays/pauses." data-i18n="LABEL_NOTIFICATIONS" data-i18n-title="LABEL_NOTIFICATIONS_TOOLTIP">Browser Notifications</label>
             <label class="toggle-switch">
                 <input type="checkbox" id="browserNotifications">
@@ -602,16 +617,16 @@
             </label>
         </div>
 
-        <div class="form-group" style="display: flex; align-items: center; justify-content: space-between; background: var(--card); padding: 10px 12px; border-radius: 8px; margin-bottom: 12px; border: 1px solid #334155;">
+        <div class="form-group" style="display: flex; align-items: center; justify-content: space-between; background: var(--card); padding: 10px 12px; border-radius: 8px; margin-bottom: 12px; border: 1px solid var(--border-strong);">
             <div style="display: flex; align-items: center; gap: 8px;">
                 <label id="audioProcessingLabel" style="margin-bottom: 0; cursor: help; white-space: nowrap; font-size: 13px;" data-i18n="LABEL_AUDIO_PROCESSING" data-i18n-title="LABEL_AUDIO_PROCESSING_TOOLTIP">Audio Processing</label>
             </div>
-            <a id="audioSettingsLink" href="#" style="font-size: 11px; color: var(--accent); text-decoration: none; white-space: nowrap; background: rgba(99,102,241,0.12); padding: 5px 12px; border-radius: 6px; font-weight: 600; transition: background 0.2s;" data-i18n="AUDIO_OPEN_SETTINGS">Open</a>
+            <a id="audioSettingsLink" href="#" style="font-size: 11px; color: var(--accent); text-decoration: none; white-space: nowrap; background: rgba(86, 174, 108, 0.12); padding: 5px 12px; border-radius: 6px; font-weight: 600; transition: background 0.2s;" data-i18n="AUDIO_OPEN_SETTINGS">Open</a>
         </div>
 
-        <div class="form-group" style="display: flex; align-items: center; justify-content: space-between; background: var(--card); padding: 10px; border-radius: 8px; margin-bottom: 12px; border: 1px solid #334155;">
+        <div class="form-group" style="display: flex; align-items: center; justify-content: space-between; background: var(--card); padding: 10px; border-radius: 8px; margin-bottom: 12px; border: 1px solid var(--border-strong);">
             <label style="margin-bottom: 0;" data-i18n="LABEL_LANGUAGE" data-i18n-title="LABEL_LANGUAGE_TOOLTIP" title="Choose your preferred extension language">App Language</label>
-            <select id="langSelector" style="width: 165px; background: var(--bg); border: 1px solid #334155; color: white; padding: 6px 10px; border-radius: 8px; font-size: 13px; cursor: pointer; outline: none; font-family: inherit;">
+            <select id="langSelector" style="width: 165px; background: var(--bg); border: 1px solid var(--border-strong); color: white; padding: 6px 10px; border-radius: 8px; font-size: 13px; cursor: pointer; outline: none; font-family: inherit;">
                 <option value="en">🇬🇧 English</option>
                 <option value="de">🇩🇪 Deutsch</option>
                 <option value="fr">🇫🇷 Français</option>
@@ -710,10 +725,10 @@
     <!-- Onboarding Overlay -->
     <div id="onboarding-overlay" style="display:none; position:fixed; inset:0; background:transparent; z-index:1000; pointer-events:auto;">
         <!-- Spotlight element -->
-        <div id="onboarding-spotlight" style="position:fixed; pointer-events:none; border:2px solid var(--accent); box-shadow:0 0 0 9999px rgba(15, 23, 42, 0.65); border-radius:8px; transition:all 0.3s cubic-bezier(0.4, 0, 0.2, 1); display:none; opacity:0; z-index:1001; animation: spotlightPulse 2s infinite ease-in-out;"></div>
+        <div id="onboarding-spotlight" style="position:fixed; pointer-events:none; border:2px solid var(--accent); box-shadow:0 0 0 9999px rgba(16, 25, 14, 0.65); border-radius:8px; transition:all 0.3s cubic-bezier(0.4, 0, 0.2, 1); display:none; opacity:0; z-index:1001; animation: spotlightPulse 2s infinite ease-in-out;"></div>
         
         <!-- Onboarding Card -->
-        <div id="onboarding-card" style="position:fixed; background:var(--card); padding:16px 20px; border-radius:12px; width:280px; box-shadow:0 8px 32px rgba(0,0,0,0.5); z-index:1002; transition:all 0.3s cubic-bezier(0.4, 0, 0.2, 1); box-sizing:border-box; border:1px solid #334155; opacity:0; transform: scale(0.9); display:none;">
+        <div id="onboarding-card" style="position:fixed; background:var(--card); padding:16px 20px; border-radius:12px; width:280px; box-shadow:0 8px 32px rgba(0,0,0,0.5); z-index:1002; transition:all 0.3s cubic-bezier(0.4, 0, 0.2, 1); box-sizing:border-box; border:1px solid var(--border-strong); opacity:0; transform: scale(0.9); display:none;">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
                 <span id="onboarding-icon" style="font-size:24px;">👋</span>
                 <span id="onboarding-step-indicator" style="font-size:10px; font-weight:700; color:var(--accent); text-transform:uppercase; letter-spacing:0.5px;">Step 1 of 5</span>
@@ -722,7 +737,7 @@
             <p id="onboarding-text" style="color:var(--text-muted); font-size:12px; margin:0 0 16px; line-height:1.4; text-align:left;">Let's get you started.</p>
             
             <!-- Progress Bar -->
-            <div id="onboarding-progress-container" style="height:4px; background:#334155; border-radius:2px; margin-bottom:16px; overflow:hidden;">
+            <div id="onboarding-progress-container" style="height:4px; background: var(--border-strong); border-radius:2px; margin-bottom:16px; overflow:hidden;">
                 <div id="onboarding-progress-bar" style="height:100%; width:20%; background:var(--accent); transition:width 0.3s ease;"></div>
             </div>
             

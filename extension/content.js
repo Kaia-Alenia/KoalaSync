@@ -430,7 +430,7 @@
         const body = hcmEl('div', 'margin-bottom:12px;color:#d1d5db', hcmStrings.body);
         const btnRow = hcmEl('div', 'display:flex;gap:8px;justify-content:flex-end');
         const soloBtn = hcmEl('button', 'background:#374151;color:#f9fafb;border:0;padding:8px 12px;border-radius:8px;cursor:pointer', hcmStrings.solo);
-        const stayBtn = hcmEl('button', 'background:#10b981;color:#062a20;border:0;padding:8px 12px;border-radius:8px;cursor:pointer;font-weight:600', hcmStrings.stay);
+        const stayBtn = hcmEl('button', 'background:#56ae6c;color:#0a1a0d;border:0;padding:8px 12px;border-radius:8px;cursor:pointer;font-weight:600', hcmStrings.stay);
         btnRow.append(soloBtn, stayBtn);
         wrap.append(title, body, btnRow);
         root.appendChild(wrap);

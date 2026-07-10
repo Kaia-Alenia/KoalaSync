@@ -529,7 +529,7 @@ function updateLastActionUI(state, peers) {
         if (pId === localPeerId) return;
         const pName = (typeof peer === 'object' && peer.username) ? peer.username : pId.substring(0, 4);
         const isAcked = safeAcks.includes(pId) || pId === state.senderId;
-        const color = isAcked ? 'var(--success)' : '#475569';
+        const color = isAcked ? 'var(--success)' : '#4c5142';
         const icon = isAcked ? '✓' : '...';
         const avatar = getAvatarForName(pName);
         
@@ -1024,7 +1024,7 @@ function applyConnectionStatus(status) {
             elements.connDot.style.background = '#9ca3af';
             elements.connDot.style.boxShadow = 'none';
         } else if (!connected) {
-            elements.connDot.style.background = '#ef4444';
+            elements.connDot.style.background = '#b94642';
             elements.connDot.style.boxShadow = 'none';
         } else {
             elements.connDot.style.background = '';
@@ -1071,11 +1071,11 @@ function updatePingDisplay(pingMs) {
     }
     elements.connPing.textContent = `${Math.round(pingMs)}ms`;
     if (pingMs < 50) {
-        elements.connPing.style.color = '#22c55e';
+        elements.connPing.style.color = '#56ae6c';
     } else if (pingMs < 150) {
         elements.connPing.style.color = '#f59e0b';
     } else {
-        elements.connPing.style.color = '#ef4444';
+        elements.connPing.style.color = '#b94642';
     }
 }
 
@@ -1096,7 +1096,7 @@ function updateHistory(history) {
         entry.style.cssText = 'margin-bottom: 4px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 2px;';
         
         const timeSpan = document.createElement('span');
-        timeSpan.style.color = '#64748b';
+        timeSpan.style.color = '#6b705e';
         timeSpan.textContent = `[${time}] `;
         
         const actionBold = document.createElement('b');
@@ -2259,7 +2259,7 @@ function refreshDebugInfo() {
 
                 const addSection = (title) => {
                     const div = document.createElement('div');
-                    div.style.cssText = 'margin: 8px 0 4px 0; border-bottom: 1px solid #334155; padding-bottom: 2px; color: var(--accent); font-weight: bold; font-size: 10px; text-transform: uppercase;';
+                    div.style.cssText = 'margin: 8px 0 4px 0; border-bottom: 1px solid #2f3625; padding-bottom: 2px; color: var(--accent); font-weight: bold; font-size: 10px; text-transform: uppercase;';
                     div.textContent = title;
                     elements.videoDebug.appendChild(div);
                 };
@@ -2268,7 +2268,7 @@ function refreshDebugInfo() {
                     // No video found — show diagnostic info
                     addSection('Video Detection');
                     const notFound = document.createElement('div');
-                    notFound.style.cssText = 'color: #ef4444; font-weight: 700; margin-bottom: 8px;';
+                    notFound.style.cssText = 'color: #b94642; font-weight: 700; margin-bottom: 8px;';
                     notFound.textContent = 'NO VIDEO ELEMENT FOUND';
                     elements.videoDebug.appendChild(notFound);
 
@@ -2294,12 +2294,12 @@ function refreshDebugInfo() {
 
                 // Video found — full debug
                 addSection('Playback');
-                addField('State', state.paused ? 'PAUSED' : 'PLAYING', state.paused ? 'var(--text-muted)' : '#22c55e');
+                addField('State', state.paused ? 'PAUSED' : 'PLAYING', state.paused ? 'var(--text-muted)' : '#56ae6c');
                 addField('Time', `${state.currentTime.toFixed(2)}s / ${(state.duration || 0).toFixed(2)}s`);
                 addField('ReadyState', `${state.readyState} (${state.readyStateLabel || '?'})`,
-                    state.readyState >= 3 ? '#22c55e' : '#fbbf24');
+                    state.readyState >= 3 ? '#56ae6c' : '#fbbf24');
                 addField('Network', `${state.networkState} (${state.networkStateLabel || '?'})`,
-                    state.networkState === 1 ? '#22c55e' : state.networkState === 3 ? '#ef4444' : 'var(--text-muted)');
+                    state.networkState === 1 ? '#56ae6c' : state.networkState === 3 ? '#b94642' : 'var(--text-muted)');
                 addField('Buffered', state.buffered || '?');
                 if (state.nativeCurrentTime != null || state.nativeDuration != null) {
                     addField('Native Time', `${state.nativeCurrentTime ?? '?'}s / ${state.nativeDuration ?? '?'}s`);
@@ -2323,7 +2323,7 @@ function refreshDebugInfo() {
 
                 addSection('Dimensions');
                 const dimsOk = state.videoWidth > 0 && state.videoHeight > 0;
-                addField('Resolution', `${state.videoWidth}x${state.videoHeight}`, dimsOk ? '#22c55e' : '#ef4444');
+                addField('Resolution', `${state.videoWidth}x${state.videoHeight}`, dimsOk ? '#56ae6c' : '#b94642');
                 if (!dimsOk) {
                     const dimHint = document.createElement('div');
                     dimHint.style.cssText = 'color: #fbbf24; font-size: 9px; margin: 2px 0 6px 12px;';
@@ -2333,8 +2333,8 @@ function refreshDebugInfo() {
 
                 if (state.error) {
                     addSection('Media Error');
-                    addField('Code', String(state.error.code), '#ef4444');
-                    addField('Message', state.error.message || '?', '#ef4444');
+                    addField('Code', String(state.error.code), '#b94642');
+                    addField('Message', state.error.message || '?', '#b94642');
                 }
 
                 addSection('Detection');
