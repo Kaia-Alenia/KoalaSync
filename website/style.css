@@ -115,6 +115,30 @@ body {
 }
 
 /* --- Animated Bamboo Forest Background (v3 Greens Update) --- */
+/* Registered so wind gusts can TRANSITION these instead of jumping */
+@property --sway {
+    syntax: '<angle>';
+    initial-value: 1.2deg;
+    inherits: true;
+}
+
+@property --leaf-drift {
+    syntax: '<length>';
+    initial-value: 26px;
+    inherits: true;
+}
+
+.bg-nature {
+    --sway: 1.2deg;
+    --leaf-drift: 26px;
+    transition: --sway 1.6s ease-in-out, --leaf-drift 1.6s ease-in-out;
+}
+
+.bg-nature.gusting {
+    --sway: 3.4deg;
+    --leaf-drift: 68px;
+}
+
 .bg-nature {
     position: fixed;
     top: 0;
@@ -143,12 +167,37 @@ body {
     height: 140%;
     border-radius: 999px;
     filter: blur(5.5px);
+    transition: filter 1.2s ease;
     background: linear-gradient(180deg, oklch(0.32 0.05 145 / 0.35), oklch(0.24 0.04 140 / 0.15));
 }
 
 #bamboo-far .far-1 { left: 2%; width: 26px; }
 #bamboo-far .far-2 { left: 7.5%; width: 18px; }
 #bamboo-far .far-3 { right: 4%; width: 30px; }
+#bamboo-far .far-4 { left: 13%; width: 20px; }
+#bamboo-far .far-5 { right: 10.5%; width: 16px; }
+
+/* Two barely-there trunks break up the empty middle without competing with
+   the content. They share the far layer's single parallax transform. */
+#bamboo-far::before,
+#bamboo-far::after {
+    content: '';
+    position: absolute;
+    top: -20%;
+    height: 140%;
+    border-radius: 999px;
+    filter: blur(8px);
+    opacity: 0.28;
+    background: linear-gradient(180deg, oklch(0.34 0.05 145 / 0.3), oklch(0.23 0.04 140 / 0.1));
+}
+
+#bamboo-far::before { left: 24%; width: 13px; }
+#bamboo-far::after { right: 25%; width: 17px; }
+
+/* Depth of field: the far layer blurs further as you descend (stepped by
+   JS on threshold crossings, never per frame) */
+.bg-nature.depth-mid #bamboo-far .bamboo-stalk { filter: blur(6.5px); }
+.bg-nature.depth-deep #bamboo-far .bamboo-stalk { filter: blur(8px); }
 
 /* (b) Near bamboo layer: sharp stalks with nodes and leaves, gentle sway */
 #bamboo-near {
@@ -169,6 +218,7 @@ body {
 
 #bamboo-near .near-1 { left: 4.5%; width: 13px; animation-duration: 9.2s; }
 #bamboo-near .near-2 { right: 7%; width: 11px; animation-duration: 11s; animation-delay: -3.5s; }
+#bamboo-near .near-3 { left: 10%; width: 9px; animation-duration: 12.5s; animation-delay: -6s; opacity: 0.75; }
 
 #bamboo-near .bamboo-node {
     position: absolute;
@@ -194,10 +244,11 @@ body {
 #bamboo-near .near-1 .leaf-1 { top: 27.5%; left: 10px; transform: rotate(18deg); }
 #bamboo-near .near-1 .leaf-2 { top: 47.5%; left: -28px; transform: rotate(-160deg); width: 22px; height: 10px; }
 #bamboo-near .near-2 .leaf-1 { top: 44%; left: -26px; transform: rotate(-155deg); }
+#bamboo-near .near-3 .leaf-1 { top: 33%; left: 7px; transform: rotate(24deg); width: 18px; height: 9px; }
 
 @keyframes bambooSway {
     0%, 100% { transform: rotate(0); }
-    50% { transform: rotate(1.2deg); }
+    50% { transform: rotate(var(--sway, 1.2deg)); }
 }
 
 /* (d) Falling leaves: outer element falls + rotates, inner leaf sways */
@@ -245,7 +296,7 @@ body {
 
 @keyframes leafSway {
     0%, 100% { margin-left: 0; }
-    50% { margin-left: 26px; }
+    50% { margin-left: var(--leaf-drift, 26px); }
 }
 
 /* Scroll journey: JS drives the opacity of these two groups so the page
@@ -377,9 +428,30 @@ body {
     50% { opacity: 0.85; }
 }
 
-/* (i) Fireflies */
-.firefly {
+/* Theme switch to light: the horizon flares up once like a sunrise */
+.bg-nature.sunrise .bg-horizon {
+    animation:
+        horizonBreathe 10s ease-in-out infinite,
+        sunriseFlash 1.6s ease-out;
+}
+
+@keyframes sunriseFlash {
+    0% { opacity: 0.5; }
+    30% { opacity: 1; }
+    100% { opacity: 0.5; }
+}
+
+/* (i) Fireflies: the wrapper holds the base position and is what the JS
+   pushes away from the cursor; the inner dot pulses (transform) and
+   wanders (translate) independently. */
+.firefly-wrap {
     position: absolute;
+    width: 4px;
+    height: 4px;
+}
+
+.firefly {
+    display: block;
     width: 4px;
     height: 4px;
     border-radius: 50%;
@@ -390,19 +462,38 @@ body {
         fireflyWander 21s ease-in-out infinite alternate;
 }
 
-.firefly:nth-child(even) {
+.fw-2 .firefly,
+.fw-4 .firefly,
+.fw-6 .firefly {
     width: 3px;
     height: 3px;
     background: oklch(0.62 0.14 45);
     box-shadow: 0 0 8px oklch(0.62 0.14 45);
 }
 
-.firefly-1 { top: 32%; left: 12%; animation-delay: -0.4s, -4s; }
-.firefly-2 { top: 58%; left: 22%; animation-duration: 4.4s, 26s; animation-delay: -2.1s, -11s; }
-.firefly-3 { top: 44%; left: 46%; animation-duration: 3.4s, 18s; animation-delay: -1.2s, -7s; }
-.firefly-4 { top: 70%; left: 64%; animation-duration: 4.1s, 29s; animation-delay: -3s, -19s; }
-.firefly-5 { top: 26%; left: 78%; animation-duration: 3.6s, 23s; animation-delay: -1.8s, -14s; }
-.firefly-6 { top: 62%; left: 90%; animation-duration: 4.2s, 17s; animation-delay: -0.9s, -2s; }
+.fw-1 { top: 32%; left: 12%; }
+.fw-2 { top: 58%; left: 22%; }
+.fw-3 { top: 44%; left: 46%; }
+.fw-4 { top: 70%; left: 64%; }
+.fw-5 { top: 26%; left: 78%; }
+.fw-6 { top: 62%; left: 90%; }
+
+.fw-1 .firefly { animation-delay: -0.4s, -4s; }
+.fw-2 .firefly { animation-duration: 4.4s, 26s; animation-delay: -2.1s, -11s; }
+.fw-3 .firefly { animation-duration: 3.4s, 18s; animation-delay: -1.2s, -7s; }
+.fw-4 .firefly { animation-duration: 4.1s, 29s; animation-delay: -3s, -19s; }
+.fw-5 .firefly { animation-duration: 3.6s, 23s; animation-delay: -1.8s, -14s; }
+.fw-6 .firefly { animation-duration: 4.2s, 17s; animation-delay: -0.9s, -2s; }
+
+/* One firefly greets you when a new section scrolls into view */
+.firefly-wrap.firefly-hello {
+    animation: fireflyHello 1.2s ease-out;
+}
+
+@keyframes fireflyHello {
+    0%, 100% { transform: scale(1); filter: brightness(1); }
+    35% { transform: scale(2.4); filter: brightness(1.7); }
+}
 
 @keyframes fireflyPulse {
     0%, 100% { opacity: 0.2; transform: scale(1); }
@@ -441,6 +532,22 @@ body {
     opacity: 0.05;
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
     background-size: 160px 160px;
+}
+
+@media (max-width: 768px) {
+    /* Half the leaves, no god rays / light sweep / extra stalks: the scene
+       stays recognisable while the animation count roughly halves. */
+    .fall-leaf-5,
+    .fall-leaf-6,
+    .fall-leaf-7,
+    .fall-leaf-8,
+    .bg-godrays,
+    .bg-light-sweep,
+    #bamboo-far .far-4,
+    #bamboo-far .far-5,
+    #bamboo-near .near-3 {
+        display: none;
+    }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -5263,6 +5370,19 @@ header[id] {
     width: 0%;
     transition: width 0.1s ease-out;
     box-shadow: 0 0 8px var(--accent-glow);
+}
+
+.scroll-progress-bar::after {
+    content: '';
+    position: absolute;
+    right: -3px;
+    top: 50%;
+    width: 10px;
+    height: 7px;
+    border-radius: 0 70% 0 70%;
+    background: var(--accent-green);
+    box-shadow: 0 0 6px var(--accent-glow);
+    transform: translateY(-50%) rotate(24deg);
 }
 
 /* Navigation logo pop & spin */

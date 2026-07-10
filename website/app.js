@@ -60,6 +60,9 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
+    // Populated by the forest renderer further down (no-op until then)
+    let forestGreet = null;
+
     // Theme toggle (saved preference wins; otherwise follows system preference,
     // pre-paint class is applied by lang-init.js to avoid a flash)
     const themeToggle = document.getElementById('theme-toggle');
@@ -108,6 +111,14 @@ document.addEventListener('DOMContentLoaded', () => {
             applyTheme(nextTheme);
             safeSetLocalStorage(themeStorageKey, nextTheme);
             syncThemeMeta();
+            // Switching into light mode flares the horizon once (sunrise)
+            const scene = document.querySelector('.bg-nature');
+            if (nextTheme === 'light' && scene && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+                scene.classList.remove('sunrise');
+                void scene.offsetWidth;
+                scene.classList.add('sunrise');
+                setTimeout(() => scene.classList.remove('sunrise'), 1700);
+            }
         });
     }
 
@@ -200,6 +211,7 @@ document.addEventListener('DOMContentLoaded', () => {
             entries.forEach(entry => {
                 if (entry.isIntersecting) {
                     history.replaceState(null, null, '#' + entry.target.id);
+                    if (forestGreet) forestGreet();
                 }
             });
         }, { threshold: 0.3 });
@@ -220,11 +232,18 @@ document.addEventListener('DOMContentLoaded', () => {
     // pointer devices the layers tilt slightly toward the cursor.
     const bambooFar = document.getElementById('bamboo-far');
     const bambooNear = document.getElementById('bamboo-near');
-    if (bambooFar && bambooNear && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    const forestScene = document.querySelector('.bg-nature');
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (bambooFar && bambooNear && !prefersReducedMotion) {
         const depthDay = document.querySelector('.bg-depth-day');
         const depthDusk = document.querySelector('.bg-depth-dusk');
         const duskTint = document.querySelector('.bg-dusk-tint');
+        const fireflies = Array.from(document.querySelectorAll('.firefly-wrap'), (el) => ({ el, x: 0, y: 0 }));
+        const canHover = window.matchMedia('(hover: hover)').matches;
         let mouseX = 0;
+        let pointerX = -9999;
+        let pointerY = -9999;
+        let depthStep = '';
         let framePending = false;
 
         const renderForest = () => {
@@ -238,6 +257,39 @@ document.addEventListener('DOMContentLoaded', () => {
             if (depthDay) depthDay.style.opacity = (1 - depth * 0.75).toFixed(3);
             if (depthDusk) depthDusk.style.opacity = (0.35 + depth * 0.65).toFixed(3);
             if (duskTint) duskTint.style.opacity = (depth * 0.85).toFixed(3);
+
+            // Depth of field: step the far layer's blur on threshold crossings
+            // only (filter changes are too expensive to run per frame)
+            if (forestScene) {
+                const step = depth < 0.33 ? '' : depth < 0.66 ? 'depth-mid' : 'depth-deep';
+                if (step !== depthStep) {
+                    forestScene.classList.remove('depth-mid', 'depth-deep');
+                    if (step) forestScene.classList.add(step);
+                    depthStep = step;
+                }
+            }
+
+            // Fireflies shy away from the cursor and drift back once it leaves
+            let settling = false;
+            for (const fly of fireflies) {
+                const cx = fly.el.offsetLeft + 2;
+                const cy = fly.el.offsetTop + 2;
+                const dx = cx - pointerX;
+                const dy = cy - pointerY;
+                const dist = Math.hypot(dx, dy);
+                let tx = 0;
+                let ty = 0;
+                if (dist < 130 && dist > 0.001) {
+                    const push = ((130 - dist) / 130) * 46;
+                    tx = (dx / dist) * push;
+                    ty = (dy / dist) * push;
+                }
+                fly.x += (tx - fly.x) * 0.14;
+                fly.y += (ty - fly.y) * 0.14;
+                if (Math.abs(tx - fly.x) > 0.4 || Math.abs(ty - fly.y) > 0.4) settling = true;
+                fly.el.style.transform = `translate(${fly.x.toFixed(1)}px, ${fly.y.toFixed(1)}px)`;
+            }
+            if (settling) requestForestFrame();
         };
 
         const requestForestFrame = () => {
@@ -246,16 +298,51 @@ document.addEventListener('DOMContentLoaded', () => {
                 requestAnimationFrame(renderForest);
             }
         };
+        // Let one firefly greet newly reached sections (used by the section
+        // observer below; index rotates so it is not always the same one)
+        let helloIndex = 0;
+        forestGreet = () => {
+            if (!fireflies.length) return;
+            const wrap = fireflies[helloIndex % fireflies.length].el;
+            helloIndex += 1;
+            wrap.classList.remove('firefly-hello');
+            void wrap.offsetWidth;
+            wrap.classList.add('firefly-hello');
+            setTimeout(() => wrap.classList.remove('firefly-hello'), 1300);
+        };
 
         window.addEventListener('scroll', requestForestFrame, { passive: true });
         window.addEventListener('resize', requestForestFrame, { passive: true });
-        if (window.matchMedia('(hover: hover)').matches) {
+        if (canHover) {
             window.addEventListener('pointermove', (e) => {
                 mouseX = (e.clientX / window.innerWidth - 0.5) * 2;
+                pointerX = e.clientX;
+                pointerY = e.clientY;
                 requestForestFrame();
             }, { passive: true });
+            window.addEventListener('pointerleave', () => {
+                pointerX = -9999;
+                pointerY = -9999;
+                requestForestFrame();
+            });
         }
         renderForest();
+
+        // Wind gusts: every 12-24s the sway variables ramp up for ~3s. The
+        // custom properties are registered via @property, so they transition
+        // smoothly inside the running keyframes instead of jumping.
+        if (forestScene) {
+            const scheduleGust = () => {
+                setTimeout(() => {
+                    forestScene.classList.add('gusting');
+                    setTimeout(() => {
+                        forestScene.classList.remove('gusting');
+                        scheduleGust();
+                    }, 3000);
+                }, 12000 + Math.random() * 12000);
+            };
+            scheduleGust();
+        }
     }
 
     // Invite Detection & Bridge
