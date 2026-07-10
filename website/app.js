@@ -212,17 +212,50 @@ document.addEventListener('DOMContentLoaded', () => {
         nav.classList.toggle('nav-scrolled', window.scrollY > 50);
     }, { passive: true });
 
-    // Bamboo forest scroll parallax (background layers only)
+    // Bamboo forest: scroll journey + parallax (background layers only).
+    // The vertical drift maps scroll PROGRESS (0..1 over the whole page) onto
+    // the stalks' 20% overscan, so the parallax runs for the entire scroll
+    // instead of saturating after a few hundred pixels. The same progress
+    // value crossfades the scene from sunlit canopy into misty dusk, and on
+    // pointer devices the layers tilt slightly toward the cursor.
     const bambooFar = document.getElementById('bamboo-far');
     const bambooNear = document.getElementById('bamboo-near');
     if (bambooFar && bambooNear && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-        window.addEventListener('scroll', () => {
-            // Cap the drift at ~14% of the viewport: the stalks have 20%
-            // overscan, so they always span the full height while parallaxing.
-            const maxShift = window.innerHeight * 0.14;
-            bambooFar.style.transform = `translateY(${Math.min(window.scrollY * 0.04, maxShift)}px)`;
-            bambooNear.style.transform = `translateY(${-Math.min(window.scrollY * 0.06, maxShift)}px)`;
-        }, { passive: true });
+        const depthDay = document.querySelector('.bg-depth-day');
+        const depthDusk = document.querySelector('.bg-depth-dusk');
+        const duskTint = document.querySelector('.bg-dusk-tint');
+        let mouseX = 0;
+        let framePending = false;
+
+        const renderForest = () => {
+            framePending = false;
+            const doc = document.documentElement;
+            const maxScroll = Math.max(1, doc.scrollHeight - window.innerHeight);
+            const depth = Math.min(1, window.scrollY / maxScroll);
+            const shift = window.innerHeight * 0.14;
+            bambooFar.style.transform = `translate(${(-mouseX * 5).toFixed(1)}px, ${(depth * shift).toFixed(1)}px)`;
+            bambooNear.style.transform = `translate(${(mouseX * 11).toFixed(1)}px, ${(-depth * shift).toFixed(1)}px)`;
+            if (depthDay) depthDay.style.opacity = (1 - depth * 0.75).toFixed(3);
+            if (depthDusk) depthDusk.style.opacity = (0.35 + depth * 0.65).toFixed(3);
+            if (duskTint) duskTint.style.opacity = (depth * 0.85).toFixed(3);
+        };
+
+        const requestForestFrame = () => {
+            if (!framePending) {
+                framePending = true;
+                requestAnimationFrame(renderForest);
+            }
+        };
+
+        window.addEventListener('scroll', requestForestFrame, { passive: true });
+        window.addEventListener('resize', requestForestFrame, { passive: true });
+        if (window.matchMedia('(hover: hover)').matches) {
+            window.addEventListener('pointermove', (e) => {
+                mouseX = (e.clientX / window.innerWidth - 0.5) * 2;
+                requestForestFrame();
+            }, { passive: true });
+        }
+        renderForest();
     }
 
     // Invite Detection & Bridge

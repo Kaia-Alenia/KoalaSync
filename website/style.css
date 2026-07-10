@@ -248,6 +248,59 @@ body {
     50% { margin-left: 26px; }
 }
 
+/* Scroll journey: JS drives the opacity of these two groups so the page
+   travels from sunlit canopy (top) into misty dusk (bottom). Static
+   defaults below keep the scene balanced without JS. */
+.bg-depth-day,
+.bg-depth-dusk {
+    position: absolute;
+    inset: 0;
+}
+
+.bg-depth-dusk {
+    opacity: 0.6;
+}
+
+/* Dusk tint: darkens and warms the whole scene as you descend */
+.bg-dusk-tint {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    background: linear-gradient(180deg,
+        oklch(0.10 0.03 145 / 0.15) 0%,
+        oklch(0.12 0.045 142 / 0.5) 65%,
+        oklch(0.16 0.07 55 / 0.35) 100%);
+}
+
+/* God rays: soft light shafts falling through the canopy */
+.bg-godrays {
+    position: absolute;
+    top: -10%;
+    left: 0;
+    right: 0;
+    height: 75%;
+}
+
+.godray {
+    position: absolute;
+    top: 0;
+    height: 115%;
+    background: linear-gradient(180deg, oklch(0.85 0.06 130 / 0.10), transparent 78%);
+    filter: blur(10px);
+    transform: rotate(14deg);
+    transform-origin: top center;
+    animation: rayShimmer 9s ease-in-out infinite alternate;
+}
+
+.godray-1 { left: 16%; width: 120px; animation-duration: 8s; }
+.godray-2 { left: 33%; width: 70px; animation-delay: -3s; background: linear-gradient(180deg, oklch(0.85 0.06 130 / 0.07), transparent 78%); }
+.godray-3 { left: 56%; width: 140px; animation-duration: 13s; animation-delay: -6s; background: linear-gradient(180deg, oklch(0.85 0.05 110 / 0.08), transparent 75%); }
+
+@keyframes rayShimmer {
+    0% { opacity: 0.45; }
+    100% { opacity: 1; }
+}
+
 /* (e) Canopy: dark vignette at the top plus hanging leaf arcs */
 .bg-canopy {
     position: absolute;
@@ -332,7 +385,9 @@ body {
     border-radius: 50%;
     background: oklch(0.68 0.13 150);
     box-shadow: 0 0 8px oklch(0.68 0.13 150);
-    animation: fireflyPulse 3.8s ease-in-out infinite;
+    animation:
+        fireflyPulse 3.8s ease-in-out infinite,
+        fireflyWander 21s ease-in-out infinite alternate;
 }
 
 .firefly:nth-child(even) {
@@ -342,16 +397,24 @@ body {
     box-shadow: 0 0 8px oklch(0.62 0.14 45);
 }
 
-.firefly-1 { top: 32%; left: 12%; animation-delay: -0.4s; }
-.firefly-2 { top: 58%; left: 22%; animation-duration: 4.4s; animation-delay: -2.1s; }
-.firefly-3 { top: 44%; left: 46%; animation-duration: 3.4s; animation-delay: -1.2s; }
-.firefly-4 { top: 70%; left: 64%; animation-duration: 4.1s; animation-delay: -3s; }
-.firefly-5 { top: 26%; left: 78%; animation-duration: 3.6s; animation-delay: -1.8s; }
-.firefly-6 { top: 62%; left: 90%; animation-duration: 4.2s; animation-delay: -0.9s; }
+.firefly-1 { top: 32%; left: 12%; animation-delay: -0.4s, -4s; }
+.firefly-2 { top: 58%; left: 22%; animation-duration: 4.4s, 26s; animation-delay: -2.1s, -11s; }
+.firefly-3 { top: 44%; left: 46%; animation-duration: 3.4s, 18s; animation-delay: -1.2s, -7s; }
+.firefly-4 { top: 70%; left: 64%; animation-duration: 4.1s, 29s; animation-delay: -3s, -19s; }
+.firefly-5 { top: 26%; left: 78%; animation-duration: 3.6s, 23s; animation-delay: -1.8s, -14s; }
+.firefly-6 { top: 62%; left: 90%; animation-duration: 4.2s, 17s; animation-delay: -0.9s, -2s; }
 
 @keyframes fireflyPulse {
     0%, 100% { opacity: 0.2; transform: scale(1); }
     50% { opacity: 0.9; transform: scale(1.35); }
+}
+
+@keyframes fireflyWander {
+    0% { translate: 0 0; }
+    25% { translate: 38px -26px; }
+    50% { translate: -20px 16px; }
+    75% { translate: 26px 30px; }
+    100% { translate: -14px -18px; }
 }
 
 /* (j) Wandering light sweep */
@@ -608,6 +671,15 @@ html.theme-light .bg-grass {
 
 html.theme-light .bg-mist {
     display: none;
+}
+
+html.theme-light .bg-dusk-tint {
+    display: none;
+}
+
+html.theme-light .godray {
+    filter: blur(12px);
+    opacity: 0.5;
 }
 
 html.theme-light .bg-grain {
