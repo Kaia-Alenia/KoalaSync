@@ -790,13 +790,13 @@ function updateBadgeStatus() {
 
     if (status === 'reconnecting') {
         chrome.action.setBadgeText({ text: '...' });
-        chrome.action.setBadgeBackgroundColor({ color: '#f59e0b' });
+        chrome.action.setBadgeBackgroundColor({ color: '#c96736' });
     } else if (status === 'connecting') {
         chrome.action.setBadgeText({ text: '...' });
-        chrome.action.setBadgeBackgroundColor({ color: '#fbbf24' });
+        chrome.action.setBadgeBackgroundColor({ color: '#de7949' });
     } else if (status === 'connected' && currentRoom && currentTabId) {
         chrome.action.setBadgeText({ text: 'ON' });
-        chrome.action.setBadgeBackgroundColor({ color: '#22c55e' });
+        chrome.action.setBadgeBackgroundColor({ color: '#56ae6c' });
     } else {
         chrome.action.setBadgeText({ text: '' });
     }

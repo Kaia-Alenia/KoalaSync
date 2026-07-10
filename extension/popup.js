@@ -725,7 +725,7 @@ function updatePeerList(peers) {
             // Host Control Mode: show "Solo" badge for peers watching on their own.
             if (typeof p === 'object' && p.desynced) {
                 const solo = document.createElement('span');
-                solo.style.cssText = 'font-size:10px; color:#fff; background:#b45309; padding:2px 6px; border-radius:6px; font-weight:600;';
+                solo.style.cssText = 'font-size:10px; color:#fff; background:#c96736; padding:2px 6px; border-radius:6px; font-weight:600;';
                 const soloText = getMessage('BADGE_DESYNCED') || 'Solo';
                 solo.textContent = soloText;
                 solo.title = getMessage('TOOLTIP_PEER_DESYNCED') || soloText;
@@ -1014,14 +1014,14 @@ function applyConnectionStatus(status) {
         elements.connDot.className = 'status-dot ' + (connected ? 'status-online' : ((connecting || reconnecting) ? 'status-online' : 'status-offline'));
 
         if (reconnecting) {
-            elements.connDot.style.background = '#f59e0b';
-            elements.connDot.style.boxShadow = '0 0 8px #f59e0b';
+            elements.connDot.style.background = '#c96736';
+            elements.connDot.style.boxShadow = '0 0 8px #c96736';
         } else if (connecting) {
-            elements.connDot.style.background = '#fbbf24';
-            elements.connDot.style.boxShadow = '0 0 8px #fbbf24';
+            elements.connDot.style.background = '#de7949';
+            elements.connDot.style.boxShadow = '0 0 8px #de7949';
         } else if (idle) {
             // Neutral grey — ready, not failed.
-            elements.connDot.style.background = '#9ca3af';
+            elements.connDot.style.background = '#bcb7a9';
             elements.connDot.style.boxShadow = 'none';
         } else if (!connected) {
             elements.connDot.style.background = '#b94642';
@@ -1073,7 +1073,7 @@ function updatePingDisplay(pingMs) {
     if (pingMs < 50) {
         elements.connPing.style.color = '#56ae6c';
     } else if (pingMs < 150) {
-        elements.connPing.style.color = '#f59e0b';
+        elements.connPing.style.color = '#c96736';
     } else {
         elements.connPing.style.color = '#b94642';
     }
@@ -2286,7 +2286,7 @@ function refreshDebugInfo() {
                     }
 
                     const hint = document.createElement('div');
-                    hint.style.cssText = 'margin-top: 12px; padding: 8px; background: rgba(251,191,36,0.1); border-left: 3px solid #fbbf24; border-radius: 4px; font-size: 10px; color: var(--text-muted);';
+                    hint.style.cssText = 'margin-top: 12px; padding: 8px; background: rgba(222,121,73,0.12); border-left: 3px solid #de7949; border-radius: 4px; font-size: 10px; color: var(--text-muted);';
                     hint.textContent = 'Is a video currently playing? The extension only detects <video> elements. Ensure media is actively loaded on the page.';
                     elements.videoDebug.appendChild(hint);
                     return;
@@ -2297,7 +2297,7 @@ function refreshDebugInfo() {
                 addField('State', state.paused ? 'PAUSED' : 'PLAYING', state.paused ? 'var(--text-muted)' : '#56ae6c');
                 addField('Time', `${state.currentTime.toFixed(2)}s / ${(state.duration || 0).toFixed(2)}s`);
                 addField('ReadyState', `${state.readyState} (${state.readyStateLabel || '?'})`,
-                    state.readyState >= 3 ? '#56ae6c' : '#fbbf24');
+                    state.readyState >= 3 ? '#56ae6c' : '#de7949');
                 addField('Network', `${state.networkState} (${state.networkStateLabel || '?'})`,
                     state.networkState === 1 ? '#56ae6c' : state.networkState === 3 ? '#b94642' : 'var(--text-muted)');
                 addField('Buffered', state.buffered || '?');
@@ -2326,7 +2326,7 @@ function refreshDebugInfo() {
                 addField('Resolution', `${state.videoWidth}x${state.videoHeight}`, dimsOk ? '#56ae6c' : '#b94642');
                 if (!dimsOk) {
                     const dimHint = document.createElement('div');
-                    dimHint.style.cssText = 'color: #fbbf24; font-size: 9px; margin: 2px 0 6px 12px;';
+                    dimHint.style.cssText = 'color: #de7949; font-size: 9px; margin: 2px 0 6px 12px;';
                     dimHint.textContent = '0x0 = video element hidden or not yet loaded';
                     elements.videoDebug.appendChild(dimHint);
                 }

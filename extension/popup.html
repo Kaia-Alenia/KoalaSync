@@ -36,7 +36,7 @@
             --success: var(--accent-green);
             --error: var(--danger);
             --radius: 12px;
-            --star: #fbbf24;
+            --star: oklch(0.68 0.14 45);
         }
 
         body {
@@ -289,7 +289,7 @@
         .toast-success { background: var(--success); color: var(--text-on-green); }
         .toast-error { background: var(--error); color: white; }
         .toast-info { background: var(--accent); color: var(--text-on-green); }
-        .toast-warning { background: #f59e0b; color: white; }
+        .toast-warning { background: var(--accent-terracotta); color: white; }
 
         @keyframes toastSlideIn {
             from { opacity: 0; transform: translateY(-20px); }

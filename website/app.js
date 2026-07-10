@@ -217,9 +217,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const bambooNear = document.getElementById('bamboo-near');
     if (bambooFar && bambooNear && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
         window.addEventListener('scroll', () => {
-            const scrollY = window.scrollY;
-            bambooFar.style.transform = `translateY(${scrollY * 0.04}px)`;
-            bambooNear.style.transform = `translateY(${-scrollY * 0.06}px)`;
+            // Cap the drift at ~14% of the viewport: the stalks have 20%
+            // overscan, so they always span the full height while parallaxing.
+            const maxShift = window.innerHeight * 0.14;
+            bambooFar.style.transform = `translateY(${Math.min(window.scrollY * 0.04, maxShift)}px)`;
+            bambooNear.style.transform = `translateY(${-Math.min(window.scrollY * 0.06, maxShift)}px)`;
         }, { passive: true });
     }
 

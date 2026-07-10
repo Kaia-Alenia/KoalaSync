@@ -139,9 +139,9 @@ body {
 
 #bamboo-far .bamboo-stalk {
     position: absolute;
-    top: -6%;
-    height: 112%;
-    border-radius: 50%;
+    top: -20%;
+    height: 140%;
+    border-radius: 999px;
     filter: blur(5.5px);
     background: linear-gradient(180deg, oklch(0.32 0.05 145 / 0.35), oklch(0.24 0.04 140 / 0.15));
 }
@@ -159,9 +159,9 @@ body {
 
 #bamboo-near .bamboo-stalk {
     position: absolute;
-    top: -6%;
-    height: 112%;
-    border-radius: 50%;
+    top: -20%;
+    height: 140%;
+    border-radius: 999px;
     background: linear-gradient(180deg, oklch(0.4 0.07 145 / 0.55), oklch(0.26 0.05 140 / 0.25));
     transform-origin: bottom center;
     animation: bambooSway 10s ease-in-out infinite;
@@ -179,9 +179,9 @@ body {
     background: oklch(0.5 0.08 145 / 0.5);
 }
 
-#bamboo-near .node-1 { top: 24%; }
-#bamboo-near .node-2 { top: 49%; }
-#bamboo-near .node-3 { top: 74%; }
+#bamboo-near .node-1 { top: 28%; }
+#bamboo-near .node-2 { top: 48%; }
+#bamboo-near .node-3 { top: 68%; }
 
 #bamboo-near .bamboo-leaf {
     position: absolute;
@@ -191,9 +191,9 @@ body {
     background: oklch(0.55 0.11 145 / 0.4);
 }
 
-#bamboo-near .near-1 .leaf-1 { top: 23%; left: 10px; transform: rotate(18deg); }
-#bamboo-near .near-1 .leaf-2 { top: 48.5%; left: -28px; transform: rotate(-160deg); width: 22px; height: 10px; }
-#bamboo-near .near-2 .leaf-1 { top: 30%; left: -26px; transform: rotate(-155deg); }
+#bamboo-near .near-1 .leaf-1 { top: 27.5%; left: 10px; transform: rotate(18deg); }
+#bamboo-near .near-1 .leaf-2 { top: 47.5%; left: -28px; transform: rotate(-160deg); width: 22px; height: 10px; }
+#bamboo-near .near-2 .leaf-1 { top: 44%; left: -26px; transform: rotate(-155deg); }
 
 @keyframes bambooSway {
     0%, 100% { transform: rotate(0); }
@@ -1409,9 +1409,9 @@ html.theme-light .koala-speech-bubble::after {
     display: flex;
     align-items: center;
     gap: 0.4rem;
-    background: rgba(234, 179, 8, 0.1);
-    border: 1px solid rgba(234, 179, 8, 0.2);
-    color: #facc15;
+    background: oklch(0.62 0.14 45 / 0.1);
+    border: 1px solid oklch(0.62 0.14 45 / 0.2);
+    color: oklch(0.72 0.13 50);
     padding: 0.5rem 0.6rem;
     border-radius: 8px;
     font-weight: 600;
@@ -1977,7 +1977,7 @@ input:checked + .mock-slider:before {
     opacity: 0.6;
 }
 .illus-browser-dot:nth-child(1) { background: oklch(0.55 0.15 25); }
-.illus-browser-dot:nth-child(2) { background: #fbbf24; }
+.illus-browser-dot:nth-child(2) { background: oklch(0.68 0.14 45); }
 .illus-browser-dot:nth-child(3) { background: oklch(0.68 0.13 150); }
 
 .illus-browser-address-bar {
@@ -2639,7 +2639,7 @@ input:checked + .mock-slider:before {
 }
 
 .terminal-dot.red { background: oklch(0.55 0.15 25); }
-.terminal-dot.yellow { background: #f59e0b; }
+.terminal-dot.yellow { background: oklch(0.68 0.14 45); }
 .terminal-dot.green { background: oklch(0.68 0.13 150); }
 
 .terminal-tabs {
@@ -2701,7 +2701,7 @@ input:checked + .mock-slider:before {
 .t-key { color: oklch(0.72 0.12 45); }
 .t-val { color: oklch(0.75 0.10 150); }
 .t-str { color: oklch(0.80 0.12 155); }
-.t-num { color: #fbbf24; }
+.t-num { color: oklch(0.75 0.12 50); }
 
 .terminal-copy-btn {
     position: absolute;
@@ -3046,7 +3046,7 @@ html:not(.lang-de) [lang="de"] {
 .feature-card:nth-child(2) { --card-accent: oklch(0.62 0.14 45 / 0.06); }
 .feature-card:nth-child(3) { --card-accent: oklch(0.68 0.13 150 / 0.06); }
 .feature-card:nth-child(4) { --card-accent: oklch(0.75 0.10 150 / 0.06); }
-.feature-card:nth-child(5) { --card-accent: rgba(245, 158, 11, 0.06); }
+.feature-card:nth-child(5) { --card-accent: oklch(0.68 0.14 45 / 0.06); }
 .feature-card:nth-child(6) { --card-accent: oklch(0.62 0.14 45 / 0.06); }
 .feature-card:nth-child(7) { --card-accent: oklch(0.62 0.14 45 / 0.06); }
 .feature-card:nth-child(8) { --card-accent: oklch(0.68 0.13 150 / 0.06); }
@@ -3339,9 +3339,9 @@ html.theme-light .compat-logo img.compat-logo-disneyplus-mark {
     transition: opacity 0.3s ease;
 }
 
-.use-case-card:nth-child(1) { --card-accent-border: #f59e0b; }
-.use-case-card:nth-child(2) { --card-accent-border: oklch(0.75 0.10 150); }
-.use-case-card:nth-child(3) { --card-accent-border: oklch(0.62 0.14 45); }
+.use-case-card:nth-child(1) { --card-accent-border: oklch(0.68 0.13 150); }
+.use-case-card:nth-child(2) { --card-accent-border: oklch(0.62 0.14 45); }
+.use-case-card:nth-child(3) { --card-accent-border: oklch(0.75 0.10 150); }
 
 
 .use-case-card:hover {
@@ -4789,7 +4789,7 @@ header[id] {
 .film-bounce-ball {
     transform-origin: bottom center;
     transform: translateY(var(--bounce-y, 0px));
-    filter: drop-shadow(0 0 4px #fde047);
+    filter: drop-shadow(0 0 4px oklch(0.72 0.13 50));
 }
 
 /* Twinkle & Glow play state bindings */

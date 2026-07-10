@@ -424,12 +424,12 @@
         const host = hcmEl('div', 'all:initial');
         const root = host.attachShadow({ mode: 'open' });
 
-        const wrap = hcmEl('div', 'position:fixed;z-index:2147483647;left:50%;bottom:32px;transform:translateX(-50%);background:#1f2937;color:#f9fafb;font:14px/1.4 system-ui,sans-serif;padding:16px 18px;border-radius:12px;box-shadow:0 8px 30px rgba(0,0,0,.45);max-width:360px;border:1px solid #374151');
+        const wrap = hcmEl('div', 'position:fixed;z-index:2147483647;left:50%;bottom:32px;transform:translateX(-50%);background:#212a17;color:#f4f2ea;font:14px/1.4 system-ui,sans-serif;padding:16px 18px;border-radius:12px;box-shadow:0 8px 30px rgba(0,0,0,.45);max-width:360px;border:1px solid #2f3625');
         wrap.setAttribute('role', 'dialog');
         const title = hcmEl('div', 'font-weight:600;margin-bottom:6px', hcmStrings.title);
-        const body = hcmEl('div', 'margin-bottom:12px;color:#d1d5db', hcmStrings.body);
+        const body = hcmEl('div', 'margin-bottom:12px;color:#bcb7a9', hcmStrings.body);
         const btnRow = hcmEl('div', 'display:flex;gap:8px;justify-content:flex-end');
-        const soloBtn = hcmEl('button', 'background:#374151;color:#f9fafb;border:0;padding:8px 12px;border-radius:8px;cursor:pointer', hcmStrings.solo);
+        const soloBtn = hcmEl('button', 'background:#2f3625;color:#f4f2ea;border:0;padding:8px 12px;border-radius:8px;cursor:pointer', hcmStrings.solo);
         const stayBtn = hcmEl('button', 'background:#56ae6c;color:#0a1a0d;border:0;padding:8px 12px;border-radius:8px;cursor:pointer;font-weight:600', hcmStrings.stay);
         btnRow.append(soloBtn, stayBtn);
         wrap.append(title, body, btnRow);
@@ -494,7 +494,7 @@
         }
         const host = hcmEl('div', 'all:initial');
         const root = host.attachShadow({ mode: 'open' });
-        const b = hcmEl('div', 'position:fixed;z-index:2147483646;right:16px;bottom:16px;background:#b45309;color:#fff;font:13px/1.3 system-ui,sans-serif;padding:8px 12px;border-radius:10px;box-shadow:0 6px 20px rgba(0,0,0,.4);cursor:pointer;display:flex;align-items:center;gap:8px');
+        const b = hcmEl('div', 'position:fixed;z-index:2147483646;right:16px;bottom:16px;background:#c96736;color:#fff;font:13px/1.3 system-ui,sans-serif;padding:8px 12px;border-radius:10px;box-shadow:0 6px 20px rgba(0,0,0,.4);cursor:pointer;display:flex;align-items:center;gap:8px');
         b.append(hcmEl('span', null, '● ' + hcmStrings.badge), hcmEl('span', 'text-decoration:underline', hcmStrings.resync));
         b.addEventListener('click', hcmExitDesync);
         root.appendChild(b);
