@@ -266,15 +266,14 @@ document.addEventListener('DOMContentLoaded', () => {
             const doc = document.documentElement;
             const maxScroll = Math.max(1, doc.scrollHeight - window.innerHeight);
             const depth = Math.min(1, window.scrollY / maxScroll);
-            // Couple the forest directly to the scroll distance so it visibly
-            // travels down instead of being overpowered by upward-moving content.
+            // Couple the forest directly to the scroll distance. The layers
+            // follow the content's direction (up-screen while scrolling down)
+            // but slower — near fastest, far slowest — so the forest recedes
+            // with believable depth instead of moving against the page.
             const shift = Math.min(window.innerHeight * 0.55, window.scrollY * 0.14);
-            // All bamboo layers travel in the same vertical direction. Depth
-            // comes from their different speeds; reversing one layer makes
-            // the forest look mechanically disconnected while scrolling.
-            bambooFar.style.transform = `translate(${(-mouseX * 5).toFixed(1)}px, ${(shift * 0.42).toFixed(1)}px)`;
-            bambooNear.style.transform = `translate(${(mouseX * 11).toFixed(1)}px, ${shift.toFixed(1)}px)`;
-            if (bambooMid) bambooMid.style.transform = `translate(${(mouseX * 4).toFixed(1)}px, ${(shift * 0.7).toFixed(1)}px)`;
+            bambooFar.style.transform = `translate(${(-mouseX * 5).toFixed(1)}px, ${(-shift * 0.42).toFixed(1)}px)`;
+            bambooNear.style.transform = `translate(${(mouseX * 11).toFixed(1)}px, ${(-shift).toFixed(1)}px)`;
+            if (bambooMid) bambooMid.style.transform = `translate(${(mouseX * 4).toFixed(1)}px, ${(-shift * 0.7).toFixed(1)}px)`;
             if (depthDay) depthDay.style.transform = `translate(${(-mouseX * 2.5).toFixed(1)}px, ${(mouseY * 1.5).toFixed(1)}px)`;
             if (depthDay) depthDay.style.opacity = (1 - depth * 0.75).toFixed(3);
             if (depthDusk) depthDusk.style.opacity = (0.35 + depth * 0.65).toFixed(3);

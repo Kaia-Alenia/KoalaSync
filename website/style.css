@@ -163,9 +163,10 @@ body {
 
 #bamboo-far .bamboo-stalk {
     position: absolute;
-    /* 200% covers the parallax drift (max 0.55vh down) with margin while
-       keeping the blurred layer 17% smaller than the old 240% overscan. */
-    top: -70%;
+    /* 200% covers the upward parallax drift (max 0.55vh on the near layer)
+       with margin while keeping the blurred layer smaller than the old
+       240% overscan. Spare coverage sits below, where the drift needs it. */
+    top: -40%;
     height: 200%;
     border-radius: 999px;
     filter: blur(4.5px);
@@ -193,7 +194,7 @@ body {
 #bamboo-far::after {
     content: '';
     position: absolute;
-    top: -70%;
+    top: -40%;
     height: 200%;
     border-radius: 999px;
     filter: blur(6.5px);
@@ -221,7 +222,7 @@ body {
 
 #bamboo-mid .bamboo-stalk {
     position: absolute;
-    top: -70%;
+    top: -40%;
     height: 200%;
     border-radius: 999px;
     filter: blur(2px);
@@ -283,7 +284,7 @@ body {
 
 #bamboo-near .bamboo-stalk {
     position: absolute;
-    top: -70%;
+    top: -40%;
     height: 200%;
     border-radius: 999px;
     /* Vertical sheen over the culm gradient: reads as light from the
