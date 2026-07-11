@@ -820,16 +820,16 @@ document.addEventListener('DOMContentLoaded', () => {
             const midOffset = (t * -24) % 160;
             const foreOffset = (t * -48) % 160;
             
-            // Bouncing ball logic (bounce Y is computed as parabolic arc)
-            const bouncePeriod = 0.8;
-            const bounceProgress = (t % bouncePeriod) / bouncePeriod;
-            const bounceHeight = 16;
-            const bounceY = 4 * bounceProgress * (1 - bounceProgress) * -bounceHeight;
-            
+            // Floating lantern: slow vertical bob + softer horizontal sway on
+            // detuned periods, so the drift never repeats exactly in sync
+            const bounceY = Math.sin((t % 5.2) / 5.2 * Math.PI * 2) * 3.5;
+            const lanternX = Math.cos((t % 8.6) / 8.6 * Math.PI * 2) * 4;
+
             tab.root.style.setProperty('--scroll-back', backOffset.toFixed(2) + 'px');
             tab.root.style.setProperty('--scroll-mid', midOffset.toFixed(2) + 'px');
             tab.root.style.setProperty('--scroll-fore', foreOffset.toFixed(2) + 'px');
             tab.root.style.setProperty('--bounce-y', bounceY.toFixed(2) + 'px');
+            tab.root.style.setProperty('--lantern-x', lanternX.toFixed(2) + 'px');
         };
 
         const updateSyncUI = () => {

@@ -234,6 +234,8 @@
             <span class="bamboo-stalk far-3"></span>
             <span class="bamboo-stalk far-4"></span>
             <span class="bamboo-stalk far-5"></span>
+            <span class="bamboo-stalk far-6"></span>
+            <span class="bamboo-stalk far-7"></span>
         </div>
         <div id="bamboo-mid">
             <span class="bamboo-stalk mid-1"></span>
@@ -254,6 +256,7 @@
                 <i class="bamboo-node node-2"></i>
                 <i class="bamboo-node node-3"></i>
                 <i class="bamboo-leaf leaf-1"></i>
+                <i class="bamboo-leaf leaf-2"></i>
             </div>
             <div class="bamboo-stalk near-3">
                 <i class="bamboo-node node-1"></i>
@@ -420,6 +423,16 @@
                             <div class="demo-video-art" aria-hidden="true"></div>
                             <div class="demo-seek-sweep" aria-hidden="true"></div>
                             <svg class="demo-film" viewBox="0 0 160 90" preserveAspectRatio="xMidYMid slice" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
+                                <g class="film-clouds" fill="#f0efe7">
+                                    <g class="film-cloud film-cloud-1" opacity="0.09">
+                                        <ellipse cx="34" cy="15" rx="17" ry="3"/>
+                                        <ellipse cx="42" cy="12" rx="9" ry="2.1"/>
+                                    </g>
+                                    <g class="film-cloud film-cloud-2" opacity="0.07">
+                                        <ellipse cx="100" cy="21" rx="13" ry="2.4"/>
+                                        <ellipse cx="107" cy="19" rx="7" ry="1.7"/>
+                                    </g>
+                                </g>
                                 <g class="film-stars" fill="#dbd7cd">
                                     <circle class="film-star" cx="18" cy="14" r="0.8"/>
                                     <circle class="film-star" cx="42" cy="24" r="0.6"/>
@@ -429,8 +442,27 @@
                                     <circle class="film-star" cx="134" cy="22" r="0.8"/>
                                     <circle class="film-star" cx="150" cy="12" r="0.5"/>
                                 </g>
-                                <circle class="film-moon" cx="122" cy="26" r="7.5" fill="#f0efe7" opacity="0.92"/>
+                                <line class="film-shooting-star" x1="151" y1="6" x2="143" y2="9.5" stroke="#f0efe7" stroke-width="0.6" stroke-linecap="round"/>
+                                <g class="film-moon-g">
+                                    <circle class="film-moon" cx="122" cy="26" r="7.5" fill="#f0efe7" opacity="0.92"/>
+                                    <g class="film-moon-detail" fill="#10190e" opacity="0.1">
+                                        <circle cx="119.6" cy="24.2" r="1.7"/>
+                                        <circle cx="124.6" cy="28.4" r="1.15"/>
+                                        <circle cx="123" cy="22.4" r="0.8"/>
+                                    </g>
+                                </g>
+                                <g class="film-birds" stroke="#dbd7cd" stroke-width="0.55" fill="none" stroke-linecap="round">
+                                    <path d="M-4,32 q1.5,-1.5 3,0 q1.5,-1.5 3,0"/>
+                                    <path d="M-11,28 q1.2,-1.2 2.4,0 q1.2,-1.2 2.4,0"/>
+                                    <path d="M-8,36 q1,-1 2,0 q1,-1 2,0"/>
+                                </g>
                                 <path class="film-mtn-scroll" d="M0,60 L30,45 L70,55 L110,40 L160,60 L190,45 L230,55 L270,40 L320,60 L320,92 L0,92 Z" fill="rgba(14, 31, 15, 0.7)"/>
+                                <g class="film-mist-scroll" fill="#dbd7cd">
+                                    <ellipse cx="40" cy="63" rx="46" ry="4" opacity="0.055"/>
+                                    <ellipse cx="120" cy="65" rx="52" ry="4.5" opacity="0.045"/>
+                                    <ellipse cx="200" cy="63" rx="46" ry="4" opacity="0.055"/>
+                                    <ellipse cx="280" cy="65" rx="52" ry="4.5" opacity="0.045"/>
+                                </g>
                                 <g class="film-mid-scroll">
                                     <polygon points="20,76 26,60 32,76" fill="rgba(26, 47, 23, 0.55)"/>
                                     <polygon points="55,78 63,52 71,78" fill="rgba(26, 47, 23, 0.55)"/>
@@ -449,7 +481,10 @@
                                     <polygon points="275,84 288,42 301,84" fill="#040903"/>
                                     <path d="M0,84 Q80,82 160,84 T320,84 L320,92 L0,92 Z" fill="#040903"/>
                                 </g>
-                                <circle class="film-bounce-ball" cx="80" cy="46" r="3.5" fill="#de7949"/>
+                                <g class="film-lantern-g">
+                                    <circle class="film-lantern-halo" cx="80" cy="38" r="6.5" fill="#de7949" opacity="0.16"/>
+                                    <circle class="film-bounce-ball" cx="80" cy="38" r="2.4" fill="#de7949"/>
+                                </g>
                             </svg>
                             <div class="demo-play-overlay" aria-hidden="true">
                                 <span class="demo-icon-wrap">
@@ -458,8 +493,16 @@
                                 </span>
                             </div>
                             <div class="demo-video-controls">
+                                <span class="demo-ctrl-icon demo-ctrl-play" aria-hidden="true">
+                                    <svg class="icon-play" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="11" height="11"><path d="M8 5v14l11-7z"/></svg>
+                                    <svg class="icon-pause" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="11" height="11"><path d="M6 5h4v14H6zM14 5h4v14h-4z"/></svg>
+                                </span>
                                 <span class="demo-time">12:34</span>
-                                <div class="demo-progress" title="Seek: KoalaSync jumps the other tab to the same spot"><div class="demo-progress-fill"></div></div>
+                                <div class="demo-progress" title="Seek: KoalaSync jumps the other tab to the same spot"><div class="demo-progress-buffer"></div><div class="demo-progress-fill"></div></div>
+                                <span class="demo-duration" aria-hidden="true">42:17</span>
+                                <span class="demo-ctrl-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="11" height="11"><path d="M11 5 6 9H2v6h4l5 4V5z"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg></span>
+                                <span class="demo-ctrl-badge" aria-hidden="true">HD</span>
+                                <span class="demo-ctrl-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="11" height="11"><path d="M8 3H5a2 2 0 0 0-2 2v3M21 8V5a2 2 0 0 0-2-2h-3M3 16v3a2 2 0 0 0 2 2h3M16 21h3a2 2 0 0 0 2-2v-3"/></svg></span>
                             </div>
                         </div>
                     </div>
@@ -477,6 +520,16 @@
                             <div class="demo-video-art" aria-hidden="true"></div>
                             <div class="demo-seek-sweep" aria-hidden="true"></div>
                             <svg class="demo-film" viewBox="0 0 160 90" preserveAspectRatio="xMidYMid slice" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
+                                <g class="film-clouds" fill="#f0efe7">
+                                    <g class="film-cloud film-cloud-1" opacity="0.09">
+                                        <ellipse cx="34" cy="15" rx="17" ry="3"/>
+                                        <ellipse cx="42" cy="12" rx="9" ry="2.1"/>
+                                    </g>
+                                    <g class="film-cloud film-cloud-2" opacity="0.07">
+                                        <ellipse cx="100" cy="21" rx="13" ry="2.4"/>
+                                        <ellipse cx="107" cy="19" rx="7" ry="1.7"/>
+                                    </g>
+                                </g>
                                 <g class="film-stars" fill="#dbd7cd">
                                     <circle class="film-star" cx="18" cy="14" r="0.8"/>
                                     <circle class="film-star" cx="42" cy="24" r="0.6"/>
@@ -486,8 +539,27 @@
                                     <circle class="film-star" cx="134" cy="22" r="0.8"/>
                                     <circle class="film-star" cx="150" cy="12" r="0.5"/>
                                 </g>
-                                <circle class="film-moon" cx="122" cy="26" r="7.5" fill="#f0efe7" opacity="0.92"/>
+                                <line class="film-shooting-star" x1="151" y1="6" x2="143" y2="9.5" stroke="#f0efe7" stroke-width="0.6" stroke-linecap="round"/>
+                                <g class="film-moon-g">
+                                    <circle class="film-moon" cx="122" cy="26" r="7.5" fill="#f0efe7" opacity="0.92"/>
+                                    <g class="film-moon-detail" fill="#10190e" opacity="0.1">
+                                        <circle cx="119.6" cy="24.2" r="1.7"/>
+                                        <circle cx="124.6" cy="28.4" r="1.15"/>
+                                        <circle cx="123" cy="22.4" r="0.8"/>
+                                    </g>
+                                </g>
+                                <g class="film-birds" stroke="#dbd7cd" stroke-width="0.55" fill="none" stroke-linecap="round">
+                                    <path d="M-4,32 q1.5,-1.5 3,0 q1.5,-1.5 3,0"/>
+                                    <path d="M-11,28 q1.2,-1.2 2.4,0 q1.2,-1.2 2.4,0"/>
+                                    <path d="M-8,36 q1,-1 2,0 q1,-1 2,0"/>
+                                </g>
                                 <path class="film-mtn-scroll" d="M0,60 L30,45 L70,55 L110,40 L160,60 L190,45 L230,55 L270,40 L320,60 L320,92 L0,92 Z" fill="rgba(14, 31, 15, 0.7)"/>
+                                <g class="film-mist-scroll" fill="#dbd7cd">
+                                    <ellipse cx="40" cy="63" rx="46" ry="4" opacity="0.055"/>
+                                    <ellipse cx="120" cy="65" rx="52" ry="4.5" opacity="0.045"/>
+                                    <ellipse cx="200" cy="63" rx="46" ry="4" opacity="0.055"/>
+                                    <ellipse cx="280" cy="65" rx="52" ry="4.5" opacity="0.045"/>
+                                </g>
                                 <g class="film-mid-scroll">
                                     <polygon points="20,76 26,60 32,76" fill="rgba(26, 47, 23, 0.55)"/>
                                     <polygon points="55,78 63,52 71,78" fill="rgba(26, 47, 23, 0.55)"/>
@@ -506,7 +578,10 @@
                                     <polygon points="275,84 288,42 301,84" fill="#040903"/>
                                     <path d="M0,84 Q80,82 160,84 T320,84 L320,92 L0,92 Z" fill="#040903"/>
                                 </g>
-                                <circle class="film-bounce-ball" cx="80" cy="46" r="3.5" fill="#de7949"/>
+                                <g class="film-lantern-g">
+                                    <circle class="film-lantern-halo" cx="80" cy="38" r="6.5" fill="#de7949" opacity="0.16"/>
+                                    <circle class="film-bounce-ball" cx="80" cy="38" r="2.4" fill="#de7949"/>
+                                </g>
                             </svg>
                             <div class="demo-play-overlay" aria-hidden="true">
                                 <span class="demo-icon-wrap">
@@ -515,8 +590,16 @@
                                 </span>
                             </div>
                             <div class="demo-video-controls">
+                                <span class="demo-ctrl-icon demo-ctrl-play" aria-hidden="true">
+                                    <svg class="icon-play" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="11" height="11"><path d="M8 5v14l11-7z"/></svg>
+                                    <svg class="icon-pause" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="11" height="11"><path d="M6 5h4v14H6zM14 5h4v14h-4z"/></svg>
+                                </span>
                                 <span class="demo-time">12:34</span>
-                                <div class="demo-progress" title="Seek: KoalaSync jumps the other tab to the same spot"><div class="demo-progress-fill"></div></div>
+                                <div class="demo-progress" title="Seek: KoalaSync jumps the other tab to the same spot"><div class="demo-progress-buffer"></div><div class="demo-progress-fill"></div></div>
+                                <span class="demo-duration" aria-hidden="true">42:17</span>
+                                <span class="demo-ctrl-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="11" height="11"><path d="M11 5 6 9H2v6h4l5 4V5z"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg></span>
+                                <span class="demo-ctrl-badge" aria-hidden="true">HD</span>
+                                <span class="demo-ctrl-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="11" height="11"><path d="M8 3H5a2 2 0 0 0-2 2v3M21 8V5a2 2 0 0 0-2-2h-3M3 16v3a2 2 0 0 0 2 2h3M16 21h3a2 2 0 0 0 2-2v-3"/></svg></span>
                             </div>
                         </div>
                         <div class="demo-tab-toast" id="demo-toast-b" data-joined="{{DEMO_JOINED}}" data-selected="{{DEMO_TAB_SELECTED}}" aria-hidden="true"></div>
@@ -598,7 +681,7 @@
                                 </label>
                                 <select class="mock-input" id="demo-video-select" style="width: 100%; box-sizing: border-box; background: var(--card); border: 1px solid #2f3625; color: white; padding: 8px; border-radius: 8px; font-family: inherit; font-size: 0.75rem; outline: none; cursor: default;">
                                     <option value="" class="demo-select-placeholder" selected hidden>{{DEMO_SELECT_PLACEHOLDER}}</option>
-                                    <option><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="12" height="12" aria-hidden="true"><rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18"/><line x1="7" y1="2" x2="7" y2="22"/><line x1="17" y1="2" x2="17" y2="22"/><line x1="2" y1="12" x2="22" y2="12"/><line x1="2" y1="7" x2="7" y2="7"/><line x1="2" y1="17" x2="7" y2="17"/><line x1="17" y1="17" x2="22" y2="17"/><line x1="17" y1="7" x2="22" y2="7"/></svg> <span class="demo-title-text-ep1">Stranger Things - S4E1</span></option>
+                                    <option class="demo-title-text-ep1">Stranger Things - S4E1</option>
                                 </select>
                             </div>
                             

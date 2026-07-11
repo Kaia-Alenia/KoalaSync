@@ -163,12 +163,18 @@ body {
 
 #bamboo-far .bamboo-stalk {
     position: absolute;
+    /* 200% covers the parallax drift (max 0.55vh down) with margin while
+       keeping the blurred layer 17% smaller than the old 240% overscan. */
     top: -70%;
-    height: 240%;
+    height: 200%;
     border-radius: 999px;
-    filter: blur(5.5px);
+    filter: blur(4.5px);
     transition: filter 1.2s ease;
-    background: linear-gradient(180deg, oklch(0.32 0.05 145 / 0.35), oklch(0.24 0.04 140 / 0.15));
+    background:
+        repeating-linear-gradient(180deg,
+            transparent 0, transparent 108px,
+            oklch(0.40 0.06 145 / 0.22) 108px, oklch(0.40 0.06 145 / 0.22) 112px),
+        linear-gradient(180deg, oklch(0.34 0.05 145 / 0.4), oklch(0.24 0.04 140 / 0.16));
 }
 
 #bamboo-far .far-1 { left: 2%; width: 26px; }
@@ -176,6 +182,10 @@ body {
 #bamboo-far .far-3 { right: 4%; width: 30px; }
 #bamboo-far .far-4 { left: 13%; width: 20px; }
 #bamboo-far .far-5 { right: 10.5%; width: 16px; }
+/* Two whisper-quiet trunks soften the empty centre without touching the
+   content: wide apart, thin, and at the lowest opacity in the scene. */
+#bamboo-far .far-6 { left: 39%; width: 12px; opacity: 0.55; }
+#bamboo-far .far-7 { right: 42%; width: 14px; opacity: 0.6; }
 
 /* Two barely-there trunks break up the empty middle without competing with
    the content. They share the far layer's single parallax transform. */
@@ -184,10 +194,10 @@ body {
     content: '';
     position: absolute;
     top: -70%;
-    height: 240%;
+    height: 200%;
     border-radius: 999px;
-    filter: blur(8px);
-    opacity: 0.28;
+    filter: blur(6.5px);
+    opacity: 0.3;
     background: linear-gradient(180deg, oklch(0.34 0.05 145 / 0.3), oklch(0.23 0.04 140 / 0.1));
 }
 
@@ -196,8 +206,8 @@ body {
 
 /* Depth of field: the far layer blurs further as you descend (stepped by
    JS on threshold crossings, never per frame) */
-.bg-nature.depth-mid #bamboo-far .bamboo-stalk { filter: blur(6.5px); }
-.bg-nature.depth-deep #bamboo-far .bamboo-stalk { filter: blur(8px); }
+.bg-nature.depth-mid #bamboo-far .bamboo-stalk { filter: blur(5.5px); }
+.bg-nature.depth-deep #bamboo-far .bamboo-stalk { filter: blur(6.5px); }
 
 /* (a2) Mid bamboo layer: sits between far and near with its own parallax
    rate (app.js) and half the near layer's sway, so the three layers drift
@@ -212,9 +222,9 @@ body {
 #bamboo-mid .bamboo-stalk {
     position: absolute;
     top: -70%;
-    height: 240%;
+    height: 200%;
     border-radius: 999px;
-    filter: blur(2.5px);
+    filter: blur(2px);
     transition: filter 1.2s ease;
     /* Segment rings + a soft left-of-centre sheen give the stalks culm
        structure without any extra elements; the blur keeps both faint. */
@@ -256,8 +266,8 @@ body {
     display: none;
 }
 
-.bg-nature.depth-mid #bamboo-mid .bamboo-stalk { filter: blur(3.5px); }
-.bg-nature.depth-deep #bamboo-mid .bamboo-stalk { filter: blur(4.5px); }
+.bg-nature.depth-mid #bamboo-mid .bamboo-stalk { filter: blur(3px); }
+.bg-nature.depth-deep #bamboo-mid .bamboo-stalk { filter: blur(4px); }
 
 @keyframes bambooSwayHalf {
     0%, 100% { transform: rotate(0); }
@@ -274,20 +284,20 @@ body {
 #bamboo-near .bamboo-stalk {
     position: absolute;
     top: -70%;
-    height: 240%;
+    height: 200%;
     border-radius: 999px;
     /* Vertical sheen over the culm gradient: reads as light from the
        canopy catching the rounded stalk instead of a flat strip. */
     background:
-        linear-gradient(90deg, transparent 12%, oklch(0.62 0.08 145 / 0.18) 36%, transparent 64%),
-        linear-gradient(180deg, oklch(0.4 0.07 145 / 0.55), oklch(0.26 0.05 140 / 0.25));
+        linear-gradient(90deg, transparent 12%, oklch(0.64 0.08 145 / 0.22) 36%, transparent 64%),
+        linear-gradient(180deg, oklch(0.42 0.075 145 / 0.6), oklch(0.27 0.05 140 / 0.3));
     transform-origin: bottom center;
     animation: bambooSway 10s ease-in-out infinite;
 }
 
-#bamboo-near .near-1 { left: 4.5%; width: 13px; animation-duration: 9.2s; }
-#bamboo-near .near-2 { right: 7%; width: 11px; animation-duration: 11s; animation-delay: -3.5s; }
-#bamboo-near .near-3 { left: 10%; width: 9px; animation-duration: 12.5s; animation-delay: -6s; opacity: 0.75; }
+#bamboo-near .near-1 { left: 4.5%; width: 15px; animation-duration: 9.2s; }
+#bamboo-near .near-2 { right: 7%; width: 13px; animation-duration: 11s; animation-delay: -3.5s; }
+#bamboo-near .near-3 { left: 10%; width: 10px; animation-duration: 12.5s; animation-delay: -6s; opacity: 0.75; }
 
 #bamboo-near .bamboo-node {
     position: absolute;
@@ -295,7 +305,7 @@ body {
     right: -1px;
     height: 3px;
     border-radius: 2px;
-    background: oklch(0.5 0.08 145 / 0.5);
+    background: oklch(0.52 0.085 145 / 0.6);
 }
 
 #bamboo-near .node-1 { top: 28%; }
@@ -310,10 +320,11 @@ body {
     background: oklch(0.55 0.11 145 / 0.4);
 }
 
-#bamboo-near .near-1 .leaf-1 { top: 27.5%; left: 10px; transform: rotate(18deg); }
+#bamboo-near .near-1 .leaf-1 { top: 27.5%; left: 12px; transform: rotate(18deg); }
 #bamboo-near .near-1 .leaf-2 { top: 47.5%; left: -28px; transform: rotate(-160deg); width: 22px; height: 10px; }
 #bamboo-near .near-2 .leaf-1 { top: 44%; left: -26px; transform: rotate(-155deg); }
-#bamboo-near .near-3 .leaf-1 { top: 33%; left: 7px; transform: rotate(24deg); width: 18px; height: 9px; }
+#bamboo-near .near-2 .leaf-2 { top: 61%; left: 11px; transform: rotate(21deg); width: 20px; height: 9px; }
+#bamboo-near .near-3 .leaf-1 { top: 33%; left: 8px; transform: rotate(24deg); width: 18px; height: 9px; }
 
 @keyframes bambooSway {
     0%, 100% { transform: rotate(0); }
@@ -724,6 +735,8 @@ html.theme-light .bg-nature::after {
     #bamboo-mid,
     #bamboo-far .far-4,
     #bamboo-far .far-5,
+    #bamboo-far .far-6,
+    #bamboo-far .far-7,
     #bamboo-near .near-3 {
         display: none;
     }
@@ -1014,6 +1027,12 @@ html.theme-light #bamboo-mid .bamboo-stalk,
 html.theme-light #bamboo-near .bamboo-stalk,
 html.theme-light .bg-grass {
     opacity: 0.45;
+}
+
+/* The centre trunks stay whisper-quiet by daylight too */
+html.theme-light #bamboo-far .far-6,
+html.theme-light #bamboo-far .far-7 {
+    opacity: 0.26;
 }
 
 html.theme-light .bg-mist {
@@ -2804,17 +2823,18 @@ input:checked + .mock-slider:before {
 /* Floating Success Badge */
 .illus-floating-success {
     position: absolute;
-    bottom: -0.9rem;
+    /* Fully below the card so the toast never straddles its border */
+    bottom: -2.4rem;
     left: 50%;
     transform: translateX(-50%);
-    background: oklch(0.12 0.015 135 / 0.9);
-    border: 1px solid oklch(0.68 0.13 150 / 0.3);
+    background: oklch(0.12 0.015 135 / 0.92);
+    border: 1px solid oklch(0.68 0.13 150 / 0.35);
     border-radius: 20px;
-    padding: 2px 9px;
+    padding: 3px 10px;
     display: flex;
     align-items: center;
     gap: 4px;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.4);
+    box-shadow: 0 6px 14px rgba(0, 0, 0, 0.45), 0 0 12px oklch(0.68 0.13 150 / 0.18);
     animation: floating-success-fade 5s infinite;
     white-space: nowrap;
     z-index: 10;
@@ -4932,9 +4952,11 @@ header[id] {
     inset: 0;
     z-index: 1;
     pointer-events: none;
+    /* Cinematic vignette: soft edge falloff + heavier floor for the controls */
     box-shadow:
         inset 0 0 0 1px rgba(255, 255, 255, 0.05),
-        inset 0 -24px 36px oklch(0.04 0.015 145 / 0.2);
+        inset 0 0 34px oklch(0.04 0.015 145 / 0.32),
+        inset 0 -26px 40px oklch(0.04 0.015 145 / 0.26);
 }
 
 html.theme-light .hero-demo-scene .demo-video::after {
@@ -5067,12 +5089,42 @@ html.theme-light .hero-demo-scene .demo-video::after {
     z-index: 1;
 }
 
-.demo-time {
+.demo-time,
+.demo-duration {
     flex-shrink: 0;
     font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
     font-weight: 700;
     letter-spacing: 0.03em;
     font-variant-numeric: tabular-nums;
+}
+
+.demo-duration {
+    font-weight: 600;
+    opacity: 0.7;
+}
+
+/* Decorative player chrome: play state glyph, volume, HD, fullscreen */
+.demo-ctrl-icon {
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+    opacity: 0.85;
+}
+
+.demo-ctrl-play .icon-pause { display: none; }
+.demo-tab-card.playing .demo-ctrl-play .icon-play { display: none; }
+.demo-tab-card.playing .demo-ctrl-play .icon-pause { display: block; }
+
+.demo-ctrl-badge {
+    flex-shrink: 0;
+    font-size: 7px;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    line-height: 1;
+    padding: 2px 3px;
+    border: 1px solid currentColor;
+    border-radius: 3px;
+    opacity: 0.65;
 }
 
 .demo-progress {
@@ -5089,6 +5141,18 @@ html.theme-light .hero-demo-scene .demo-video::after {
     content: '';
     position: absolute;
     inset: -8px 0;
+}
+
+/* Buffered range behind the playhead, like a real player */
+.demo-progress-buffer {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    width: 56%;
+    border-radius: 99px;
+    background: oklch(0.92 0.02 95 / 0.14);
+    pointer-events: none;
 }
 
 .demo-progress-fill {
@@ -5269,6 +5333,9 @@ html.theme-light .hero-demo-scene .demo-video::after {
 }
 
 .hero-demo-scene .film-stars { fill: var(--demo-stars) !important; }
+.hero-demo-scene .film-clouds { fill: var(--demo-stars) !important; }
+.hero-demo-scene .film-mist-scroll { fill: var(--demo-stars) !important; }
+.hero-demo-scene .film-shooting-star { stroke: var(--demo-stars) !important; }
 .hero-demo-scene .film-moon {
     fill: var(--demo-moon) !important;
     filter: drop-shadow(0 0 6px var(--demo-moon));
@@ -5276,6 +5343,9 @@ html.theme-light .hero-demo-scene .demo-video::after {
 .hero-demo-scene .film-mtn-scroll { fill: var(--demo-mountain) !important; }
 .hero-demo-scene .film-mid-scroll > * { fill: var(--demo-midground) !important; }
 .hero-demo-scene .film-fore-scroll > * { fill: var(--demo-foreground) !important; }
+
+/* By day the flock reads as silhouettes, not chalk marks */
+html.theme-light .hero-demo-scene .film-birds { stroke: oklch(0.32 0.06 145 / 0.65); }
 
 /* Stars: staggered twinkle so the sky feels alive */
 .film-star {
@@ -5295,7 +5365,30 @@ html.theme-light .hero-demo-scene .demo-video::after {
     50% { opacity: 1; transform: scale(1.15); }
 }
 
-/* Moon: gentle glow pulse + slow arc drift */
+/* Moon: gentle glow pulse + slow arc drift. The drift lives on the wrapper
+   group so the craters travel with the disc; the glow stays on the circle.
+   (Step-3 uses a bare .film-moon without wrapper — filmMoon still covers it.) */
+.film-moon-g {
+    transform-box: fill-box;
+    transform-origin: center;
+    animation: filmMoonDrift 6s ease-in-out infinite alternate;
+    animation-play-state: paused;
+}
+
+.film-moon-g .film-moon {
+    animation-name: filmMoonGlow;
+}
+
+@keyframes filmMoonDrift {
+    from { transform: translate(0, 0); }
+    to { transform: translate(-6px, 3px); }
+}
+
+@keyframes filmMoonGlow {
+    from { filter: drop-shadow(0 0 4px oklch(0.95 0.01 100 / 0.5)); }
+    to { filter: drop-shadow(0 0 10px oklch(0.95 0.01 100 / 0.95)); }
+}
+
 .film-moon {
     transform-box: fill-box;
     transform-origin: center;
@@ -5317,10 +5410,27 @@ html.theme-light .hero-demo-scene .demo-video::after {
 .film-fore-scroll {
     transform: translateX(var(--scroll-fore, 0px));
 }
+/* Floating lantern: the group rides the JS-driven drift vars so halo and
+   light travel together; the glow stays cheap via a single drop-shadow. */
+.film-lantern-g {
+    transform: translate(var(--lantern-x, 0px), var(--bounce-y, 0px));
+}
+
 .film-bounce-ball {
     transform-origin: bottom center;
-    transform: translateY(var(--bounce-y, 0px));
     filter: drop-shadow(0 0 4px oklch(0.72 0.13 50));
+}
+
+.film-lantern-halo {
+    transform-box: fill-box;
+    transform-origin: center;
+    animation: filmHaloPulse 2.6s ease-in-out infinite alternate;
+    animation-play-state: paused;
+}
+
+@keyframes filmHaloPulse {
+    from { transform: scale(0.85); opacity: 0.12; }
+    to { transform: scale(1.18); opacity: 0.22; }
 }
 
 /* Twinkle & Glow play state bindings */
@@ -5330,9 +5440,56 @@ html.theme-light .hero-demo-scene .demo-video::after {
     animation: filmTwinkle 2.8s ease-in-out infinite;
     animation-play-state: paused;
 }
-.demo-tab-card.playing .film-star,
-.demo-tab-card.playing .film-moon {
+.demo-tab-card.playing :is(.film-star, .film-moon, .film-moon-g, .film-cloud, .film-shooting-star, .film-birds, .film-lantern-halo) {
     animation-play-state: running;
+}
+
+/* Drifting clouds: gentle back-and-forth so there is no wrap pop */
+.film-cloud {
+    transform-box: fill-box;
+    animation: filmCloudDrift 26s ease-in-out infinite alternate;
+    animation-play-state: paused;
+}
+
+.film-cloud-2 {
+    animation-duration: 34s;
+    animation-delay: -12s;
+}
+
+@keyframes filmCloudDrift {
+    from { transform: translateX(-6px); }
+    to { transform: translateX(10px); }
+}
+
+/* A shooting star streaks across the sky every few loops */
+.film-shooting-star {
+    opacity: 0;
+    animation: filmShoot 11s linear infinite;
+    animation-play-state: paused;
+}
+
+@keyframes filmShoot {
+    0%, 87% { opacity: 0; transform: translate(0, 0); }
+    89% { opacity: 0.9; }
+    95%, 100% { opacity: 0; transform: translate(-46px, 20px); }
+}
+
+/* A distant flock crosses the valley, fading out mid-flight */
+.film-birds {
+    animation: filmBirds 16s linear infinite;
+    animation-play-state: paused;
+}
+
+@keyframes filmBirds {
+    0% { transform: translate(0, 0); opacity: 0; }
+    4% { opacity: 0.75; }
+    42% { opacity: 0.75; }
+    48%, 100% { transform: translate(185px, -12px); opacity: 0; }
+}
+
+/* Valley mist rides the slow background parallax between tree layers */
+.film-mist-scroll {
+    transform: translateX(var(--scroll-back, 0px));
 }
 
 /* Play button pulsing indicator at the end of the walkthrough */

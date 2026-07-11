@@ -583,11 +583,11 @@
             </div>
             <!-- Room credentials — distinct group below the server picker. -->
             <div class="form-group">
-                <label title="The unique identifier for your sync room" data-i18n="LABEL_ROOM_ID" data-i18n-title="LABEL_ROOM_ID_TOOLTIP">Room ID</label>
+                <label for="roomId" title="The unique identifier for your sync room" data-i18n="LABEL_ROOM_ID" data-i18n-title="LABEL_ROOM_ID_TOOLTIP">Room ID</label>
                 <input type="text" id="roomId" data-i18n-placeholder="PLACEHOLDER_ROOM_ID" data-i18n-title="PLACEHOLDER_ROOM_ID_TOOLTIP" placeholder="Enter Room ID" title="The unique ID of the room you want to join">
             </div>
             <div class="form-group">
-                <label title="Optional password to restrict room access" data-i18n="LABEL_PASSWORD" data-i18n-title="LABEL_PASSWORD_TOOLTIP">Password (Optional)</label>
+                <label for="password" title="Optional password to restrict room access" data-i18n="LABEL_PASSWORD" data-i18n-title="LABEL_PASSWORD_TOOLTIP">Password (Optional)</label>
                 <input type="password" id="password" data-i18n-placeholder="PLACEHOLDER_PASSWORD" data-i18n-title="PLACEHOLDER_PASSWORD_TOOLTIP" placeholder="Room Password (optional)" title="Password for the room (leave empty if none)">
             </div>
             <div id="roomError" style="display:none; color:var(--error); font-size:11px; margin-bottom:8px; text-align:center;"></div>
@@ -628,7 +628,7 @@
                     <span id="hostRoleBadge" style="font-size:10px; font-weight:700; text-transform:uppercase; padding:2px 8px; border-radius:8px; background:var(--accent); color:var(--text-on-green);"></span>
                 </div>
                 <div id="hostControlToggleRow" style="display:none; align-items:center; justify-content:space-between; gap:12px; margin-top:12px;">
-                    <span style="font-size:12px; color:var(--text); line-height:1.3;" data-i18n="LABEL_HOST_ONLY_TOGGLE">Only I can control playback</span>
+                    <label for="hostControlToggle" style="font-size:12px; color:var(--text); line-height:1.3; margin:0; text-transform:none; font-weight:400;" data-i18n="LABEL_HOST_ONLY_TOGGLE">Only I can control playback</label>
                     <label class="toggle-switch" style="flex:none;">
                         <input type="checkbox" id="hostControlToggle">
                         <span class="slider"></span>
@@ -654,7 +654,7 @@
         <!-- SYNC ACTIVE: Visible when in a room -->
         <div id="sync-active">
         <div class="form-group" style="position: relative;">
-            <label title="Choose the browser tab containing the video to sync" data-i18n="LABEL_SELECT_VIDEO" data-i18n-title="LABEL_SELECT_VIDEO_TOOLTIP">Select Video</label>
+            <label for="targetTab" title="Choose the browser tab containing the video to sync" data-i18n="LABEL_SELECT_VIDEO" data-i18n-title="LABEL_SELECT_VIDEO_TOOLTIP">Select Video</label>
             <select id="targetTab">
                 <option value="" data-i18n="OPTION_SELECT_TAB">-- Select a Tab --</option>
             </select>
@@ -714,7 +714,7 @@
     <!-- Settings Tab -->
     <div id="tab-settings" class="tab-content">
         <div class="form-group" style="display: flex; align-items: center; justify-content: space-between; background: var(--card); padding: 10px; border-radius: 8px; margin-bottom: 12px; border: 1px solid var(--border-strong);">
-            <label id="themeLabel" style="margin-bottom: 0;" title="Follow the system theme or choose a fixed appearance">Appearance</label>
+            <label id="themeLabel" for="themeSelector" style="margin-bottom: 0;" title="Follow the system theme or choose a fixed appearance">Appearance</label>
             <select id="themeSelector" aria-label="Appearance" style="width: 165px; background: var(--bg); border: 1px solid var(--border-strong); color: var(--text); padding: 6px 10px; border-radius: 8px; font-size: 13px; cursor: pointer; outline: none; font-family: inherit;">
                 <option id="themeOptionSystem" value="system">💻 System</option>
                 <option id="themeOptionDark" value="dark">🌙 Dark</option>
@@ -723,21 +723,21 @@
         </div>
 
         <div class="form-group" style="display: flex; align-items: center; justify-content: space-between; background: var(--card); padding: 10px; border-radius: 8px; margin-bottom: 12px; border: 1px solid var(--border-strong);">
-            <label style="margin-bottom: 0;" title="Username helps others identify you." data-i18n="LABEL_USERNAME" data-i18n-title="LABEL_USERNAME_TOOLTIP">Your Username</label>
+            <label for="username" style="margin-bottom: 0;" title="Username helps others identify you." data-i18n="LABEL_USERNAME" data-i18n-title="LABEL_USERNAME_TOOLTIP">Your Username</label>
             <input type="text" id="username" data-i18n-placeholder="PLACEHOLDER_USERNAME" placeholder="Anonymous Koala" maxlength="20" style="width: 150px;">
         </div>
 
         <details class="form-group" style="background: var(--card); padding: 10px; border-radius: 8px; margin-bottom: 12px; border: 1px solid var(--border-strong);">
             <summary style="cursor: pointer; font-size: 12px; font-weight: 700; color: var(--text);" title="Choose which titles are sent to the room." data-i18n="LABEL_PRIVACY_SETTINGS" data-i18n-title="LABEL_PRIVACY_SETTINGS_TOOLTIP">Privacy Settings</summary>
             <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 10px;">
-                <label style="margin-bottom: 0; cursor: help;" title="Send the selected browser tab title to the room." data-i18n="LABEL_SEND_TAB_TITLE" data-i18n-title="LABEL_SEND_TAB_TITLE_TOOLTIP">Send tab title</label>
+                <label for="sendTabTitle" style="margin-bottom: 0; cursor: help;" title="Send the selected browser tab title to the room." data-i18n="LABEL_SEND_TAB_TITLE" data-i18n-title="LABEL_SEND_TAB_TITLE_TOOLTIP">Send tab title</label>
                 <label class="toggle-switch">
                     <input type="checkbox" id="sendTabTitle" checked>
                     <span class="slider"></span>
                 </label>
             </div>
             <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 10px;">
-                <label style="margin-bottom: 0; cursor: help;" title="Choose how media titles are sent to the room." data-i18n="LABEL_MEDIA_TITLE_PRIVACY" data-i18n-title="LABEL_MEDIA_TITLE_PRIVACY_TOOLTIP">Media title</label>
+                <label for="mediaTitlePrivacyMode" style="margin-bottom: 0; cursor: help;" title="Choose how media titles are sent to the room." data-i18n="LABEL_MEDIA_TITLE_PRIVACY" data-i18n-title="LABEL_MEDIA_TITLE_PRIVACY_TOOLTIP">Media title</label>
                 <select id="mediaTitlePrivacyMode" style="width: 165px; background: var(--bg); border: 1px solid var(--border-strong); color: white; padding: 6px 10px; border-radius: 8px; font-size: 12px; cursor: pointer; outline: none; font-family: inherit;">
                     <option value="full" data-i18n="OPTION_TITLE_PRIVACY_FULL">Send full title</option>
                     <option value="episode" data-i18n="OPTION_TITLE_PRIVACY_EPISODE">Send episode ID</option>
@@ -747,7 +747,7 @@
         </details>
 
         <div class="form-group" style="display: flex; align-items: center; justify-content: space-between; background: var(--card); padding: 10px; border-radius: 8px; margin-bottom: 12px; border: 1px solid var(--border-strong);">
-            <label style="margin-bottom: 0; cursor: help;" title="Filters out non-video tabs and unrelated domains to keep the list clean" data-i18n="LABEL_HIDE_CLUTTER" data-i18n-title="LABEL_HIDE_CLUTTER_TOOLTIP">Hide Clutter Tabs</label>
+            <label for="filterNoise" style="margin-bottom: 0; cursor: help;" title="Filters out non-video tabs and unrelated domains to keep the list clean" data-i18n="LABEL_HIDE_CLUTTER" data-i18n-title="LABEL_HIDE_CLUTTER_TOOLTIP">Hide Clutter Tabs</label>
             <label class="toggle-switch">
                 <input type="checkbox" id="filterNoise" checked>
                 <span class="slider"></span>
@@ -755,7 +755,7 @@
         </div>
 
         <div class="form-group" style="display: flex; align-items: center; justify-content: space-between; background: var(--card); padding: 10px; border-radius: 8px; margin-bottom: 12px; border: 1px solid var(--border-strong);">
-            <label style="margin-bottom: 0; cursor: help;" title="Pauses automatically and waits for all peers when an episode changes, then sync-starts together." data-i18n="LABEL_AUTO_SYNC_NEXT" data-i18n-title="LABEL_AUTO_SYNC_NEXT_TOOLTIP">Auto-Sync Next Episode</label>
+            <label for="autoSyncNextEpisode" style="margin-bottom: 0; cursor: help;" title="Pauses automatically and waits for all peers when an episode changes, then sync-starts together." data-i18n="LABEL_AUTO_SYNC_NEXT" data-i18n-title="LABEL_AUTO_SYNC_NEXT_TOOLTIP">Auto-Sync Next Episode</label>
             <label class="toggle-switch">
                 <input type="checkbox" id="autoSyncNextEpisode">
                 <span class="slider"></span>
@@ -763,7 +763,7 @@
         </div>
 
         <div class="form-group" style="display: flex; align-items: center; justify-content: space-between; background: var(--card); padding: 10px; border-radius: 8px; margin-bottom: 12px; border: 1px solid var(--border-strong);">
-            <label style="margin-bottom: 0; cursor: help;" title="Automatically copies the invite link to your clipboard when creating a new room." data-i18n="LABEL_AUTO_COPY_INVITE" data-i18n-title="LABEL_AUTO_COPY_INVITE_TOOLTIP">Auto-Copy Invite Link</label>
+            <label for="autoCopyInvite" style="margin-bottom: 0; cursor: help;" title="Automatically copies the invite link to your clipboard when creating a new room." data-i18n="LABEL_AUTO_COPY_INVITE" data-i18n-title="LABEL_AUTO_COPY_INVITE_TOOLTIP">Auto-Copy Invite Link</label>
             <label class="toggle-switch">
                 <input type="checkbox" id="autoCopyInvite" checked>
                 <span class="slider"></span>
@@ -771,7 +771,7 @@
         </div>
 
         <div class="form-group" style="display: flex; align-items: center; justify-content: space-between; background: var(--card); padding: 10px; border-radius: 8px; margin-bottom: 12px; border: 1px solid var(--border-strong);">
-            <label style="margin-bottom: 0; cursor: help;" title="Shows native system notifications when someone joins/leaves or plays/pauses." data-i18n="LABEL_NOTIFICATIONS" data-i18n-title="LABEL_NOTIFICATIONS_TOOLTIP">Browser Notifications</label>
+            <label for="browserNotifications" style="margin-bottom: 0; cursor: help;" title="Shows native system notifications when someone joins/leaves or plays/pauses." data-i18n="LABEL_NOTIFICATIONS" data-i18n-title="LABEL_NOTIFICATIONS_TOOLTIP">Browser Notifications</label>
             <label class="toggle-switch">
                 <input type="checkbox" id="browserNotifications">
                 <span class="slider"></span>
@@ -786,7 +786,7 @@
         </div>
 
         <div class="form-group" style="display: flex; align-items: center; justify-content: space-between; background: var(--card); padding: 10px; border-radius: 8px; margin-bottom: 12px; border: 1px solid var(--border-strong);">
-            <label style="margin-bottom: 0;" data-i18n="LABEL_LANGUAGE" data-i18n-title="LABEL_LANGUAGE_TOOLTIP" title="Choose your preferred extension language">App Language</label>
+            <label for="langSelector" style="margin-bottom: 0;" data-i18n="LABEL_LANGUAGE" data-i18n-title="LABEL_LANGUAGE_TOOLTIP" title="Choose your preferred extension language">App Language</label>
             <select id="langSelector" style="width: 165px; background: var(--bg); border: 1px solid var(--border-strong); color: white; padding: 6px 10px; border-radius: 8px; font-size: 13px; cursor: pointer; outline: none; font-family: inherit;">
                 <option value="en">🇬🇧 English</option>
                 <option value="de">🇩🇪 Deutsch</option>
