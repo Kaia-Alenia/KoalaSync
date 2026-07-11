@@ -6,6 +6,8 @@ import { fileURLToPath } from 'node:url';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const template = fs.readFileSync(path.join(repoRoot, 'website', 'template.html'), 'utf8');
+const app = fs.readFileSync(path.join(repoRoot, 'website', 'app.js'), 'utf8');
+const langInit = fs.readFileSync(path.join(repoRoot, 'website', 'lang-init.js'), 'utf8');
 const mockupStart = template.indexOf('<div class="extension-mockup">');
 const mockupEnd = template.indexOf('<div class="demo-invite-fly"', mockupStart);
 
@@ -28,4 +30,28 @@ for (const [label, pattern] of themeSensitiveControls) {
   }
 }
 
+const landingStylesheets = [...template.matchAll(/<link\b[^>]*\brel="stylesheet"[^>]*\bhref="\{\{ASSET_PATH\}\}landing[^">]*"[^>]*>/g)];
+if (landingStylesheets.length !== 1) {
+  throw new Error(`Landing must load exactly one render-blocking stylesheet; found ${landingStylesheets.length}`);
+}
+
+const landingStylesheet = landingStylesheets[0][0];
+if (!/href="\{\{ASSET_PATH\}\}landing\.min\.css"/.test(landingStylesheet)) {
+  throw new Error('Landing stylesheet must use the landing.min.css build placeholder');
+}
+if (/\bmedia=|data-(?:landing-)?deferred/.test(landingStylesheet)) {
+  throw new Error('Landing stylesheet must not be activated after first paint');
+}
+
+const runtimeCssActivation = [
+  ['app.js', app],
+  ['lang-init.js', langInit]
+];
+for (const [file, source] of runtimeCssActivation) {
+  if (/createElement\(['"]link['"]\)|requestIdleCallback|data-landing-deferred|data-deferred-css|\.media\s*=\s*['"]all['"]/.test(source)) {
+    throw new Error(`${file} must not dynamically load or activate structural CSS`);
+  }
+}
+
 console.log('Extension mockup theme-sensitive text uses theme-aware colors');
+console.log('Landing CSS is render-blocking, single-request, and cascade-stable');
