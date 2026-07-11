@@ -75,6 +75,13 @@ sync.koalastuff.net {
     file_server
     encode zstd gzip
 
+    # Themed 404 page (Caddy returns an empty 404 without this)
+    handle_errors {
+        @notfound expression {err.status_code} == 404
+        rewrite @notfound /404.html
+        file_server
+    }
+
     @static {
         file
         path *.ico *.css *.js *.png *.svg *.webp *.avif

@@ -64,6 +64,7 @@ const elements = {
     autoCopyInvite: document.getElementById('autoCopyInvite'),
     cancelLobbyBtn: document.getElementById('cancelLobbyBtn'),
     langSelector: document.getElementById('langSelector'),
+    themeSelector: document.getElementById('themeSelector'),
 
     audioSettingsLink: document.getElementById('audioSettingsLink'),
     settingsSupportLink: document.getElementById('settingsSupportLink'),
@@ -130,6 +131,29 @@ function configureFooterLinks() {
 
 function openAudioSettingsPage() {
     chrome.tabs.create({ url: chrome.runtime.getURL('audio-options.html') });
+}
+
+function localizeThemeSelector(locale) {
+    const labels = {
+        de: ['Darstellung', 'System', 'Dunkel', 'Hell'], fr: ['Apparence', 'Système', 'Sombre', 'Clair'],
+        es: ['Apariencia', 'Sistema', 'Oscuro', 'Claro'], it: ['Aspetto', 'Sistema', 'Scuro', 'Chiaro'],
+        nl: ['Weergave', 'Systeem', 'Donker', 'Licht'], pl: ['Wygląd', 'System', 'Ciemny', 'Jasny'],
+        pt: ['Aparência', 'Sistema', 'Escuro', 'Claro'], 'pt-BR': ['Aparência', 'Sistema', 'Escuro', 'Claro'],
+        tr: ['Görünüm', 'Sistem', 'Koyu', 'Açık'], ru: ['Оформление', 'Системная', 'Тёмная', 'Светлая'],
+        ja: ['外観', 'システム', 'ダーク', 'ライト'], ko: ['테마', '시스템', '다크', '라이트'],
+        zh: ['外观', '跟随系统', '深色', '浅色'], uk: ['Вигляд', 'Системна', 'Темна', 'Світла'],
+        en: ['Appearance', 'System', 'Dark', 'Light']
+    };
+    const [label, system, dark, light] = labels[locale] || labels.en;
+    const labelEl = document.getElementById('themeLabel');
+    const systemEl = document.getElementById('themeOptionSystem');
+    const darkEl = document.getElementById('themeOptionDark');
+    const lightEl = document.getElementById('themeOptionLight');
+    if (labelEl) labelEl.textContent = label;
+    if (systemEl) systemEl.textContent = `💻 ${system}`;
+    if (darkEl) darkEl.textContent = `🌙 ${dark}`;
+    if (lightEl) lightEl.textContent = `☀️ ${light}`;
+    if (elements.themeSelector) elements.themeSelector.setAttribute('aria-label', label);
 }
 
 async function updateFeatureHints() {
@@ -204,7 +228,7 @@ function setRoomRefreshCooldown() {
 async function init() {
     // Local-only by design — settings and room credentials never come from
     // storage.sync (only onboardingComplete + dismissedHints live there).
-    const localData = await chrome.storage.local.get(['serverUrl', 'useCustomServer', 'roomId', 'password', 'username', 'filterNoise', 'autoSyncNextEpisode', 'sendTabTitle', 'mediaTitlePrivacyMode', 'titlePrivacyMode', 'forceSyncMode', 'browserNotifications', 'autoCopyInvite', 'locale', 'audioSettings', 'activeTab']);
+    const localData = await chrome.storage.local.get(['serverUrl', 'useCustomServer', 'roomId', 'password', 'username', 'filterNoise', 'autoSyncNextEpisode', 'sendTabTitle', 'mediaTitlePrivacyMode', 'titlePrivacyMode', 'forceSyncMode', 'browserNotifications', 'autoCopyInvite', 'locale', 'audioSettings', 'activeTab', 'themeMode']);
 
     let activeLang = localData.locale;
     if (!activeLang) {
@@ -214,8 +238,10 @@ async function init() {
 
     await loadLocale(activeLang);
     translateDOM();
+    localizeThemeSelector(activeLang);
     
     if (elements.langSelector) elements.langSelector.value = activeLang;
+    if (elements.themeSelector) elements.themeSelector.value = ['dark', 'light'].includes(localData.themeMode) ? localData.themeMode : 'system';
     
     let username = localData.username;
     if (!username) {
@@ -538,7 +564,7 @@ function updateLastActionUI(state, peers) {
         peerItem.style.cssText = `display:flex; flex-direction:column; align-items:center; opacity: ${isAcked ? 1 : 0.6};`;
         
         const dot = document.createElement('div');
-        dot.style.cssText = `width:18px; height:18px; border-radius:50%; background:${color}; color:white; display:flex; align-items:center; justify-content:center; font-size:9px; font-weight:bold; margin-bottom:1px;`;
+        dot.style.cssText = `width:18px; height:18px; border-radius:50%; background:${color}; color:${isAcked ? 'var(--text-on-green)' : 'var(--text-primary)'}; display:flex; align-items:center; justify-content:center; font-size:9px; font-weight:bold; margin-bottom:1px;`;
         dot.textContent = icon;
         
         const nameSpan = document.createElement('span');
@@ -630,7 +656,10 @@ function renderEmpty(container, type) {
         copyBtn.title = getMessage('BTN_COPY_INVITE_TOOLTIP');
         copyBtn.addEventListener('click', () => {
             navigator.clipboard.writeText(elements.inviteLink.value)
-                .then(() => showToast(getMessage('TOAST_INVITE_COPIED'), 'success', 2000))
+                .then(() => {
+                    showToast(getMessage('TOAST_INVITE_COPIED'), 'success', 2000);
+                    spawnLeafBurst(copyBtn);
+                })
                 .catch(() => showToast(getMessage('TOAST_COPY_FAILED'), 'error'));
         });
         wrapper.appendChild(copyBtn);
@@ -725,7 +754,7 @@ function updatePeerList(peers) {
             // Host Control Mode: show "Solo" badge for peers watching on their own.
             if (typeof p === 'object' && p.desynced) {
                 const solo = document.createElement('span');
-                solo.style.cssText = 'font-size:10px; color:#fff; background:#c96736; padding:2px 6px; border-radius:6px; font-weight:600;';
+                solo.style.cssText = 'font-size:10px; color:var(--text-on-warm); background:var(--accent-terracotta); padding:2px 6px; border-radius:6px; font-weight:700;';
                 const soloText = getMessage('BADGE_DESYNCED') || 'Solo';
                 solo.textContent = soloText;
                 solo.title = getMessage('TOOLTIP_PEER_DESYNCED') || soloText;
@@ -742,7 +771,7 @@ function updatePeerList(peers) {
                 const isController = !isOwner && hcmControllers.includes(pId);
                 if (isOwner || isController) {
                     const roleBadge = document.createElement('span');
-                    roleBadge.style.cssText = 'font-size:10px; color:#fff; background:var(--accent); padding:2px 6px; border-radius:6px; font-weight:600;';
+                    roleBadge.style.cssText = 'font-size:10px; color:var(--text-on-green); background:var(--accent); padding:2px 6px; border-radius:6px; font-weight:700;';
                     roleBadge.textContent = isOwner ? (getMessage('BADGE_HOST') || 'Host') : (getMessage('BADGE_CONTROLLER') || 'Controller');
                     rightGroup.appendChild(roleBadge);
                 }
@@ -755,7 +784,7 @@ function updatePeerList(peers) {
                     btn.title = revoke ? (getMessage('BTN_REVOKE_CONTROL') || 'Revoke') : (getMessage('BTN_GIVE_CONTROL') || 'Give control');
                     btn.addEventListener('mouseenter', () => {
                         btn.style.background = revoke ? 'var(--text-muted)' : 'var(--accent)';
-                        btn.style.color = '#fff';
+                        btn.style.color = 'var(--text-on-green)';
                     });
                     btn.addEventListener('mouseleave', () => {
                         btn.style.background = 'transparent';
@@ -1273,6 +1302,14 @@ if (elements.autoCopyInvite) {
     });
 }
 
+if (elements.themeSelector) {
+    elements.themeSelector.addEventListener('change', () => {
+        const themeMode = elements.themeSelector.value;
+        window.koalaTheme?.setMode(themeMode);
+        chrome.storage.local.set({ themeMode });
+    });
+}
+
 if (elements.audioSettingsLink) {
     elements.audioSettingsLink.addEventListener('click', async (event) => {
         event.preventDefault();
@@ -1305,6 +1342,7 @@ if (elements.langSelector) {
         await chrome.storage.local.set({ locale: selectedLang });
         await loadLocale(selectedLang);
         translateDOM();
+        localizeThemeSelector(selectedLang);
         configureFooterLinks();
         await updateFeatureHints();
         
@@ -1387,6 +1425,39 @@ function showToast(message, type = 'info', duration = 3000) {
 
     container.appendChild(toast);
     setTimeout(() => toast.remove(), duration);
+}
+
+// Eucalyptus confetti: a few tiny leaves burst from the given element
+// (matches the website's copy-invite moment). Subtle by design — few,
+// tiny, short-lived — and skipped entirely under reduced motion.
+function spawnLeafBurst(sourceEl) {
+    if (!sourceEl || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    const rect = sourceEl.getBoundingClientRect();
+    if (!rect.width) return;
+    const originY = rect.top + rect.height / 2;
+    const count = 4 + Math.floor(Math.random() * 3);
+    for (let i = 0; i < count; i++) {
+        const leaf = document.createElement('span');
+        // Three tones of the palette: deep green, sage, a dash of amber
+        const tone = Math.random();
+        leaf.className = 'click-leaf' + (tone < 0.25 ? ' click-leaf-amber' : tone < 0.55 ? ' click-leaf-sage' : '');
+        // Fan out upward to a burst peak spread across the button's width;
+        // the keyframes brake there and let each leaf sink while it rocks.
+        const angle = (-90 + (Math.random() - 0.5) * 150) * Math.PI / 180;
+        const dist = 18 + Math.random() * 24;
+        const dur = 0.85 + Math.random() * 0.4;
+        leaf.style.left = (rect.left + 4 + Math.random() * Math.max(1, rect.width - 8)) + 'px';
+        leaf.style.top = (originY - rect.height * 0.2) + 'px';
+        leaf.style.setProperty('--leaf-x', (Math.cos(angle) * dist).toFixed(1) + 'px');
+        leaf.style.setProperty('--leaf-y', (Math.sin(angle) * dist).toFixed(1) + 'px');
+        leaf.style.setProperty('--leaf-rot', ((Math.random() - 0.5) * 160).toFixed(0) + 'deg');
+        leaf.style.setProperty('--leaf-scale', (0.55 + Math.random() * 0.55).toFixed(2));
+        leaf.style.setProperty('--leaf-dur', dur.toFixed(2) + 's');
+        leaf.style.setProperty('--flutter-dur', (0.35 + Math.random() * 0.3).toFixed(2) + 's');
+        leaf.appendChild(document.createElement('i'));
+        document.body.appendChild(leaf);
+        setTimeout(() => leaf.remove(), dur * 1000 + 150);
+    }
 }
 
 function showError(msg) {
@@ -1775,13 +1846,12 @@ elements.copyInvite.addEventListener('click', () => {
     navigator.clipboard.writeText(elements.inviteLink.value).then(() => {
         const original = elements.copyInvite.textContent;
         elements.copyInvite.textContent = '✓';
-        elements.copyInvite.style.background = 'var(--success)';
-        elements.copyInvite.style.color = 'white';
+        elements.copyInvite.classList.add('copy-success');
         showToast(getMessage('TOAST_INVITE_COPIED'), 'success', 2000);
+        spawnLeafBurst(elements.copyInvite);
         setTimeout(() => {
             elements.copyInvite.textContent = original;
-            elements.copyInvite.style.background = '';
-            elements.copyInvite.style.color = '';
+            elements.copyInvite.classList.remove('copy-success');
         }, 2000);
     }).catch(() => {
         showToast(getMessage('TOAST_COPY_FAILED'), 'error');
@@ -1793,11 +1863,12 @@ if (elements.syncTabCopyInvite) {
         navigator.clipboard.writeText(elements.inviteLink.value).then(() => {
             const original = elements.syncTabCopyInvite.textContent;
             elements.syncTabCopyInvite.textContent = '✓';
-            elements.syncTabCopyInvite.style.color = 'var(--success)';
+            elements.syncTabCopyInvite.classList.add('copy-success');
             showToast(getMessage('TOAST_INVITE_COPIED'), 'success', 2000);
+            spawnLeafBurst(elements.syncTabCopyInvite);
             setTimeout(() => {
                 elements.syncTabCopyInvite.textContent = original;
-                elements.syncTabCopyInvite.style.color = '';
+                elements.syncTabCopyInvite.classList.remove('copy-success');
             }, 2000);
         });
     });

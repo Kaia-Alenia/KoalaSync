@@ -184,6 +184,19 @@ document.addEventListener('DOMContentLoaded', () => {
     // Scroll Reveal Logic (IntersectionObserver for performance)
     const revealElements = document.querySelectorAll('[data-reveal]');
 
+    // Hash navigation must never land on an intentionally transparent state.
+    // Reveal the destination before the smooth scroll begins; the observer
+    // continues to animate sections reached through ordinary scrolling.
+    const revealHashTarget = () => {
+        const id = decodeURIComponent(window.location.hash.slice(1));
+        const target = id ? document.getElementById(id) : null;
+        if (!target) return;
+        if (target.matches('[data-reveal]')) target.classList.add('revealed');
+        target.querySelectorAll('[data-reveal]').forEach(el => el.classList.add('revealed'));
+    };
+    revealHashTarget();
+    window.addEventListener('hashchange', revealHashTarget);
+
     if ('IntersectionObserver' in window) {
         const revealObserver = new IntersectionObserver((entries) => {
             entries.forEach(entry => {
@@ -193,7 +206,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             });
         }, {
-            rootMargin: '0px 0px -30px 0px',
+            rootMargin: '0px 0px 12% 0px',
             threshold: 0.05
         });
 
@@ -231,6 +244,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // value crossfades the scene from sunlit canopy into misty dusk, and on
     // pointer devices the layers tilt slightly toward the cursor.
     const bambooFar = document.getElementById('bamboo-far');
+    const bambooMid = document.getElementById('bamboo-mid');
     const bambooNear = document.getElementById('bamboo-near');
     const forestScene = document.querySelector('.bg-nature');
     const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -241,6 +255,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const fireflies = Array.from(document.querySelectorAll('.firefly-wrap'), (el) => ({ el, x: 0, y: 0 }));
         const canHover = window.matchMedia('(hover: hover)').matches;
         let mouseX = 0;
+        let mouseY = 0;
         let pointerX = -9999;
         let pointerY = -9999;
         let depthStep = '';
@@ -251,9 +266,16 @@ document.addEventListener('DOMContentLoaded', () => {
             const doc = document.documentElement;
             const maxScroll = Math.max(1, doc.scrollHeight - window.innerHeight);
             const depth = Math.min(1, window.scrollY / maxScroll);
-            const shift = window.innerHeight * 0.14;
-            bambooFar.style.transform = `translate(${(-mouseX * 5).toFixed(1)}px, ${(depth * shift).toFixed(1)}px)`;
-            bambooNear.style.transform = `translate(${(mouseX * 11).toFixed(1)}px, ${(-depth * shift).toFixed(1)}px)`;
+            // Couple the forest directly to the scroll distance so it visibly
+            // travels down instead of being overpowered by upward-moving content.
+            const shift = Math.min(window.innerHeight * 0.55, window.scrollY * 0.14);
+            // All bamboo layers travel in the same vertical direction. Depth
+            // comes from their different speeds; reversing one layer makes
+            // the forest look mechanically disconnected while scrolling.
+            bambooFar.style.transform = `translate(${(-mouseX * 5).toFixed(1)}px, ${(shift * 0.42).toFixed(1)}px)`;
+            bambooNear.style.transform = `translate(${(mouseX * 11).toFixed(1)}px, ${shift.toFixed(1)}px)`;
+            if (bambooMid) bambooMid.style.transform = `translate(${(mouseX * 4).toFixed(1)}px, ${(shift * 0.7).toFixed(1)}px)`;
+            if (depthDay) depthDay.style.transform = `translate(${(-mouseX * 2.5).toFixed(1)}px, ${(mouseY * 1.5).toFixed(1)}px)`;
             if (depthDay) depthDay.style.opacity = (1 - depth * 0.75).toFixed(3);
             if (depthDusk) depthDusk.style.opacity = (0.35 + depth * 0.65).toFixed(3);
             if (duskTint) duskTint.style.opacity = (depth * 0.85).toFixed(3);
@@ -316,6 +338,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (canHover) {
             window.addEventListener('pointermove', (e) => {
                 mouseX = (e.clientX / window.innerWidth - 0.5) * 2;
+                mouseY = (e.clientY / window.innerHeight - 0.5) * 2;
                 pointerX = e.clientX;
                 pointerY = e.clientY;
                 requestForestFrame();
@@ -343,6 +366,68 @@ document.addEventListener('DOMContentLoaded', () => {
             };
             scheduleGust();
         }
+    }
+
+    // Eucalyptus click confetti: leaves burst from wherever the visitor
+    // presses. Buttons and other controls shed leaves along their whole
+    // width; anywhere else a small fan rises from the pointer itself. The
+    // hero walkthrough's scripted cursor calls burstFromElement directly so
+    // its fake clicks scatter leaves too. Rate-capped, pointer-events:none —
+    // it can never block a click or flood the DOM.
+    let burstFromElement = () => {};
+    if (!prefersReducedMotion) {
+        const spawnLeaf = (x, y) => {
+            const leaf = document.createElement('span');
+            // Three tones of the palette: deep green, sage, a dash of amber
+            const tone = Math.random();
+            leaf.className = 'click-leaf' + (tone < 0.25 ? ' click-leaf-amber' : tone < 0.55 ? ' click-leaf-sage' : '');
+            // Fan out upward to a burst peak; the keyframes brake there and
+            // let the leaf sink past it while the inner element rocks.
+            const angle = (-90 + (Math.random() - 0.5) * 150) * Math.PI / 180;
+            const dist = 26 + Math.random() * 38;
+            const dur = 0.9 + Math.random() * 0.5;
+            leaf.style.left = x + 'px';
+            leaf.style.top = y + 'px';
+            leaf.style.setProperty('--leaf-x', (Math.cos(angle) * dist).toFixed(1) + 'px');
+            leaf.style.setProperty('--leaf-y', (Math.sin(angle) * dist).toFixed(1) + 'px');
+            leaf.style.setProperty('--leaf-rot', ((Math.random() - 0.5) * 160).toFixed(0) + 'deg');
+            leaf.style.setProperty('--leaf-scale', (0.55 + Math.random() * 0.6).toFixed(2));
+            leaf.style.setProperty('--leaf-dur', dur.toFixed(2) + 's');
+            leaf.style.setProperty('--flutter-dur', (0.4 + Math.random() * 0.35).toFixed(2) + 's');
+            leaf.appendChild(document.createElement('i'));
+            document.body.appendChild(leaf);
+            setTimeout(() => leaf.remove(), dur * 1000 + 150);
+        };
+
+        burstFromElement = (el) => {
+            if (!el) return;
+            const r = el.getBoundingClientRect();
+            if (!r.width || r.bottom < 0 || r.top > window.innerHeight) return;
+            // Leaf count scales with the control's width so a wide demo card
+            // sheds a few more than a compact icon button, capped for subtlety.
+            const count = Math.max(4, Math.min(9, Math.round(r.width / 26)));
+            for (let i = 0; i < count; i++) {
+                const x = r.left + 4 + Math.random() * Math.max(1, r.width - 8);
+                // Spawn along the upper edge, like leaves knocked off the top
+                const y = r.top + r.height * (0.1 + Math.random() * 0.4);
+                spawnLeaf(x, y);
+            }
+        };
+
+        let lastBurst = 0;
+        document.addEventListener('pointerdown', (e) => {
+            if (e.button !== 0 || !e.isPrimary) return;
+            const now = Date.now();
+            if (now - lastBurst < 180) return;
+            lastBurst = now;
+            const control = e.target.closest('button, [role="button"], .btn, .mock-tab, select, .demo-progress');
+            if (control) {
+                burstFromElement(control);
+            } else {
+                const count = 4 + Math.floor(Math.random() * 3);
+                for (let i = 0; i < count; i++) spawnLeaf(e.clientX, e.clientY);
+            }
+        }, { passive: true });
     }
 
     // Invite Detection & Bridge
@@ -1136,6 +1221,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 await wait(180);
                 if (userTookOver || demoRunId !== myRunId) return false;
                 if (action) action(); else el.click();
+                // The scripted cursor's clicks scatter leaves like real ones
+                burstFromElement(el);
                 await wait(320 + (pause || 0));
                 return !userTookOver && demoRunId === myRunId;
             };

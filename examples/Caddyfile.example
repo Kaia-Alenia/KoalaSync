@@ -18,6 +18,14 @@
 #     # Clean URLs support (resolves /join to join.html, etc.)
 #     try_files {path} {path}.html {path}/
 #     file_server
+#
+#     # Serve the themed 404 page for unknown URLs (without this block,
+#     # Caddy returns an empty 404 response)
+#     handle_errors {
+#         @notfound expression {err.status_code} == 404
+#         rewrite @notfound /404.html
+#         file_server
+#     }
 # }
 #
 # syncserver.koalastuff.net {
@@ -56,6 +64,14 @@ sync.koalastuff.net {
     # Clean URLs: Resolves paths without .html in the URL
     try_files {path} {path}.html {path}/
     file_server
+
+    # Serve the themed 404 page for unknown URLs (without this block,
+    # Caddy returns an empty 404 response)
+    handle_errors {
+        @notfound expression {err.status_code} == 404
+        rewrite @notfound /404.html
+        file_server
+    }
 
     # Static Caching for high-performance PageSpeed (1 year with validation)
     @static {

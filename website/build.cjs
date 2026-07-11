@@ -371,7 +371,8 @@ async function compile() {
         { src: 'impressum-de.html', dest: 'de/impressum.html' },
         { src: 'datenschutz-de.html', dest: 'de/datenschutz.html' },
         { src: 'impressum.html', dest: 'impressum.html' },
-        { src: 'datenschutz.html', dest: 'datenschutz.html' }
+        { src: 'datenschutz.html', dest: 'datenschutz.html' },
+        { src: '404.html', dest: '404.html' }
     ];
     for (const mapping of staticMappings) {
         const src = path.join(websiteDir, mapping.src);
@@ -457,13 +458,15 @@ async function compile() {
         let html = fs.readFileSync(filePath, 'utf8');
 
         // 8a. Replace hashed asset refs and inject SRI (Subresource Integrity)
-        html = html.replace(/(<link\b[^>]*?\bhref=")((?:\.\.\/)*)style\.min\.css"/g, (m, before, prefix) => {
+        // The prefix is either any number of "../" segments or a single "/"
+        // (404.html must use absolute paths: it is served for arbitrary URLs).
+        html = html.replace(/(<link\b[^>]*?\bhref=")((?:\.\.\/)*\/?)style\.min\.css"/g, (m, before, prefix) => {
             return `${before}${prefix}${styleName}" integrity="${styleSRI}" crossorigin="anonymous"`;
         });
-        html = html.replace(/(<script\b[^>]*?\bsrc=")((?:\.\.\/)*)app\.min\.js"/g, (m, before, prefix) => {
+        html = html.replace(/(<script\b[^>]*?\bsrc=")((?:\.\.\/)*\/?)app\.min\.js"/g, (m, before, prefix) => {
             return `${before}${prefix}${appName}" integrity="${appSRI}" crossorigin="anonymous"`;
         });
-        html = html.replace(/(<script\b[^>]*?\bsrc=")((?:\.\.\/)*)lang-init\.min\.js"/g, (m, before, prefix) => {
+        html = html.replace(/(<script\b[^>]*?\bsrc=")((?:\.\.\/)*\/?)lang-init\.min\.js"/g, (m, before, prefix) => {
             return `${before}${prefix}${langName}" integrity="${langSRI}" crossorigin="anonymous"`;
         });
 

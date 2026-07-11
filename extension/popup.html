@@ -3,6 +3,7 @@
 <head>
     <meta charset="utf-8">
     <title>KoalaSync</title>
+    <script src="theme-init.js"></script>
     <style>
         @font-face {
             font-family: 'Twemoji Country Flags';
@@ -26,6 +27,7 @@
             --accent-terracotta: oklch(0.62 0.14 45);
             --danger: oklch(0.55 0.15 25);
             --text-on-green: oklch(0.14 0.02 90);
+            --text-on-warm: oklch(0.16 0.025 45);
 
             --bg: var(--surface-deep);
             --card: var(--surface);
@@ -37,6 +39,25 @@
             --error: var(--danger);
             --radius: 12px;
             --star: oklch(0.68 0.14 45);
+            color-scheme: dark;
+        }
+
+        html.theme-light {
+            --bg-base: oklch(0.965 0.012 105);
+            --surface: oklch(0.995 0.006 100);
+            --surface-deep: oklch(0.935 0.018 110);
+            --surface-alt: oklch(0.91 0.022 115);
+            --border-soft: oklch(0.28 0.035 140 / 0.10);
+            --border-strong: oklch(0.73 0.035 125);
+            --text-primary: oklch(0.21 0.03 140);
+            --text-secondary: oklch(0.43 0.03 135);
+            --accent-green: oklch(0.56 0.13 150);
+            --accent-green-hover: oklch(0.49 0.13 150);
+            --accent-terracotta: oklch(0.64 0.14 45);
+            --danger: oklch(0.57 0.17 25);
+            --text-on-green: oklch(0.16 0.03 140);
+            --text-on-warm: oklch(0.18 0.03 45);
+            color-scheme: light;
         }
 
         body {
@@ -47,6 +68,16 @@
             color: var(--text);
             font-family: 'Twemoji Country Flags', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
             font-size: 14px;
+            background-image:
+                radial-gradient(circle at 12% -8%, oklch(0.68 0.13 150 / 0.12), transparent 42%),
+                radial-gradient(circle at 105% 12%, oklch(0.62 0.14 45 / 0.08), transparent 34%);
+            transition: background-color 0.25s ease, color 0.25s ease;
+        }
+
+        html.theme-light body {
+            background-image:
+                radial-gradient(circle at 8% -5%, oklch(0.72 0.11 145 / 0.24), transparent 40%),
+                radial-gradient(circle at 105% 5%, oklch(0.82 0.12 65 / 0.2), transparent 38%);
         }
 
         .header-row {
@@ -81,7 +112,7 @@
             font-size: 10px;
             color: var(--text-muted);
             text-decoration: none;
-            opacity: 0.5;
+            opacity: 0.72;
             transition: opacity 0.2s, color 0.2s;
         }
         .popup-version:hover {
@@ -113,7 +144,8 @@
             cursor: pointer;
             font-weight: 600;
             border-radius: 8px;
-            transition: all 0.2s;
+            min-height: 36px;
+            transition: background-color 0.2s, color 0.2s, box-shadow 0.2s;
         }
 
         .tab-btn.active {
@@ -154,7 +186,7 @@
             box-sizing: border-box;
             background: var(--card);
             border: 1px solid var(--border-strong);
-            color: white;
+            color: var(--text);
             padding: 10px;
             border-radius: 8px;
             outline: none;
@@ -189,7 +221,7 @@
             font-weight: 700;
             border-radius: 8px;
             cursor: pointer;
-            transition: all 0.2s;
+            transition: background-color 0.2s, box-shadow 0.2s, transform 0.2s;
             margin-top: 8px;
         }
 
@@ -203,11 +235,42 @@
             padding: 10px;
             background: var(--border-strong);
             border: none;
-            color: white;
+            color: var(--text);
             font-weight: 600;
             border-radius: 8px;
             cursor: pointer;
             margin-top: 8px;
+        }
+
+        button.secondary:hover {
+            background: oklch(0.38 0.035 125);
+        }
+
+        details > summary:focus-visible {
+            outline: 2px solid var(--accent-hover) !important;
+            outline-offset: 3px;
+            border-radius: 4px;
+        }
+
+        button:focus-visible,
+        a:focus-visible,
+        input:focus-visible,
+        select:focus-visible {
+            outline: 2px solid var(--accent-hover);
+            outline-offset: 2px;
+        }
+
+        button:disabled {
+            cursor: not-allowed;
+            opacity: 0.48;
+            transform: none !important;
+        }
+
+        .copy-success {
+            background: var(--success) !important;
+            border-color: var(--success) !important;
+            color: var(--text-on-green) !important;
+            opacity: 1 !important;
         }
 
         /* Info Cards */
@@ -289,7 +352,7 @@
         .toast-success { background: var(--success); color: var(--text-on-green); }
         .toast-error { background: var(--error); color: white; }
         .toast-info { background: var(--accent); color: var(--text-on-green); }
-        .toast-warning { background: var(--accent-terracotta); color: white; }
+        .toast-warning { background: var(--accent-terracotta); color: var(--text-on-warm); }
 
         @keyframes toastSlideIn {
             from { opacity: 0; transform: translateY(-20px); }
@@ -298,6 +361,59 @@
         @keyframes toastFadeOut {
             from { opacity: 1; }
             to { opacity: 0; transform: translateY(-10px); }
+        }
+
+        /* Eucalyptus confetti: tiny leaves bursting from the copy-invite
+           button (spawned by popup.js, mirrors the website's effect). The
+           outer span owns the flight path — fast burst that brakes at its
+           peak, then sinks — while the inner leaf rocks around its stem. */
+        .click-leaf {
+            position: fixed;
+            z-index: 3000;
+            margin: -5px 0 0 -4px;
+            pointer-events: none;
+            opacity: 0;
+            animation: leafBurst var(--leaf-dur, 1s) forwards;
+            will-change: transform, opacity;
+        }
+        .click-leaf i {
+            display: block;
+            width: 7px;
+            height: 10px;
+            border-radius: 0 70% 0 70%;
+            background: linear-gradient(135deg, oklch(0.68 0.13 150 / 0.95), oklch(0.5 0.1 145 / 0.85));
+            transform: rotate(var(--leaf-rot, 0deg));
+            animation: leafRock var(--flutter-dur, 0.55s) ease-in-out infinite alternate;
+        }
+        .click-leaf-sage i {
+            background: linear-gradient(135deg, oklch(0.75 0.09 140 / 0.9), oklch(0.58 0.08 145 / 0.8));
+        }
+        .click-leaf-amber i {
+            background: linear-gradient(135deg, oklch(0.68 0.14 55 / 0.95), oklch(0.55 0.13 40 / 0.85));
+        }
+        @keyframes leafBurst {
+            0% {
+                opacity: 0;
+                transform: translate(0, 0) scale(var(--leaf-scale, 1));
+                animation-timing-function: cubic-bezier(0.16, 0.84, 0.44, 1);
+            }
+            10% { opacity: 1; }
+            45% {
+                opacity: 1;
+                transform: translate(var(--leaf-x, 0), var(--leaf-y, -14px)) scale(var(--leaf-scale, 1));
+                animation-timing-function: cubic-bezier(0.55, 0.06, 0.68, 0.19);
+            }
+            100% {
+                opacity: 0;
+                transform: translate(calc(var(--leaf-x, 0) * 1.4), calc(var(--leaf-y, -14px) + 30px)) scale(calc(var(--leaf-scale, 1) * 0.92));
+            }
+        }
+        @keyframes leafRock {
+            from { transform: rotate(calc(var(--leaf-rot, 0deg) - 24deg)); }
+            to { transform: rotate(calc(var(--leaf-rot, 0deg) + 24deg)); }
+        }
+        @media (prefers-reduced-motion: reduce) {
+            .click-leaf { display: none; }
         }
 
         @keyframes fadeSlideIn {
@@ -353,7 +469,7 @@
             padding-top: 10px;
             color: var(--text-muted);
             font-size: 10px;
-            opacity: 0.6;
+            opacity: 0.78;
         }
         .popup-footer a {
             color: var(--text-muted);
@@ -363,6 +479,42 @@
         .popup-footer a:hover {
             color: var(--accent);
             opacity: 1;
+        }
+
+        /* Light theme polish: preserve the same depth hierarchy without
+           carrying dark-only inline colors into form controls and cards. */
+        html.theme-light .tabs,
+        html.theme-light .info-card,
+        html.theme-light details.form-group,
+        html.theme-light .form-group {
+            box-shadow: 0 8px 24px oklch(0.22 0.035 140 / 0.07);
+        }
+        html.theme-light input,
+        html.theme-light select,
+        html.theme-light option {
+            color: var(--text) !important;
+            background-color: var(--surface) !important;
+        }
+        html.theme-light button.secondary {
+            background: var(--surface-alt);
+            color: var(--text);
+            border: 1px solid var(--border-strong);
+        }
+        html.theme-light button.secondary:hover {
+            background: oklch(0.86 0.035 125);
+        }
+        html.theme-light .mock-card,
+        html.theme-light .peer-item {
+            border-color: var(--border-strong);
+        }
+        html.theme-light .slider:before {
+            background-color: oklch(0.62 0.025 125);
+        }
+        html.theme-light input:checked + .slider:before {
+            background-color: white;
+        }
+        html.theme-light .popup-footer {
+            border-top-color: var(--border-soft);
         }
         .feature-hint {
             display: inline-block;
@@ -466,7 +618,7 @@
                 <label title="Share this link with friends so they can join" data-i18n="LABEL_INVITE_LINK" data-i18n-title="LABEL_INVITE_LINK_TOOLTIP">Invite Link</label>
                 <div class="invite-box">
                     <input type="text" id="inviteLink" readonly>
-                    <button id="copyInvite" class="secondary">📋</button>
+                    <button id="copyInvite" class="secondary" title="Copy invite link" aria-label="Copy invite link">📋</button>
                 </div>
             </div>
 
@@ -561,6 +713,15 @@
     
     <!-- Settings Tab -->
     <div id="tab-settings" class="tab-content">
+        <div class="form-group" style="display: flex; align-items: center; justify-content: space-between; background: var(--card); padding: 10px; border-radius: 8px; margin-bottom: 12px; border: 1px solid var(--border-strong);">
+            <label id="themeLabel" style="margin-bottom: 0;" title="Follow the system theme or choose a fixed appearance">Appearance</label>
+            <select id="themeSelector" aria-label="Appearance" style="width: 165px; background: var(--bg); border: 1px solid var(--border-strong); color: var(--text); padding: 6px 10px; border-radius: 8px; font-size: 13px; cursor: pointer; outline: none; font-family: inherit;">
+                <option id="themeOptionSystem" value="system">💻 System</option>
+                <option id="themeOptionDark" value="dark">🌙 Dark</option>
+                <option id="themeOptionLight" value="light">☀️ Light</option>
+            </select>
+        </div>
+
         <div class="form-group" style="display: flex; align-items: center; justify-content: space-between; background: var(--card); padding: 10px; border-radius: 8px; margin-bottom: 12px; border: 1px solid var(--border-strong);">
             <label style="margin-bottom: 0;" title="Username helps others identify you." data-i18n="LABEL_USERNAME" data-i18n-title="LABEL_USERNAME_TOOLTIP">Your Username</label>
             <input type="text" id="username" data-i18n-placeholder="PLACEHOLDER_USERNAME" placeholder="Anonymous Koala" maxlength="20" style="width: 150px;">
