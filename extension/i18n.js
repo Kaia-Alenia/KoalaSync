@@ -12,6 +12,7 @@ let currentLanguage = null;
  */
 export async function loadLocale(langCode) {
     const resolvedLang = SUPPORTED_LANGUAGES.includes(langCode) ? langCode : DEFAULT_LANGUAGE;
+    document.documentElement.lang = resolvedLang;
     
     if (currentLanguage === resolvedLang && Object.keys(activeDictionary).length > 0) {
         return;

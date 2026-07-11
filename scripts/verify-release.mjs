@@ -28,6 +28,7 @@ const checks = [
   ['background syntax', 'node', ['-c', 'extension/background.js']],
   ['locale coverage', 'node', ['scripts/test-locales.cjs']],
   ['website locale coverage', 'node', ['scripts/test-website-locales.mjs']],
+  ['website theme coverage', 'node', ['scripts/test-website-theme.mjs']],
   ['lint', 'npm', ['run', 'lint']],
   ['root production audit', 'npm', ['audit', '--omit=dev']],
   ['server production audit', 'npm', ['audit', '--omit=dev'], { cwd: path.join(repoRoot, 'server') }],

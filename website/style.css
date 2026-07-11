@@ -743,6 +743,215 @@ html.theme-light .bg-nature::after {
     }
 }
 
+/* --- UI/UX cohesion pass -------------------------------------------------
+   Shared rhythm and interaction rules for the landing page. Component-specific
+   responsive refinements are repeated at the end of the cascade. */
+html {
+    scroll-padding-top: 96px;
+}
+
+body {
+    text-rendering: optimizeLegibility;
+}
+
+.footer-disclaimer {
+    color: oklch(0.72 0.015 90);
+}
+
+html.theme-light .footer-disclaimer {
+    color: var(--text-muted);
+}
+
+.logo-area {
+    text-decoration: none;
+    border-radius: 12px;
+}
+
+.logo-area:focus-visible,
+.nav-links a:focus-visible,
+.theme-toggle:focus-visible,
+.lang-dropdown:focus-visible,
+.hamburger:focus-visible,
+.btn:focus-visible,
+.faq-item summary:focus-visible {
+    outline: 3px solid var(--accent);
+    outline-offset: 4px;
+}
+
+.nav-links a {
+    position: relative;
+    padding: 0.55rem 0;
+}
+
+.nav-links a::after {
+    content: "";
+    position: absolute;
+    right: 0;
+    bottom: 0.25rem;
+    left: 0;
+    height: 2px;
+    border-radius: 999px;
+    background: var(--accent);
+    transform: scaleX(0);
+    transform-origin: right;
+    transition: transform 0.25s ease;
+}
+
+.nav-links a:hover::after,
+.nav-links a:focus-visible::after {
+    transform: scaleX(1);
+    transform-origin: left;
+}
+
+.hero-text {
+    max-width: 42rem;
+}
+
+.hero-text h1 {
+    text-wrap: balance;
+}
+
+.hero-subtitle,
+.section-subtitle,
+.use-cases-subtitle {
+    text-wrap: pretty;
+}
+
+.cta-group {
+    align-items: stretch;
+}
+
+.cta-group .btn {
+    min-height: 48px;
+    box-sizing: border-box;
+}
+
+.cta-trust {
+    max-width: 44rem;
+    line-height: 1.55;
+}
+
+section[id] {
+    scroll-margin-top: 96px;
+}
+
+.section-title,
+#how-it-works h2,
+#self-hosting h2,
+#faq h2 {
+    text-wrap: balance;
+    letter-spacing: -0.035em;
+}
+
+.use-case-card,
+.feature-card,
+.faq-item,
+.comparison-table-wrapper {
+    box-shadow: 0 18px 46px rgba(0, 0, 0, 0.12);
+}
+
+html.theme-light :is(.use-case-card, .feature-card, .faq-item, .comparison-table-wrapper) {
+    box-shadow: 0 18px 46px oklch(0.22 0.035 140 / 0.09);
+}
+
+.use-case-card,
+.feature-card {
+    height: 100%;
+}
+
+.use-case-card p,
+.feature-card p,
+.faq-item p {
+    line-height: 1.7;
+}
+
+.faq-item summary {
+    min-height: 52px;
+    display: flex;
+    align-items: center;
+}
+
+.comparison-table tbody tr {
+    transition: background-color 0.2s ease;
+}
+
+@media (max-width: 768px) {
+    html {
+        scroll-padding-top: 76px;
+    }
+
+    .container {
+        padding-inline: 1.15rem;
+    }
+
+    section {
+        padding-block: 4.25rem;
+    }
+
+    .hero-text {
+        max-width: none;
+    }
+
+    .hero-text h1,
+    .section-title,
+    #how-it-works h2,
+    #self-hosting h2,
+    #faq h2 {
+        font-size: clamp(2rem, 9vw, 2.65rem) !important;
+    }
+
+    .cta-group {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        width: 100%;
+    }
+
+    .cta-group .btn {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .cta-group .btn-primary,
+    .cta-group .btn-firefox {
+        grid-column: span 1;
+    }
+
+    .hero-github-cta,
+    .btn-demo-mobile {
+        grid-column: span 1;
+    }
+
+    .use-case-card,
+    .feature-card,
+    .faq-item,
+    .comparison-table-wrapper {
+        box-shadow: 0 12px 30px rgba(0, 0, 0, 0.1);
+    }
+}
+
+@media (max-width: 430px) {
+    .cta-group {
+        grid-template-columns: 1fr;
+    }
+
+    .cta-group .btn-primary,
+    .cta-group .btn-firefox,
+    .hero-github-cta,
+    .btn-demo-mobile {
+        grid-column: 1;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .nav-links a::after,
+    .use-case-card,
+    .feature-card,
+    .faq-item,
+    .btn {
+        transition-duration: 0.01ms !important;
+    }
+}
+
 /* (l) Click confetti: a small handful of eucalyptus leaves bursts from
    wherever the visitor presses (spawned by app.js). Built like the falling
    leaves above — the outer span owns the flight path (fast burst that
@@ -5414,8 +5623,9 @@ html.theme-light .hero-demo-scene .demo-video::after {
 .hero-demo-scene .film-mid-scroll > * { fill: var(--demo-midground) !important; }
 .hero-demo-scene .film-fore-scroll > * { fill: var(--demo-foreground) !important; }
 
-/* By day the flock reads as silhouettes, not chalk marks */
+/* By day the birds read as silhouettes, not chalk marks */
 html.theme-light .hero-demo-scene .film-birds { stroke: oklch(0.32 0.06 145 / 0.65); }
+html.theme-light :is(.hero-demo-scene, .step-illustration-3) .film-hero-bird { stroke: oklch(0.32 0.06 145 / 0.75); }
 
 /* Stars: staggered twinkle so the sky feels alive */
 .film-star {
@@ -5480,27 +5690,22 @@ html.theme-light .hero-demo-scene .film-birds { stroke: oklch(0.32 0.06 145 / 0.
 .film-fore-scroll {
     transform: translateX(var(--scroll-fore, 0px));
 }
-/* Floating lantern: the group rides the JS-driven drift vars so halo and
-   light travel together; the glow stays cheap via a single drop-shadow. */
-.film-lantern-g {
+/* A single gliding bird carries the scene: the outer group rides the
+   JS-driven drift vars, the inner group flaps its wings via scaleY. */
+.film-hero-bird-drift {
     transform: translate(var(--lantern-x, 0px), var(--bounce-y, 0px));
 }
 
-.film-bounce-ball {
-    transform-origin: bottom center;
-    filter: drop-shadow(0 0 4px oklch(0.72 0.13 50));
-}
-
-.film-lantern-halo {
+.film-hero-bird {
     transform-box: fill-box;
     transform-origin: center;
-    animation: filmHaloPulse 2.6s ease-in-out infinite alternate;
+    animation: filmWingFlap 0.85s ease-in-out infinite alternate;
     animation-play-state: paused;
 }
 
-@keyframes filmHaloPulse {
-    from { transform: scale(0.85); opacity: 0.12; }
-    to { transform: scale(1.18); opacity: 0.22; }
+@keyframes filmWingFlap {
+    from { transform: scaleY(1); }
+    to { transform: scaleY(0.5); }
 }
 
 /* Twinkle & Glow play state bindings */
@@ -5510,7 +5715,7 @@ html.theme-light .hero-demo-scene .film-birds { stroke: oklch(0.32 0.06 145 / 0.
     animation: filmTwinkle 2.8s ease-in-out infinite;
     animation-play-state: paused;
 }
-.demo-tab-card.playing :is(.film-star, .film-moon, .film-moon-g, .film-cloud, .film-shooting-star, .film-birds, .film-lantern-halo) {
+.demo-tab-card.playing :is(.film-star, .film-moon, .film-moon-g, .film-cloud, .film-shooting-star, .film-birds, .film-hero-bird) {
     animation-play-state: running;
 }
 
@@ -5914,9 +6119,9 @@ html.theme-light .hero-demo-scene .film-birds { stroke: oklch(0.32 0.06 145 / 0.
 .step-illustration-3 .film-fore-scroll {
     animation: scrollFore 3s linear infinite !important;
 }
-.step-illustration-3 .film-bounce-ball {
-    animation: ballBounce 0.8s ease-in-out infinite !important;
-    transform-origin: bottom center;
+.step-illustration-3 .film-hero-bird {
+    animation: filmWingFlap 0.85s ease-in-out infinite !important;
+    animation-direction: alternate !important;
 }
 
 @keyframes scrollBack {
@@ -5930,10 +6135,6 @@ html.theme-light .hero-demo-scene .film-birds { stroke: oklch(0.32 0.06 145 / 0.
 @keyframes scrollFore {
     0% { transform: translateX(0); }
     100% { transform: translateX(-160px); }
-}
-@keyframes ballBounce {
-    0%, 100% { transform: translateY(0); }
-    50% { transform: translateY(-16px); }
 }
 
 /* --- High Fidelity Micro-Animations & Identity additions --- */
@@ -6331,5 +6532,45 @@ html.theme-light .mobile-demo-close:hover {
 
     #faq {
         contain-intrinsic-block-size: auto 700px;
+    }
+}
+
+/* Final responsive hierarchy overrides. Keep these last: the landing page has
+   several component-level media blocks above that intentionally own geometry. */
+@media (max-width: 768px) {
+    .container {
+        padding-inline: 1.15rem;
+    }
+
+    section {
+        padding-block: 4.25rem;
+    }
+
+    .hero-text h1,
+    .section-title,
+    #how-it-works h2,
+    #self-hosting h2,
+    #faq h2 {
+        font-size: clamp(2rem, 9vw, 2.65rem) !important;
+        text-wrap: balance;
+    }
+
+    .cta-group {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        align-items: stretch;
+        width: 100%;
+    }
+
+    .cta-group .btn {
+        width: 100%;
+        min-height: 48px;
+        justify-content: center;
+    }
+}
+
+@media (max-width: 430px) {
+    .cta-group {
+        grid-template-columns: 1fr;
     }
 }
