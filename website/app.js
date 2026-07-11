@@ -1,6 +1,27 @@
 // KoalaSync Landing Page Logic
 
 document.addEventListener('DOMContentLoaded', () => {
+    const deferredCss = document.body.dataset.deferredCss;
+    if (deferredCss) {
+        const loadDeferredCss = () => {
+            if (document.querySelector('link[data-landing-deferred]')) return;
+            const link = document.createElement('link');
+            link.rel = 'stylesheet';
+            link.href = deferredCss;
+            link.dataset.landingDeferred = '';
+            const integrity = document.body.dataset.deferredCssIntegrity;
+            if (integrity) {
+                link.integrity = integrity;
+                link.crossOrigin = 'anonymous';
+            }
+            document.head.appendChild(link);
+        };
+        if ('requestIdleCallback' in window) {
+            window.requestIdleCallback(loadDeferredCss, { timeout: 1500 });
+        } else {
+            window.setTimeout(loadDeferredCss, 250);
+        }
+    }
     // Mockup Video Title Randomization on Load
     const SERIES_NAMES = [
         'Stranger Things',
@@ -1311,6 +1332,8 @@ document.addEventListener('DOMContentLoaded', () => {
         let previousFocus = null;
 
         const openModal = () => {
+            const demoStyles = document.querySelector('link[data-landing-demo]');
+            if (demoStyles) demoStyles.media = 'all';
             previousFocus = document.activeElement && typeof document.activeElement.focus === 'function'
                 ? document.activeElement
                 : null;

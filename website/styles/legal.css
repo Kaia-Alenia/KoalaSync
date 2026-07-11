@@ -1,0 +1,168 @@
+/* --- Legal Pages --- */
+.legal-content {
+    max-width: 800px;
+    margin: 8rem auto 4rem auto;
+    padding: 0 2rem;
+}
+
+.legal-card {
+    background: var(--card);
+    padding: 3rem;
+    border-radius: 24px;
+    border: 1px solid var(--glass-border);
+}
+
+.legal-card h1 {
+    font-size: 2.5rem;
+    margin-bottom: 2rem;
+    text-align: center;
+}
+
+.legal-card h2 {
+    font-size: 1.25rem;
+    margin-top: 1rem;
+    margin-bottom: 0.5rem;
+    color: var(--accent);
+}
+
+.legal-card p {
+    color: var(--text-muted);
+    margin-bottom: 0.5rem;
+    font-size: 0.95rem;
+}
+
+/* Reset global section padding for legal sections specifically */
+.legal-card section {
+    padding: 0 !important;
+    margin-bottom: 0.75rem;
+}
+
+/* --- Join Page Specifics --- */
+.join-card {
+    max-width: 450px;
+    margin: 6rem auto;
+    text-align: center;
+}
+
+.room-badge {
+    display: inline-block;
+    background: oklch(0.68 0.13 150 / 0.1);
+    color: var(--accent);
+    padding: 0.5rem 1rem;
+    border-radius: 99px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    margin-bottom: 1rem;
+    border: 1px solid oklch(0.68 0.13 150 / 0.2);
+}
+
+@media (max-width: 768px) {
+    .hero {
+        align-items: center;
+        padding-top: 5.5rem;
+        padding-bottom: 3.5rem;
+        min-height: 100svh;
+    }
+
+    .hero-grid {
+        min-height: auto;
+    }
+
+    .hero-grid {
+        grid-template-columns: minmax(0, 1fr);
+        text-align: center;
+    }
+    .step {
+        grid-template-columns: minmax(0, 1fr);
+        text-align: left;
+    }
+    .hero-text h1 {
+        font-size: 2.5rem;
+        max-width: none;
+    }
+    .cta-group {
+        justify-content: center;
+        flex-wrap: wrap;
+    }
+    .nav-links {
+        display: none;
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        flex-direction: column;
+        background: oklch(0.20 0.025 140 / 0.95);
+        backdrop-filter: blur(12px);
+        padding: 1rem 2rem;
+        gap: 1rem;
+        border-bottom: 1px solid var(--glass-border);
+        margin-left: 0;
+    }
+    .nav-links.open {
+        display: flex;
+    }
+    .nav-right {
+        margin-left: auto;
+    }
+    .hamburger {
+        display: inline-flex !important;
+    }
+    nav .container {
+        padding: 0 0.5rem;
+    }
+    .logo-area {
+        gap: 0.25rem;
+        font-size: 1.1rem;
+    }
+    .logo-area img {
+        height: 40px;
+        width: 40px;
+        margin: 0;
+    }
+    .lang-select-container {
+        padding: 4px 10px;
+        gap: 4px;
+    }
+    .lang-select-container .globe-icon {
+        width: 14px;
+        height: 14px;
+    }
+    .lang-dropdown {
+        font-size: 0.7rem;
+        padding: 0 6px 0 0;
+    }
+    .lang-select-container .chevron-icon {
+        width: 10px;
+        height: 10px;
+    }
+    .legal-card {
+        padding: 1.5rem;
+    }
+}
+
+@media (min-width: 769px) and (max-height: 920px) {
+    .hero {
+        padding-top: clamp(7.5rem, 10vh, 9rem);
+        padding-bottom: clamp(1.5rem, 3vh, 2.75rem);
+    }
+
+    .hero-grid {
+        min-height: calc(100svh - 9.5rem);
+    }
+}
+
+/* Extra-narrow phones: make sure logo, language picker and the menu button
+   never crowd each other in the header (kept comfortable down to ~320px). */
+@media (max-width: 380px) {
+    nav .container {
+        padding: 0 0.4rem;
+    }
+    .nav-right {
+        gap: 0.35rem;
+    }
+    .logo-area {
+        font-size: 1rem;
+        gap: 0.4rem;
+    }
+}
+

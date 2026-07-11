@@ -22,7 +22,7 @@ KoalaSync is a specialized tool for **synchronized video playback** across multi
 - `server/`: Node.js Relay Server using Socket.IO (WebSocket-only).
 - `website/`: **Landing Page** & Invitation Bridge (Marketing, Tutorials, and Downloads).
   - **`build.cjs`**: Zero-dependency static site compiler. Translates `template.html` + `locales/*.json` → `www/`. Also minifies CSS/JS automatically.
-  - **`www/` is auto-generated**: Never edit files in `www/` directly. Always edit source files (`template.html`, `style.css`, `app.js`, `lang-init.js`, `locales/*.json`) and run `node website/build.cjs` to regenerate. CSS/JS are output as `.min.*` files — a built-in cleanup step removes stale artifacts on each build.
+  - **`www/` is auto-generated**: Never edit files in `www/` directly. Always edit source files (`template.html`, `style.css`, `styles/*.css`, `app.js`, `lang-init.js`, `locales/*.json`) and run `node website/build.cjs` to regenerate. `style.css` is the development manifest; `style.legacy.css` is an unloaded, byte-identical migration reference. Production creates page-specific and render-priority CSS bundles from `styles/*.css`; CSS/JS are output as `.min.*` files and stale generated assets are removed on each build.
 - `shared/`: **Single Source of Truth** for protocol constants, event names, blacklist data, and generated usernames.
 - `scripts/`: Development utilities (e.g., `build-extension.cjs`).
 - `docker-compose.yml`: Root-level orchestration for the relay server.
@@ -149,7 +149,7 @@ Before starting any task, committing, or pushing, you **MUST** run `git pull --r
 3. Implement the handler in `server/index.js` and `background.js`.
 
 ### Making Website Changes
-1. Edit source files in `website/` (`template.html`, `style.css`, `app.js`, `lang-init.js`, or `locales/*.json`).
+1. Edit source files in `website/` (`template.html`, `style.css`, `styles/*.css`, `app.js`, `lang-init.js`, or `locales/*.json`).
 2. Run the compiler: `node website/build.cjs`. This generates the multilingual pages in `www/` and minifies CSS/JS.
 3. Verify the output: `node --check website/www/app.min.js && node --check website/www/lang-init.min.js`.
 4. Test locally: `npx serve website/www` or `python3 -m http.server 8080 -d website/www`.

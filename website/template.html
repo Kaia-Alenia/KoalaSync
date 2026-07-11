@@ -10,9 +10,9 @@
     <link rel="dns-prefetch" href="https://addons.mozilla.org">
     <link rel="dns-prefetch" href="https://github.com">
     
-    <link rel="preload" href="{{ASSET_PATH}}style.min.css" as="style">
+    <link rel="stylesheet" href="{{ASSET_PATH}}landing.min.css">
+    <link rel="stylesheet" href="{{ASSET_PATH}}landing-demo.min.css" media="(min-width: 769px)" data-landing-demo>
     <link rel="preload" as="image" href="{{ASSET_PATH}}assets/LookDownKoala.avif" imagesrcset="{{ASSET_PATH}}assets/LookDownKoala-1x.avif 90w, {{ASSET_PATH}}assets/LookDownKoala.avif 205w" imagesizes="90px" type="image/avif" fetchpriority="high">
-    <link rel="stylesheet" href="{{ASSET_PATH}}style.min.css">
     <link rel="icon" type="image/png" sizes="16x16" href="{{ASSET_PATH}}assets/favicon-16x16.png">
     <link rel="icon" type="image/png" sizes="32x32" href="{{ASSET_PATH}}assets/favicon-32x32.png">
     <link rel="apple-touch-icon" sizes="180x180" href="{{ASSET_PATH}}assets/icon-192x192.png">
@@ -209,7 +209,7 @@
         </style>
     </noscript>
 </head>
-<body>
+<body data-deferred-css="{{ASSET_PATH}}landing-deferred.min.css">
     <div class="scroll-progress-bar"></div>
 
     <a class="skip-link" href="#main-content">Skip to main content</a>

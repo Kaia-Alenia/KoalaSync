@@ -1,0 +1,1418 @@
+/* KoalaSync Design System - Privacy-Focused (No External Assets) */
+
+@font-face {
+    font-family: 'Twemoji Country Flags';
+    unicode-range: U+1F1E6-1F1FF, U+1F3F4, U+E0062-E0063, U+E0065, U+E0067, U+E006C, U+E006E, U+E0073-E0074, U+E0077, U+E007F;
+    src: url('assets/TwemojiCountryFlags.woff2') format('woff2');
+    font-display: swap;
+}
+
+:root {
+    /* v3.0.0 "The Greens Update" nature palette */
+    --bg-base: oklch(0.20 0.025 140);
+    --surface: oklch(0.27 0.035 130);
+    --surface-deep: oklch(0.16 0.025 135);
+    --surface-alt: oklch(0.23 0.03 130);
+    --border-soft: rgba(255, 255, 255, 0.06);
+    --border-strong: oklch(0.32 0.03 125);
+    --text-primary: oklch(0.96 0.01 90);
+    --text-secondary: oklch(0.78 0.02 90);
+    --accent-green: oklch(0.68 0.13 150);
+    --accent-green-hover: oklch(0.75 0.13 150);
+    --accent-terracotta: oklch(0.62 0.14 45);
+    --danger: oklch(0.55 0.15 25);
+    --text-on-green: oklch(0.14 0.02 90);
+
+    /* Legacy aliases used throughout the stylesheet */
+    --bg: var(--bg-base);
+    --card: var(--surface);
+    --accent: var(--accent-green);
+    --accent-glow: oklch(0.68 0.13 150 / 0.3);
+    --text: var(--text-primary);
+    --text-muted: var(--text-secondary);
+    --success: var(--accent-green);
+    --glass: oklch(0.27 0.035 130 / 0.4);
+    --glass-border: var(--border-soft);
+    --section-tint: transparent;
+    --section-tint-strong: oklch(0.20 0.025 140 / 0.28);
+    --card-surface: oklch(0.27 0.035 130 / 0.45);
+    --card-border: rgba(255, 255, 255, 0.08);
+    color-scheme: dark;
+}
+
+.extension-mockup,
+.illus-popup-card,
+.illus-player-card {
+    --bg: oklch(0.20 0.025 140) !important;
+    --card: oklch(0.27 0.035 130) !important;
+    --accent: oklch(0.68 0.13 150) !important;
+    --accent-glow: oklch(0.68 0.13 150 / 0.3) !important;
+    --text: oklch(0.96 0.01 90) !important;
+    --text-muted: oklch(0.78 0.02 90) !important;
+    --success: oklch(0.68 0.13 150) !important;
+    --error: oklch(0.55 0.15 25) !important;
+    --glass: oklch(0.27 0.035 130 / 0.4) !important;
+    --glass-border: rgba(255, 255, 255, 0.05) !important;
+    --section-tint: rgba(255, 255, 255, 0.02) !important;
+    --section-tint-strong: oklch(0.20 0.025 140 / 0.4) !important;
+    --card-surface: oklch(0.27 0.035 130 / 0.45) !important;
+    --card-border: rgba(255, 255, 255, 0.08) !important;
+}
+
+.invite-banner {
+    background: var(--accent);
+    color: var(--text-on-green);
+    padding: 0.75rem 0;
+    text-align: center;
+    font-weight: 600;
+    font-size: 0.9rem;
+    position: relative;
+    z-index: 2000;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+}
+
+.btn-banner {
+    background: white;
+    color: var(--accent);
+    padding: 4px 12px;
+    border-radius: 6px;
+    text-decoration: none;
+    font-size: 0.8rem;
+    font-weight: 700;
+    margin-left: 12px;
+    cursor: pointer;
+    border: none;
+    transition: transform 0.2s;
+}
+
+.btn-banner:hover {
+    transform: scale(1.05);
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+    border-radius: 6px;
+}
+
+html {
+    scroll-behavior: smooth;
+}
+
+body {
+    font-family: 'Twemoji Country Flags', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
+    background-color: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+    overflow-x: hidden;
+    position: relative;
+}
+
+/* --- Animated Bamboo Forest Background (v3 Greens Update) --- */
+/* Registered so wind gusts can TRANSITION these instead of jumping */
+@property --sway {
+    syntax: '<angle>';
+    initial-value: 1.2deg;
+    inherits: true;
+}
+
+@property --leaf-drift {
+    syntax: '<length>';
+    initial-value: 26px;
+    inherits: true;
+}
+
+.bg-nature {
+    --sway: 1.2deg;
+    --leaf-drift: 26px;
+    transition: --sway 1.6s ease-in-out, --leaf-drift 1.6s ease-in-out;
+}
+
+.bg-nature.gusting {
+    --sway: 3.4deg;
+    --leaf-drift: 68px;
+}
+
+.bg-nature {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: -1;
+    overflow: hidden;
+    pointer-events: none;
+    background:
+        radial-gradient(circle at 18% 10%, oklch(0.26 0.05 145 / 0.35), transparent 34rem),
+        radial-gradient(circle at 78% 68%, oklch(0.24 0.04 140 / 0.3), transparent 38rem),
+        linear-gradient(180deg, oklch(0.20 0.025 140) 0%, oklch(0.17 0.03 142) 45%, oklch(0.19 0.03 140) 100%);
+}
+
+/* (a) Distant bamboo layer: blurred, scroll-parallaxed by app.js */
+#bamboo-far {
+    position: absolute;
+    inset: 0;
+    will-change: transform;
+}
+
+#bamboo-far .bamboo-stalk {
+    position: absolute;
+    /* 200% covers the upward parallax drift (max 0.55vh on the near layer)
+       with margin while keeping the blurred layer smaller than the old
+       240% overscan. Spare coverage sits below, where the drift needs it. */
+    top: -40%;
+    height: 200%;
+    border-radius: 999px;
+    filter: blur(4.5px);
+    transition: filter 1.2s ease;
+    background:
+        repeating-linear-gradient(180deg,
+            transparent 0, transparent 108px,
+            oklch(0.40 0.06 145 / 0.22) 108px, oklch(0.40 0.06 145 / 0.22) 112px),
+        linear-gradient(180deg, oklch(0.34 0.05 145 / 0.4), oklch(0.24 0.04 140 / 0.16));
+}
+
+#bamboo-far .far-1 { left: 2%; width: 26px; }
+#bamboo-far .far-2 { left: 7.5%; width: 18px; }
+#bamboo-far .far-3 { right: 4%; width: 30px; }
+#bamboo-far .far-4 { left: 13%; width: 20px; }
+#bamboo-far .far-5 { right: 10.5%; width: 16px; }
+/* Two whisper-quiet trunks soften the empty centre without touching the
+   content: wide apart, thin, and at the lowest opacity in the scene. */
+#bamboo-far .far-6 { left: 39%; width: 12px; opacity: 0.55; }
+#bamboo-far .far-7 { right: 42%; width: 14px; opacity: 0.6; }
+
+/* Two barely-there trunks break up the empty middle without competing with
+   the content. They share the far layer's single parallax transform. */
+#bamboo-far::before,
+#bamboo-far::after {
+    content: '';
+    position: absolute;
+    top: -40%;
+    height: 200%;
+    border-radius: 999px;
+    filter: blur(6.5px);
+    opacity: 0.3;
+    background: linear-gradient(180deg, oklch(0.34 0.05 145 / 0.3), oklch(0.23 0.04 140 / 0.1));
+}
+
+#bamboo-far::before { left: 24%; width: 13px; }
+#bamboo-far::after { right: 25%; width: 17px; }
+
+/* Depth of field: the far layer blurs further as you descend (stepped by
+   JS on threshold crossings, never per frame) */
+.bg-nature.depth-mid #bamboo-far .bamboo-stalk { filter: blur(5.5px); }
+.bg-nature.depth-deep #bamboo-far .bamboo-stalk { filter: blur(6.5px); }
+
+/* (a2) Mid bamboo layer: sits between far and near with its own parallax
+   rate (app.js) and half the near layer's sway, so the three layers drift
+   apart subtly instead of moving as one sheet. Landing page only — the
+   static pages keep the lighter two-layer scene. */
+#bamboo-mid {
+    position: absolute;
+    inset: 0;
+    will-change: transform;
+}
+
+#bamboo-mid .bamboo-stalk {
+    position: absolute;
+    top: -40%;
+    height: 200%;
+    border-radius: 999px;
+    filter: blur(2px);
+    transition: filter 1.2s ease;
+    /* Segment rings + a soft left-of-centre sheen give the stalks culm
+       structure without any extra elements; the blur keeps both faint. */
+    background:
+        repeating-linear-gradient(180deg,
+            transparent 0, transparent 84px,
+            oklch(0.46 0.075 145 / 0.28) 84px, oklch(0.46 0.075 145 / 0.28) 87px),
+        linear-gradient(90deg, transparent 14%, oklch(0.58 0.07 145 / 0.14) 38%, transparent 68%),
+        linear-gradient(180deg, oklch(0.36 0.06 145 / 0.45), oklch(0.25 0.045 140 / 0.2));
+    transform-origin: bottom center;
+    animation: bambooSwayHalf 13s ease-in-out infinite;
+}
+
+#bamboo-mid .mid-1 { left: 17%; width: 15px; animation-duration: 12s; }
+#bamboo-mid .mid-2 { left: 31%; width: 9px; animation-delay: -5s; opacity: 0.55; }
+#bamboo-mid .mid-3 { right: 15.5%; width: 17px; animation-duration: 14.5s; animation-delay: -8s; }
+#bamboo-mid .mid-4 { right: 30%; width: 8px; animation-duration: 11.5s; animation-delay: -2.5s; opacity: 0.5; }
+
+/* A few leaves sprout from the mid stalks (pseudo-elements, so they ride
+   the stalk's sway for free). The slim centre stalks stay bare. */
+#bamboo-mid .bamboo-stalk::before,
+#bamboo-mid .bamboo-stalk::after {
+    content: '';
+    position: absolute;
+    width: 24px;
+    height: 11px;
+    border-radius: 0 100% 0 100%;
+    background: oklch(0.5 0.1 145 / 0.32);
+}
+
+#bamboo-mid .mid-1::before { top: 31%; left: 13px; transform: rotate(20deg); }
+#bamboo-mid .mid-1::after { top: 55%; left: -26px; transform: rotate(-158deg); width: 20px; height: 9px; }
+#bamboo-mid .mid-3::before { top: 26%; left: -27px; transform: rotate(-156deg); }
+#bamboo-mid .mid-3::after { top: 49%; left: 15px; transform: rotate(24deg); width: 21px; height: 10px; }
+#bamboo-mid .mid-2::before,
+#bamboo-mid .mid-2::after,
+#bamboo-mid .mid-4::before,
+#bamboo-mid .mid-4::after {
+    display: none;
+}
+
+.bg-nature.depth-mid #bamboo-mid .bamboo-stalk { filter: blur(3px); }
+.bg-nature.depth-deep #bamboo-mid .bamboo-stalk { filter: blur(4px); }
+
+@keyframes bambooSwayHalf {
+    0%, 100% { transform: rotate(0); }
+    50% { transform: rotate(calc(var(--sway, 1.2deg) * 0.5)); }
+}
+
+/* (b) Near bamboo layer: sharp stalks with nodes and leaves, gentle sway */
+#bamboo-near {
+    position: absolute;
+    inset: 0;
+    will-change: transform;
+}
+
+#bamboo-near .bamboo-stalk {
+    position: absolute;
+    top: -40%;
+    height: 200%;
+    border-radius: 999px;
+    /* Vertical sheen over the culm gradient: reads as light from the
+       canopy catching the rounded stalk instead of a flat strip. */
+    background:
+        linear-gradient(90deg, transparent 12%, oklch(0.64 0.08 145 / 0.22) 36%, transparent 64%),
+        linear-gradient(180deg, oklch(0.42 0.075 145 / 0.6), oklch(0.27 0.05 140 / 0.3));
+    transform-origin: bottom center;
+    animation: bambooSway 10s ease-in-out infinite;
+}
+
+#bamboo-near .near-1 { left: 4.5%; width: 15px; animation-duration: 9.2s; }
+#bamboo-near .near-2 { right: 7%; width: 13px; animation-duration: 11s; animation-delay: -3.5s; }
+#bamboo-near .near-3 { left: 10%; width: 10px; animation-duration: 12.5s; animation-delay: -6s; opacity: 0.75; }
+
+#bamboo-near .bamboo-node {
+    position: absolute;
+    left: -1px;
+    right: -1px;
+    height: 3px;
+    border-radius: 2px;
+    background: oklch(0.52 0.085 145 / 0.6);
+}
+
+#bamboo-near .node-1 { top: 28%; }
+#bamboo-near .node-2 { top: 48%; }
+#bamboo-near .node-3 { top: 68%; }
+
+#bamboo-near .bamboo-leaf {
+    position: absolute;
+    width: 26px;
+    height: 12px;
+    border-radius: 0 100% 0 100%;
+    background: oklch(0.55 0.11 145 / 0.4);
+}
+
+#bamboo-near .near-1 .leaf-1 { top: 27.5%; left: 12px; transform: rotate(18deg); }
+#bamboo-near .near-1 .leaf-2 { top: 47.5%; left: -28px; transform: rotate(-160deg); width: 22px; height: 10px; }
+#bamboo-near .near-2 .leaf-1 { top: 44%; left: -26px; transform: rotate(-155deg); }
+#bamboo-near .near-2 .leaf-2 { top: 61%; left: 11px; transform: rotate(21deg); width: 20px; height: 9px; }
+#bamboo-near .near-3 .leaf-1 { top: 33%; left: 8px; transform: rotate(24deg); width: 18px; height: 9px; }
+
+@keyframes bambooSway {
+    0%, 100% { transform: rotate(0); }
+    50% { transform: rotate(var(--sway, 1.2deg)); }
+}
+
+/* (d) Falling leaves: outer element falls + rotates, inner leaf sways */
+.fall-leaf {
+    position: absolute;
+    top: 0;
+    animation: leafFall 17s linear infinite;
+    opacity: 0;
+}
+
+.fall-leaf i {
+    display: block;
+    width: 10px;
+    height: 14px;
+    border-radius: 0 70% 0 70%;
+    background: oklch(0.68 0.13 150 / 0.55);
+    animation: leafSway 3.2s ease-in-out infinite;
+}
+
+.fall-leaf:nth-child(even) i {
+    background: oklch(0.62 0.14 45 / 0.55);
+}
+
+.fall-leaf-1 { left: 6%;  animation-duration: 15s;  animation-delay: -2s; }
+.fall-leaf-2 { left: 16%; animation-duration: 19s;  animation-delay: -9s; }
+.fall-leaf-2 i { animation-duration: 2.7s; background: oklch(0.62 0.14 45 / 0.6); }
+.fall-leaf-3 { left: 28%; animation-duration: 14s;  animation-delay: -5s; }
+.fall-leaf-3 i { background: oklch(0.68 0.13 150 / 0.5); }
+.fall-leaf-4 { left: 41%; animation-duration: 21s;  animation-delay: -13s; }
+.fall-leaf-4 i { animation-duration: 4s; }
+.fall-leaf-5 { left: 55%; animation-duration: 16s;  animation-delay: -7s; }
+.fall-leaf-5 i { background: oklch(0.68 0.13 150 / 0.6); }
+.fall-leaf-6 { left: 68%; animation-duration: 20s;  animation-delay: -16s; }
+.fall-leaf-6 i { animation-duration: 3.6s; background: oklch(0.62 0.14 45 / 0.5); }
+.fall-leaf-7 { left: 81%; animation-duration: 14.5s; animation-delay: -3s; }
+.fall-leaf-7 i { animation-duration: 2.9s; }
+.fall-leaf-8 { left: 92%; animation-duration: 18s;  animation-delay: -11s; }
+
+@keyframes leafFall {
+    0% { transform: translateY(-40px) rotate(0); opacity: 0; }
+    8% { opacity: 0.65; }
+    92% { opacity: 0.5; }
+    100% { transform: translateY(110vh) translateX(120px) rotate(280deg); opacity: 0; }
+}
+
+@keyframes leafSway {
+    0%, 100% { margin-left: 0; }
+    50% { margin-left: var(--leaf-drift, 26px); }
+}
+
+/* Scroll journey: JS drives the opacity of these two groups so the page
+   travels from sunlit canopy (top) into misty dusk (bottom). Static
+   defaults below keep the scene balanced without JS. */
+.bg-depth-day,
+.bg-depth-dusk {
+    position: absolute;
+    inset: 0;
+}
+
+.bg-depth-dusk {
+    opacity: 0.6;
+}
+
+/* Dusk tint: darkens and warms the whole scene as you descend */
+.bg-dusk-tint {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    background: linear-gradient(180deg,
+        oklch(0.10 0.03 145 / 0.15) 0%,
+        oklch(0.12 0.045 142 / 0.5) 65%,
+        oklch(0.16 0.07 55 / 0.35) 100%);
+}
+
+/* God rays: soft light shafts falling through the canopy */
+.bg-godrays {
+    position: absolute;
+    top: -10%;
+    left: 0;
+    right: 0;
+    height: 75%;
+}
+
+.godray {
+    position: absolute;
+    top: 0;
+    height: 115%;
+    background: linear-gradient(180deg, oklch(0.85 0.06 130 / 0.10), transparent 78%);
+    filter: blur(10px);
+    transform: rotate(14deg);
+    transform-origin: top center;
+    animation: rayShimmer 9s ease-in-out infinite alternate;
+}
+
+.godray-1 { left: 16%; width: 120px; animation-duration: 8s; }
+.godray-2 { left: 33%; width: 70px; animation-delay: -3s; background: linear-gradient(180deg, oklch(0.85 0.06 130 / 0.07), transparent 78%); }
+.godray-3 { left: 56%; width: 140px; animation-duration: 13s; animation-delay: -6s; background: linear-gradient(180deg, oklch(0.85 0.05 110 / 0.08), transparent 75%); }
+
+@keyframes rayShimmer {
+    0% { opacity: 0.45; }
+    100% { opacity: 1; }
+}
+
+/* (e) Canopy: dark vignette at the top plus hanging leaf arcs */
+.bg-canopy {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 150px;
+    background:
+        radial-gradient(ellipse 70% 100% at 30% 0%, oklch(0.14 0.03 145 / 0.55), transparent 70%),
+        radial-gradient(ellipse 60% 90% at 80% 0%, oklch(0.14 0.03 145 / 0.45), transparent 70%);
+}
+
+.canopy-arc {
+    position: absolute;
+    border-radius: 0 0 100% 100%;
+    background: oklch(0.32 0.06 145 / 0.45);
+}
+
+.canopy-arc-1 { top: -3px; left: 12%; width: 52px; height: 16px; transform: rotate(-6deg); background: oklch(0.30 0.06 145 / 0.5); }
+.canopy-arc-2 { top: -2px; left: 34%; width: 38px; height: 12px; transform: rotate(4deg); background: oklch(0.34 0.06 145 / 0.35); }
+.canopy-arc-3 { top: -4px; left: 61%; width: 46px; height: 14px; transform: rotate(-3deg); }
+.canopy-arc-4 { top: -2px; left: 84%; width: 30px; height: 10px; transform: rotate(7deg); background: oklch(0.33 0.06 145 / 0.4); }
+
+/* (f) Undergrowth: grass blades in the lower corners. Each blade carries a
+   shorter companion blade (::before) so the corners read as small tufts. */
+.bg-grass {
+    position: absolute;
+    bottom: -4px;
+    transform-origin: bottom;
+}
+
+.bg-grass::before {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    width: 72%;
+    height: 55%;
+    border-radius: inherit;
+    background: inherit;
+    opacity: 0.7;
+    transform-origin: bottom;
+}
+
+.bg-grass-1::before { left: -5px; transform: rotate(-13deg); }
+.bg-grass-2::before { left: 4px; transform: rotate(11deg); }
+.bg-grass-3::before { right: -5px; transform: rotate(12deg); }
+.bg-grass-4::before { right: 4px; transform: rotate(-9deg); }
+
+.bg-grass-1 { left: 1.5%; width: 6px; height: 52px; border-radius: 100% 0 0 0; background: oklch(0.38 0.07 145 / 0.4); transform: rotate(-9deg); }
+.bg-grass-2 { left: 3.2%; width: 5px; height: 38px; border-radius: 100% 0 0 0; background: oklch(0.35 0.07 145 / 0.3); transform: rotate(-12deg); }
+.bg-grass-3 { right: 2%; width: 6px; height: 56px; border-radius: 0 100% 0 0; background: oklch(0.4 0.07 145 / 0.4); transform: rotate(8deg); }
+.bg-grass-4 { right: 3.8%; width: 5px; height: 40px; border-radius: 0 100% 0 0; background: oklch(0.36 0.07 145 / 0.32); transform: rotate(11deg); }
+
+/* (g) Ground mist: soft drifting ellipses at the bottom edge */
+.bg-mist {
+    position: absolute;
+    bottom: -40px;
+    height: 130px;
+    filter: blur(19px);
+    will-change: transform;
+}
+
+.bg-mist-1 {
+    left: -6%;
+    width: 75%;
+    background: radial-gradient(ellipse, oklch(0.85 0.03 145 / 0.07), transparent 70%);
+    animation: mistDrift 22s ease-in-out infinite alternate;
+}
+
+.bg-mist-2 {
+    right: -6%;
+    width: 70%;
+    background: radial-gradient(ellipse, oklch(0.85 0.03 145 / 0.06), transparent 70%);
+    animation: mistDrift 27s ease-in-out infinite alternate-reverse;
+}
+
+@keyframes mistDrift {
+    0% { transform: translateX(-8%); }
+    100% { transform: translateX(8%); }
+}
+
+/* (h) Breathing horizon glow */
+.bg-horizon {
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse 60% 100% at 50% 100%, oklch(0.62 0.14 45 / 0.14), transparent 70%);
+    animation: horizonBreathe 10s ease-in-out infinite;
+}
+
+@keyframes horizonBreathe {
+    0%, 100% { opacity: 0.5; }
+    50% { opacity: 0.85; }
+}
+
+/* Theme switch to light: the horizon flares up once like a sunrise */
+.bg-nature.sunrise .bg-horizon {
+    animation:
+        horizonBreathe 10s ease-in-out infinite,
+        sunriseFlash 1.6s ease-out;
+}
+
+@keyframes sunriseFlash {
+    0% { opacity: 0.5; }
+    30% { opacity: 1; }
+    100% { opacity: 0.5; }
+}
+
+/* (i) Fireflies: the wrapper holds the base position and is what the JS
+   pushes away from the cursor; the inner dot pulses (transform) and
+   wanders (translate) independently. */
+.firefly-wrap {
+    position: absolute;
+    width: 4px;
+    height: 4px;
+}
+
+.firefly {
+    display: block;
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background: oklch(0.68 0.13 150);
+    box-shadow: 0 0 8px oklch(0.68 0.13 150);
+    animation:
+        fireflyPulse 3.8s ease-in-out infinite,
+        fireflyWander 21s ease-in-out infinite alternate;
+}
+
+.fw-2 .firefly,
+.fw-4 .firefly,
+.fw-6 .firefly {
+    width: 3px;
+    height: 3px;
+    background: oklch(0.62 0.14 45);
+    box-shadow: 0 0 8px oklch(0.62 0.14 45);
+}
+
+.fw-1 { top: 32%; left: 12%; }
+.fw-2 { top: 58%; left: 22%; }
+.fw-3 { top: 44%; left: 46%; }
+.fw-4 { top: 70%; left: 64%; }
+.fw-5 { top: 26%; left: 78%; }
+.fw-6 { top: 62%; left: 90%; }
+
+.fw-1 .firefly { animation-delay: -0.4s, -4s; }
+.fw-2 .firefly { animation-duration: 4.4s, 26s; animation-delay: -2.1s, -11s; }
+.fw-3 .firefly { animation-duration: 3.4s, 18s; animation-delay: -1.2s, -7s; }
+.fw-4 .firefly { animation-duration: 4.1s, 29s; animation-delay: -3s, -19s; }
+.fw-5 .firefly { animation-duration: 3.6s, 23s; animation-delay: -1.8s, -14s; }
+.fw-6 .firefly { animation-duration: 4.2s, 17s; animation-delay: -0.9s, -2s; }
+
+/* One firefly greets you when a new section scrolls into view */
+.firefly-wrap.firefly-hello {
+    animation: fireflyHello 1.2s ease-out;
+}
+
+@keyframes fireflyHello {
+    0%, 100% { transform: scale(1); filter: brightness(1); }
+    35% { transform: scale(2.4); filter: brightness(1.7); }
+}
+
+@keyframes fireflyPulse {
+    0%, 100% { opacity: 0.2; transform: scale(1); }
+    50% { opacity: 0.9; transform: scale(1.35); }
+}
+
+@keyframes fireflyWander {
+    0% { translate: 0 0; }
+    25% { translate: 38px -26px; }
+    50% { translate: -20px 16px; }
+    75% { translate: 26px 30px; }
+    100% { translate: -14px -18px; }
+}
+
+/* Day/night: fireflies belong to the dark theme. By daylight the same six
+   spots are visited by small butterflies instead — the wrapper (and with it
+   the cursor-shy push and the section greeting) is shared, only the inner
+   dot is redressed. Only animation-name is swapped so the per-firefly
+   duration/delay variety above keeps applying to the butterflies. */
+html.theme-light .firefly {
+    position: relative;
+    width: 2px;
+    height: 9px;
+    border-radius: 1px;
+    background: oklch(0.35 0.05 140 / 0.8);
+    box-shadow: none;
+    opacity: 0.85;
+    animation-name: butterflyBob, fireflyWander;
+}
+
+html.theme-light .firefly::before,
+html.theme-light .firefly::after {
+    content: '';
+    position: absolute;
+    top: -2px;
+    width: 7px;
+    height: 10px;
+    background: oklch(0.62 0.14 45 / 0.7);
+    animation: wingFlap 0.5s ease-in-out infinite alternate;
+}
+
+html.theme-light .firefly::before {
+    left: -6px;
+    border-radius: 90% 10% 60% 40%;
+    transform-origin: 100% 55%;
+}
+
+html.theme-light .firefly::after {
+    right: -6px;
+    border-radius: 10% 90% 40% 60%;
+    transform-origin: 0% 55%;
+    animation-name: wingFlapR;
+}
+
+/* Every other butterfly wears the sage of the canopy and flaps lazier */
+html.theme-light .fw-2 .firefly::before,
+html.theme-light .fw-2 .firefly::after,
+html.theme-light .fw-4 .firefly::before,
+html.theme-light .fw-4 .firefly::after,
+html.theme-light .fw-6 .firefly::before,
+html.theme-light .fw-6 .firefly::after {
+    background: oklch(0.52 0.12 150 / 0.55);
+    animation-duration: 0.62s;
+}
+
+@keyframes butterflyBob {
+    0%, 100% { transform: translateY(0) rotate(-4deg); }
+    50% { transform: translateY(-8px) rotate(5deg); }
+}
+
+@keyframes wingFlap {
+    from { transform: scaleX(1) rotate(-6deg); }
+    to { transform: scaleX(0.3) rotate(8deg); }
+}
+
+@keyframes wingFlapR {
+    from { transform: scaleX(1) rotate(6deg); }
+    to { transform: scaleX(0.3) rotate(-8deg); }
+}
+
+/* By day the dusk layer must not dim the butterflies with scroll depth
+   (the JS crossfade keeps writing inline opacity for the dark theme), and
+   the warm horizon glow steps back so it reads as haze, not dusk. */
+html.theme-light .bg-depth-dusk {
+    opacity: 1 !important;
+}
+
+html.theme-light .bg-horizon {
+    background: radial-gradient(ellipse 60% 100% at 50% 100%, oklch(0.8 0.08 60 / 0.1), transparent 70%);
+}
+
+/* (j) Wandering light sweep */
+.bg-light-sweep {
+    position: absolute;
+    top: -30%;
+    left: -30%;
+    width: 160%;
+    height: 160%;
+    background: linear-gradient(115deg, transparent 42%, oklch(0.68 0.13 150 / 0.05) 50%, transparent 58%);
+    animation: lightSweep 26s ease-in-out infinite alternate;
+    will-change: transform;
+}
+
+@keyframes lightSweep {
+    0% { transform: translate(-20%, -20%) rotate(8deg); }
+    100% { transform: translate(20%, 20%) rotate(8deg); }
+}
+
+/* (j2) Corner vignette: pulls the eye toward the content and grounds the
+   scene — the forest darkens gently toward the edges like real depth. */
+.bg-nature::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: radial-gradient(ellipse 120% 90% at 50% 38%, transparent 55%, oklch(0.10 0.025 142 / 0.4) 100%);
+}
+
+html.theme-light .bg-nature::after {
+    background: radial-gradient(ellipse 120% 90% at 50% 38%, transparent 62%, oklch(0.78 0.03 120 / 0.3) 100%);
+}
+
+/* (k) Film grain (SVG feTurbulence, no external assets) */
+.bg-grain {
+    position: absolute;
+    inset: 0;
+    opacity: 0.05;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    background-size: 160px 160px;
+}
+
+@media (max-width: 768px) {
+    /* Half the leaves, no god rays / light sweep / extra stalks: the scene
+       stays recognisable while the animation count roughly halves. */
+    .fall-leaf-5,
+    .fall-leaf-6,
+    .fall-leaf-7,
+    .fall-leaf-8,
+    .bg-godrays,
+    .bg-light-sweep,
+    #bamboo-mid,
+    #bamboo-far .far-4,
+    #bamboo-far .far-5,
+    #bamboo-far .far-6,
+    #bamboo-far .far-7,
+    #bamboo-near .near-3 {
+        display: none;
+    }
+}
+
+/* --- UI/UX cohesion pass -------------------------------------------------
+   Shared rhythm and interaction rules for the landing page. Component-specific
+   responsive refinements are repeated at the end of the cascade. */
+html {
+    scroll-padding-top: 96px;
+}
+
+body {
+    text-rendering: optimizeLegibility;
+}
+
+.footer-disclaimer {
+    color: oklch(0.72 0.015 90);
+}
+
+html.theme-light .footer-disclaimer {
+    color: var(--text-muted);
+}
+
+.logo-area {
+    text-decoration: none;
+    border-radius: 12px;
+}
+
+.logo-area:focus-visible,
+.nav-links a:focus-visible,
+.theme-toggle:focus-visible,
+.lang-dropdown:focus-visible,
+.hamburger:focus-visible,
+.btn:focus-visible,
+.faq-item summary:focus-visible {
+    outline: 3px solid var(--accent);
+    outline-offset: 4px;
+}
+
+.nav-links a {
+    position: relative;
+    padding: 0.55rem 0;
+}
+
+.nav-links a::after {
+    content: "";
+    position: absolute;
+    right: 0;
+    bottom: 0.25rem;
+    left: 0;
+    height: 2px;
+    border-radius: 999px;
+    background: var(--accent);
+    transform: scaleX(0);
+    transform-origin: right;
+    transition: transform 0.25s ease;
+}
+
+.nav-links a:hover::after,
+.nav-links a:focus-visible::after {
+    transform: scaleX(1);
+    transform-origin: left;
+}
+
+.hero-text {
+    max-width: 42rem;
+}
+
+.hero-text h1 {
+    text-wrap: balance;
+}
+
+.hero-subtitle,
+.section-subtitle,
+.use-cases-subtitle {
+    text-wrap: pretty;
+}
+
+.cta-group {
+    align-items: stretch;
+}
+
+.cta-group .btn {
+    min-height: 48px;
+    box-sizing: border-box;
+}
+
+.cta-trust {
+    max-width: 44rem;
+    line-height: 1.55;
+}
+
+section[id] {
+    scroll-margin-top: 96px;
+}
+
+.section-title,
+#how-it-works h2,
+#self-hosting h2,
+#faq h2 {
+    text-wrap: balance;
+    letter-spacing: -0.035em;
+}
+
+.use-case-card,
+.feature-card,
+.faq-item,
+.comparison-table-wrapper {
+    box-shadow: 0 18px 46px rgba(0, 0, 0, 0.12);
+}
+
+html.theme-light :is(.use-case-card, .feature-card, .faq-item, .comparison-table-wrapper) {
+    box-shadow: 0 18px 46px oklch(0.22 0.035 140 / 0.09);
+}
+
+.use-case-card,
+.feature-card {
+    height: 100%;
+}
+
+.use-case-card p,
+.feature-card p,
+.faq-item p {
+    line-height: 1.7;
+}
+
+.faq-item summary {
+    min-height: 52px;
+    display: flex;
+    align-items: center;
+}
+
+.comparison-table tbody tr {
+    transition: background-color 0.2s ease;
+}
+
+@media (max-width: 768px) {
+    html {
+        scroll-padding-top: 76px;
+    }
+
+    .container {
+        padding-inline: 1.15rem;
+    }
+
+    section {
+        padding-block: 4.25rem;
+    }
+
+    .hero-text {
+        max-width: none;
+    }
+
+    .hero-text h1,
+    .section-title,
+    #how-it-works h2,
+    #self-hosting h2,
+    #faq h2 {
+        font-size: clamp(2rem, 9vw, 2.65rem) !important;
+    }
+
+    .cta-group {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        width: 100%;
+    }
+
+    .cta-group .btn {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .cta-group .btn-primary,
+    .cta-group .btn-firefox {
+        grid-column: span 1;
+    }
+
+    .hero-github-cta,
+    .btn-demo-mobile {
+        grid-column: span 1;
+    }
+
+    .use-case-card,
+    .feature-card,
+    .faq-item,
+    .comparison-table-wrapper {
+        box-shadow: 0 12px 30px rgba(0, 0, 0, 0.1);
+    }
+}
+
+@media (max-width: 430px) {
+    .cta-group {
+        grid-template-columns: 1fr;
+    }
+
+    .cta-group .btn-primary,
+    .cta-group .btn-firefox,
+    .hero-github-cta,
+    .btn-demo-mobile {
+        grid-column: 1;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .nav-links a::after,
+    .use-case-card,
+    .feature-card,
+    .faq-item,
+    .btn {
+        transition-duration: 0.01ms !important;
+    }
+}
+
+/* (l) Click confetti: a small handful of eucalyptus leaves bursts from
+   wherever the visitor presses (spawned by app.js). Built like the falling
+   leaves above — the outer span owns the flight path (fast burst that
+   brakes at its peak, then sinks), the inner leaf rocks around its stem
+   the whole way down. Deliberately subtle: few, tiny, short-lived. */
+.click-leaf {
+    position: fixed;
+    z-index: 3000;
+    margin: -6px 0 0 -4px;
+    pointer-events: none;
+    opacity: 0;
+    animation: leafBurst var(--leaf-dur, 1.1s) forwards;
+    will-change: transform, opacity;
+}
+
+.click-leaf i {
+    display: block;
+    width: 8px;
+    height: 12px;
+    border-radius: 0 70% 0 70%;
+    background: linear-gradient(135deg, oklch(0.62 0.12 150 / 0.95), oklch(0.45 0.09 145 / 0.85));
+    transform: rotate(var(--leaf-rot, 0deg));
+    animation: leafRock var(--flutter-dur, 0.6s) ease-in-out infinite alternate;
+}
+
+.click-leaf-sage i {
+    background: linear-gradient(135deg, oklch(0.72 0.09 140 / 0.9), oklch(0.55 0.08 145 / 0.8));
+}
+
+.click-leaf-amber i {
+    background: linear-gradient(135deg, oklch(0.68 0.14 55 / 0.95), oklch(0.55 0.13 40 / 0.85));
+}
+
+/* Two-phase flight: --leaf-x/--leaf-y is the burst PEAK; from there each
+   leaf loses momentum and sinks past it while fading. Per-segment timing
+   functions give the fast pop and the gentle fall. */
+@keyframes leafBurst {
+    0% {
+        opacity: 0;
+        transform: translate(0, 0) scale(var(--leaf-scale, 1));
+        animation-timing-function: cubic-bezier(0.16, 0.84, 0.44, 1);
+    }
+    10% { opacity: 1; }
+    45% {
+        opacity: 1;
+        transform: translate(var(--leaf-x, 0), var(--leaf-y, -20px)) scale(var(--leaf-scale, 1));
+        animation-timing-function: cubic-bezier(0.55, 0.06, 0.68, 0.19);
+    }
+    100% {
+        opacity: 0;
+        transform: translate(calc(var(--leaf-x, 0) * 1.4), calc(var(--leaf-y, -20px) + 44px)) scale(calc(var(--leaf-scale, 1) * 0.92));
+    }
+}
+
+@keyframes leafRock {
+    from { transform: rotate(calc(var(--leaf-rot, 0deg) - 24deg)); }
+    to { transform: rotate(calc(var(--leaf-rot, 0deg) + 24deg)); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .click-leaf { display: none; }
+    .bg-nature *,
+    .bg-nature *::before,
+    .bg-nature *::after {
+        animation: none !important;
+    }
+    .fall-leaf { opacity: 0; }
+}
+
+/* --- Layout --- */
+.container {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 0 2rem;
+}
+
+section {
+    padding: 6rem 0;
+}
+
+#how-it-works {
+    padding: 4.5rem 0;
+}
+
+/* Content-visibility for offscreen sections to improve INP */
+.use-cases-section,
+#self-hosting,
+.comparison-section {
+    content-visibility: auto;
+    contain-intrinsic-size: auto 1400px;
+}
+
+/* --- Navigation --- */
+nav {
+    position: fixed;
+    top: 0;
+    width: 100%;
+    z-index: 1000;
+    background: var(--glass);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--glass-border);
+    padding: 1rem 0;
+    transition: padding 0.3s ease, background 0.3s ease;
+}
+
+nav.nav-scrolled {
+    padding: 0.75rem 0;
+    background: oklch(0.20 0.025 140 / 0.9);
+}
+
+html.theme-light nav.nav-scrolled {
+    background: oklch(0.95 0.01 100 / 0.92);
+}
+
+.nav-content {
+    display: flex;
+    align-items: center;
+}
+
+.logo-area {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    font-weight: 800;
+    font-size: 1.5rem;
+    letter-spacing: -0.5px;
+}
+
+/* Logo can be a plain <a>; without this it falls back to the UA link blue,
+   which clashed silently with the old indigo theme and visibly with green. */
+a.logo-area {
+    color: var(--text);
+}
+
+.logo-area picture {
+    display: contents;
+}
+
+.logo-area img {
+    height: 64px;
+    width: 64px;
+    object-fit: contain;
+    border-radius: 8px;
+    margin: -4px 0;
+}
+
+.nav-ext-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 8px;
+    background: oklch(0.68 0.13 150 / 0.15);
+    border: 1px solid oklch(0.68 0.13 150 / 0.3);
+    color: oklch(0.68 0.13 150);
+    border-radius: 12px;
+    font-size: 0.55rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    box-shadow: 0 0 10px oklch(0.68 0.13 150 / 0.1);
+    animation: fade-in 0.4s ease-out;
+    margin-left: 0.2rem;
+}
+
+@keyframes fade-in {
+    from { opacity: 0; transform: translateY(-5px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.nav-links {
+    display: flex;
+    gap: 2rem;
+    margin-left: auto;
+}
+
+.nav-links a {
+    color: var(--text-muted);
+    text-decoration: none;
+    font-weight: 500;
+    transition: color 0.3s;
+}
+
+.nav-links a:hover {
+    color: var(--accent);
+}
+
+.nav-right {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-left: 2rem;
+    flex-shrink: 0;
+}
+
+/* --- Theme Toggle (sun/moon) --- */
+.theme-toggle {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    background: transparent;
+    border: none;
+    border-radius: 10px;
+    color: var(--text-muted);
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: color 0.3s, transform 0.3s;
+    overflow: hidden;
+}
+
+.theme-toggle:hover {
+    color: var(--accent);
+    transform: scale(1.15);
+}
+
+.theme-toggle:active {
+    transform: scale(0.9);
+}
+
+.theme-toggle svg {
+    position: absolute;
+    width: 18px;
+    height: 18px;
+    transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.4s ease;
+}
+
+/* Default (Dark mode): Sun visible, Moon hidden & rotated */
+.theme-toggle .theme-icon-sun {
+    opacity: 1;
+    transform: scale(1) rotate(0deg);
+}
+
+.theme-toggle .theme-icon-moon {
+    opacity: 0;
+    transform: scale(0) rotate(-90deg);
+}
+
+/* Light mode: Moon visible, Sun hidden & rotated */
+html.theme-light .theme-toggle .theme-icon-sun {
+    opacity: 0;
+    transform: scale(0) rotate(90deg);
+}
+
+html.theme-light .theme-toggle .theme-icon-moon {
+    opacity: 1;
+    transform: scale(1) rotate(0deg);
+}
+
+/* --- Light Theme --- */
+html.theme-light {
+    --accent-green: oklch(0.52 0.12 150);
+    --accent-green-hover: oklch(0.58 0.12 150);
+    --text-on-green: #ffffff;
+    --bg: oklch(0.95 0.01 100);
+    --card: #ffffff;
+    --accent: var(--accent-green);
+    --accent-glow: oklch(0.52 0.12 150 / 0.25);
+    --text: oklch(0.20 0.025 140);
+    --text-muted: oklch(0.45 0.02 110);
+    --glass: rgba(255, 255, 255, 0.7);
+    --glass-border: oklch(0.20 0.025 140 / 0.08);
+    --section-tint: transparent;
+    --section-tint-strong: oklch(0.88 0.015 90 / 0.5);
+    --card-surface: rgba(255, 255, 255, 0.75);
+    --card-border: oklch(0.20 0.025 140 / 0.08);
+    color-scheme: light;
+}
+
+html.theme-light .bg-nature {
+    background:
+        radial-gradient(circle at 16% 10%, oklch(0.85 0.06 150 / 0.3), transparent 34rem),
+        radial-gradient(circle at 78% 68%, oklch(0.85 0.06 60 / 0.2), transparent 38rem),
+        linear-gradient(180deg, oklch(0.96 0.01 90) 0%, oklch(0.93 0.025 140) 46%, oklch(0.96 0.01 90) 100%);
+}
+
+html.theme-light .bg-canopy,
+html.theme-light .canopy-arc,
+html.theme-light .bg-grass {
+    opacity: 0.45;
+}
+
+/* By day the stalks get their own fresh-green recipes — the dark-theme
+   gradients faded to 45% read as grey smears on the light backdrop and
+   stopped looking like bamboo at all. */
+html.theme-light #bamboo-far .bamboo-stalk {
+    opacity: 0.55;
+    background:
+        repeating-linear-gradient(180deg,
+            transparent 0, transparent 108px,
+            oklch(0.55 0.09 145 / 0.4) 108px, oklch(0.55 0.09 145 / 0.4) 112px),
+        linear-gradient(180deg, oklch(0.68 0.11 145 / 0.6), oklch(0.62 0.09 140 / 0.35));
+}
+
+html.theme-light #bamboo-far::before,
+html.theme-light #bamboo-far::after {
+    background: linear-gradient(180deg, oklch(0.7 0.1 145 / 0.5), oklch(0.64 0.08 140 / 0.25));
+}
+
+html.theme-light #bamboo-mid .bamboo-stalk {
+    opacity: 0.65;
+    background:
+        repeating-linear-gradient(180deg,
+            transparent 0, transparent 84px,
+            oklch(0.5 0.1 145 / 0.45) 84px, oklch(0.5 0.1 145 / 0.45) 87px),
+        linear-gradient(90deg, transparent 14%, oklch(0.85 0.08 130 / 0.35) 38%, transparent 68%),
+        linear-gradient(180deg, oklch(0.63 0.115 145 / 0.65), oklch(0.57 0.09 140 / 0.4));
+}
+
+html.theme-light #bamboo-mid .bamboo-stalk::before,
+html.theme-light #bamboo-mid .bamboo-stalk::after {
+    background: oklch(0.55 0.13 145 / 0.5);
+}
+
+html.theme-light #bamboo-near .bamboo-stalk {
+    opacity: 0.75;
+    background:
+        linear-gradient(90deg, transparent 12%, oklch(0.88 0.07 130 / 0.4) 36%, transparent 64%),
+        linear-gradient(180deg, oklch(0.59 0.12 145 / 0.75), oklch(0.52 0.1 140 / 0.5));
+}
+
+html.theme-light #bamboo-near .bamboo-node {
+    background: oklch(0.45 0.1 145 / 0.65);
+}
+
+html.theme-light #bamboo-near .bamboo-leaf {
+    background: oklch(0.55 0.13 145 / 0.6);
+}
+
+/* The centre trunks stay whisper-quiet by daylight too */
+html.theme-light #bamboo-far .far-6,
+html.theme-light #bamboo-far .far-7 {
+    opacity: 0.26;
+}
+
+html.theme-light .bg-mist {
+    display: none;
+}
+
+html.theme-light .bg-dusk-tint {
+    display: none;
+}
+
+html.theme-light .godray {
+    filter: blur(12px);
+    opacity: 0.5;
+}
+
+html.theme-light .bg-grain {
+    opacity: 0.035;
+}
+
+html.theme-light .feature-card,
+html.theme-light .faq-item {
+    background: var(--card-surface);
+    border-color: var(--card-border);
+    box-shadow: 0 8px 24px oklch(0.20 0.025 140 / 0.06);
+}
+
+html.theme-light .feature-card::before {
+    background: linear-gradient(to bottom right, oklch(0.20 0.025 140 / 0.08), transparent);
+}
+
+html.theme-light .use-case-card {
+    background: var(--card-surface);
+}
+
+html.theme-light .use-case-card h3 {
+    color: var(--text);
+}
+
+html.theme-light .use-case-card:hover {
+    box-shadow: 0 12px 30px oklch(0.20 0.025 140 / 0.12);
+    border-color: oklch(0.20 0.025 140 / 0.15);
+}
+
+html.theme-light .faq-item[open] {
+    background: #ffffff;
+}
+
+html.theme-light .faq-item p {
+    border-top-color: oklch(0.20 0.025 140 / 0.08);
+}
+
+html.theme-light .btn-secondary {
+    background: #ffffff;
+    border-color: oklch(0.20 0.025 140 / 0.12);
+}
+
+html.theme-light .btn-secondary:hover {
+    background: oklch(0.88 0.015 90);
+}
+
+html.theme-light .btn-firefox {
+    background: oklch(0.62 0.14 45);
+    color: #ffffff;
+    box-shadow: 0 10px 18px oklch(0.62 0.14 45 / 0.24);
+}
+
+html.theme-light .btn-firefox:hover {
+    background: oklch(0.55 0.13 45);
+    box-shadow: 0 18px 26px oklch(0.62 0.14 45 / 0.28);
+}
+
+html.theme-light .btn-firefox img {
+    filter: brightness(0) saturate(100%) invert(13%) sepia(38%) saturate(1084%) hue-rotate(177deg) brightness(89%) contrast(96%);
+}
+
+html.theme-light .btn-firefox-secondary img {
+    filter: brightness(0) saturate(100%) invert(13%) sepia(38%) saturate(1084%) hue-rotate(177deg) brightness(89%) contrast(96%);
+}
+
+html.theme-light .comparison-section {
+    background: transparent;
+}
+
+html.theme-light .comparison-table-wrapper {
+    background: rgba(255, 255, 255, 0.75);
+    box-shadow: 0 10px 30px oklch(0.20 0.025 140 / 0.08);
+}
+
+html.theme-light .comparison-table th {
+    background: oklch(0.20 0.025 140 / 0.06);
+    color: var(--text);
+}
+
+html.theme-light .comparison-table th,
+html.theme-light .comparison-table td {
+    border-bottom-color: oklch(0.20 0.025 140 / 0.08);
+}
+
+html.theme-light .comparison-table tbody tr:hover {
+    background: oklch(0.20 0.025 140 / 0.03);
+}
+
+html.theme-light .feat-name strong {
+    color: var(--text);
+}
+
+html.theme-light .table-footnotes {
+    background: oklch(0.20 0.025 140 / 0.04);
+    border-top-color: oklch(0.20 0.025 140 / 0.06);
+}
+
+@media (max-width: 900px) {
+    html.theme-light .comparison-table tbody tr {
+        background: rgba(255, 255, 255, 0.85);
+        box-shadow: 0 6px 18px oklch(0.20 0.025 140 / 0.08);
+    }
+    html.theme-light .comparison-table td.feat-name {
+        background: oklch(0.20 0.025 140 / 0.05);
+    }
+    html.theme-light .comparison-table td {
+        border-bottom-color: oklch(0.20 0.025 140 / 0.08);
+    }
+}
+
+html.theme-light .compat-logo img,
+html.theme-light .compat-logo {
+    filter: none;
+}
+

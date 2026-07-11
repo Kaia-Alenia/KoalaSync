@@ -1,0 +1,41 @@
+/* --- Join Page Loading Spinner --- */
+.join-spinner {
+    width: 36px;
+    height: 36px;
+    border: 3px solid oklch(0.68 0.13 150 / 0.2);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin: 0 auto 0.75rem;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/* --- Reduced Motion --- */
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+    [data-reveal] {
+        opacity: 1;
+        transform: none;
+    }
+    .illus-typing-text::after {
+        animation: none;
+    }
+    .illus-timeline-progress {
+        animation: none;
+        width: 60%;
+    }
+    .illus-sync-pulse {
+        animation: none;
+    }
+    .illus-extension-icon {
+        animation: none;
+    }
+}
+

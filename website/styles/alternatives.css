@@ -1,0 +1,23 @@
+/* --- Alternatives Hub Styles --- */
+.guide-card {
+    transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.25s ease, border-color 0.25s ease !important;
+}
+.guide-card:hover {
+    transform: translateY(-4px);
+    background-color: rgba(255, 255, 255, 0.07) !important;
+    border-color: rgba(255, 255, 255, 0.22) !important;
+    box-shadow: 0 12px 24px -10px rgba(0, 0, 0, 0.4);
+}
+.guide-card .btn-primary {
+    transition: background-color 0.2s ease, transform 0.1s ease;
+}
+.guide-card .btn-primary:active {
+    transform: scale(0.97);
+}
+@media (max-width: 640px) {
+    .guides-grid {
+        grid-template-columns: 1fr !important;
+        gap: 1.25rem !important;
+    }
+}
+

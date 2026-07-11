@@ -4,7 +4,7 @@ This directory contains the static KoalaSync website. It is both the public mark
 
 ## Where You Are
 
-- `template.html`, `style.css`, `app.js`, `lang-init.js`, and `locales/*.json` are source files.
+- `template.html`, `style.css`, `styles/*.css`, `app.js`, `lang-init.js`, and `locales/*.json` are source files. `style.css` is the local-development manifest; production concatenates the modules in the order declared by `website/build.cjs`.
 - `build.cjs` compiles the static site into `website/www/`.
 - `website/www/` is generated output. Do not edit files there directly.
 - `join.html` handles room-invite links and communicates with the extension through `bridge.js`.
@@ -33,6 +33,7 @@ The website is 100% static HTML, CSS, and JavaScript.
 
 - **Static i18n compiler**: `build.cjs` combines `template.html` with dictionaries in `locales/`.
 - **Build-time minification**: Source CSS/JS stays readable; generated output uses `.min.css` and `.min.js`.
+- **Strangler CSS architecture**: `styles/*.css` supplies page/runtime bundles; `style.legacy.css` is the byte-identical, unloaded reference monolith. The landing ships a critical shell, a desktop/on-demand demo bundle, and idle-loaded below-fold styles. Legal, join, and alternatives rules stay out of landing bundles.
 - **Zero backend**: The compiled site can be hosted by any static file server.
 - **Zero external assets**: Fonts, icons, scripts, and images must remain self-hosted.
 - **Generated SEO/runtime files**: `version.json`, sitemap, robots, clean URLs, localized pages, and minified assets are copied or generated into `www/`.

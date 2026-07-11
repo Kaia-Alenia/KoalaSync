@@ -132,11 +132,62 @@ async function compile() {
 
     // ── 1. Minify CSS/JS (must happen first so hashes go into HTML) ──
     console.log('Minifying CSS/JS...');
-    const styleRaw = fs.readFileSync(path.join(websiteDir, 'style.css'), 'utf8');
+    const styleModules = [
+        'styles/foundation.css',
+        'styles/hero.css',
+        'styles/landing-primary.css',
+        'styles/legal.css',
+        'styles/landing-controls.css',
+        'styles/join-spinner.css',
+        'styles/landing-sections.css',
+        'styles/join.css',
+        'styles/landing-faq.css',
+        'styles/alternatives.css',
+        'styles/demo.css'
+    ];
+    // Landing CSS is split by actual render dependency, not by the historical
+    // section comments in style.legacy.css. The initial bundle contains every
+    // selector used by the background, navigation, hero, interactive mockup,
+    // responsive shell, and accessibility states. Below-fold sections load
+    // after first paint from app.js. Utility-page rules never reach the landing.
+    const landingCriticalModules = [
+        'styles/foundation.css',
+        'styles/hero.css',
+        'styles/legal.css',
+        'styles/landing-controls.css',
+        'styles/landing-demo-gate.css'
+    ];
+    const landingDemoModules = ['styles/demo.css'];
+    const landingDeferredModules = [
+        'styles/landing-primary.css',
+        'styles/landing-sections.css',
+        'styles/landing-faq.css'
+    ];
+    const styleRaw = styleModules
+        .map(relativePath => fs.readFileSync(path.join(websiteDir, relativePath), 'utf8'))
+        .join('');
     const styleMin = minifyCSS(styleRaw);
     const styleHash = sha8(styleMin);
     const styleName = `style.${styleHash}.min.css`;
     const styleSRI = sha384(styleMin);
+    const landingStyleRaw = landingCriticalModules
+        .map(relativePath => fs.readFileSync(path.join(websiteDir, relativePath), 'utf8'))
+        .join('');
+    const landingStyleMin = minifyCSS(landingStyleRaw);
+    const landingStyleName = `landing.${sha8(landingStyleMin)}.min.css`;
+    const landingStyleSRI = sha384(landingStyleMin);
+    const landingDemoRaw = landingDemoModules
+        .map(relativePath => fs.readFileSync(path.join(websiteDir, relativePath), 'utf8'))
+        .join('');
+    const landingDemoMin = minifyCSS(landingDemoRaw);
+    const landingDemoName = `landing-demo.${sha8(landingDemoMin)}.min.css`;
+    const landingDemoSRI = sha384(landingDemoMin);
+    const landingDeferredRaw = landingDeferredModules
+        .map(relativePath => fs.readFileSync(path.join(websiteDir, relativePath), 'utf8'))
+        .join('');
+    const landingDeferredMin = minifyCSS(landingDeferredRaw);
+    const landingDeferredName = `landing-deferred.${sha8(landingDeferredMin)}.min.css`;
+    const landingDeferredSRI = sha384(landingDeferredMin);
 
     const appRaw = fs.readFileSync(path.join(websiteDir, 'app.js'), 'utf8');
     const appMin = await minifyJS(appRaw);
@@ -154,6 +205,9 @@ async function compile() {
     const appPct   = ((1 - appMin.length / appRaw.length) * 100).toFixed(0);
     const langPct  = ((1 - langMin.length / langRaw.length) * 100).toFixed(0);
     console.log(`  CSS: ${styleName} (${(styleMin.length/1024).toFixed(1)} KB, -${stylePct}%)`);
+    console.log(`  Landing CSS: ${landingStyleName} (${(landingStyleMin.length/1024).toFixed(1)} KB)`);
+    console.log(`  Desktop/modal demo CSS: ${landingDemoName} (${(landingDemoMin.length/1024).toFixed(1)} KB)`);
+    console.log(`  Deferred landing CSS: ${landingDeferredName} (${(landingDeferredMin.length/1024).toFixed(1)} KB)`);
     console.log(`  App: ${appName} (${(appMin.length/1024).toFixed(1)} KB, -${appPct}%)`);
     console.log(`  Lang: ${langName} (${(langMin.length/1024).toFixed(1)} KB, -${langPct}%)`);
 
@@ -167,6 +221,9 @@ async function compile() {
 
     // Write minified files
     fs.writeFileSync(path.join(wwwDir, styleName), styleMin);
+    fs.writeFileSync(path.join(wwwDir, landingStyleName), landingStyleMin);
+    fs.writeFileSync(path.join(wwwDir, landingDemoName), landingDemoMin);
+    fs.writeFileSync(path.join(wwwDir, landingDeferredName), landingDeferredMin);
     fs.writeFileSync(path.join(wwwDir, appName), appMin);
     fs.writeFileSync(path.join(wwwDir, langName), langMin);
 
@@ -462,6 +519,15 @@ async function compile() {
         // (404.html must use absolute paths: it is served for arbitrary URLs).
         html = html.replace(/(<link\b[^>]*?\bhref=")((?:\.\.\/)*\/?)style\.min\.css"/g, (m, before, prefix) => {
             return `${before}${prefix}${styleName}" integrity="${styleSRI}" crossorigin="anonymous"`;
+        });
+        html = html.replace(/(<link\b[^>]*?\bhref=")((?:\.\.\/)*\/?)landing\.min\.css"/g, (m, before, prefix) => {
+            return `${before}${prefix}${landingStyleName}" integrity="${landingStyleSRI}" crossorigin="anonymous"`;
+        });
+        html = html.replace(/(<link\b[^>]*?\bhref=")((?:\.\.\/)*\/?)landing-demo\.min\.css"/g, (m, before, prefix) => {
+            return `${before}${prefix}${landingDemoName}" integrity="${landingDemoSRI}" crossorigin="anonymous"`;
+        });
+        html = html.replace(/data-deferred-css="((?:\.\.\/)*\/?)landing-deferred\.min\.css"/g, (m, prefix) => {
+            return `data-deferred-css="${prefix}${landingDeferredName}" data-deferred-css-integrity="${landingDeferredSRI}"`;
         });
         html = html.replace(/(<script\b[^>]*?\bsrc=")((?:\.\.\/)*\/?)app\.min\.js"/g, (m, before, prefix) => {
             return `${before}${prefix}${appName}" integrity="${appSRI}" crossorigin="anonymous"`;
