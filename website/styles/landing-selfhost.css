@@ -1,0 +1,12 @@
+.selfhost-mascot {
+    display: block;
+    width: 300px;
+    height: auto;
+    margin: 0 auto;
+    filter: drop-shadow(0 4px 12px rgba(0,0,0,0.15));
+    transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.selfhost-mascot:hover {
+    transform: scale(1.05) translateY(-4px) rotate(-1deg);
+}

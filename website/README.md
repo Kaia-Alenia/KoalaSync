@@ -33,7 +33,7 @@ The website is 100% static HTML, CSS, and JavaScript.
 
 - **Static i18n compiler**: `build.cjs` combines `template.html` with dictionaries in `locales/`.
 - **Build-time minification**: Source CSS/JS stays readable; generated output uses `.min.css` and `.min.js`.
-- **Strangler CSS architecture**: `styles/*.css` supplies page/runtime bundles; `style.legacy.css` is the byte-identical, unloaded reference monolith. The landing ships a critical shell, a desktop/on-demand demo bundle, and idle-loaded below-fold styles. Legal, join, and alternatives rules stay out of landing bundles.
+- **Strangler CSS architecture**: `styles/*.css` supplies page-specific production bundles; `style.legacy.css` is the byte-identical, unloaded reference monolith. The landing bundle preserves the legacy cascade while excluding Join- and Alternatives-only rules. Structural CSS is not activated after paint because that causes layout shifts.
 - **Zero backend**: The compiled site can be hosted by any static file server.
 - **Zero external assets**: Fonts, icons, scripts, and images must remain self-hosted.
 - **Generated SEO/runtime files**: `version.json`, sitemap, robots, clean URLs, localized pages, and minified assets are copied or generated into `www/`.
