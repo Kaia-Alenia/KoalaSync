@@ -25,6 +25,22 @@
     --text-muted: var(--text-secondary);
     --border: var(--border-strong);
     --radius: 8px;
+    color-scheme: dark;
+}
+
+html.theme-light {
+    --bg-base: oklch(0.965 0.012 105);
+    --surface: oklch(0.995 0.006 100);
+    --surface-deep: oklch(0.935 0.018 110);
+    --surface-alt: oklch(0.91 0.022 115);
+    --border-soft: oklch(0.28 0.035 140 / 0.10);
+    --border-strong: oklch(0.73 0.035 125);
+    --text-primary: oklch(0.21 0.03 140);
+    --text-secondary: oklch(0.43 0.03 135);
+    --accent-green: oklch(0.52 0.13 155);
+    --accent-green-hover: oklch(0.45 0.12 155);
+    --text-on-green: oklch(0.98 0.005 100);
+    color-scheme: light;
 }
 
 * {
@@ -100,6 +116,10 @@ h2 {
     box-shadow: 0 2px 8px rgba(0,0,0,0.15);
 }
 
+html.theme-light .panel {
+    box-shadow: 0 12px 30px oklch(0.22 0.035 140 / 0.09);
+}
+
 .muted-panel {
     color: var(--text-muted);
 }
@@ -142,12 +162,12 @@ h2 {
     transition: border-color 0.2s, box-shadow 0.2s;
 }
 .preset-card:hover {
-    border-color: rgba(86, 174, 108, 0.4);
+    border-color: color-mix(in oklch, var(--accent), transparent 60%);
 }
 
 .preset-card:has(input:checked) {
     border-color: var(--accent);
-    box-shadow: 0 0 0 1px rgba(86, 174, 108, 0.35);
+    box-shadow: 0 0 0 1px color-mix(in oklch, var(--accent), transparent 65%);
 }
 
 .preset-card input {
@@ -158,8 +178,8 @@ h2 {
     display: grid;
     gap: 12px;
     padding: 16px;
-    background: rgba(16, 25, 14, 0.58);
-    border: 1px solid rgba(163, 162, 148, 0.16);
+    background: var(--surface-deep);
+    border: 1px solid var(--border-soft);
     border-radius: var(--radius);
     transition: opacity 0.3s;
 }

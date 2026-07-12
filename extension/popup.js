@@ -149,11 +149,26 @@ function localizeThemeSelector(locale) {
     const systemEl = document.getElementById('themeOptionSystem');
     const darkEl = document.getElementById('themeOptionDark');
     const lightEl = document.getElementById('themeOptionLight');
+    const systemButton = document.getElementById('themeChoiceSystem');
+    const darkButton = document.getElementById('themeChoiceDark');
+    const lightButton = document.getElementById('themeChoiceLight');
     if (labelEl) labelEl.textContent = label;
     if (systemEl) systemEl.textContent = system;
     if (darkEl) darkEl.textContent = dark;
     if (lightEl) lightEl.textContent = light;
+    if (systemButton) systemButton.textContent = system;
+    if (darkButton) darkButton.textContent = dark;
+    if (lightButton) lightButton.textContent = light;
     if (elements.themeSelector) elements.themeSelector.setAttribute('aria-label', label);
+}
+
+function syncThemePicker() {
+    const activeMode = elements.themeSelector?.value || 'system';
+    document.querySelectorAll('.theme-choice').forEach(button => {
+        const active = button.dataset.themeValue === activeMode;
+        button.classList.toggle('active', active);
+        button.setAttribute('aria-pressed', String(active));
+    });
 }
 
 async function updateFeatureHints() {
@@ -242,6 +257,7 @@ async function init() {
     
     if (elements.langSelector) elements.langSelector.value = activeLang;
     if (elements.themeSelector) elements.themeSelector.value = ['dark', 'light'].includes(localData.themeMode) ? localData.themeMode : 'system';
+    syncThemePicker();
     
     let username = localData.username;
     if (!username) {
@@ -555,7 +571,7 @@ function updateLastActionUI(state, peers) {
         if (pId === localPeerId) return;
         const pName = (typeof peer === 'object' && peer.username) ? peer.username : pId.substring(0, 4);
         const isAcked = safeAcks.includes(pId) || pId === state.senderId;
-        const color = isAcked ? 'var(--success)' : '#4c5142';
+        const color = isAcked ? 'var(--success)' : 'var(--border-strong)';
         const icon = isAcked ? '✓' : '...';
         const avatar = getAvatarForName(pName);
         
@@ -705,7 +721,7 @@ function updatePeerList(peers) {
 
             const peerItem = document.createElement('div');
             peerItem.className = 'peer-item';
-            peerItem.style.cssText = 'position:relative; display:block; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.05);';
+            peerItem.style.cssText = 'position:relative; display:block; padding: 8px 0; border-bottom: 1px solid var(--border-soft);';
 
             const header = document.createElement('div');
             header.style.cssText = 'display:flex; justify-content:space-between; align-items:center; padding-right: 24px;';
@@ -715,7 +731,7 @@ function updatePeerList(peers) {
             const avatar = getAvatarForName(pUsername || pId);
             if (pUsername) {
                 const u = document.createElement('span');
-                u.style.cssText = 'font-weight:600; color:white; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 120px; display: inline-block;';
+                u.style.cssText = 'font-weight:600; color:var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 120px; display: inline-block;';
                 u.textContent = `${avatar} ${pUsername}`;
                 const i = document.createElement('span');
                 i.style.cssText = 'font-size:10px; opacity:0.6; font-style:italic; white-space: nowrap; flex-shrink: 0;';
@@ -1040,25 +1056,8 @@ function applyConnectionStatus(status) {
     const idle = status === 'idle';
 
     if (elements.connDot) {
-        elements.connDot.className = 'status-dot ' + (connected ? 'status-online' : ((connecting || reconnecting) ? 'status-online' : 'status-offline'));
-
-        if (reconnecting) {
-            elements.connDot.style.background = '#c96736';
-            elements.connDot.style.boxShadow = '0 0 8px #c96736';
-        } else if (connecting) {
-            elements.connDot.style.background = '#de7949';
-            elements.connDot.style.boxShadow = '0 0 8px #de7949';
-        } else if (idle) {
-            // Neutral grey — ready, not failed.
-            elements.connDot.style.background = '#bcb7a9';
-            elements.connDot.style.boxShadow = 'none';
-        } else if (!connected) {
-            elements.connDot.style.background = '#b94642';
-            elements.connDot.style.boxShadow = 'none';
-        } else {
-            elements.connDot.style.background = '';
-            elements.connDot.style.boxShadow = '';
-        }
+        const dotStatus = connected ? 'status-online' : ((connecting || reconnecting) ? 'status-connecting' : (idle ? 'status-idle' : 'status-offline'));
+        elements.connDot.className = `status-dot ${dotStatus}`;
     }
 
     if (elements.connText) {
@@ -1095,16 +1094,16 @@ function updatePingDisplay(pingMs) {
     if (!elements.connPing) return;
     if (pingMs === null || pingMs === undefined || typeof pingMs !== 'number' || !Number.isFinite(pingMs)) {
         elements.connPing.textContent = '';
-        elements.connPing.style.color = '';
+        elements.connPing.className = 'conn-ping';
         return;
     }
     elements.connPing.textContent = `${Math.round(pingMs)}ms`;
-    if (pingMs < 50) {
-        elements.connPing.style.color = '#56ae6c';
+    if (pingMs < 75) {
+        elements.connPing.className = 'conn-ping conn-ping-good';
     } else if (pingMs < 150) {
-        elements.connPing.style.color = '#c96736';
+        elements.connPing.className = 'conn-ping conn-ping-warning';
     } else {
-        elements.connPing.style.color = '#b94642';
+        elements.connPing.className = 'conn-ping conn-ping-bad';
     }
 }
 
@@ -1122,10 +1121,10 @@ function updateHistory(history) {
         const actionLabel = item.action.toUpperCase().replace('FORCE_SYNC_', '');
         
         const entry = document.createElement('div');
-        entry.style.cssText = 'margin-bottom: 4px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 2px;';
+        entry.style.cssText = 'margin-bottom: 4px; border-bottom: 1px solid var(--border-soft); padding-bottom: 2px;';
         
         const timeSpan = document.createElement('span');
-        timeSpan.style.color = '#6b705e';
+        timeSpan.style.color = 'var(--text-muted)';
         timeSpan.textContent = `[${time}] `;
         
         const actionBold = document.createElement('b');
@@ -1168,7 +1167,7 @@ function updateRoomList(rooms) {
     rooms.forEach(r => {
         const item = document.createElement('div');
         item.className = 'room-item';
-        item.style.cssText = 'display:flex; justify-content:space-between; align-items:center; padding: 8px; border-bottom: 1px solid rgba(255,255,255,0.05); cursor:pointer;';
+        item.style.cssText = 'display:flex; justify-content:space-between; align-items:center; padding: 8px; border-bottom: 1px solid var(--border-soft); cursor:pointer;';
         item.dataset.id = r.id;
 
         const leftSide = document.createElement('div');
@@ -1307,8 +1306,17 @@ if (elements.themeSelector) {
         const themeMode = elements.themeSelector.value;
         window.koalaTheme?.setMode(themeMode);
         chrome.storage.local.set({ themeMode });
+        syncThemePicker();
     });
 }
+
+document.querySelectorAll('.theme-choice').forEach(button => {
+    button.addEventListener('click', () => {
+        if (!elements.themeSelector) return;
+        elements.themeSelector.value = button.dataset.themeValue;
+        elements.themeSelector.dispatchEvent(new window.Event('change'));
+    });
+});
 
 if (elements.audioSettingsLink) {
     elements.audioSettingsLink.addEventListener('click', async (event) => {
@@ -2343,7 +2351,7 @@ function refreshDebugInfo() {
 
                 const addSection = (title) => {
                     const div = document.createElement('div');
-                    div.style.cssText = 'margin: 8px 0 4px 0; border-bottom: 1px solid #2f3625; padding-bottom: 2px; color: var(--accent); font-weight: bold; font-size: 10px; text-transform: uppercase;';
+                    div.style.cssText = 'margin: 8px 0 4px 0; border-bottom: 1px solid var(--border-soft); padding-bottom: 2px; color: var(--accent); font-weight: bold; font-size: 10px; text-transform: uppercase;';
                     div.textContent = title;
                     elements.videoDebug.appendChild(div);
                 };
@@ -2352,7 +2360,7 @@ function refreshDebugInfo() {
                     // No video found — show diagnostic info
                     addSection('Video Detection');
                     const notFound = document.createElement('div');
-                    notFound.style.cssText = 'color: #b94642; font-weight: 700; margin-bottom: 8px;';
+                    notFound.style.cssText = 'color: var(--status-error-text); font-weight: 700; margin-bottom: 8px;';
                     notFound.textContent = 'NO VIDEO ELEMENT FOUND';
                     elements.videoDebug.appendChild(notFound);
 
@@ -2370,7 +2378,7 @@ function refreshDebugInfo() {
                     }
 
                     const hint = document.createElement('div');
-                    hint.style.cssText = 'margin-top: 12px; padding: 8px; background: rgba(222,121,73,0.12); border-left: 3px solid #de7949; border-radius: 4px; font-size: 10px; color: var(--text-muted);';
+                    hint.style.cssText = 'margin-top: 12px; padding: 8px; background: color-mix(in oklch, var(--warning), transparent 88%); border-left: 3px solid var(--warning); border-radius: 4px; font-size: 10px; color: var(--text);';
                     hint.textContent = 'Is a video currently playing? The extension only detects <video> elements. Ensure media is actively loaded on the page.';
                     elements.videoDebug.appendChild(hint);
                     return;
@@ -2378,12 +2386,12 @@ function refreshDebugInfo() {
 
                 // Video found — full debug
                 addSection('Playback');
-                addField('State', state.paused ? 'PAUSED' : 'PLAYING', state.paused ? 'var(--text-muted)' : '#56ae6c');
+                addField('State', state.paused ? 'PAUSED' : 'PLAYING', state.paused ? 'var(--text-muted)' : 'var(--status-success-text)');
                 addField('Time', `${state.currentTime.toFixed(2)}s / ${(state.duration || 0).toFixed(2)}s`);
                 addField('ReadyState', `${state.readyState} (${state.readyStateLabel || '?'})`,
-                    state.readyState >= 3 ? '#56ae6c' : '#de7949');
+                    state.readyState >= 3 ? 'var(--status-success-text)' : 'var(--status-warning-text)');
                 addField('Network', `${state.networkState} (${state.networkStateLabel || '?'})`,
-                    state.networkState === 1 ? '#56ae6c' : state.networkState === 3 ? '#b94642' : 'var(--text-muted)');
+                    state.networkState === 1 ? 'var(--status-success-text)' : state.networkState === 3 ? 'var(--status-error-text)' : 'var(--text-muted)');
                 addField('Buffered', state.buffered || '?');
                 if (state.nativeCurrentTime != null || state.nativeDuration != null) {
                     addField('Native Time', `${state.nativeCurrentTime ?? '?'}s / ${state.nativeDuration ?? '?'}s`);
@@ -2407,18 +2415,18 @@ function refreshDebugInfo() {
 
                 addSection('Dimensions');
                 const dimsOk = state.videoWidth > 0 && state.videoHeight > 0;
-                addField('Resolution', `${state.videoWidth}x${state.videoHeight}`, dimsOk ? '#56ae6c' : '#b94642');
+                addField('Resolution', `${state.videoWidth}x${state.videoHeight}`, dimsOk ? 'var(--status-success-text)' : 'var(--status-error-text)');
                 if (!dimsOk) {
                     const dimHint = document.createElement('div');
-                    dimHint.style.cssText = 'color: #de7949; font-size: 9px; margin: 2px 0 6px 12px;';
+                    dimHint.style.cssText = 'color: var(--status-warning-text); font-size: 9px; margin: 2px 0 6px 12px;';
                     dimHint.textContent = '0x0 = video element hidden or not yet loaded';
                     elements.videoDebug.appendChild(dimHint);
                 }
 
                 if (state.error) {
                     addSection('Media Error');
-                    addField('Code', String(state.error.code), '#b94642');
-                    addField('Message', state.error.message || '?', '#b94642');
+                    addField('Code', String(state.error.code), 'var(--status-error-text)');
+                    addField('Message', state.error.message || '?', 'var(--status-error-text)');
                 }
 
                 addSection('Detection');
