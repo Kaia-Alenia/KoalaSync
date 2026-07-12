@@ -9,6 +9,7 @@ const template = fs.readFileSync(path.join(repoRoot, 'website', 'template.html')
 const app = fs.readFileSync(path.join(repoRoot, 'website', 'app.js'), 'utf8');
 const langInit = fs.readFileSync(path.join(repoRoot, 'website', 'lang-init.js'), 'utf8');
 const demoCss = fs.readFileSync(path.join(repoRoot, 'website', 'styles', 'demo.css'), 'utf8');
+const landingPrimaryCss = fs.readFileSync(path.join(repoRoot, 'website', 'styles', 'landing-primary.css'), 'utf8');
 const mockupStart = template.indexOf('<div class="extension-mockup">');
 const mockupEnd = template.indexOf('<div class="demo-invite-fly"', mockupStart);
 
@@ -65,6 +66,22 @@ if (!/\.film-hero-bird-drift\s*\{[^}]*animation:\s*filmBirdGlide/s.test(demoCss)
   throw new Error('Foreground film birds must glide and flap without waiting for video playback');
 }
 
+const gettingStartedLightSurfaces = [
+  'step-illustration-1',
+  'step-illustration-2',
+  'step-illustration-3',
+  'illus-popup-card',
+  'illus-player-card',
+  'popup-select-mock'
+];
+for (const className of gettingStartedLightSurfaces) {
+  const pattern = new RegExp(`html\\.theme-light[^{]*\\.${className}[^}]*\\{`);
+  if (!pattern.test(landingPrimaryCss)) {
+    throw new Error(`Getting Started .${className} must define an explicit light-theme surface`);
+  }
+}
+
 console.log('Extension mockup theme-sensitive text uses theme-aware colors');
 console.log('Landing CSS is render-blocking, single-request, and cascade-stable');
 console.log('Foreground film birds use complete, always-on wing and glide animations');
+console.log('All Getting Started mockups define explicit light-theme surfaces');
