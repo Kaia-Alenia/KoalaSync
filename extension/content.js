@@ -758,7 +758,8 @@
         // Only trigger if: we had a previous title, the title changed,
         // a video exists, and we're near the start of new content.
         if (lastKnownMediaTitle && currentTitle
-            && !sameEpisode(currentTitle, lastKnownMediaTitle)
+            && !sameEpisode(currentTitle, lastKnownMediaTitle)
+            && extractEpisodeId(currentTitle) !== null
             && video
             && current !== null && current < 5
             && video.readyState >= 1) {
@@ -798,7 +799,11 @@
 
         const current = video ? getSyncCurrentTime(video) : null;
         if (video && currentTitle && sameEpisode(currentTitle, expectedTitle)
-            && current !== null && current < 5 && video.readyState >= 1) {
+            && current !== null && video.readyState >= 1) {
+            if (current >= 5) {
+                expectedSeekTime = 0;
+                video.currentTime = 0;
+            }
             // Match! Pause at start and report ready.
             if (!video.paused) {
                 _setSuppress('paused');

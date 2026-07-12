@@ -1,7 +1,7 @@
 import { EVENTS, CONTROL_MODES, CAPABILITIES, PROTOCOL_VERSION, OFFICIAL_SERVER_URL, OFFICIAL_SERVER_TOKEN, EPISODE_LOBBY_TIMEOUT, FORCE_SYNC_TIMEOUT, HEARTBEAT_INTERVAL } from './shared/constants.js';
 import { generateUsername } from './shared/names.js';
 import { loadLocale, getMessage, getSystemLanguage } from './i18n.js';
-import { sameEpisode } from './episode-utils.js';
+import { sameEpisode, extractEpisodeId } from './episode-utils.js';
 import { applyTitlePrivacyToPayload, sanitizeSharedTitle, sanitizeTabTitle, normalizeSendTabTitle, normalizeTitlePrivacyMode } from './title-privacy.js';
 import { initTabManager } from './modules/tab-manager.js';
 import './page-api-seek-overrides.js';
@@ -1325,6 +1325,9 @@ function handleServerEvent(event, data) {
                         }
                         if (storageInitialized) chrome.storage.session.set({ currentRoom });
                         chrome.runtime.sendMessage({ type: 'PEER_UPDATE', peers: currentRoom.peers }).catch(() => {});
+                        if (episodeLobby) {
+                            checkEpisodeLobbyCompletion();
+                        }
                     }
                 }
             }
@@ -2476,6 +2479,11 @@ async function handleAsyncMessage(message, sender, sendResponse) {
         }
 
         const newTitle = message.payload && message.payload.newTitle;
+        if (newTitle && extractEpisodeId(newTitle) === null) {
+            addLog(`Episode change detected ("${newTitle}") but no episode ID was found; ignoring.`, 'info');
+            sendResponse({ status: 'not_an_episode' });
+            return;
+        }
         if (!newTitle) {
             sendResponse({ status: 'no_title' });
             return;
@@ -2566,6 +2574,13 @@ async function handleAsyncMessage(message, sender, sendResponse) {
 
         sendResponse({ status: 'lobby_created' });
     } else if (message.type === 'EPISODE_READY_LOCAL') {
+        if (sender.tab) {
+            const senderTabId = sender.tab.id;
+            if (!currentTabId || currentTabId !== senderTabId) {
+                sendResponse({ status: 'ignored_unselected_tab' });
+                return;
+            }
+        }
         // Content script confirmed it loaded the lobby episode
         if (episodeLobby && message.payload && sameEpisode(message.payload.title, episodeLobby.expectedTitle)) {
             if (!episodeLobby.readyPeers.includes(peerId)) {
@@ -2604,6 +2619,13 @@ async function handleAsyncMessage(message, sender, sendResponse) {
         }
         sendResponse({ status: 'ok' });
     } else if (message.type === 'CONTENT_BOOT') {
+        if (sender.tab) {
+            const senderTabId = sender.tab.id;
+            if (!currentTabId || currentTabId !== senderTabId) {
+                sendResponse({ status: 'ignored_unselected_tab' });
+                return;
+            }
+        }
         // Content script re-injected, check if there's an active lobby
         if (episodeLobby) {
             sendResponse({ lobbyActive: true, expectedTitle: episodeLobby.expectedTitle });
