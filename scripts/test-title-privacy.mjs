@@ -21,9 +21,9 @@ assert.equal(normalizeTabTitle('[7] Testvideo - YouTube'), 'Testvideo - YouTube'
 assert.equal(normalizeTabTitle('(99+) Testvideo - YouTube'), 'Testvideo - YouTube');
 assert.equal(normalizeTabTitle('(999+) Testvideo - YouTube'), 'Testvideo - YouTube');
 assert.equal(normalizeTabTitle('[999+] Testvideo - YouTube'), 'Testvideo - YouTube');
-assert.equal(normalizeTabTitle('(500) Days of Summer'), '(500) Days of Summer');
-assert.equal(normalizeTabTitle('(101) Days of Summer'), '(101) Days of Summer');
-assert.equal(normalizeTabTitle('[101] Days of Summer'), '[101] Days of Summer');
+assert.equal(normalizeTabTitle('(500) Days of Summer'), 'Days of Summer');
+assert.equal(normalizeTabTitle('(101) Days of Summer'), 'Days of Summer');
+assert.equal(normalizeTabTitle('[101] Days of Summer'), 'Days of Summer');
 assert.equal(normalizeTabTitle('   '), null);
 
 assert.equal(sanitizeTabTitle('Private Tab', true), 'Private Tab');
