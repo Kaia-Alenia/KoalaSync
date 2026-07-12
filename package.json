@@ -9,6 +9,7 @@
     "indexnow": "node website/submit-indexnow.cjs",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
+    "subset-flags": "node website/tools/subset-flag-font.mjs",
     "test": "npm run verify",
     "test:unit": "vitest run",
     "verify": "node scripts/verify-release.mjs"
