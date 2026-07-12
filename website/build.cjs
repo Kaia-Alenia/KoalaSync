@@ -107,7 +107,7 @@ async function minifyJS(raw) {
     const result = await esbuild.transform(raw, {
         loader: 'js',
         minify: true,
-        target: 'es2020'
+        target: 'es2022'
     });
     return result.code;
 }

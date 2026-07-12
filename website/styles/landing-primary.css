@@ -254,13 +254,17 @@
 .step-num {
     font-size: 3.25rem;
     font-weight: 900;
-    background: linear-gradient(135deg, oklch(0.68 0.13 150 / 0.5), oklch(0.62 0.14 45 / 0.15));
+    background: linear-gradient(135deg, oklch(0.68 0.13 150 / 0.75), oklch(0.62 0.14 45 / 0.5));
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     line-height: 1;
     margin-bottom: 0.5rem;
     font-family: inherit;
     letter-spacing: 0;
+}
+
+html.theme-light .step-num {
+    background: linear-gradient(135deg, oklch(0.45 0.10 150), oklch(0.40 0.08 120));
 }
 
 .step-text h3 {

@@ -1194,18 +1194,7 @@ html.theme-light .hero-demo-scene .demo-video::after {
     box-shadow: 0 0 8px var(--accent-glow);
 }
 
-.scroll-progress-bar::after {
-    content: '';
-    position: absolute;
-    right: -3px;
-    top: 50%;
-    width: 10px;
-    height: 7px;
-    border-radius: 0 70% 0 70%;
-    background: var(--accent-green);
-    box-shadow: 0 0 6px var(--accent-glow);
-    transform: translateY(-50%) rotate(24deg);
-}
+
 
 /* Navigation logo pop & spin */
 .nav-logo-img {

@@ -146,16 +146,7 @@
     border-bottom: 0;
 }
 
-#self-hosting,
-#faq,
-#faq + section,
-footer {
-    background: var(--section-tint-strong);
-}
 
-#self-hosting {
-    border-top: 1px solid var(--glass-border);
-}
 
 .comparison-table-wrapper {
     overflow-x: auto;

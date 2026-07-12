@@ -1419,3 +1419,73 @@ html.theme-light .compat-logo {
     filter: none;
 }
 
+/* ── 2026 Performance Optimizations: Scroll-Driven Animations ── */
+@keyframes scrollParallaxFar {
+    from { translate: 0 0; }
+    to { translate: 0 calc(-55vh * 0.42); }
+}
+@keyframes scrollParallaxMid {
+    from { translate: 0 0; }
+    to { translate: 0 calc(-55vh * 0.7); }
+}
+@keyframes scrollParallaxNear {
+    from { translate: 0 0; }
+    to { translate: 0 -55vh; }
+}
+@keyframes fadeDay {
+    from { opacity: 1; }
+    to { opacity: 0.25; }
+}
+@keyframes fadeDusk {
+    from { opacity: 0.35; }
+    to { opacity: 1; }
+}
+@keyframes fadeTint {
+    from { opacity: 0; }
+    to { opacity: 0.85; }
+}
+@keyframes blurFar {
+    0%, 33% { filter: blur(4.5px); }
+    34%, 66% { filter: blur(5.5px); }
+    67%, 100% { filter: blur(6.5px); }
+}
+@keyframes blurMid {
+    0%, 33% { filter: blur(2px); }
+    34%, 66% { filter: blur(3px); }
+    67%, 100% { filter: blur(4px); }
+}
+
+#bamboo-far {
+    animation: scrollParallaxFar linear;
+    animation-timeline: scroll(root);
+}
+#bamboo-mid {
+    animation: scrollParallaxMid linear;
+    animation-timeline: scroll(root);
+}
+#bamboo-near {
+    animation: scrollParallaxNear linear;
+    animation-timeline: scroll(root);
+}
+.bg-depth-day {
+    animation: fadeDay linear;
+    animation-timeline: scroll(root);
+}
+.bg-depth-dusk {
+    animation: fadeDusk linear;
+    animation-timeline: scroll(root);
+}
+.bg-dusk-tint {
+    animation: fadeTint linear;
+    animation-timeline: scroll(root);
+}
+
+#bamboo-far .bamboo-stalk {
+    animation: blurFar linear;
+    animation-timeline: scroll(root);
+}
+#bamboo-mid .bamboo-stalk {
+    animation: blurMid linear;
+    animation-timeline: scroll(root);
+}
+

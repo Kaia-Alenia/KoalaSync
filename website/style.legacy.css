@@ -2583,13 +2583,17 @@ input:checked + .mock-slider:before {
 .step-num {
     font-size: 3.25rem;
     font-weight: 900;
-    background: linear-gradient(135deg, oklch(0.68 0.13 150 / 0.5), oklch(0.62 0.14 45 / 0.15));
+    background: linear-gradient(135deg, oklch(0.68 0.13 150 / 0.75), oklch(0.62 0.14 45 / 0.5));
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     line-height: 1;
     margin-bottom: 0.5rem;
     font-family: inherit;
     letter-spacing: 0;
+}
+
+html.theme-light .step-num {
+    background: linear-gradient(135deg, oklch(0.45 0.10 150), oklch(0.40 0.08 120));
 }
 
 .step-text h3 {
@@ -4231,16 +4235,7 @@ html.theme-light .compat-logo img.compat-logo-disneyplus-mark {
     border-bottom: 0;
 }
 
-#self-hosting,
-#faq,
-#faq + section,
-footer {
-    background: var(--section-tint-strong);
-}
 
-#self-hosting {
-    border-top: 1px solid var(--glass-border);
-}
 
 .comparison-table-wrapper {
     overflow-x: auto;
@@ -6113,18 +6108,7 @@ html.theme-light .hero-demo-scene .demo-video::after {
     box-shadow: 0 0 8px var(--accent-glow);
 }
 
-.scroll-progress-bar::after {
-    content: '';
-    position: absolute;
-    right: -3px;
-    top: 50%;
-    width: 10px;
-    height: 7px;
-    border-radius: 0 70% 0 70%;
-    background: var(--accent-green);
-    box-shadow: 0 0 6px var(--accent-glow);
-    transform: translateY(-50%) rotate(24deg);
-}
+
 
 /* Navigation logo pop & spin */
 .nav-logo-img {
@@ -6534,4 +6518,74 @@ html.theme-light .mobile-demo-close:hover {
     .cta-group {
         grid-template-columns: 1fr;
     }
+}
+
+/* ── 2026 Performance Optimizations: Scroll-Driven Animations ── */
+@keyframes scrollParallaxFar {
+    from { translate: 0 0; }
+    to { translate: 0 calc(-55vh * 0.42); }
+}
+@keyframes scrollParallaxMid {
+    from { translate: 0 0; }
+    to { translate: 0 calc(-55vh * 0.7); }
+}
+@keyframes scrollParallaxNear {
+    from { translate: 0 0; }
+    to { translate: 0 -55vh; }
+}
+@keyframes fadeDay {
+    from { opacity: 1; }
+    to { opacity: 0.25; }
+}
+@keyframes fadeDusk {
+    from { opacity: 0.35; }
+    to { opacity: 1; }
+}
+@keyframes fadeTint {
+    from { opacity: 0; }
+    to { opacity: 0.85; }
+}
+@keyframes blurFar {
+    0%, 33% { filter: blur(4.5px); }
+    34%, 66% { filter: blur(5.5px); }
+    67%, 100% { filter: blur(6.5px); }
+}
+@keyframes blurMid {
+    0%, 33% { filter: blur(2px); }
+    34%, 66% { filter: blur(3px); }
+    67%, 100% { filter: blur(4px); }
+}
+
+#bamboo-far {
+    animation: scrollParallaxFar linear;
+    animation-timeline: scroll(root);
+}
+#bamboo-mid {
+    animation: scrollParallaxMid linear;
+    animation-timeline: scroll(root);
+}
+#bamboo-near {
+    animation: scrollParallaxNear linear;
+    animation-timeline: scroll(root);
+}
+.bg-depth-day {
+    animation: fadeDay linear;
+    animation-timeline: scroll(root);
+}
+.bg-depth-dusk {
+    animation: fadeDusk linear;
+    animation-timeline: scroll(root);
+}
+.bg-dusk-tint {
+    animation: fadeTint linear;
+    animation-timeline: scroll(root);
+}
+
+#bamboo-far .bamboo-stalk {
+    animation: blurFar linear;
+    animation-timeline: scroll(root);
+}
+#bamboo-mid .bamboo-stalk {
+    animation: blurMid linear;
+    animation-timeline: scroll(root);
 }

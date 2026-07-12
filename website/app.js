@@ -60,6 +60,16 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
+    const restartAnimation = (el, className) => {
+        if (!el) return;
+        el.classList.remove(className);
+        requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+                el.classList.add(className);
+            });
+        });
+    };
+
     // Populated by the forest renderer further down (no-op until then)
     let forestGreet = null;
 
@@ -114,9 +124,7 @@ document.addEventListener('DOMContentLoaded', () => {
             // Switching into light mode flares the horizon once (sunrise)
             const scene = document.querySelector('.bg-nature');
             if (nextTheme === 'light' && scene && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-                scene.classList.remove('sunrise');
-                void scene.offsetWidth;
-                scene.classList.add('sunrise');
+                restartAnimation(scene, 'sunrise');
                 setTimeout(() => scene.classList.remove('sunrise'), 1700);
             }
         });
@@ -250,45 +258,20 @@ document.addEventListener('DOMContentLoaded', () => {
     const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     if (bambooFar && bambooNear && !prefersReducedMotion) {
         const depthDay = document.querySelector('.bg-depth-day');
-        const depthDusk = document.querySelector('.bg-depth-dusk');
-        const duskTint = document.querySelector('.bg-dusk-tint');
         const fireflies = Array.from(document.querySelectorAll('.firefly-wrap'), (el) => ({ el, x: 0, y: 0 }));
         const canHover = window.matchMedia('(hover: hover)').matches;
         let mouseX = 0;
         let mouseY = 0;
         let pointerX = -9999;
         let pointerY = -9999;
-        let depthStep = '';
         let framePending = false;
 
         const renderForest = () => {
             framePending = false;
-            const doc = document.documentElement;
-            const maxScroll = Math.max(1, doc.scrollHeight - window.innerHeight);
-            const depth = Math.min(1, window.scrollY / maxScroll);
-            // Couple the forest directly to the scroll distance. The layers
-            // follow the content's direction (up-screen while scrolling down)
-            // but slower — near fastest, far slowest — so the forest recedes
-            // with believable depth instead of moving against the page.
-            const shift = Math.min(window.innerHeight * 0.55, window.scrollY * 0.14);
-            bambooFar.style.transform = `translate(${(-mouseX * 5).toFixed(1)}px, ${(-shift * 0.42).toFixed(1)}px)`;
-            bambooNear.style.transform = `translate(${(mouseX * 11).toFixed(1)}px, ${(-shift).toFixed(1)}px)`;
-            if (bambooMid) bambooMid.style.transform = `translate(${(mouseX * 4).toFixed(1)}px, ${(-shift * 0.7).toFixed(1)}px)`;
+            bambooFar.style.transform = `translateX(${(-mouseX * 5).toFixed(1)}px)`;
+            bambooNear.style.transform = `translateX(${(mouseX * 11).toFixed(1)}px)`;
+            if (bambooMid) bambooMid.style.transform = `translateX(${(mouseX * 4).toFixed(1)}px)`;
             if (depthDay) depthDay.style.transform = `translate(${(-mouseX * 2.5).toFixed(1)}px, ${(mouseY * 1.5).toFixed(1)}px)`;
-            if (depthDay) depthDay.style.opacity = (1 - depth * 0.75).toFixed(3);
-            if (depthDusk) depthDusk.style.opacity = (0.35 + depth * 0.65).toFixed(3);
-            if (duskTint) duskTint.style.opacity = (depth * 0.85).toFixed(3);
-
-            // Depth of field: step the far layer's blur on threshold crossings
-            // only (filter changes are too expensive to run per frame)
-            if (forestScene) {
-                const step = depth < 0.33 ? '' : depth < 0.66 ? 'depth-mid' : 'depth-deep';
-                if (step !== depthStep) {
-                    forestScene.classList.remove('depth-mid', 'depth-deep');
-                    if (step) forestScene.classList.add(step);
-                    depthStep = step;
-                }
-            }
 
             // Fireflies shy away from the cursor and drift back once it leaves
             let settling = false;
@@ -326,13 +309,9 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!fireflies.length) return;
             const wrap = fireflies[helloIndex % fireflies.length].el;
             helloIndex += 1;
-            wrap.classList.remove('firefly-hello');
-            void wrap.offsetWidth;
-            wrap.classList.add('firefly-hello');
+            restartAnimation(wrap, 'firefly-hello');
             setTimeout(() => wrap.classList.remove('firefly-hello'), 1300);
         };
-
-        window.addEventListener('scroll', requestForestFrame, { passive: true });
         window.addEventListener('resize', requestForestFrame, { passive: true });
         if (canHover) {
             window.addEventListener('pointermove', (e) => {
@@ -888,10 +867,7 @@ document.addEventListener('DOMContentLoaded', () => {
         };
 
         const pulse = (key) => {
-            const el = tabs[key].root;
-            el.classList.remove('sync-pulse');
-            void el.offsetWidth; // restart the CSS animation
-            el.classList.add('sync-pulse');
+            restartAnimation(tabs[key].root, 'sync-pulse');
         };
 
         const NAMES = { a: '🐱 ChillCat', b: '🐶 HappyDog' };
@@ -949,16 +925,15 @@ document.addEventListener('DOMContentLoaded', () => {
         let seekFlashTimers = [];
         const flashSeek = (root) => {
             if (!root) return;
-            root.classList.remove('demo-seeking');
             // Restart every animated layer from frame zero so the jump is visible
             const film = root.querySelector('.demo-film');
             if (film) {
                 film.classList.add('demo-reset');
-                void film.offsetWidth; // force reflow so the browser commits the reset
-                film.classList.remove('demo-reset');
+                requestAnimationFrame(() => {
+                    film.classList.remove('demo-reset');
+                });
             }
-            void root.offsetWidth;
-            root.classList.add('demo-seeking');
+            restartAnimation(root, 'demo-seeking');
             const t = setTimeout(() => root.classList.remove('demo-seeking'), 360);
             seekFlashTimers.push(t);
         };
@@ -1051,10 +1026,13 @@ document.addEventListener('DOMContentLoaded', () => {
             inviteFly.style.left = fromPoint.x + 'px';
             inviteFly.style.top = fromPoint.y + 'px';
             inviteFly.style.opacity = '1';
-            void inviteFly.offsetWidth;
-            inviteFly.style.transition = '';
-            inviteFly.style.left = (toPoint.x - 40) + 'px';
-            inviteFly.style.top = (toPoint.y + 2) + 'px';
+            requestAnimationFrame(() => {
+                requestAnimationFrame(() => {
+                    inviteFly.style.transition = '';
+                    inviteFly.style.left = (toPoint.x - 40) + 'px';
+                    inviteFly.style.top = (toPoint.y + 2) + 'px';
+                });
+            });
             setTimeout(() => {
                 inviteFly.style.opacity = '0';
                 resolve();
@@ -1067,9 +1045,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (videoSelect.options.length > 1) {
                 videoSelect.selectedIndex = 1;
             }
-            videoSelect.classList.remove('demo-attn');
-            void videoSelect.offsetWidth;
-            videoSelect.classList.add('demo-attn');
+            restartAnimation(videoSelect, 'demo-attn');
         };
 
         if (createRoomBtn) createRoomBtn.addEventListener('click', () => setRoomJoined(true));
@@ -1087,8 +1063,9 @@ document.addEventListener('DOMContentLoaded', () => {
             setConnected(false);
             setRoomJoined(false);
         }
-        void scene.offsetWidth;
-        scene.classList.remove('demo-no-anim');
+        requestAnimationFrame(() => {
+            scene.classList.remove('demo-no-anim');
+        });
 
         const showHint = () => {
             if (hint) hint.classList.add('show');
@@ -1133,9 +1110,10 @@ document.addEventListener('DOMContentLoaded', () => {
             seekFlashTimers.forEach(clearTimeout);
             seekFlashTimers = [];
 
-            // Force reflow and remove demo-no-anim:
-            void scene.offsetWidth;
-            scene.classList.remove('demo-no-anim');
+            // Remove demo-no-anim on next frame:
+            requestAnimationFrame(() => {
+                scene.classList.remove('demo-no-anim');
+            });
         };
         const finishDemo = () => {
             if (demoFinished) return;
@@ -1214,9 +1192,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (userTookOver || demoRunId !== myRunId || !el) return false;
                 await moveTo(el, fx);
                 if (userTookOver || demoRunId !== myRunId) return false;
-                cursor.classList.remove('clicking');
-                void cursor.offsetWidth;
-                cursor.classList.add('clicking');
+                restartAnimation(cursor, 'clicking');
                 await wait(180);
                 if (userTookOver || demoRunId !== myRunId) return false;
                 if (action) action(); else el.click();
