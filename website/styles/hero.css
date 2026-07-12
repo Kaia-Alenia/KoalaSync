@@ -191,7 +191,26 @@ html.theme-light .koala-speech-bubble::after {
     }
 }
 
-@media (max-width: 768px) {
+/* Stacked hero (below the 1024px demo breakpoint): the text block owns the
+   full row, so the whole column — headline, subtitle, koala, CTAs — reads
+   as one centered axis instead of a left-aligned half of a two-column grid. */
+@media (max-width: 1023px) {
+    .hero-grid {
+        text-align: center;
+    }
+    /* Lift the desktop measure cap: the text block is the full row here,
+       so a left-flushed 42rem box would sit visibly off-center. */
+    .hero-text {
+        max-width: none;
+    }
+    .hero-text p,
+    .hero-subtitle,
+    .hero-text .cta-trust {
+        margin-inline: auto;
+    }
+    .cta-group {
+        justify-content: center;
+    }
     /* The koala keeps standing on the active install CTA; app.js updates the
        offset from the real button geometry when the row wraps. */
     .hero-mascot-container {

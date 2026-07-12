@@ -258,7 +258,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const bambooFar = document.getElementById('bamboo-far');
     const bambooMid = document.getElementById('bamboo-mid');
     const bambooNear = document.getElementById('bamboo-near');
-    const forestScene = document.querySelector('.bg-nature');
     const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     if (bambooFar && bambooNear && !prefersReducedMotion) {
         const depthDay = document.querySelector('.bg-depth-day');
@@ -332,22 +331,6 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         }
         renderForest();
-
-        // Wind gusts: every 12-24s the sway variables ramp up for ~3s. The
-        // custom properties are registered via @property, so they transition
-        // smoothly inside the running keyframes instead of jumping.
-        if (forestScene) {
-            const scheduleGust = () => {
-                setTimeout(() => {
-                    forestScene.classList.add('gusting');
-                    setTimeout(() => {
-                        forestScene.classList.remove('gusting');
-                        scheduleGust();
-                    }, 3000);
-                }, 12000 + Math.random() * 12000);
-            };
-            scheduleGust();
-        }
     }
 
     // Eucalyptus click confetti: leaves burst from wherever the visitor

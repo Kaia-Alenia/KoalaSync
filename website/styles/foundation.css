@@ -118,28 +118,9 @@ body {
 }
 
 /* --- Animated Bamboo Forest Background (v3 Greens Update) --- */
-/* Registered so wind gusts can TRANSITION these instead of jumping */
-@property --sway {
-    syntax: '<angle>';
-    initial-value: 1.2deg;
-    inherits: true;
-}
-
-@property --leaf-drift {
-    syntax: '<length>';
-    initial-value: 26px;
-    inherits: true;
-}
-
 .bg-nature {
     --sway: 1.2deg;
     --leaf-drift: 26px;
-    transition: --sway 1.6s ease-in-out, --leaf-drift 1.6s ease-in-out;
-}
-
-.bg-nature.gusting {
-    --sway: 3.4deg;
-    --leaf-drift: 68px;
 }
 
 .bg-nature {
@@ -727,22 +708,69 @@ html.theme-light .bg-nature::after {
     background-size: 160px 160px;
 }
 
-@media (max-width: 768px) {
-    /* Half the leaves, no god rays / light sweep / extra stalks: the scene
-       stays recognisable while the animation count roughly halves. */
+/* --- Responsive calm-down ------------------------------------------------
+   On wide screens the decor lives in the side gutters; once those gutters
+   shrink it sits directly behind the text and hurts readability. Thin the
+   scene out in tiers: small monitors lose the mid-column movers, tablets
+   keep only the outer frame, phones get a static, dimmed frame. */
+
+/* Small monitors / laptops: clear the text column */
+@media (max-width: 1440px) {
+    .fall-leaf-3,
+    .fall-leaf-4,
     .fall-leaf-5,
     .fall-leaf-6,
+    .fw-3,
+    .fw-4,
+    #bamboo-far .far-6,
+    #bamboo-far .far-7 {
+        display: none;
+    }
+
+    /* The pseudo stalks sit at 24% / 25% — mid-column at this width */
+    #bamboo-far::before,
+    #bamboo-far::after {
+        display: none;
+    }
+
+    .bg-godrays {
+        opacity: 0.55;
+    }
+}
+
+/* Tablets: only the outermost decor remains, slightly dimmed */
+@media (max-width: 1024px) {
+    .fall-leaf-2,
     .fall-leaf-7,
-    .fall-leaf-8,
+    .fw-2,
+    .fw-5,
     .bg-godrays,
     .bg-light-sweep,
     #bamboo-mid,
     #bamboo-far .far-4,
-    #bamboo-far .far-5,
-    #bamboo-far .far-6,
-    #bamboo-far .far-7,
+    #bamboo-far .far-5 {
+        display: none;
+    }
+
+    #bamboo-far,
+    #bamboo-near {
+        opacity: 0.7;
+    }
+}
+
+/* Phones: nothing moves behind the text — a faint static frame is enough */
+@media (max-width: 768px) {
+    .fall-leaf,
+    .firefly-wrap,
+    .bg-mist,
+    #bamboo-far .far-2,
     #bamboo-near .near-3 {
         display: none;
+    }
+
+    #bamboo-far,
+    #bamboo-near {
+        opacity: 0.45;
     }
 }
 
@@ -919,9 +947,11 @@ html.theme-light :is(.use-case-card, .feature-card, .faq-item, .comparison-table
         grid-column: span 1;
     }
 
+    /* Odd button out (GitHub is hidden below 900px): span the full row so
+       the group closes as a clean 2+1 block instead of leaving a gap. */
     .hero-github-cta,
     .btn-demo-mobile {
-        grid-column: span 1;
+        grid-column: 1 / -1;
     }
 
     .use-case-card,
