@@ -209,6 +209,7 @@
   "LABEL_AUDIO_PROCESSING_TOOLTIP": "動画再生に圧縮などのオーディオエフェクトを適用します",
   "AUDIO_OPEN_SETTINGS": "開く",
   "NEW_FEATURE_AUDIO": "新機能: オーディオ処理 — コンプレッサーを試してみよう！",
+  "NEW_FEATURE_THEME": "新機能：テーマ — クラシックな外観やミニマルなグラファイトに切り替え。",
   "AUDIO_BACK": "← 戻る",
   "AUDIO_PAGE_TITLE": "オーディオ設定",
   "AUDIO_MASTER_TOGGLE": "オーディオ処理",

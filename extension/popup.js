@@ -65,6 +65,7 @@ const elements = {
     cancelLobbyBtn: document.getElementById('cancelLobbyBtn'),
     langSelector: document.getElementById('langSelector'),
     themeSelector: document.getElementById('themeSelector'),
+    paletteSelector: document.getElementById('paletteSelector'),
 
     audioSettingsLink: document.getElementById('audioSettingsLink'),
     settingsSupportLink: document.getElementById('settingsSupportLink'),
@@ -115,6 +116,12 @@ const FEATURE_HINTS = [
         selector: '#audioProcessingLabel',
         position: 'beforebegin',
         i18nTooltip: 'NEW_FEATURE_AUDIO'
+    },
+    {
+        key: 'theme_picker',
+        selector: '#paletteLabel',
+        position: 'afterend',
+        i18nTooltip: 'NEW_FEATURE_THEME'
     }
 ];
 
@@ -135,16 +142,23 @@ function openAudioSettingsPage() {
 
 function localizeThemeSelector(locale) {
     const labels = {
-        de: ['Darstellung', 'System', 'Dunkel', 'Hell'], fr: ['Apparence', 'Système', 'Sombre', 'Clair'],
-        es: ['Apariencia', 'Sistema', 'Oscuro', 'Claro'], it: ['Aspetto', 'Sistema', 'Scuro', 'Chiaro'],
-        nl: ['Weergave', 'Systeem', 'Donker', 'Licht'], pl: ['Wygląd', 'System', 'Ciemny', 'Jasny'],
-        pt: ['Aparência', 'Sistema', 'Escuro', 'Claro'], 'pt-BR': ['Aparência', 'Sistema', 'Escuro', 'Claro'],
-        tr: ['Görünüm', 'Sistem', 'Koyu', 'Açık'], ru: ['Оформление', 'Системная', 'Тёмная', 'Светлая'],
-        ja: ['外観', 'システム', 'ダーク', 'ライト'], ko: ['테마', '시스템', '다크', '라이트'],
-        zh: ['外观', '跟随系统', '深色', '浅色'], uk: ['Вигляд', 'Системна', 'Темна', 'Світла'],
-        en: ['Appearance', 'System', 'Dark', 'Light']
+        de: ['Darstellung', 'System', 'Dunkel', 'Hell', 'Folge dem System-Design oder wähle ein festes Design'],
+        fr: ['Apparence', 'Système', 'Sombre', 'Clair', 'Suivre le thème du système ou choisir une apparence fixe'],
+        es: ['Apariencia', 'Sistema', 'Oscuro', 'Claro', 'Seguir el tema del sistema o elegir una apariencia fija'],
+        it: ['Aspetto', 'Sistema', 'Scuro', 'Chiaro', 'Segui il tema di sistema o scegli un aspetto fisso'],
+        nl: ['Weergave', 'Systeem', 'Donker', 'Licht', 'Volg het systeemthema of kies een vaste weergave'],
+        pl: ['Wygląd', 'System', 'Ciemny', 'Jasny', 'Dostosuj do motywu systemowego lub wybierz stały wygląd'],
+        pt: ['Aparência', 'Sistema', 'Escuro', 'Claro', 'Seguir o tema do sistema ou escolher uma aparência fixa'],
+        'pt-BR': ['Aparência', 'Sistema', 'Escuro', 'Claro', 'Seguir o tema do sistema ou escolher uma aparência fixa'],
+        tr: ['Görünüm', 'Sistem', 'Koyu', 'Açık', 'Sistem temasını takip et veya sabit bir görünüm seç'],
+        ru: ['Оформление', 'Системная', 'Тёмная', 'Светлая', 'Следовать системной теме или выбрать фиксированное оформление'],
+        ja: ['外観', 'システム', 'ダーク', 'ライト', 'システムテーマに従うか、固定の外観を選択します'],
+        ko: ['테마', '시스템', '다크', '라이트', '시스템 테마를 따르거나 고정된 테마를 선택하세요'],
+        zh: ['外观', '跟随系统', '深色', '浅色', '跟随系统主题或选择固定外观'],
+        uk: ['Вигляд', 'Системна', 'Темна', 'Світла', 'Дотримуватися системної теми або вибрати фіксоване оформлення'],
+        en: ['Appearance', 'System', 'Dark', 'Light', 'Follow the system theme or choose a fixed appearance']
     };
-    const [label, system, dark, light] = labels[locale] || labels.en;
+    const [label, system, dark, light, tooltip] = labels[locale] || labels.en;
     const labelEl = document.getElementById('themeLabel');
     const systemEl = document.getElementById('themeOptionSystem');
     const darkEl = document.getElementById('themeOptionDark');
@@ -152,7 +166,10 @@ function localizeThemeSelector(locale) {
     const systemButton = document.getElementById('themeChoiceSystem');
     const darkButton = document.getElementById('themeChoiceDark');
     const lightButton = document.getElementById('themeChoiceLight');
-    if (labelEl) labelEl.textContent = label;
+    if (labelEl) {
+        labelEl.textContent = label;
+        if (tooltip) labelEl.setAttribute('title', tooltip);
+    }
     if (systemEl) systemEl.textContent = system;
     if (darkEl) darkEl.textContent = dark;
     if (lightEl) lightEl.textContent = light;
@@ -160,6 +177,51 @@ function localizeThemeSelector(locale) {
     if (darkButton) darkButton.textContent = dark;
     if (lightButton) lightButton.textContent = light;
     if (elements.themeSelector) elements.themeSelector.setAttribute('aria-label', label);
+
+    // The palette scheme names (Eucalyptus / Cyber / Graphite) are brand
+    // words kept verbatim; only the row label is localized.
+    const paletteLabels = {
+        de: ['Farbschema', 'Wähle ein kuratiertes Farbschema für die Erweiterung'],
+        fr: ['Thème', 'Choisissez une palette de couleurs personnalisée pour l\'extension'],
+        es: ['Tema', 'Elige una paleta de colores seleccionada para la extensión'],
+        it: ['Tema', 'Scegli una combinazione di colori curata per l\'estensione'],
+        nl: ['Thema', 'Kies een samengesteld kleurenschema voor de extensie'],
+        pl: ['Motyw', 'Wybierz dopasowany schemat kolorów dla rozszerzenia'],
+        pt: ['Tema', 'Escolha um esquema de cores personalizado para a extensão'],
+        'pt-BR': ['Tema', 'Escolha um esquema de cores personalizado para a extensão'],
+        tr: ['Tema', 'Uzantı için özel olarak seçilmiş bir renk şeması seçin'],
+        ru: ['Тема', 'Выберите цветовую схему для расширения'],
+        ja: ['テーマ', '拡張機能の厳選された配色を選択します'],
+        ko: ['테마', '확장 프로그램에 맞는 특별한 색상 테마를 선택하세요'],
+        zh: ['主题', '为扩展程序选择精心设计的配色方案'],
+        uk: ['Тема', 'Виберіть колірну схему для розширення'],
+        en: ['Theme', 'Pick a curated colour scheme for the extension']
+    };
+    const [paletteLabel, paletteTooltip] = paletteLabels[locale] || paletteLabels.en;
+    const paletteLabelEl = document.getElementById('paletteLabel');
+    if (paletteLabelEl) {
+        paletteLabelEl.textContent = paletteLabel;
+        if (paletteTooltip) paletteLabelEl.setAttribute('title', paletteTooltip);
+    }
+    if (elements.paletteSelector) elements.paletteSelector.setAttribute('aria-label', paletteLabel);
+
+    // Micro-descriptors under each swatch card: [nature, classic, minimal].
+    const paletteDescs = {
+        de: ['Natur', 'Klassik', 'Minimal'], fr: ['Nature', 'Classique', 'Minimal'],
+        es: ['Naturaleza', 'Clásico', 'Minimal'], it: ['Natura', 'Classico', 'Minimal'],
+        nl: ['Natuur', 'Klassiek', 'Minimaal'], pl: ['Natura', 'Klasyczny', 'Minimal'],
+        pt: ['Natureza', 'Clássico', 'Minimal'], 'pt-BR': ['Natureza', 'Clássico', 'Minimal'],
+        tr: ['Doğa', 'Klasik', 'Minimal'], ru: ['Природа', 'Классика', 'Минимал'],
+        ja: ['ネイチャー', 'クラシック', 'ミニマル'], ko: ['자연', '클래식', '미니멀'],
+        zh: ['自然', '经典', '极简'], uk: ['Природа', 'Класика', 'Мінімал'],
+        en: ['Nature', 'Classic', 'Minimal']
+    };
+    const [natureDesc, classicDesc, minimalDesc] = paletteDescs[locale] || paletteDescs.en;
+    const descMap = { eucalyptus: natureDesc, cyber: classicDesc, graphite: minimalDesc };
+    document.querySelectorAll('.palette-choice').forEach(btn => {
+        const desc = btn.querySelector('.palette-desc');
+        if (desc) desc.textContent = descMap[btn.dataset.paletteValue] || desc.textContent;
+    });
 }
 
 function syncThemePicker() {
@@ -169,6 +231,25 @@ function syncThemePicker() {
         button.classList.toggle('active', active);
         button.setAttribute('aria-pressed', String(active));
     });
+}
+
+function syncPalettePicker() {
+    const activePalette = elements.paletteSelector?.value || 'eucalyptus';
+    document.querySelectorAll('.palette-choice').forEach(button => {
+        const active = button.dataset.paletteValue === activePalette;
+        button.classList.toggle('active', active);
+        button.setAttribute('aria-pressed', String(active));
+    });
+}
+
+// Briefly enable global colour transitions so a theme/appearance switch
+// cross-fades instead of snapping. Self-clearing; a no-op under reduced motion.
+let themeAnimTimer = null;
+function flashThemeTransition() {
+    const root = document.documentElement;
+    root.classList.add('theme-anim');
+    if (themeAnimTimer) clearTimeout(themeAnimTimer);
+    themeAnimTimer = setTimeout(() => root.classList.remove('theme-anim'), 300);
 }
 
 async function updateFeatureHints() {
@@ -243,7 +324,7 @@ function setRoomRefreshCooldown() {
 async function init() {
     // Local-only by design — settings and room credentials never come from
     // storage.sync (only onboardingComplete + dismissedHints live there).
-    const localData = await chrome.storage.local.get(['serverUrl', 'useCustomServer', 'roomId', 'password', 'username', 'filterNoise', 'autoSyncNextEpisode', 'sendTabTitle', 'mediaTitlePrivacyMode', 'titlePrivacyMode', 'forceSyncMode', 'browserNotifications', 'autoCopyInvite', 'locale', 'audioSettings', 'activeTab', 'themeMode']);
+    const localData = await chrome.storage.local.get(['serverUrl', 'useCustomServer', 'roomId', 'password', 'username', 'filterNoise', 'autoSyncNextEpisode', 'sendTabTitle', 'mediaTitlePrivacyMode', 'titlePrivacyMode', 'forceSyncMode', 'browserNotifications', 'autoCopyInvite', 'locale', 'audioSettings', 'activeTab', 'themeMode', 'themePalette']);
 
     let activeLang = localData.locale;
     if (!activeLang) {
@@ -257,7 +338,9 @@ async function init() {
     
     if (elements.langSelector) elements.langSelector.value = activeLang;
     if (elements.themeSelector) elements.themeSelector.value = ['dark', 'light'].includes(localData.themeMode) ? localData.themeMode : 'system';
+    if (elements.paletteSelector) elements.paletteSelector.value = ['cyber', 'graphite'].includes(localData.themePalette) ? localData.themePalette : 'eucalyptus';
     syncThemePicker();
+    syncPalettePicker();
     
     let username = localData.username;
     if (!username) {
@@ -1304,6 +1387,7 @@ if (elements.autoCopyInvite) {
 if (elements.themeSelector) {
     elements.themeSelector.addEventListener('change', () => {
         const themeMode = elements.themeSelector.value;
+        flashThemeTransition();
         window.koalaTheme?.setMode(themeMode);
         chrome.storage.local.set({ themeMode });
         syncThemePicker();
@@ -1315,6 +1399,25 @@ document.querySelectorAll('.theme-choice').forEach(button => {
         if (!elements.themeSelector) return;
         elements.themeSelector.value = button.dataset.themeValue;
         elements.themeSelector.dispatchEvent(new window.Event('change'));
+    });
+});
+
+if (elements.paletteSelector) {
+    elements.paletteSelector.addEventListener('change', () => {
+        const themePalette = elements.paletteSelector.value;
+        flashThemeTransition();
+        window.koalaTheme?.setPalette(themePalette);
+        chrome.storage.local.set({ themePalette });
+        syncPalettePicker();
+        dismissFeatureHint('theme_picker');
+    });
+}
+
+document.querySelectorAll('.palette-choice').forEach(button => {
+    button.addEventListener('click', () => {
+        if (!elements.paletteSelector) return;
+        elements.paletteSelector.value = button.dataset.paletteValue;
+        elements.paletteSelector.dispatchEvent(new window.Event('change'));
     });
 });
 

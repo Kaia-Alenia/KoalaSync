@@ -209,6 +209,7 @@
   "LABEL_AUDIO_PROCESSING_TOOLTIP": "비디오 재생에 압축과 같은 오디오 효과를 적용합니다",
   "AUDIO_OPEN_SETTINGS": "열기",
   "NEW_FEATURE_AUDIO": "신규: 오디오 처리 — 컴프레서를 사용해보세요!",
+  "NEW_FEATURE_THEME": "신규: 테마 — 클래식 룩이나 미니멀 그래파이트로 전환하세요.",
   "AUDIO_BACK": "← 뒤로",
   "AUDIO_PAGE_TITLE": "오디오 설정",
   "AUDIO_MASTER_TOGGLE": "오디오 처리",

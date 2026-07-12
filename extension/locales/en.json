@@ -209,6 +209,7 @@
   "LABEL_AUDIO_PROCESSING_TOOLTIP": "Apply audio effects like compression to video playback",
   "AUDIO_OPEN_SETTINGS": "Open",
   "NEW_FEATURE_AUDIO": "New: Audio Processing — try the compressor!",
+  "NEW_FEATURE_THEME": "New: Themes — switch to the classic look or minimal graphite.",
   "AUDIO_BACK": "← Back",
   "AUDIO_PAGE_TITLE": "Audio Settings",
   "AUDIO_MASTER_TOGGLE": "Audio Processing",

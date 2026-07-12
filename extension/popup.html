@@ -73,6 +73,113 @@
             color-scheme: light;
         }
 
+        /* ============================================================
+           THEME: CYBER — the original indigo / slate look, kept for
+           people who prefer the pre-nature design. Cool navy neutrals
+           with an electric indigo brand accent and a violet companion.
+           ============================================================ */
+        html[data-palette="cyber"] {
+            --bg-base: oklch(0.215 0.042 265);
+            --surface: oklch(0.285 0.05 265);
+            --surface-deep: oklch(0.185 0.04 265);
+            --surface-alt: oklch(0.25 0.048 265);
+            --border-soft: oklch(0.9 0.03 265 / 0.10);
+            --border-strong: oklch(0.42 0.05 265);
+            --text-primary: oklch(0.97 0.012 265);
+            --text-secondary: oklch(0.74 0.03 265);
+            --accent-green: oklch(0.59 0.20 275);
+            --accent-green-hover: oklch(0.69 0.17 275);
+            --accent-terracotta: oklch(0.64 0.21 320);
+            --success-green: oklch(0.74 0.17 150);
+            --warning-amber: oklch(0.79 0.15 75);
+            --danger: oklch(0.63 0.20 25);
+            --text-on-green: oklch(0.99 0.006 275);
+            --text-on-warm: oklch(0.99 0.006 320);
+            --status-success-text: oklch(0.82 0.15 150);
+            --status-warning-text: oklch(0.85 0.14 78);
+            --status-error-text: oklch(0.78 0.16 25);
+            --status-neutral-text: oklch(0.74 0.03 265);
+            color-scheme: dark;
+        }
+
+        html[data-palette="cyber"].theme-light {
+            --bg-base: oklch(0.965 0.01 265);
+            --surface: oklch(0.995 0.005 265);
+            --surface-deep: oklch(0.945 0.014 265);
+            --surface-alt: oklch(0.915 0.02 265);
+            --border-soft: oklch(0.30 0.05 265 / 0.12);
+            --border-strong: oklch(0.79 0.03 265);
+            --text-primary: oklch(0.26 0.05 265);
+            --text-secondary: oklch(0.48 0.045 265);
+            --accent-green: oklch(0.53 0.21 275);
+            --accent-green-hover: oklch(0.46 0.20 275);
+            --accent-terracotta: oklch(0.55 0.23 320);
+            --success-green: oklch(0.52 0.16 150);
+            --warning-amber: oklch(0.62 0.15 72);
+            --danger: oklch(0.56 0.21 25);
+            --text-on-green: oklch(0.99 0.005 275);
+            --text-on-warm: oklch(0.99 0.005 320);
+            --status-success-text: oklch(0.45 0.15 150);
+            --status-warning-text: oklch(0.50 0.13 70);
+            --status-error-text: oklch(0.50 0.18 25);
+            --status-neutral-text: oklch(0.48 0.045 265);
+            color-scheme: light;
+        }
+
+        /* ============================================================
+           THEME: GRAPHITE — a quiet black-and-white minimal system.
+           Near-neutral cool greys, a monochrome accent (bright on dark,
+           ink on light); status hues are the only colour, kept muted so
+           they still read as success / warning / danger.
+           ============================================================ */
+        html[data-palette="graphite"] {
+            --bg-base: oklch(0.19 0.004 260);
+            --surface: oklch(0.255 0.005 260);
+            --surface-deep: oklch(0.165 0.004 260);
+            --surface-alt: oklch(0.225 0.005 260);
+            --border-soft: oklch(0.92 0.008 260 / 0.11);
+            --border-strong: oklch(0.42 0.006 260);
+            --text-primary: oklch(0.97 0.003 260);
+            --text-secondary: oklch(0.72 0.005 260);
+            --accent-green: oklch(0.93 0.006 260);
+            --accent-green-hover: oklch(0.99 0.003 260);
+            --accent-terracotta: oklch(0.80 0.008 260);
+            --success-green: oklch(0.74 0.10 155);
+            --warning-amber: oklch(0.80 0.10 80);
+            --danger: oklch(0.64 0.14 25);
+            --text-on-green: oklch(0.20 0.004 260);
+            --text-on-warm: oklch(0.20 0.004 260);
+            --status-success-text: oklch(0.81 0.09 152);
+            --status-warning-text: oklch(0.84 0.10 80);
+            --status-error-text: oklch(0.76 0.12 25);
+            --status-neutral-text: oklch(0.72 0.005 260);
+            color-scheme: dark;
+        }
+
+        html[data-palette="graphite"].theme-light {
+            --bg-base: oklch(0.955 0.002 260);
+            --surface: oklch(1 0 0);
+            --surface-deep: oklch(0.928 0.003 260);
+            --surface-alt: oklch(0.90 0.004 260);
+            --border-soft: oklch(0.20 0.006 260 / 0.13);
+            --border-strong: oklch(0.77 0.004 260);
+            --text-primary: oklch(0.22 0.005 260);
+            --text-secondary: oklch(0.46 0.006 260);
+            --accent-green: oklch(0.28 0.006 260);
+            --accent-green-hover: oklch(0.18 0.005 260);
+            --accent-terracotta: oklch(0.44 0.008 260);
+            --success-green: oklch(0.51 0.12 152);
+            --warning-amber: oklch(0.60 0.12 72);
+            --danger: oklch(0.55 0.17 25);
+            --text-on-green: oklch(0.98 0.002 260);
+            --text-on-warm: oklch(0.98 0.002 260);
+            --status-success-text: oklch(0.45 0.12 152);
+            --status-warning-text: oklch(0.49 0.11 70);
+            --status-error-text: oklch(0.49 0.16 25);
+            --status-neutral-text: oklch(0.46 0.006 260);
+            color-scheme: light;
+        }
+
         body {
             width: 360px;
             margin: 0;
@@ -92,6 +199,60 @@
             background-image:
                 radial-gradient(circle at 8% -5%, oklch(0.72 0.11 145 / 0.24), transparent 40%),
                 radial-gradient(circle at 105% 5%, oklch(0.82 0.12 65 / 0.2), transparent 38%);
+        }
+
+        /* Per-theme ambient glow: each palette carries its own signature
+           corner wash so the backdrop matches the accent, not eucalyptus. */
+        html[data-palette="cyber"] body {
+            background-image:
+                radial-gradient(circle at 12% -8%, oklch(0.64 0.19 275 / 0.16), transparent 42%),
+                radial-gradient(circle at 105% 12%, oklch(0.64 0.21 320 / 0.11), transparent 34%);
+        }
+        html[data-palette="cyber"].theme-light body {
+            background-image:
+                radial-gradient(circle at 8% -5%, oklch(0.60 0.20 275 / 0.16), transparent 40%),
+                radial-gradient(circle at 105% 5%, oklch(0.62 0.20 320 / 0.14), transparent 38%);
+        }
+        html[data-palette="graphite"] body {
+            background-image:
+                radial-gradient(circle at 12% -8%, oklch(0.93 0.006 260 / 0.05), transparent 44%);
+        }
+        html[data-palette="graphite"].theme-light body {
+            background-image:
+                radial-gradient(circle at 12% -8%, oklch(0.20 0.006 260 / 0.045), transparent 46%);
+        }
+
+        /* The Create Room button carries an inline eucalyptus glow; retint
+           its shadow per palette so the hero action stays on-theme. */
+        html[data-palette="cyber"] #createRoomBtn,
+        html[data-palette="cyber"] #syncTabCreateRoomBtn {
+            box-shadow: 0 4px 12px oklch(0.64 0.19 275 / 0.4) !important;
+        }
+        html[data-palette="graphite"] #createRoomBtn,
+        html[data-palette="graphite"] #syncTabCreateRoomBtn {
+            box-shadow: 0 4px 12px oklch(0.20 0.006 260 / 0.4) !important;
+        }
+
+        /* Cyber's brand ink is white (for the dark indigo accent), but its
+           success/warning fills are bright — so the few surfaces that print
+           text directly on those fills need dark ink to stay legible. */
+        html[data-palette="cyber"] .toast-success,
+        html[data-palette="cyber"] .toast-warning,
+        html[data-palette="cyber"] .copy-success {
+            color: oklch(0.22 0.03 265) !important;
+        }
+
+        /* Theme cross-fade: enabled only for the ~260ms around a user-initiated
+           theme/appearance switch (added by popup.js), so colours glide instead
+           of snapping — without slowing down normal hover/state transitions. */
+        html.theme-anim,
+        html.theme-anim * {
+            transition: background-color 0.24s ease, border-color 0.24s ease,
+                        color 0.24s ease, box-shadow 0.24s ease, fill 0.24s ease !important;
+        }
+        @media (prefers-reduced-motion: reduce) {
+            html.theme-anim,
+            html.theme-anim * { transition: none !important; }
         }
 
         .header-row {
@@ -216,7 +377,7 @@
         input:focus,
         select:focus {
             border-color: var(--accent);
-            box-shadow: 0 0 0 3px oklch(0.68 0.13 150 / 0.18);
+            box-shadow: 0 0 0 3px color-mix(in oklch, var(--accent), transparent 82%);
         }
 
         button.primary {
@@ -494,6 +655,23 @@
         }
         .click-leaf-amber i {
             background: linear-gradient(135deg, oklch(0.68 0.14 55 / 0.95), oklch(0.55 0.13 40 / 0.85));
+        }
+        /* Non-eucalyptus themes retint the burst from their own accent pair so
+           the particles stay on-theme and, because those vars flip with
+           light/dark, remain visible against every background. */
+        html[data-palette="cyber"] .click-leaf i,
+        html[data-palette="graphite"] .click-leaf i {
+            background: linear-gradient(135deg, var(--accent), var(--accent-hover));
+        }
+        html[data-palette="cyber"] .click-leaf-sage i,
+        html[data-palette="graphite"] .click-leaf-sage i {
+            background: linear-gradient(135deg, var(--accent-hover), var(--accent));
+        }
+        html[data-palette="cyber"] .click-leaf-amber i {
+            background: linear-gradient(135deg, var(--accent-terracotta), var(--accent));
+        }
+        html[data-palette="graphite"] .click-leaf-amber i {
+            background: linear-gradient(135deg, var(--text-secondary), var(--accent));
         }
         @keyframes leafBurst {
             0% {
@@ -865,6 +1043,109 @@
             color: var(--text);
             box-shadow: 0 1px 5px oklch(0.08 0.02 150 / 0.32), inset 0 0 0 1px var(--border-soft);
         }
+
+        /* Theme (colour palette) picker: a full-width row of swatch cards so
+           each curated scheme previews its own colours before selection. */
+        .palette-row {
+            display: block;
+            padding: 12px 0 4px;
+            border-bottom: 1px solid var(--border-soft);
+        }
+        .palette-row > label {
+            margin: 0 0 9px;
+            color: var(--text);
+            font-size: 12px;
+            font-weight: 600;
+            letter-spacing: 0;
+            text-transform: none;
+        }
+        .palette-picker {
+            position: relative;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+        }
+        .palette-picker select {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            margin: -1px;
+            padding: 0;
+            overflow: hidden;
+            clip: rect(0 0 0 0);
+            white-space: nowrap;
+            border: 0;
+        }
+        .palette-choice {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            min-height: 62px;
+            margin: 0;
+            padding: 10px 4px 9px;
+            border: 1px solid var(--border-strong);
+            border-radius: 10px;
+            background: var(--surface-deep);
+            color: var(--text-muted);
+            font-family: inherit;
+            font-size: 11px;
+            font-weight: 700;
+            line-height: 1;
+            cursor: pointer;
+            transition: border-color 0.18s ease, background-color 0.18s ease, color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease;
+        }
+        .palette-choice:hover {
+            color: var(--text);
+            border-color: var(--accent);
+            transform: translateY(-1px);
+        }
+        .palette-choice.active {
+            color: var(--text);
+            border-color: var(--accent);
+            background: color-mix(in oklch, var(--accent) 10%, var(--surface-deep));
+            box-shadow: 0 0 0 1px var(--accent), 0 5px 14px oklch(0.08 0.02 260 / 0.28);
+        }
+        .palette-swatch {
+            display: inline-flex;
+            padding: 3px;
+            border-radius: 999px;
+            background: var(--surface-alt);
+            box-shadow: inset 0 0 0 1px var(--border-soft);
+        }
+        .palette-swatch i {
+            width: 13px;
+            height: 13px;
+            border-radius: 50%;
+            display: block;
+            box-shadow: inset 0 0 0 1px oklch(0 0 0 / 0.22);
+        }
+        .palette-swatch i + i {
+            margin-left: -5px;
+        }
+        .palette-labeltext {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 2px;
+        }
+        .palette-name {
+            font-size: 11px;
+            font-weight: 700;
+            line-height: 1.1;
+        }
+        .palette-desc {
+            font-size: 9px;
+            font-weight: 600;
+            line-height: 1.1;
+            letter-spacing: 0.01em;
+            color: var(--text-muted);
+            opacity: 0.85;
+        }
+        .palette-choice.active .palette-desc {
+            color: var(--accent);
+            opacity: 1;
+        }
         .tab-btn[data-tab="tab-dev"],
         #devToolsTabBtn {
             color: color-mix(in oklch, var(--text-muted), transparent 18%);
@@ -1147,7 +1428,7 @@
                 <option value="" data-i18n="OPTION_SELECT_TAB">-- Select a Tab --</option>
             </select>
             <!-- Hint Tooltip -->
-            <div id="targetTabHint" style="display: none; position: absolute; top: -25px; right: 0; background: var(--accent); color: var(--text-on-green); padding: 4px 8px; border-radius: 6px; font-size: 11px; font-weight: bold; pointer-events: none; animation: floatHint 2s ease-in-out infinite; box-shadow: 0 4px 12px rgba(86, 174, 108, 0.4); z-index: 10;" data-i18n="HINT_SELECT_VIDEO">
+            <div id="targetTabHint" style="display: none; position: absolute; top: -25px; right: 0; background: var(--accent); color: var(--text-on-green); padding: 4px 8px; border-radius: 6px; font-size: 11px; font-weight: bold; pointer-events: none; animation: floatHint 2s ease-in-out infinite; box-shadow: 0 4px 12px color-mix(in oklch, var(--accent), transparent 60%); z-index: 10;" data-i18n="HINT_SELECT_VIDEO">
                 Select your video here!
                 <div style="position: absolute; bottom: -4px; right: 20px; width: 8px; height: 8px; background: var(--accent); transform: rotate(45deg);"></div>
             </div>
@@ -1219,6 +1500,49 @@
                         <button id="themeChoiceSystem" class="theme-choice" type="button" data-theme-value="system">System</button>
                         <button id="themeChoiceDark" class="theme-choice" type="button" data-theme-value="dark">Dark</button>
                         <button id="themeChoiceLight" class="theme-choice" type="button" data-theme-value="light">Light</button>
+                    </div>
+                </div>
+                <div class="palette-row">
+                    <label id="paletteLabel" for="paletteSelector" title="Pick a curated colour scheme for the extension">Theme</label>
+                    <div class="palette-picker" role="group" aria-labelledby="paletteLabel">
+                        <select id="paletteSelector" aria-label="Theme" tabindex="-1">
+                            <option value="eucalyptus">Eucalyptus</option>
+                            <option value="cyber">Cyber</option>
+                            <option value="graphite">Graphite</option>
+                        </select>
+                        <button id="paletteChoiceEucalyptus" class="palette-choice" type="button" data-palette-value="eucalyptus">
+                            <span class="palette-swatch" aria-hidden="true">
+                                <i style="background: oklch(0.73 0.13 155)"></i>
+                                <i style="background: oklch(0.62 0.14 45)"></i>
+                                <i style="background: oklch(0.30 0.035 150)"></i>
+                            </span>
+                            <span class="palette-labeltext">
+                                <span class="palette-name">Eucalyptus</span>
+                                <span class="palette-desc">Nature</span>
+                            </span>
+                        </button>
+                        <button id="paletteChoiceCyber" class="palette-choice" type="button" data-palette-value="cyber">
+                            <span class="palette-swatch" aria-hidden="true">
+                                <i style="background: oklch(0.64 0.19 275)"></i>
+                                <i style="background: oklch(0.64 0.21 320)"></i>
+                                <i style="background: oklch(0.185 0.04 265)"></i>
+                            </span>
+                            <span class="palette-labeltext">
+                                <span class="palette-name">Cyber</span>
+                                <span class="palette-desc">Classic</span>
+                            </span>
+                        </button>
+                        <button id="paletteChoiceGraphite" class="palette-choice" type="button" data-palette-value="graphite">
+                            <span class="palette-swatch" aria-hidden="true">
+                                <i style="background: oklch(0.95 0.004 260)"></i>
+                                <i style="background: oklch(0.55 0.006 260)"></i>
+                                <i style="background: oklch(0.20 0.004 260)"></i>
+                            </span>
+                            <span class="palette-labeltext">
+                                <span class="palette-name">Graphite</span>
+                                <span class="palette-desc">Minimal</span>
+                            </span>
+                        </button>
                     </div>
                 </div>
                 <div class="settings-row">
