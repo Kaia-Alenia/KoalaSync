@@ -13,10 +13,16 @@ const { optimize: svgoOptimize } = require('svgo');
 function minifyCSS(code) {
     return code
         .replace(/\/\*[\s\S]*?\*\//g, '')
-        .replace(/\s*([{}:;,])\s*/g, '$1')
+        // Never strip whitespace before `:`: `.parent :is(...)` is a
+        // descendant selector, while `.parent:is(...)` targets the parent.
+        .replace(/\s*([{},;])\s*/g, '$1')
+        .replace(/:\s+/g, ':')
         .replace(/\s+/g, ' ')
         .replace(/;\}/g, '}')
         .trim();
+}
+if (minifyCSS('.parent :is(.a, .b) { color: red; }') !== '.parent :is(.a,.b){color:red}') {
+    throw new Error('CSS minifier must preserve descendant combinators before functional pseudo-classes');
 }
 const MIN_AVIF_KB = 0;
 

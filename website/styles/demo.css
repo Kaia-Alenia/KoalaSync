@@ -701,7 +701,7 @@ html.theme-light .hero-demo-scene .demo-video::after {
 
 /* By day the birds read as silhouettes, not chalk marks */
 html.theme-light .hero-demo-scene .film-birds { stroke: oklch(0.32 0.06 145 / 0.65); }
-html.theme-light :is(.hero-demo-scene, .step-illustration-3) .film-hero-bird { stroke: oklch(0.32 0.06 145 / 0.75); }
+html.theme-light :is(.hero-demo-scene, .step-illustration-3) .film-hero-bird { color: oklch(0.32 0.06 145 / 0.86); }
 
 /* Stars: staggered twinkle so the sky feels alive */
 .film-star {
@@ -766,22 +766,52 @@ html.theme-light :is(.hero-demo-scene, .step-illustration-3) .film-hero-bird { s
 .film-fore-scroll {
     transform: translateX(var(--scroll-fore, 0px));
 }
-/* A single gliding bird carries the scene: the outer group rides the
-   JS-driven drift vars, the inner group flaps its wings via scaleY. */
+/* The foreground bird stays alive even while the fake video is paused. */
 .film-hero-bird-drift {
-    transform: translate(var(--lantern-x, 0px), var(--bounce-y, 0px));
+    animation: filmBirdGlide 6.5s ease-in-out infinite alternate;
 }
 
 .film-hero-bird {
+    color: #dbd7cd;
+    filter: drop-shadow(0 1px 1px oklch(0.08 0.02 145 / 0.55));
+}
+
+.film-bird-wing {
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.15;
+    stroke-linecap: round;
+    stroke-linejoin: round;
     transform-box: fill-box;
-    transform-origin: center;
-    animation: filmWingFlap 0.85s ease-in-out infinite alternate;
-    animation-play-state: paused;
+    animation: filmWingFlap 0.72s ease-in-out infinite alternate;
+}
+
+.film-bird-wing-left {
+    transform-origin: right bottom;
+}
+
+.film-bird-wing-right {
+    transform-origin: left bottom;
+    animation-direction: alternate-reverse;
+}
+
+.film-bird-body,
+.film-bird-beak {
+    fill: currentColor;
+}
+
+.film-bird-eye {
+    fill: oklch(0.12 0.025 145);
+}
+
+@keyframes filmBirdGlide {
+    from { transform: translate(calc(var(--lantern-x, 0px) - 3px), calc(var(--bounce-y, 0px) + 1px)) rotate(-1.5deg); }
+    to { transform: translate(calc(var(--lantern-x, 0px) + 4px), calc(var(--bounce-y, 0px) - 2px)) rotate(1.5deg); }
 }
 
 @keyframes filmWingFlap {
-    from { transform: scaleY(1); }
-    to { transform: scaleY(0.5); }
+    from { transform: rotate(8deg) translateY(0); }
+    to { transform: rotate(-13deg) translateY(1.2px); }
 }
 
 /* Twinkle & Glow play state bindings */
@@ -791,8 +821,15 @@ html.theme-light :is(.hero-demo-scene, .step-illustration-3) .film-hero-bird { s
     animation: filmTwinkle 2.8s ease-in-out infinite;
     animation-play-state: paused;
 }
-.demo-tab-card.playing :is(.film-star, .film-moon, .film-moon-g, .film-cloud, .film-shooting-star, .film-birds, .film-hero-bird) {
+.demo-tab-card.playing :is(.film-star, .film-moon, .film-moon-g, .film-cloud, .film-shooting-star, .film-birds) {
     animation-play-state: running;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .film-hero-bird-drift,
+    .film-bird-wing {
+        animation: none !important;
+    }
 }
 
 /* Drifting clouds: gentle back-and-forth so there is no wrap pop */

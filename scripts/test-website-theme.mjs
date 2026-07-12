@@ -8,6 +8,7 @@ const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..'
 const template = fs.readFileSync(path.join(repoRoot, 'website', 'template.html'), 'utf8');
 const app = fs.readFileSync(path.join(repoRoot, 'website', 'app.js'), 'utf8');
 const langInit = fs.readFileSync(path.join(repoRoot, 'website', 'lang-init.js'), 'utf8');
+const demoCss = fs.readFileSync(path.join(repoRoot, 'website', 'styles', 'demo.css'), 'utf8');
 const mockupStart = template.indexOf('<div class="extension-mockup">');
 const mockupEnd = template.indexOf('<div class="demo-invite-fly"', mockupStart);
 
@@ -53,5 +54,17 @@ for (const [file, source] of runtimeCssActivation) {
   }
 }
 
+const heroBirds = template.match(/class="film-hero-bird"/g) || [];
+const leftWings = template.match(/class="film-bird-wing film-bird-wing-left"/g) || [];
+const rightWings = template.match(/class="film-bird-wing film-bird-wing-right"/g) || [];
+if (heroBirds.length !== 4 || leftWings.length !== heroBirds.length || rightWings.length !== heroBirds.length) {
+  throw new Error('Every foreground film bird must have independently animated left and right wings');
+}
+if (!/\.film-hero-bird-drift\s*\{[^}]*animation:\s*filmBirdGlide/s.test(demoCss) ||
+    !/\.film-bird-wing\s*\{[^}]*animation:\s*filmWingFlap/s.test(demoCss)) {
+  throw new Error('Foreground film birds must glide and flap without waiting for video playback');
+}
+
 console.log('Extension mockup theme-sensitive text uses theme-aware colors');
 console.log('Landing CSS is render-blocking, single-request, and cascade-stable');
+console.log('Foreground film birds use complete, always-on wing and glide animations');
