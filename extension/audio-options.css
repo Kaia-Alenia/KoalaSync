@@ -1,15 +1,15 @@
 :root {
     /* KoalaSync nature system: forest neutrals, eucalyptus brand, warm supporting accents. */
-    --bg-base: oklch(0.20 0.025 140);
-    --surface: oklch(0.27 0.035 130);
-    --surface-deep: oklch(0.16 0.025 135);
-    --surface-alt: oklch(0.23 0.03 130);
-    --border-soft: rgba(255, 255, 255, 0.06);
-    --border-strong: oklch(0.32 0.03 125);
+    --bg-base: oklch(0.23 0.028 155);
+    --surface: oklch(0.30 0.035 150);
+    --surface-deep: oklch(0.205 0.025 155);
+    --surface-alt: oklch(0.265 0.032 150);
+    --border-soft: oklch(0.88 0.025 145 / 0.09);
+    --border-strong: oklch(0.39 0.038 145);
     --text-primary: oklch(0.96 0.01 90);
     --text-secondary: oklch(0.78 0.02 90);
-    --accent-green: oklch(0.68 0.13 155);
-    --accent-green-hover: oklch(0.75 0.13 155);
+    --accent-green: oklch(0.73 0.13 155);
+    --accent-green-hover: oklch(0.79 0.12 155);
     --accent-terracotta: oklch(0.62 0.14 45);
     --success-green: oklch(0.72 0.14 135);
     --warning-amber: oklch(0.76 0.14 80);
