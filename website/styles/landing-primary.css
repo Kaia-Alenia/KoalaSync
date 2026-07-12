@@ -1277,9 +1277,22 @@ footer a:hover {
 }
 
 .footer-ram {
-    font-size: 0.8rem;
-    margin-top: 0.5rem;
+    font-size: 0.72rem;
+    margin-bottom: 0.8rem;
+    line-height: 1.5;
+    color: oklch(0.72 0.015 90);
 }
+
+html.theme-light .footer-ram {
+    color: var(--text-muted);
+}
+
+.footer-copyright {
+    font-size: 0.85rem;
+    margin-bottom: 0.8rem;
+    color: var(--text);
+}
+
 
 .footer-disclaimer {
     font-size: 0.72rem;
