@@ -238,5 +238,9 @@
   "LABEL_SEND_TAB_TITLE": "Sekme başlığını gönder",
   "LABEL_SEND_TAB_TITLE_TOOLTIP": "Seçili tarayıcı sekmesinin başlığını odaya gönderir.",
   "LABEL_MEDIA_TITLE_PRIVACY": "Medya başlığı",
-  "LABEL_MEDIA_TITLE_PRIVACY_TOOLTIP": "Medya başlıklarının odaya nasıl gönderileceğini seçin."
+  "LABEL_MEDIA_TITLE_PRIVACY_TOOLTIP": "Medya başlıklarının odaya nasıl gönderileceğini seçin.",
+  "LABEL_SETTINGS_GROUP_PROFILE": "Profil ve Görünüm",
+  "LABEL_SETTINGS_GROUP_PROFILE_TOOLTIP": "Kullanıcı adınızı, temanızı ve dil tercihlerinizi değiştirin.",
+  "LABEL_SETTINGS_GROUP_SYNC": "Oynatma ve Eşitleme",
+  "LABEL_SETTINGS_GROUP_SYNC_TOOLTIP": "Oynatma, bildirim ve ses tercihlerini özelleştirin."
 }

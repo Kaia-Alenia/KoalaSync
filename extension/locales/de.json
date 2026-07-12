@@ -238,5 +238,9 @@
   "LABEL_SEND_TAB_TITLE": "Tab-Titel senden",
   "LABEL_SEND_TAB_TITLE_TOOLTIP": "Sendet den Titel des ausgewählten Browser-Tabs an den Raum.",
   "LABEL_MEDIA_TITLE_PRIVACY": "Medientitel",
-  "LABEL_MEDIA_TITLE_PRIVACY_TOOLTIP": "Lege fest, wie Medientitel an den Raum gesendet werden."
+  "LABEL_MEDIA_TITLE_PRIVACY_TOOLTIP": "Lege fest, wie Medientitel an den Raum gesendet werden.",
+  "LABEL_SETTINGS_GROUP_PROFILE": "Profil & Aussehen",
+  "LABEL_SETTINGS_GROUP_PROFILE_TOOLTIP": "Ändere deinen Benutzernamen, dein Design und deine Spracheinstellungen.",
+  "LABEL_SETTINGS_GROUP_SYNC": "Wiedergabe & Sync",
+  "LABEL_SETTINGS_GROUP_SYNC_TOOLTIP": "Passe Wiedergabe-, Benachrichtigungs- und Audioeinstellungen an."
 }

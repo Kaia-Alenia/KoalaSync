@@ -238,5 +238,9 @@
   "LABEL_SEND_TAB_TITLE": "Enviar título de pestaña",
   "LABEL_SEND_TAB_TITLE_TOOLTIP": "Envía a la sala el título de la pestaña del navegador seleccionada.",
   "LABEL_MEDIA_TITLE_PRIVACY": "Título multimedia",
-  "LABEL_MEDIA_TITLE_PRIVACY_TOOLTIP": "Elige cómo se envían los títulos multimedia a la sala."
+  "LABEL_MEDIA_TITLE_PRIVACY_TOOLTIP": "Elige cómo se envían los títulos multimedia a la sala.",
+  "LABEL_SETTINGS_GROUP_PROFILE": "Perfil y Apariencia",
+  "LABEL_SETTINGS_GROUP_PROFILE_TOOLTIP": "Cambia tu nombre de usuario, tema y preferencias de idioma.",
+  "LABEL_SETTINGS_GROUP_SYNC": "Reproducción y Sincronización",
+  "LABEL_SETTINGS_GROUP_SYNC_TOOLTIP": "Personaliza la reproducción, las notificaciones y las preferencias de audio."
 }

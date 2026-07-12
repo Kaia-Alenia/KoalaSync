@@ -238,5 +238,9 @@
   "LABEL_SEND_TAB_TITLE": "Send tab title",
   "LABEL_SEND_TAB_TITLE_TOOLTIP": "Send the selected browser tab title to the room.",
   "LABEL_MEDIA_TITLE_PRIVACY": "Media title",
-  "LABEL_MEDIA_TITLE_PRIVACY_TOOLTIP": "Choose how media titles are sent to the room."
+  "LABEL_MEDIA_TITLE_PRIVACY_TOOLTIP": "Choose how media titles are sent to the room.",
+  "LABEL_SETTINGS_GROUP_PROFILE": "Profile & Appearance",
+  "LABEL_SETTINGS_GROUP_PROFILE_TOOLTIP": "Change your username, theme, and language preferences.",
+  "LABEL_SETTINGS_GROUP_SYNC": "Playback & Sync",
+  "LABEL_SETTINGS_GROUP_SYNC_TOOLTIP": "Customize playback, notifications, and audio preferences."
 }

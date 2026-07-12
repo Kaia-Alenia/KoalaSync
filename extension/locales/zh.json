@@ -238,5 +238,9 @@
   "LABEL_SEND_TAB_TITLE": "发送标签页标题",
   "LABEL_SEND_TAB_TITLE_TOOLTIP": "将所选浏览器标签页的标题发送到房间。",
   "LABEL_MEDIA_TITLE_PRIVACY": "媒体标题",
-  "LABEL_MEDIA_TITLE_PRIVACY_TOOLTIP": "选择媒体标题发送到房间的方式。"
+  "LABEL_MEDIA_TITLE_PRIVACY_TOOLTIP": "选择媒体标题发送到房间的方式。",
+  "LABEL_SETTINGS_GROUP_PROFILE": "个人资料与外观",
+  "LABEL_SETTINGS_GROUP_PROFILE_TOOLTIP": "更改您的用户名、主题和语言首选项。",
+  "LABEL_SETTINGS_GROUP_SYNC": "播放与同步",
+  "LABEL_SETTINGS_GROUP_SYNC_TOOLTIP": "自定义播放、通知和音频首选项。"
 }

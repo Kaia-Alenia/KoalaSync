@@ -493,11 +493,53 @@
         .tab-btn:not(:disabled):active {
             transform: translateY(1px) scale(0.985);
         }
+        details.form-group {
+            background: var(--card);
+            border: 1px solid var(--border-strong);
+            border-radius: var(--radius);
+            margin-bottom: 12px;
+            transition: border-color 0.2s, background-color 0.2s;
+            overflow: hidden;
+        }
+        details.form-group:hover {
+            border-color: var(--accent);
+        }
         details.form-group > summary {
-            min-height: 30px;
+            min-height: 38px;
+            padding: 10px 14px;
             display: flex;
             align-items: center;
+            justify-content: space-between;
             cursor: pointer;
+            font-weight: 700;
+            font-size: 13px;
+            color: var(--text-primary);
+            user-select: none;
+            list-style: none;
+        }
+        details.form-group > summary::-webkit-details-marker {
+            display: none;
+        }
+        details.form-group > summary::after {
+            content: "";
+            display: inline-block;
+            width: 6px;
+            height: 6px;
+            border-right: 2px solid var(--text-muted);
+            border-bottom: 2px solid var(--text-muted);
+            transform: rotate(-45deg);
+            transition: transform 0.2s ease;
+            margin-right: 4px;
+        }
+        details[open].form-group > summary::after {
+            transform: rotate(45deg);
+        }
+        details.form-group > .details-content {
+            padding: 4px 14px 14px 14px;
+            border-top: 1px solid var(--border-soft);
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
         }
         #section-join > .info-card,
         #section-active > .info-card,
@@ -771,106 +813,112 @@
     
     <!-- Settings Tab -->
     <div id="tab-settings" class="tab-content">
-        <div class="form-group" style="display: flex; align-items: center; justify-content: space-between; background: var(--card); padding: 10px; border-radius: 8px; margin-bottom: 12px; border: 1px solid var(--border-strong);">
-            <label id="themeLabel" for="themeSelector" style="margin-bottom: 0;" title="Follow the system theme or choose a fixed appearance">Appearance</label>
-            <select id="themeSelector" aria-label="Appearance" style="width: 165px; background: var(--bg); border: 1px solid var(--border-strong); color: var(--text); padding: 6px 10px; border-radius: 8px; font-size: 13px; cursor: pointer; outline: none; font-family: inherit;">
-                <option id="themeOptionSystem" value="system">💻 System</option>
-                <option id="themeOptionDark" value="dark">🌙 Dark</option>
-                <option id="themeOptionLight" value="light">☀️ Light</option>
-            </select>
-        </div>
-
-        <div class="form-group" style="display: flex; align-items: center; justify-content: space-between; background: var(--card); padding: 10px; border-radius: 8px; margin-bottom: 12px; border: 1px solid var(--border-strong);">
-            <label for="username" style="margin-bottom: 0;" title="Username helps others identify you." data-i18n="LABEL_USERNAME" data-i18n-title="LABEL_USERNAME_TOOLTIP">Your Username</label>
-            <input type="text" id="username" data-i18n-placeholder="PLACEHOLDER_USERNAME" placeholder="Anonymous Koala" maxlength="20" style="width: 150px;">
-        </div>
-
-        <details class="form-group" style="background: var(--card); padding: 10px; border-radius: 8px; margin-bottom: 12px; border: 1px solid var(--border-strong);">
-            <summary style="cursor: pointer; font-size: 12px; font-weight: 700; color: var(--text);" title="Choose which titles are sent to the room." data-i18n="LABEL_PRIVACY_SETTINGS" data-i18n-title="LABEL_PRIVACY_SETTINGS_TOOLTIP">Privacy Settings</summary>
-            <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 10px;">
-                <label for="sendTabTitle" style="margin-bottom: 0; cursor: help;" title="Send the selected browser tab title to the room." data-i18n="LABEL_SEND_TAB_TITLE" data-i18n-title="LABEL_SEND_TAB_TITLE_TOOLTIP">Send tab title</label>
-                <label class="toggle-switch">
-                    <input type="checkbox" id="sendTabTitle" checked>
-                    <span class="slider"></span>
-                </label>
-            </div>
-            <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 10px;">
-                <label for="mediaTitlePrivacyMode" style="margin-bottom: 0; cursor: help;" title="Choose how media titles are sent to the room." data-i18n="LABEL_MEDIA_TITLE_PRIVACY" data-i18n-title="LABEL_MEDIA_TITLE_PRIVACY_TOOLTIP">Media title</label>
-                <select id="mediaTitlePrivacyMode" style="width: 165px; background: var(--bg); border: 1px solid var(--border-strong); color: var(--text); padding: 6px 10px; border-radius: 8px; font-size: 12px; cursor: pointer; outline: none; font-family: inherit;">
-                    <option value="full" data-i18n="OPTION_TITLE_PRIVACY_FULL">Send full title</option>
-                    <option value="episode" data-i18n="OPTION_TITLE_PRIVACY_EPISODE">Send episode ID</option>
-                    <option value="hidden" data-i18n="OPTION_TITLE_PRIVACY_HIDDEN">Do not send</option>
-                </select>
+        <details class="form-group" open>
+            <summary title="Change your username, theme, and language." data-i18n="LABEL_SETTINGS_GROUP_PROFILE" data-i18n-title="LABEL_SETTINGS_GROUP_PROFILE_TOOLTIP">👤 Profile & Theme</summary>
+            <div class="details-content">
+                <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px;">
+                    <label for="username" style="margin-bottom: 0;" title="Username helps others identify you." data-i18n="LABEL_USERNAME" data-i18n-title="LABEL_USERNAME_TOOLTIP">Your Username</label>
+                    <input type="text" id="username" data-i18n-placeholder="PLACEHOLDER_USERNAME" placeholder="Anonymous Koala" maxlength="20" style="width: 150px;">
+                </div>
+                <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px;">
+                    <label id="themeLabel" for="themeSelector" style="margin-bottom: 0;" title="Follow the system theme or choose a fixed appearance">Appearance</label>
+                    <select id="themeSelector" aria-label="Appearance" style="width: 150px; background: var(--bg); border: 1px solid var(--border-strong); color: var(--text); padding: 6px 10px; border-radius: 8px; font-size: 13px; cursor: pointer; outline: none; font-family: inherit;">
+                        <option id="themeOptionSystem" value="system">💻 System</option>
+                        <option id="themeOptionDark" value="dark">🌙 Dark</option>
+                        <option id="themeOptionLight" value="light">☀️ Light</option>
+                    </select>
+                </div>
+                <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px;">
+                    <label for="langSelector" style="margin-bottom: 0;" data-i18n="LABEL_LANGUAGE" data-i18n-title="LABEL_LANGUAGE_TOOLTIP" title="Choose your preferred extension language">App Language</label>
+                    <select id="langSelector" style="width: 150px; background: var(--bg); border: 1px solid var(--border-strong); color: var(--text); padding: 6px 10px; border-radius: 8px; font-size: 13px; cursor: pointer; outline: none; font-family: inherit;">
+                        <option value="en">🇬🇧 English</option>
+                        <option value="de">🇩🇪 Deutsch</option>
+                        <option value="fr">🇫🇷 Français</option>
+                        <option value="es">🇪🇸 Español</option>
+                        <option value="pt-BR">🇧🇷 Português (Brasil)</option>
+                        <option value="ru">🇷🇺 Русский</option>
+                        <option value="it">🇮🇹 Italiano</option>
+                        <option value="pl">🇵🇱 Polski</option>
+                        <option value="tr">🇹🇷 Türkçe</option>
+                        <option value="nl">🇳🇱 Nederlands</option>
+                        <option value="ja">🇯🇵 日本語</option>
+                        <option value="ko">🇰🇷 한국어</option>
+                        <option value="zh">🇨🇳 中文</option>
+                        <option value="uk">🇺🇦 Українська</option>
+                        <option value="pt">🇵🇹 Português (Portugal)</option>
+                    </select>
+                </div>
             </div>
         </details>
 
-        <div class="form-group" style="display: flex; align-items: center; justify-content: space-between; background: var(--card); padding: 10px; border-radius: 8px; margin-bottom: 12px; border: 1px solid var(--border-strong);">
-            <label for="filterNoise" style="margin-bottom: 0; cursor: help;" title="Filters out non-video tabs and unrelated domains to keep the list clean" data-i18n="LABEL_HIDE_CLUTTER" data-i18n-title="LABEL_HIDE_CLUTTER_TOOLTIP">Hide Clutter Tabs</label>
-            <label class="toggle-switch">
-                <input type="checkbox" id="filterNoise" checked>
-                <span class="slider"></span>
-            </label>
-        </div>
-
-        <div class="form-group" style="display: flex; align-items: center; justify-content: space-between; background: var(--card); padding: 10px; border-radius: 8px; margin-bottom: 12px; border: 1px solid var(--border-strong);">
-            <label for="autoSyncNextEpisode" style="margin-bottom: 0; cursor: help;" title="Pauses automatically and waits for all peers when an episode changes, then sync-starts together." data-i18n="LABEL_AUTO_SYNC_NEXT" data-i18n-title="LABEL_AUTO_SYNC_NEXT_TOOLTIP">Auto-Sync Next Episode</label>
-            <label class="toggle-switch">
-                <input type="checkbox" id="autoSyncNextEpisode">
-                <span class="slider"></span>
-            </label>
-        </div>
-
-        <div class="form-group" style="display: flex; align-items: center; justify-content: space-between; background: var(--card); padding: 10px; border-radius: 8px; margin-bottom: 12px; border: 1px solid var(--border-strong);">
-            <label for="autoCopyInvite" style="margin-bottom: 0; cursor: help;" title="Automatically copies the invite link to your clipboard when creating a new room." data-i18n="LABEL_AUTO_COPY_INVITE" data-i18n-title="LABEL_AUTO_COPY_INVITE_TOOLTIP">Auto-Copy Invite Link</label>
-            <label class="toggle-switch">
-                <input type="checkbox" id="autoCopyInvite" checked>
-                <span class="slider"></span>
-            </label>
-        </div>
-
-        <div class="form-group" style="display: flex; align-items: center; justify-content: space-between; background: var(--card); padding: 10px; border-radius: 8px; margin-bottom: 12px; border: 1px solid var(--border-strong);">
-            <label for="browserNotifications" style="margin-bottom: 0; cursor: help;" title="Shows native system notifications when someone joins/leaves or plays/pauses." data-i18n="LABEL_NOTIFICATIONS" data-i18n-title="LABEL_NOTIFICATIONS_TOOLTIP">Browser Notifications</label>
-            <label class="toggle-switch">
-                <input type="checkbox" id="browserNotifications">
-                <span class="slider"></span>
-            </label>
-        </div>
-
-        <div class="form-group" style="display: flex; align-items: center; justify-content: space-between; background: var(--card); padding: 10px 12px; border-radius: 8px; margin-bottom: 12px; border: 1px solid var(--border-strong);">
-            <div style="display: flex; align-items: center; gap: 8px;">
-                <label id="audioProcessingLabel" style="margin-bottom: 0; cursor: help; white-space: nowrap; font-size: 13px;" data-i18n="LABEL_AUDIO_PROCESSING" data-i18n-title="LABEL_AUDIO_PROCESSING_TOOLTIP">Audio Processing</label>
+        <details class="form-group">
+            <summary title="Choose which titles are sent to the room." data-i18n="LABEL_PRIVACY_SETTINGS" data-i18n-title="LABEL_PRIVACY_SETTINGS_TOOLTIP">🔒 Privacy Settings</summary>
+            <div class="details-content">
+                <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px;">
+                    <label for="sendTabTitle" style="margin-bottom: 0; cursor: help;" title="Send the selected browser tab title to the room." data-i18n="LABEL_SEND_TAB_TITLE" data-i18n-title="LABEL_SEND_TAB_TITLE_TOOLTIP">Send tab title</label>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="sendTabTitle" checked>
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px;">
+                    <label for="mediaTitlePrivacyMode" style="margin-bottom: 0; cursor: help;" title="Choose how media titles are sent to the room." data-i18n="LABEL_MEDIA_TITLE_PRIVACY" data-i18n-title="LABEL_MEDIA_TITLE_PRIVACY_TOOLTIP">Media title</label>
+                    <select id="mediaTitlePrivacyMode" style="width: 150px; background: var(--bg); border: 1px solid var(--border-strong); color: var(--text); padding: 6px 10px; border-radius: 8px; font-size: 12px; cursor: pointer; outline: none; font-family: inherit;">
+                        <option value="full" data-i18n="OPTION_TITLE_PRIVACY_FULL">Send full title</option>
+                        <option value="episode" data-i18n="OPTION_TITLE_PRIVACY_EPISODE">Send episode ID</option>
+                        <option value="hidden" data-i18n="OPTION_TITLE_PRIVACY_HIDDEN">Do not send</option>
+                    </select>
+                </div>
             </div>
-            <a id="audioSettingsLink" href="#" style="font-size: 11px; color: var(--accent); text-decoration: none; white-space: nowrap; background: rgba(86, 174, 108, 0.12); padding: 5px 12px; border-radius: 6px; font-weight: 600; transition: background 0.2s;" data-i18n="AUDIO_OPEN_SETTINGS">Open</a>
-        </div>
+        </details>
 
-        <div class="form-group" style="display: flex; align-items: center; justify-content: space-between; background: var(--card); padding: 10px; border-radius: 8px; margin-bottom: 12px; border: 1px solid var(--border-strong);">
-            <label for="langSelector" style="margin-bottom: 0;" data-i18n="LABEL_LANGUAGE" data-i18n-title="LABEL_LANGUAGE_TOOLTIP" title="Choose your preferred extension language">App Language</label>
-            <select id="langSelector" style="width: 165px; background: var(--bg); border: 1px solid var(--border-strong); color: var(--text); padding: 6px 10px; border-radius: 8px; font-size: 13px; cursor: pointer; outline: none; font-family: inherit;">
-                <option value="en">🇬🇧 English</option>
-                <option value="de">🇩🇪 Deutsch</option>
-                <option value="fr">🇫🇷 Français</option>
-                <option value="es">🇪🇸 Español</option>
-                <option value="pt-BR">🇧🇷 Português (Brasil)</option>
-                <option value="ru">🇷🇺 Русский</option>
-                <option value="it">🇮🇹 Italiano</option>
-                <option value="pl">🇵🇱 Polski</option>
-                <option value="tr">🇹🇷 Türkçe</option>
-                <option value="nl">🇳🇱 Nederlands</option>
-                <option value="ja">🇯🇵 日本語</option>
-                <option value="ko">🇰🇷 한국어</option>
-                <option value="zh">🇨🇳 中文</option>
-                <option value="uk">🇺🇦 Українська</option>
-                <option value="pt">🇵🇹 Português (Portugal)</option>
-            </select>
-        </div>
+        <details class="form-group">
+            <summary title="Customize playback, notifications, and audio preferences." data-i18n="LABEL_SETTINGS_GROUP_SYNC" data-i18n-title="LABEL_SETTINGS_GROUP_SYNC_TOOLTIP">⚡ Playback & Sync</summary>
+            <div class="details-content">
+                <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px;">
+                    <label for="autoSyncNextEpisode" style="margin-bottom: 0; cursor: help;" title="Pauses automatically and waits for all peers when an episode changes, then sync-starts together." data-i18n="LABEL_AUTO_SYNC_NEXT" data-i18n-title="LABEL_AUTO_SYNC_NEXT_TOOLTIP">Auto-Sync Next Episode</label>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="autoSyncNextEpisode">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px;">
+                    <label for="filterNoise" style="margin-bottom: 0; cursor: help;" title="Filters out non-video tabs and unrelated domains to keep the list clean" data-i18n="LABEL_HIDE_CLUTTER" data-i18n-title="LABEL_HIDE_CLUTTER_TOOLTIP">Hide Clutter Tabs</label>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="filterNoise" checked>
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px;">
+                    <label for="autoCopyInvite" style="margin-bottom: 0; cursor: help;" title="Automatically copies the invite link to your clipboard when creating a new room." data-i18n="LABEL_AUTO_COPY_INVITE" data-i18n-title="LABEL_AUTO_COPY_INVITE_TOOLTIP">Auto-Copy Invite Link</label>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="autoCopyInvite" checked>
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px;">
+                    <label for="browserNotifications" style="margin-bottom: 0; cursor: help;" title="Shows native system notifications when someone joins/leaves or plays/pauses." data-i18n="LABEL_NOTIFICATIONS" data-i18n-title="LABEL_NOTIFICATIONS_TOOLTIP">Browser Notifications</label>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="browserNotifications">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px;">
+                    <label id="audioProcessingLabel" style="margin-bottom: 0; cursor: help; white-space: nowrap; font-size: 13px;" data-i18n="LABEL_AUDIO_PROCESSING" data-i18n-title="LABEL_AUDIO_PROCESSING_TOOLTIP">Audio Processing</label>
+                    <a id="audioSettingsLink" href="#" style="font-size: 11px; color: var(--accent); text-decoration: none; white-space: nowrap; background: rgba(86, 174, 108, 0.12); padding: 5px 12px; border-radius: 6px; font-weight: 600; transition: background 0.2s;" data-i18n="AUDIO_OPEN_SETTINGS">Open</a>
+                </div>
+            </div>
+        </details>
 
-        <div style="margin-top: 15px; padding: 8px; border-top: 1px solid var(--card);">
-            <label title="Tools for fixing connection issues" data-i18n="LABEL_TROUBLESHOOTING" data-i18n-title="LABEL_TROUBLESHOOTING_TOOLTIP">Troubleshooting</label>
-            <button id="restartTourBtn" class="secondary" style="width: 100%; font-size: 11px;" title="Restart the onboarding tutorial" data-i18n="BTN_RESTART_TOUR" data-i18n-title="BTN_RESTART_TOUR_TOOLTIP">Restart Tutorial</button>
-            <button id="regenId" class="secondary" style="width: 100%; font-size: 11px; margin-top: 8px;" title="Regenerate your internal ID and reconnect" data-i18n="BTN_REGEN_ID" data-i18n-title="BTN_REGEN_ID_TOOLTIP">Regenerate Peer ID</button>
-            <p style="font-size: 9px; color: var(--text-muted); margin-top: 5px; text-align: center;" data-i18n="REGEN_ID_DESC">Use this if you see "Duplicate Identity" errors.</p>
-            <p style="font-size: 9px; text-align: center; margin-top: 6px;"><a href="https://github.com/Shik3i/KoalaSync/issues" target="_blank" style="color: var(--accent); text-decoration: none;" data-i18n="REGEN_ID_OTHER_ISSUE">Other issue? Open a GitHub Issue</a></p>
-        </div>
+        <details class="form-group">
+            <summary title="Tools for fixing connection issues." data-i18n="LABEL_TROUBLESHOOTING" data-i18n-title="LABEL_TROUBLESHOOTING_TOOLTIP">🔧 Troubleshooting</summary>
+            <div class="details-content" style="gap: 8px;">
+                <button id="restartTourBtn" class="secondary" style="width: 100%; font-size: 11px;" title="Restart the onboarding tutorial" data-i18n="BTN_RESTART_TOUR" data-i18n-title="BTN_RESTART_TOUR_TOOLTIP">Restart Tutorial</button>
+                <button id="regenId" class="secondary" style="width: 100%; font-size: 11px; margin-top: 4px;" title="Regenerate your internal ID and reconnect" data-i18n="BTN_REGEN_ID" data-i18n-title="BTN_REGEN_ID_TOOLTIP">Regenerate Peer ID</button>
+                <p style="font-size: 9px; color: var(--text-muted); margin-top: 4px; text-align: center;" data-i18n="REGEN_ID_DESC">Use this if you see "Duplicate Identity" errors.</p>
+                <p style="font-size: 9px; text-align: center; margin-top: 4px; border-top: 1px solid var(--border-soft); padding-top: 8px;"><a href="https://github.com/Shik3i/KoalaSync/issues" target="_blank" style="color: var(--accent); text-decoration: none;" data-i18n="REGEN_ID_OTHER_ISSUE">Other issue? Open a GitHub Issue</a></p>
+            </div>
+        </details>
 
         <div class="popup-footer">
             <div style="font-size: 9px; color: var(--text-muted); opacity: 0.6; margin-bottom: 6px; line-height: 1.3;" data-i18n="FOOTER_SUPPORT_PROMPT">Enjoying KoalaSync? Leave a review!</div>

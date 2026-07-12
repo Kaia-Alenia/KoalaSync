@@ -238,5 +238,9 @@
   "LABEL_SEND_TAB_TITLE": "Envoyer le titre de l’onglet",
   "LABEL_SEND_TAB_TITLE_TOOLTIP": "Envoie au salon le titre de l’onglet de navigateur sélectionné.",
   "LABEL_MEDIA_TITLE_PRIVACY": "Titre du média",
-  "LABEL_MEDIA_TITLE_PRIVACY_TOOLTIP": "Choisissez comment les titres des médias sont envoyés au salon."
+  "LABEL_MEDIA_TITLE_PRIVACY_TOOLTIP": "Choisissez comment les titres des médias sont envoyés au salon.",
+  "LABEL_SETTINGS_GROUP_PROFILE": "Profil & Apparence",
+  "LABEL_SETTINGS_GROUP_PROFILE_TOOLTIP": "Modifiez votre nom d'utilisateur, votre thème et vos préférences linguistiques.",
+  "LABEL_SETTINGS_GROUP_SYNC": "Lecture & Sync",
+  "LABEL_SETTINGS_GROUP_SYNC_TOOLTIP": "Personnalisez la lecture, les notifications et les préférences audio."
 }

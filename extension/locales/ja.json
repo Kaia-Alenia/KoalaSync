@@ -238,5 +238,9 @@
   "LABEL_SEND_TAB_TITLE": "タブタイトルを送信",
   "LABEL_SEND_TAB_TITLE_TOOLTIP": "選択中のブラウザータブのタイトルをルームに送信します。",
   "LABEL_MEDIA_TITLE_PRIVACY": "メディアタイトル",
-  "LABEL_MEDIA_TITLE_PRIVACY_TOOLTIP": "メディアタイトルをルームに送信する方法を選択します。"
+  "LABEL_MEDIA_TITLE_PRIVACY_TOOLTIP": "メディアタイトルをルームに送信する方法を選択します。",
+  "LABEL_SETTINGS_GROUP_PROFILE": "プロフィールと外観",
+  "LABEL_SETTINGS_GROUP_PROFILE_TOOLTIP": "ユーザー名、テーマ、言語設定を変更します。",
+  "LABEL_SETTINGS_GROUP_SYNC": "再生と同期",
+  "LABEL_SETTINGS_GROUP_SYNC_TOOLTIP": "再生、通知、オーディオ設定をカスタマイズします。"
 }

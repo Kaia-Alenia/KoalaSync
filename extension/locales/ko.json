@@ -238,5 +238,9 @@
   "LABEL_SEND_TAB_TITLE": "탭 제목 보내기",
   "LABEL_SEND_TAB_TITLE_TOOLTIP": "선택한 브라우저 탭 제목을 방에 보냅니다.",
   "LABEL_MEDIA_TITLE_PRIVACY": "미디어 제목",
-  "LABEL_MEDIA_TITLE_PRIVACY_TOOLTIP": "미디어 제목을 방에 보내는 방식을 선택합니다."
+  "LABEL_MEDIA_TITLE_PRIVACY_TOOLTIP": "미디어 제목을 방에 보내는 방식을 선택합니다.",
+  "LABEL_SETTINGS_GROUP_PROFILE": "프로필 및 테마",
+  "LABEL_SETTINGS_GROUP_PROFILE_TOOLTIP": "사용자 이름, 테마 및 언어 설정을 변경합니다.",
+  "LABEL_SETTINGS_GROUP_SYNC": "재생 및 동기화",
+  "LABEL_SETTINGS_GROUP_SYNC_TOOLTIP": "재생, 알림 및 오디오 설정을 맞춤설정합니다."
 }

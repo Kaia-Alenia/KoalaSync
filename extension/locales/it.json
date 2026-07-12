@@ -238,5 +238,9 @@
   "LABEL_SEND_TAB_TITLE": "Invia titolo scheda",
   "LABEL_SEND_TAB_TITLE_TOOLTIP": "Invia alla stanza il titolo della scheda del browser selezionata.",
   "LABEL_MEDIA_TITLE_PRIVACY": "Titolo multimediale",
-  "LABEL_MEDIA_TITLE_PRIVACY_TOOLTIP": "Scegli come inviare alla stanza i titoli multimediali."
+  "LABEL_MEDIA_TITLE_PRIVACY_TOOLTIP": "Scegli come inviare alla stanza i titoli multimediali.",
+  "LABEL_SETTINGS_GROUP_PROFILE": "Profilo & Aspetto",
+  "LABEL_SETTINGS_GROUP_PROFILE_TOOLTIP": "Modifica il tuo nome utente, tema e preferenze di lingua.",
+  "LABEL_SETTINGS_GROUP_SYNC": "Riproduzione & Sync",
+  "LABEL_SETTINGS_GROUP_SYNC_TOOLTIP": "Personalizza la riproduzione, le notifiche e le preferenze audio."
 }

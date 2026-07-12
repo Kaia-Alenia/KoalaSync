@@ -238,5 +238,9 @@
   "LABEL_SEND_TAB_TITLE": "Wysyłaj tytuł karty",
   "LABEL_SEND_TAB_TITLE_TOOLTIP": "Wysyła do pokoju tytuł wybranej karty przeglądarki.",
   "LABEL_MEDIA_TITLE_PRIVACY": "Tytuł multimediów",
-  "LABEL_MEDIA_TITLE_PRIVACY_TOOLTIP": "Wybierz, jak tytuły multimediów są wysyłane do pokoju."
+  "LABEL_MEDIA_TITLE_PRIVACY_TOOLTIP": "Wybierz, jak tytuły multimediów są wysyłane do pokoju.",
+  "LABEL_SETTINGS_GROUP_PROFILE": "Profil i Wygląd",
+  "LABEL_SETTINGS_GROUP_PROFILE_TOOLTIP": "Zmień swoją nazwę użytkownika, motyw i preferencje językowe.",
+  "LABEL_SETTINGS_GROUP_SYNC": "Odtwarzanie i Sync",
+  "LABEL_SETTINGS_GROUP_SYNC_TOOLTIP": "Dostosuj odtwarzanie, powiadomienia i preferencje audio."
 }

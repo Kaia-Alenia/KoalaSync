@@ -238,5 +238,9 @@
   "LABEL_SEND_TAB_TITLE": "Enviar título do separador",
   "LABEL_SEND_TAB_TITLE_TOOLTIP": "Envia para a sala o título do separador do navegador selecionado.",
   "LABEL_MEDIA_TITLE_PRIVACY": "Título multimédia",
-  "LABEL_MEDIA_TITLE_PRIVACY_TOOLTIP": "Escolhe como os títulos multimédia são enviados para a sala."
+  "LABEL_MEDIA_TITLE_PRIVACY_TOOLTIP": "Escolhe como os títulos multimédia são enviados para a sala.",
+  "LABEL_SETTINGS_GROUP_PROFILE": "Perfil e Aparência",
+  "LABEL_SETTINGS_GROUP_PROFILE_TOOLTIP": "Altere o seu nome de utilizador, tema e preferências de idioma.",
+  "LABEL_SETTINGS_GROUP_SYNC": "Reprodução e Sincronização",
+  "LABEL_SETTINGS_GROUP_SYNC_TOOLTIP": "Personalize a reprodução, as notificações e as preferências de áudio."
 }

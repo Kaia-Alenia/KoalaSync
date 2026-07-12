@@ -84,7 +84,7 @@ sync.koalastuff.net {
     import security_headers
     header {
         # CSP hardened with base-uri and form-action limits
-        Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; connect-src 'self'; img-src 'self' data:; object-src 'none'; frame-ancestors 'none'; base-uri 'none'; form-action 'none';"
+        Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; connect-src 'self'; img-src 'self' data: blob:; object-src 'none'; frame-ancestors 'none'; base-uri 'none'; form-action 'none';"
         
         # Modern Permissions Policy (blocks browser hardware access for enhanced privacy)
         Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=(), usb=()"

@@ -238,5 +238,9 @@
   "LABEL_SEND_TAB_TITLE": "Отправлять название вкладки",
   "LABEL_SEND_TAB_TITLE_TOOLTIP": "Отправляет в комнату название выбранной вкладки браузера.",
   "LABEL_MEDIA_TITLE_PRIVACY": "Название медиа",
-  "LABEL_MEDIA_TITLE_PRIVACY_TOOLTIP": "Выберите, как названия медиа отправляются в комнату."
+  "LABEL_MEDIA_TITLE_PRIVACY_TOOLTIP": "Выберите, как названия медиа отправляются в комнату.",
+  "LABEL_SETTINGS_GROUP_PROFILE": "Профиль и Оформление",
+  "LABEL_SETTINGS_GROUP_PROFILE_TOOLTIP": "Измените имя пользователя, тему и настройки языка.",
+  "LABEL_SETTINGS_GROUP_SYNC": "Воспроизведение и Синхронизация",
+  "LABEL_SETTINGS_GROUP_SYNC_TOOLTIP": "Настройте воспроизведение, уведомления и параметры звука."
 }
