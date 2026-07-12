@@ -74,7 +74,7 @@
   "BTN_PLAY_TOOLTIP": "Wyślij polecenie odtwarzania do wszystkich",
   "BTN_PAUSE": "⏸ Pauza",
   "BTN_PAUSE_TOOLTIP": "Wyślij polecenie pauzy do wszystkich",
-  "BTN_SYNC": "⚡ SYNC",
+  "BTN_SYNC": "⚡ Sync",
   "BTN_SYNC_TOOLTIP": "Wymuś synchronizację wszystkich użytkowników",
   "OPTION_JUMP_TO_OTHERS": "Skocz do innych",
   "OPTION_JUMP_TO_ME": "Skocz do mnie",

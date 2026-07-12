@@ -74,7 +74,7 @@
   "BTN_PLAY_TOOLTIP": "Sende einen Play-Befehl an alle",
   "BTN_PAUSE": "⏸ Pause",
   "BTN_PAUSE_TOOLTIP": "Sende einen Pause-Befehl an alle",
-  "BTN_SYNC": "⚡ SYNC",
+  "BTN_SYNC": "⚡ Sync",
   "BTN_SYNC_TOOLTIP": "Erzwinge die Synchronisation aller Teilnehmer",
   "OPTION_JUMP_TO_OTHERS": "Zu anderen springen",
   "OPTION_JUMP_TO_ME": "Zu mir springen",
