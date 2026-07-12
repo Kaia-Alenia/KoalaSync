@@ -847,7 +847,9 @@
 .player-video-canvas {
     height: 70px;
     border-radius: 8px;
-    background: linear-gradient(135deg, oklch(0.20 0.04 145), oklch(0.22 0.05 45));
+    /* Sky behind the film SVG — --demo-* flips day/night with the theme
+       (defined on .illus-sync-theater in hero.css) */
+    background: linear-gradient(160deg, var(--demo-sky-top) 0%, var(--demo-sky-mid) 52%, var(--demo-sky-bottom) 100%);
     position: relative;
     overflow: hidden;
     display: flex;

@@ -712,6 +712,12 @@ html.theme-light .koala-speech-bubble::after {
    put white text on a colour get a darker shade (these beat inline styles). */
 .hero-demo-scene {
     --accent: oklch(0.80 0.10 150);
+}
+/* The step-3 sync theater reuses the film SVG and must follow the same
+   day/night palette; --accent stays hero-only (its cards sit on the page
+   surface, not on the demo sky). */
+.hero-demo-scene,
+.illus-sync-theater {
     --demo-sky-top: oklch(0.22 0.055 152);
     --demo-sky-mid: oklch(0.145 0.035 150);
     --demo-sky-bottom: oklch(0.075 0.018 145);
@@ -746,6 +752,9 @@ html.theme-light .koala-speech-bubble::after {
 
 html.theme-light .hero-demo-scene {
     --accent: oklch(0.60 0.12 150);
+}
+html.theme-light .hero-demo-scene,
+html.theme-light .illus-sync-theater {
     --demo-sky-top: oklch(0.86 0.085 78);
     --demo-sky-mid: oklch(0.76 0.095 112);
     --demo-sky-bottom: oklch(0.54 0.10 150);

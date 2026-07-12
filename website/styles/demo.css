@@ -687,17 +687,22 @@ html.theme-light .hero-demo-scene .demo-video::after {
     height: 100%;
 }
 
-.hero-demo-scene .film-stars { fill: var(--demo-stars) !important; }
+.hero-demo-scene .film-stars,
+.illus-sync-theater .film-stars { fill: var(--demo-stars) !important; }
 .hero-demo-scene .film-clouds { fill: var(--demo-stars) !important; }
 .hero-demo-scene .film-mist-scroll { fill: var(--demo-stars) !important; }
 .hero-demo-scene .film-shooting-star { stroke: var(--demo-stars) !important; }
-.hero-demo-scene .film-moon {
+.hero-demo-scene .film-moon,
+.illus-sync-theater .film-moon {
     fill: var(--demo-moon) !important;
     filter: drop-shadow(0 0 6px var(--demo-moon));
 }
-.hero-demo-scene .film-mtn-scroll { fill: var(--demo-mountain) !important; }
-.hero-demo-scene .film-mid-scroll > * { fill: var(--demo-midground) !important; }
-.hero-demo-scene .film-fore-scroll > * { fill: var(--demo-foreground) !important; }
+.hero-demo-scene .film-mtn-scroll,
+.illus-sync-theater .film-mtn-scroll { fill: var(--demo-mountain) !important; }
+.hero-demo-scene .film-mid-scroll > *,
+.illus-sync-theater .film-mid-scroll > * { fill: var(--demo-midground) !important; }
+.hero-demo-scene .film-fore-scroll > *,
+.illus-sync-theater .film-fore-scroll > * { fill: var(--demo-foreground) !important; }
 
 /* Stars: staggered twinkle so the sky feels alive */
 .film-star {
