@@ -1865,7 +1865,7 @@ elements.copyInvite.addEventListener('click', () => {
         setTimeout(() => {
             elements.copyInvite.textContent = original;
             elements.copyInvite.classList.remove('copy-success');
-        }, 2000);
+        }, 1500);
     }).catch(() => {
         showToast(getMessage('TOAST_COPY_FAILED'), 'error');
     });
@@ -1875,14 +1875,14 @@ if (elements.syncTabCopyInvite) {
     elements.syncTabCopyInvite.addEventListener('click', () => {
         navigator.clipboard.writeText(elements.inviteLink.value).then(() => {
             const original = elements.syncTabCopyInvite.textContent;
-            elements.syncTabCopyInvite.textContent = '✓';
+            elements.syncTabCopyInvite.textContent = '✓ Copied';
             elements.syncTabCopyInvite.classList.add('copy-success');
             showToast(getMessage('TOAST_INVITE_COPIED'), 'success', 2000);
             spawnLeafBurst(elements.syncTabCopyInvite);
             setTimeout(() => {
                 elements.syncTabCopyInvite.textContent = original;
                 elements.syncTabCopyInvite.classList.remove('copy-success');
-            }, 2000);
+            }, 1500);
         });
     });
 }
@@ -2494,7 +2494,7 @@ function updateLobbyUI(lobby, peers) {
 
     // Build peer readiness list
     const readySet = new Set(lobby.readyPeers || []);
-    const peerLines = [];
+    const peerHtmls = [];
 
     if (peers && peers.length > 0) {
         peers.forEach(p => {
@@ -2502,14 +2502,15 @@ function updateLobbyUI(lobby, peers) {
             const pName = (typeof p === 'object' && p.username) ? p.username : pId;
             const avatar = getAvatarForName(pName);
             const isReady = readySet.has(pId);
-            const icon = isReady ? '\u2705' : '\u23f3';
+            const icon = isReady ? '✅' : '⏳';
             const label = isReady ? getMessage('LABEL_LOBBY_PEER_READY') : getMessage('LABEL_LOBBY_PEER_LOADING');
-            peerLines.push(`${icon} ${avatar} ${pName} \u2014 ${label}`);
+            const badgeClass = isReady ? 'badge-ready' : 'badge-loading';
+            peerHtmls.push(`<span class="lobby-peer-item">${icon} ${avatar} ${pName} <span class="badge ${badgeClass}">${label}</span></span>`);
         });
     }
 
-    if (peerLines.length > 0 && elements.lobbyPeerStatus) {
-        elements.lobbyPeerStatus.textContent = peerLines.join(' | ');
+    if (peerHtmls.length > 0 && elements.lobbyPeerStatus) {
+        elements.lobbyPeerStatus.innerHTML = peerHtmls.join(' ');
     } else if (elements.lobbyPeerStatus) {
         elements.lobbyPeerStatus.textContent = getMessage('LOBBY_WAITING_PEERS');
     }
@@ -2517,7 +2518,10 @@ function updateLobbyUI(lobby, peers) {
     // Show elapsed time
     if (lobby.createdAt && elements.lobbyPeerStatus) {
         const elapsed = Math.floor((Date.now() - lobby.createdAt) / 1000);
-        elements.lobbyPeerStatus.textContent += ` (${elapsed}s)`;
+        const timerSpan = document.createElement('span');
+        timerSpan.style.cssText = 'font-size: 10px; color: var(--text-muted); margin-left: 6px; display: inline-block; vertical-align: middle;';
+        timerSpan.textContent = `(${elapsed}s)`;
+        elements.lobbyPeerStatus.appendChild(timerSpan);
     }
 }
 

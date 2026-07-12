@@ -231,7 +231,11 @@ document.addEventListener('DOMContentLoaded', () => {
         const sectionObserver = new IntersectionObserver((entries) => {
             entries.forEach(entry => {
                 if (entry.isIntersecting) {
-                    history.replaceState(null, null, '#' + entry.target.id);
+                    if (entry.target.id === 'top') {
+                        history.replaceState(null, null, window.location.pathname + window.location.search);
+                    } else {
+                        history.replaceState(null, null, '#' + entry.target.id);
+                    }
                     if (forestGreet) forestGreet();
                 }
             });

@@ -279,6 +279,8 @@
             border-color: var(--success) !important;
             color: var(--text-on-green) !important;
             opacity: 1 !important;
+            transform: scale(0.95) !important;
+            transition: transform 0.15s ease-out !important;
         }
 
         /* Info Cards */
@@ -298,6 +300,17 @@
 
         .peer-item:last-child { border: 0; }
 
+        /* Native, thin modern scrollbars (2026 standard compliant) */
+        .info-card,
+        #publicRooms,
+        #historyList,
+        #videoDebug,
+        #lastActionCard,
+        #logList {
+            scrollbar-width: thin;
+            scrollbar-color: var(--border-strong) transparent;
+        }
+
         .status-dot {
             width: 8px;
             height: 8px;
@@ -306,8 +319,53 @@
             margin-right: 6px;
         }
 
-        .status-online { background: var(--success); box-shadow: 0 0 8px var(--success); }
+        .status-online { 
+            background: var(--success); 
+            box-shadow: 0 0 8px var(--success); 
+            animation: pulseGreen 2s infinite ease-in-out;
+        }
         .status-offline { background: var(--error); }
+
+        @keyframes pulseGreen {
+            0% { box-shadow: 0 0 0 0 color-mix(in oklch, var(--success), transparent 30%); }
+            70% { box-shadow: 0 0 0 6px color-mix(in oklch, var(--success), transparent 100%); }
+            100% { box-shadow: 0 0 0 0 color-mix(in oklch, var(--success), transparent 100%); }
+        }
+
+        /* Badge and Capsule styles for peers and state */
+        .badge {
+            display: inline-block;
+            padding: 2px 6px;
+            font-size: 9px;
+            font-weight: 700;
+            text-transform: uppercase;
+            border-radius: 6px;
+            line-height: 1.2;
+            vertical-align: middle;
+            margin-left: 4px;
+        }
+        .badge-ready {
+            background: color-mix(in oklch, var(--success), transparent 85%);
+            color: var(--success);
+            border: 1px solid color-mix(in oklch, var(--success), transparent 70%);
+        }
+        .badge-loading {
+            background: color-mix(in oklch, var(--accent-terracotta), transparent 85%);
+            color: var(--accent-terracotta);
+            border: 1px solid color-mix(in oklch, var(--accent-terracotta), transparent 70%);
+        }
+        .lobby-peer-item {
+            display: inline-flex;
+            align-items: center;
+            background: var(--bg-base);
+            border: 1px solid var(--border-soft);
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 11px;
+            margin-right: 6px;
+            margin-bottom: 6px;
+            color: var(--text-primary);
+        }
 
         /* Logs */
         #logList {
@@ -667,9 +725,9 @@
         <!-- JOIN SECTION: Visible when not in a room -->
         <div id="section-join">
             <button id="createRoomBtn" class="primary" style="margin-bottom: 16px; padding: 14px; font-size: 15px; background: linear-gradient(135deg, var(--accent-green), var(--accent-terracotta)); color: var(--text-on-green); box-shadow: 0 4px 12px rgba(86, 174, 108, 0.4);" data-i18n="BTN_CREATE_ROOM">+ Create New Room</button>
-            <details style="margin-bottom: 12px; background: var(--card); border: 1px solid var(--border-strong); border-radius: 8px; padding: 8px;">
-                <summary style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; cursor: pointer; outline: none;" data-i18n="MANUAL_CONNECT_HEADER">Manual Connect / Advanced</summary>
-                <div style="margin-top: 12px;">
+            <details class="form-group" name="settings-accordion">
+                <summary data-i18n="MANUAL_CONNECT_HEADER">Manual Connect / Advanced</summary>
+                <div class="details-content">
             <!-- Server selection — its own concern, kept visually separate from the room fields. -->
             <div style="background: var(--bg); border: 1px solid var(--border-strong); border-radius: 8px; padding: 10px; margin-bottom: 14px;">
                 <div class="form-group" style="margin-bottom:0;">
@@ -919,15 +977,6 @@
                 <p style="font-size: 9px; text-align: center; margin-top: 4px; border-top: 1px solid var(--border-soft); padding-top: 8px;"><a href="https://github.com/Shik3i/KoalaSync/issues" target="_blank" style="color: var(--accent); text-decoration: none;" data-i18n="REGEN_ID_OTHER_ISSUE">Other issue? Open a GitHub Issue</a></p>
             </div>
         </details>
-
-        <div class="popup-footer">
-            <div style="font-size: 9px; color: var(--text-muted); opacity: 0.6; margin-bottom: 6px; line-height: 1.3;" data-i18n="FOOTER_SUPPORT_PROMPT">Enjoying KoalaSync? Leave a review!</div>
-            <a id="settingsReviewLink" href="#" target="_blank" data-i18n="FOOTER_REVIEW">★ Rate us</a>
-            <span> · </span>
-            <a id="settingsSupportLink" href="#" target="_blank" data-i18n="FOOTER_SUPPORT">Support KoalaSync</a>
-            <span> · </span>
-            <span id="settingsVersion">v0.0.0</span>
-        </div>
     </div>
 
     <!-- Dev Tab -->
@@ -961,18 +1010,6 @@
             <button id="clearLogs" style="background:transparent; border:none; color:var(--accent); font-size:10px; cursor:pointer;" title="Clear log output" data-i18n="BTN_CLEAR" data-i18n-title="BTN_CLEAR_TOOLTIP">CLEAR</button>
         </div>
         <div id="logList"></div>
-        
-        <div class="popup-footer">
-            <a href="https://github.com/Shik3i/KoalaSync" target="_blank" style="color: var(--text-muted); text-decoration: none; font-size: 10px; opacity: 0.6; display: block;" data-i18n="LABEL_GITHUB">GitHub Repository</a>
-            <div style="margin-top: 4px;">
-                <div style="font-size: 9px; color: var(--text-muted); opacity: 0.6; margin-bottom: 6px; line-height: 1.3;" data-i18n="FOOTER_SUPPORT_PROMPT">Enjoying KoalaSync? Leave a review!</div>
-                <a id="devReviewLink" href="#" target="_blank" data-i18n="FOOTER_REVIEW">★ Rate us</a>
-                <span> · </span>
-                <a id="devSupportLink" href="#" target="_blank" data-i18n="FOOTER_SUPPORT">Support KoalaSync</a>
-                <span> · </span>
-                <span id="appVersion">v0.0.0</span>
-            </div>
-        </div>
     </div>
 
     <div id="tab-devtools" class="tab-content">
@@ -987,6 +1024,18 @@
         </div>
     </div>
 
+    <div class="popup-footer" style="margin-top: 16px; border-top: 1px solid var(--border-soft); padding-top: 12px; text-align: center;">
+        <div style="font-size: 9px; color: var(--text-muted); opacity: 0.6; margin-bottom: 6px; line-height: 1.3;" data-i18n="FOOTER_SUPPORT_PROMPT">Enjoying KoalaSync? Leave a review!</div>
+        <div style="display: flex; justify-content: space-between; align-items: center; font-size: 10px;">
+            <a href="https://github.com/Shik3i/KoalaSync" target="_blank" style="color: var(--text-muted); text-decoration: none; opacity: 0.6;" data-i18n="LABEL_GITHUB">GitHub</a>
+            <span>
+                <a id="settingsReviewLink" href="#" target="_blank" style="color: var(--text-muted); text-decoration: none;" data-i18n="FOOTER_REVIEW">★ Rate us</a>
+                <span style="color: var(--text-muted); opacity: 0.4;"> · </span>
+                <a id="settingsSupportLink" href="#" target="_blank" style="color: var(--text-muted); text-decoration: none;" data-i18n="FOOTER_SUPPORT">Support</a>
+            </span>
+            <span id="settingsVersion" style="color: var(--text-muted); opacity: 0.6;">v0.0.0</span>
+        </div>
+    </div>
     </main>
 
     <script src="popup.js" type="module"></script>
