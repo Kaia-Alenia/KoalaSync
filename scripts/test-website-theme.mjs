@@ -55,15 +55,9 @@ for (const [file, source] of runtimeCssActivation) {
   }
 }
 
-const heroBirds = template.match(/class="film-hero-bird"/g) || [];
-const leftWings = template.match(/class="film-bird-wing film-bird-wing-left"/g) || [];
-const rightWings = template.match(/class="film-bird-wing film-bird-wing-right"/g) || [];
-if (heroBirds.length !== 4 || leftWings.length !== heroBirds.length || rightWings.length !== heroBirds.length) {
-  throw new Error('Every foreground film bird must have independently animated left and right wings');
-}
-if (!/\.film-hero-bird-drift\s*\{[^}]*animation:\s*filmBirdGlide/s.test(demoCss) ||
-    !/\.film-bird-wing\s*\{[^}]*animation:\s*filmWingFlap/s.test(demoCss)) {
-  throw new Error('Foreground film birds must glide and flap without waiting for video playback');
+// Film birds were removed entirely (commit 16cb138); guard against remnants
+if (/film-hero-bird|film-bird-wing|film-birds/.test(template) || /filmBirdGlide|filmWingFlap/.test(demoCss)) {
+  throw new Error('Film birds were removed from the demo mockups; no bird markup or animations may remain');
 }
 
 const gettingStartedLightSurfaces = [
