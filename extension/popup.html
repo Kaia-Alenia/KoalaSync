@@ -192,11 +192,11 @@
 
         label {
             display: block;
-            font-size: 11px;
-            text-transform: uppercase;
+            font-size: 12px;
             color: var(--text-muted);
             margin-bottom: 4px;
-            font-weight: 700;
+            font-weight: 650;
+            letter-spacing: 0.01em;
         }
 
         input, select, option {
@@ -340,7 +340,7 @@
         .badge {
             display: inline-block;
             padding: 2px 6px;
-            font-size: 9px;
+            font-size: 10px;
             font-weight: 700;
             text-transform: uppercase;
             border-radius: 6px;
@@ -566,6 +566,10 @@
             transform: translateX(16px);
             background-color: white;
         }
+        .toggle-switch:has(input:focus-visible) .slider {
+            outline: 2px solid var(--accent-hover);
+            outline-offset: 3px;
+        }
         .popup-footer {
             margin-top: 16px;
             padding: 11px 2px 2px;
@@ -577,7 +581,7 @@
         }
         .footer-review {
             flex: none;
-            min-height: 26px;
+            min-height: 30px;
             display: inline-flex;
             align-items: center;
             padding: 4px 8px;
@@ -585,7 +589,7 @@
             border-radius: 7px;
             background: color-mix(in oklch, var(--warning), transparent 91%);
             color: var(--status-warning-text) !important;
-            font-size: 10px;
+            font-size: 11px;
             font-weight: 700;
         }
         .footer-links {
@@ -594,12 +598,12 @@
             gap: 4px;
         }
         .footer-links a {
-            min-height: 26px;
+            min-height: 30px;
             display: inline-flex;
             align-items: center;
             padding: 4px 7px;
             border-radius: 6px;
-            font-size: 10px;
+            font-size: 11px;
             font-weight: 600;
         }
         .footer-links a:hover {
@@ -717,6 +721,64 @@
             letter-spacing: 0;
             text-transform: none;
         }
+
+        .transport-actions,
+        .sync-actions {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+        .sync-actions {
+            margin-bottom: 15px;
+            align-items: stretch;
+        }
+        .transport-actions .primary,
+        .sync-actions .primary {
+            flex: 1;
+            margin-top: 0;
+            border: 1px solid transparent;
+        }
+        #playBtn {
+            background: var(--accent);
+            color: var(--text-on-green);
+        }
+        #pauseBtn {
+            background: var(--surface-alt);
+            border-color: var(--border-strong);
+            color: var(--text);
+        }
+        #pauseBtn:hover {
+            background: color-mix(in oklch, var(--surface-alt), var(--text) 7%);
+        }
+        #forceSyncBtn {
+            background: transparent;
+            border-color: color-mix(in oklch, var(--accent), transparent 42%);
+            color: var(--accent-hover);
+        }
+        #forceSyncBtn:hover {
+            background: color-mix(in oklch, var(--accent), transparent 88%);
+        }
+        .action-icon::before {
+            content: "";
+            width: 13px;
+            height: 13px;
+            display: inline-block;
+            margin-right: 6px;
+            vertical-align: -2px;
+            background: currentColor;
+            mask-position: center;
+            mask-repeat: no-repeat;
+            mask-size: contain;
+        }
+        #playBtn::before {
+            mask-image: url("icons/play.svg");
+        }
+        #pauseBtn::before {
+            mask-image: url("icons/pause.svg");
+        }
+        #forceSyncBtn::before {
+            mask-image: url("icons/sync.svg");
+        }
         .settings-control,
         #tab-settings input[type="text"] {
             width: 154px;
@@ -789,7 +851,7 @@
             background: transparent;
             color: var(--text-muted);
             font-family: inherit;
-            font-size: 9px;
+            font-size: 10px;
             font-weight: 700;
             line-height: 1;
             cursor: pointer;
@@ -802,6 +864,15 @@
             background: var(--surface-alt);
             color: var(--text);
             box-shadow: 0 1px 5px oklch(0.08 0.02 150 / 0.32), inset 0 0 0 1px var(--border-soft);
+        }
+        .tab-btn[data-tab="tab-dev"],
+        #devToolsTabBtn {
+            color: color-mix(in oklch, var(--text-muted), transparent 18%);
+            font-size: 11px;
+        }
+        .tab-btn[data-tab="tab-dev"].active,
+        #devToolsTabBtn.active {
+            color: var(--text-on-green);
         }
         .settings-row .toggle-switch {
             justify-self: end;
@@ -1086,13 +1157,13 @@
             <label style="margin: 0;" data-i18n="LABEL_REMOTE_CONTROL">Remote Control</label>
             <button id="syncTabCopyInvite" title="Copy Invite Link" style="background:transparent; border: 1px solid var(--border-strong); border-radius: 6px; padding: 4px 8px; font-size: 11px; cursor:pointer; opacity:0.8; transition: opacity 0.2s; color: var(--text-muted); display: flex; align-items: center; gap: 4px; white-space: nowrap;" data-i18n="BTN_COPY_INVITE" data-i18n-title="BTN_COPY_INVITE_TOOLTIP">📋 Invite Link</button>
         </div>
-        <div style="display: flex; gap: 8px; margin-bottom: 12px;">
-            <button id="playBtn" class="primary" style="flex:1; background: var(--success);" title="Send a Play command to everyone" data-i18n="BTN_PLAY" data-i18n-title="BTN_PLAY_TOOLTIP">▶ Play</button>
-            <button id="pauseBtn" class="primary" style="flex:1; background: var(--error); color: #fff;" title="Send a Pause command to everyone" data-i18n="BTN_PAUSE" data-i18n-title="BTN_PAUSE_TOOLTIP">⏸ Pause</button>
+        <div class="transport-actions">
+            <button id="playBtn" class="primary action-icon" title="Send a Play command to everyone" data-i18n="BTN_PLAY" data-i18n-title="BTN_PLAY_TOOLTIP">Play</button>
+            <button id="pauseBtn" class="primary action-icon" title="Send a Pause command to everyone" data-i18n="BTN_PAUSE" data-i18n-title="BTN_PAUSE_TOOLTIP">Pause</button>
         </div>
 
-        <div style="display: flex; gap: 8px; margin-bottom: 15px; align-items: stretch;">
-            <button id="forceSyncBtn" class="primary" style="flex: 1;" title="Force all users to sync up" data-i18n="BTN_SYNC" data-i18n-title="BTN_SYNC_TOOLTIP">⚡ Sync</button>
+        <div class="sync-actions">
+            <button id="forceSyncBtn" class="primary action-icon" title="Force all users to sync up" data-i18n="BTN_SYNC" data-i18n-title="BTN_SYNC_TOOLTIP">Sync</button>
             <select id="forceSyncMode" style="flex: 1; background: var(--card); border: 1px solid var(--border-strong); color: var(--text); padding: 10px 8px; border-radius: 8px; font-size: 11px; font-family: inherit; cursor: pointer; align-self: stretch;" title="Choose sync target" data-i18n-title="OPTION_JUMP_MODE_TOOLTIP">
                 <option value="jump-to-others" data-i18n="OPTION_JUMP_TO_OTHERS">Jump to Others</option>
                 <option value="jump-to-me" data-i18n="OPTION_JUMP_TO_ME">Jump to Me</option>

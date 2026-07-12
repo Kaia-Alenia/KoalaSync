@@ -518,8 +518,8 @@ function updateLastActionUI(state, peers) {
     const safeAcks = state.acks || [];
 
     const actionNames = {
-        'play': getMessage('BTN_PLAY').replace('▶ ', '').toUpperCase(),
-        'pause': getMessage('BTN_PAUSE').replace('⏸ ', '').toUpperCase(),
+        'play': getMessage('BTN_PLAY'),
+        'pause': getMessage('BTN_PAUSE'),
         'seek': getMessage('NOTIF_SEEK').toUpperCase(),
         'force_sync_prepare': getMessage('BTN_STATE_SYNCING').toUpperCase(),
         'force_sync_execute': getMessage('BTN_STATE_SYNCED').toUpperCase()
@@ -542,7 +542,7 @@ function updateLastActionUI(state, peers) {
     actionSpan.textContent = actionNames[state.action] || state.action.toUpperCase();
     
     const infoSpan = document.createElement('span');
-    infoSpan.style.cssText = 'font-size:9px; color:var(--text-muted);';
+    infoSpan.style.cssText = 'font-size:10px; color:var(--text-muted);';
     infoSpan.textContent = `${senderName} @ ${timeStr}`;
     
     header.appendChild(actionSpan);
@@ -551,14 +551,14 @@ function updateLastActionUI(state, peers) {
 
     if (state.targetTime !== undefined && state.action === 'seek') {
         const timeInfo = document.createElement('div');
-        timeInfo.style.cssText = 'font-size:9px; color:var(--text-muted); margin-top:4px;';
+        timeInfo.style.cssText = 'font-size:10px; color:var(--text-muted); margin-top:4px;';
         timeInfo.textContent = `Target: ${formatTime(state.targetTime)}`;
         elements.lastActionCard.appendChild(timeInfo);
     }
 
     if (state.targetTime !== undefined && state.action.includes('force_sync')) {
         const timeInfo = document.createElement('div');
-        timeInfo.style.cssText = 'font-size:9px; color:var(--text-muted); margin-top:4px;';
+        timeInfo.style.cssText = 'font-size:10px; color:var(--text-muted); margin-top:4px;';
         timeInfo.textContent = `Sync to: ${formatTime(state.targetTime)}`;
         elements.lastActionCard.appendChild(timeInfo);
     }
@@ -584,7 +584,7 @@ function updateLastActionUI(state, peers) {
         dot.textContent = icon;
         
         const nameSpan = document.createElement('span');
-        nameSpan.style.cssText = 'font-size:7px; color:var(--text-muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:36px;';
+        nameSpan.style.cssText = 'font-size:9px; color:var(--text-muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:42px;';
         nameSpan.textContent = `${avatar} ${pName}`;
         
         peerItem.appendChild(dot);
@@ -2418,7 +2418,7 @@ function refreshDebugInfo() {
                 addField('Resolution', `${state.videoWidth}x${state.videoHeight}`, dimsOk ? 'var(--status-success-text)' : 'var(--status-error-text)');
                 if (!dimsOk) {
                     const dimHint = document.createElement('div');
-                    dimHint.style.cssText = 'color: var(--status-warning-text); font-size: 9px; margin: 2px 0 6px 12px;';
+                    dimHint.style.cssText = 'color: var(--status-warning-text); font-size: 10px; margin: 2px 0 6px 12px;';
                     dimHint.textContent = '0x0 = video element hidden or not yet loaded';
                     elements.videoDebug.appendChild(dimHint);
                 }
