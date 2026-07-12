@@ -1375,6 +1375,19 @@ if (elements.langSelector) {
     });
 }
 
+// Accordion behavior for settings details categories (collapses others when one opens)
+document.querySelectorAll('#tab-settings details.form-group').forEach(det => {
+    det.addEventListener('toggle', () => {
+        if (det.open) {
+            document.querySelectorAll('#tab-settings details.form-group').forEach(other => {
+                if (other !== det && other.open) {
+                    other.removeAttribute('open');
+                }
+            });
+        }
+    });
+});
+
 elements.serverUrl.addEventListener('change', () => {
     let url = elements.serverUrl.value.trim();
     if (url && !url.includes('://')) {
