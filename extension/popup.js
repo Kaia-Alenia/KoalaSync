@@ -150,9 +150,9 @@ function localizeThemeSelector(locale) {
     const darkEl = document.getElementById('themeOptionDark');
     const lightEl = document.getElementById('themeOptionLight');
     if (labelEl) labelEl.textContent = label;
-    if (systemEl) systemEl.textContent = `💻 ${system}`;
-    if (darkEl) darkEl.textContent = `🌙 ${dark}`;
-    if (lightEl) lightEl.textContent = `☀️ ${light}`;
+    if (systemEl) systemEl.textContent = system;
+    if (darkEl) darkEl.textContent = dark;
+    if (lightEl) lightEl.textContent = light;
     if (elements.themeSelector) elements.themeSelector.setAttribute('aria-label', label);
 }
 

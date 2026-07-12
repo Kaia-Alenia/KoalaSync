@@ -1,5 +1,5 @@
 :root {
-    /* v3.0.0 "The Greens Update" nature palette (shared with the website) */
+    /* KoalaSync nature system: forest neutrals, eucalyptus brand, warm supporting accents. */
     --bg-base: oklch(0.20 0.025 140);
     --surface: oklch(0.27 0.035 130);
     --surface-deep: oklch(0.16 0.025 135);
@@ -8,9 +8,11 @@
     --border-strong: oklch(0.32 0.03 125);
     --text-primary: oklch(0.96 0.01 90);
     --text-secondary: oklch(0.78 0.02 90);
-    --accent-green: oklch(0.68 0.13 150);
-    --accent-green-hover: oklch(0.75 0.13 150);
+    --accent-green: oklch(0.68 0.13 155);
+    --accent-green-hover: oklch(0.75 0.13 155);
     --accent-terracotta: oklch(0.62 0.14 45);
+    --success-green: oklch(0.72 0.14 135);
+    --warning-amber: oklch(0.76 0.14 80);
     --danger: oklch(0.55 0.15 25);
     --text-on-green: oklch(0.14 0.02 90);
 

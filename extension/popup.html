@@ -13,7 +13,7 @@
         }
 
         :root {
-            /* v3.0.0 "The Greens Update" nature palette (shared with the website) */
+            /* KoalaSync nature system: forest neutrals, eucalyptus brand, warm supporting accents. */
             --bg-base: oklch(0.20 0.025 140);
             --surface: oklch(0.27 0.035 130);
             --surface-deep: oklch(0.16 0.025 135);
@@ -22,9 +22,11 @@
             --border-strong: oklch(0.32 0.03 125);
             --text-primary: oklch(0.96 0.01 90);
             --text-secondary: oklch(0.78 0.02 90);
-            --accent-green: oklch(0.68 0.13 150);
-            --accent-green-hover: oklch(0.75 0.13 150);
+            --accent-green: oklch(0.68 0.13 155);
+            --accent-green-hover: oklch(0.75 0.13 155);
             --accent-terracotta: oklch(0.62 0.14 45);
+            --success-green: oklch(0.72 0.14 135);
+            --warning-amber: oklch(0.76 0.14 80);
             --danger: oklch(0.55 0.15 25);
             --text-on-green: oklch(0.14 0.02 90);
             --text-on-warm: oklch(0.16 0.025 45);
@@ -35,10 +37,11 @@
             --accent-hover: var(--accent-green-hover);
             --text: var(--text-primary);
             --text-muted: var(--text-secondary);
-            --success: var(--accent-green);
+            --success: var(--success-green);
+            --warning: var(--warning-amber);
             --error: var(--danger);
             --radius: 12px;
-            --star: oklch(0.68 0.14 45);
+            --star: var(--warning);
             color-scheme: dark;
         }
 
@@ -51,9 +54,11 @@
             --border-strong: oklch(0.73 0.035 125);
             --text-primary: oklch(0.21 0.03 140);
             --text-secondary: oklch(0.43 0.03 135);
-            --accent-green: oklch(0.56 0.13 150);
-            --accent-green-hover: oklch(0.49 0.13 150);
+            --accent-green: oklch(0.52 0.13 155);
+            --accent-green-hover: oklch(0.45 0.12 155);
             --accent-terracotta: oklch(0.64 0.14 45);
+            --success-green: oklch(0.48 0.14 135);
+            --warning-amber: oklch(0.58 0.14 80);
             --danger: oklch(0.57 0.17 25);
             --text-on-green: oklch(0.16 0.03 140);
             --text-on-warm: oklch(0.18 0.03 45);
@@ -350,9 +355,9 @@
             border: 1px solid color-mix(in oklch, var(--success), transparent 70%);
         }
         .badge-loading {
-            background: color-mix(in oklch, var(--accent-terracotta), transparent 85%);
-            color: var(--accent-terracotta);
-            border: 1px solid color-mix(in oklch, var(--accent-terracotta), transparent 70%);
+            background: color-mix(in oklch, var(--warning), transparent 85%);
+            color: var(--warning);
+            border: 1px solid color-mix(in oklch, var(--warning), transparent 70%);
         }
         .lobby-peer-item {
             display: inline-flex;
@@ -419,7 +424,7 @@
         .toast-success { background: var(--success); color: var(--text-on-green); }
         .toast-error { background: var(--error); color: white; }
         .toast-info { background: var(--accent); color: var(--text-on-green); }
-        .toast-warning { background: var(--accent-terracotta); color: var(--text-on-warm); }
+        .toast-warning { background: var(--warning); color: var(--text-on-warm); }
 
         @keyframes toastSlideIn {
             from { opacity: 0; transform: translateY(-20px); }
@@ -530,13 +535,52 @@
             background-color: white;
         }
         .popup-footer {
-            margin-top: 20px;
-            text-align: center;
-            border-top: 1px solid rgba(255,255,255,0.05);
-            padding-top: 10px;
-            color: var(--text-muted);
+            margin-top: 18px;
+            padding: 12px;
+            border: 1px solid var(--border-soft);
+            border-radius: var(--radius);
+            background: color-mix(in oklch, var(--card), var(--accent) 5%);
+        }
+        .footer-support {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid var(--border-soft);
+        }
+        .footer-prompt {
+            margin: 0;
+            color: var(--text);
+            font-size: 11px;
+            font-weight: 600;
+            line-height: 1.35;
+        }
+        .footer-review {
+            flex: none;
+            min-height: 30px;
+            padding: 7px 10px;
+            border-radius: 8px;
+            background: var(--warning);
+            color: var(--text-on-warm) !important;
+            font-size: 11px;
+            font-weight: 800;
+        }
+        .footer-links {
+            display: flex;
+            justify-content: center;
+            gap: 6px;
+            padding-top: 8px;
+        }
+        .footer-links a {
+            min-height: 28px;
+            padding: 6px 9px;
+            border-radius: 7px;
             font-size: 10px;
-            opacity: 0.78;
+            font-weight: 600;
+        }
+        .footer-links a:hover {
+            background: var(--surface-alt);
         }
 
         /* Unified interaction layer: the popup is a compact control surface,
@@ -598,6 +642,151 @@
             display: flex;
             flex-direction: column;
             gap: 12px;
+        }
+
+        /* Settings are deliberately quieter than the control tabs: strong
+           grouping, neutral controls, and no decorative emoji iconography. */
+        #tab-settings {
+            display: none;
+        }
+        #tab-settings.active {
+            display: block;
+        }
+        #tab-settings details.form-group {
+            background: color-mix(in oklch, var(--card), var(--bg) 12%);
+            border-color: var(--border-soft);
+            box-shadow: 0 10px 24px oklch(0.08 0.02 140 / 0.16);
+        }
+        #tab-settings details.form-group:hover {
+            border-color: var(--border-strong);
+        }
+        #tab-settings details.form-group[open] {
+            border-color: color-mix(in oklch, var(--accent), var(--border-strong) 72%);
+        }
+        #tab-settings details.form-group > summary {
+            min-height: 44px;
+            padding: 0 14px;
+            font-size: 12px;
+            font-weight: 750;
+            letter-spacing: 0.025em;
+        }
+        #tab-settings details.form-group > .details-content {
+            gap: 0;
+            padding: 2px 14px 8px;
+        }
+        .settings-row {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) 154px;
+            align-items: center;
+            gap: 14px;
+            min-height: 54px;
+            border-bottom: 1px solid var(--border-soft);
+        }
+        .settings-row:last-child {
+            border-bottom: 0;
+        }
+        .settings-row > label:not(.toggle-switch) {
+            margin: 0;
+            color: var(--text);
+            font-size: 12px;
+            font-weight: 600;
+            line-height: 1.3;
+            letter-spacing: 0;
+            text-transform: none;
+        }
+        .settings-control,
+        #tab-settings input[type="text"] {
+            width: 154px;
+            height: 38px;
+            min-height: 38px;
+            margin: 0;
+            border-radius: 9px;
+            border-color: var(--border-strong);
+            background-color: var(--surface-deep);
+            color: var(--text);
+            font-size: 12px;
+            font-weight: 600;
+            line-height: normal;
+        }
+        #tab-settings input[type="text"] {
+            padding: 0 11px;
+        }
+        .settings-select {
+            position: relative;
+            width: 154px;
+        }
+        .settings-select::after {
+            content: "";
+            position: absolute;
+            top: 50%;
+            right: 12px;
+            width: 6px;
+            height: 6px;
+            border-right: 1.5px solid var(--text-muted);
+            border-bottom: 1.5px solid var(--text-muted);
+            transform: translateY(-68%) rotate(45deg);
+            pointer-events: none;
+        }
+        .settings-select select {
+            appearance: none;
+            padding: 0 32px 0 11px;
+            cursor: pointer;
+        }
+        .settings-row .toggle-switch {
+            justify-self: end;
+            margin: 0 2px 0 0;
+        }
+        .settings-action {
+            justify-self: end;
+            min-width: 76px;
+            min-height: 34px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0 12px;
+            border: 1px solid color-mix(in oklch, var(--accent), transparent 62%);
+            border-radius: 9px;
+            background: color-mix(in oklch, var(--accent), transparent 90%);
+            color: var(--accent);
+            font-size: 11px;
+            font-weight: 750;
+            text-decoration: none;
+        }
+        .settings-action:hover {
+            background: color-mix(in oklch, var(--accent), transparent 84%);
+        }
+        .settings-tools {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            padding: 12px 0 8px;
+        }
+        .settings-tools button.secondary {
+            min-height: 38px;
+            margin: 0;
+            padding: 8px;
+            font-size: 11px;
+        }
+        .settings-note {
+            margin: 0;
+            color: var(--text-muted);
+            font-size: 10px;
+            line-height: 1.45;
+            text-align: left;
+        }
+        .settings-issue-link {
+            margin: 8px 0 2px;
+            padding-top: 9px;
+            border-top: 1px solid var(--border-soft);
+            font-size: 10px;
+            text-align: left;
+        }
+        .settings-issue-link a {
+            color: var(--text-muted);
+            text-decoration: none;
+        }
+        .settings-issue-link a:hover {
+            color: var(--accent);
         }
         #section-join > .info-card,
         #section-active > .info-card,
@@ -668,7 +857,8 @@
             background-color: white;
         }
         html.theme-light .popup-footer {
-            border-top-color: var(--border-soft);
+            border-color: var(--border-soft);
+            box-shadow: 0 8px 24px oklch(0.22 0.035 140 / 0.07);
         }
         html.theme-light .tab-btn.active {
             color: #fff;
@@ -724,7 +914,7 @@
 
         <!-- JOIN SECTION: Visible when not in a room -->
         <div id="section-join">
-            <button id="createRoomBtn" class="primary" style="margin-bottom: 16px; padding: 14px; font-size: 15px; background: linear-gradient(135deg, var(--accent-green), var(--accent-terracotta)); color: var(--text-on-green); box-shadow: 0 4px 12px rgba(86, 174, 108, 0.4);" data-i18n="BTN_CREATE_ROOM">+ Create New Room</button>
+            <button id="createRoomBtn" class="primary" style="margin-bottom: 16px; padding: 14px; font-size: 15px; box-shadow: 0 4px 12px oklch(0.40 0.10 155 / 0.4);" data-i18n="BTN_CREATE_ROOM">+ Create New Room</button>
             <details class="form-group" name="settings-accordion">
                 <summary data-i18n="MANUAL_CONNECT_HEADER">Manual Connect / Advanced</summary>
                 <div class="details-content">
@@ -833,7 +1023,7 @@
         </div>
 
         <div style="display: flex; gap: 8px; margin-bottom: 15px; align-items: stretch;">
-            <button id="forceSyncBtn" class="primary" style="background: linear-gradient(135deg, var(--accent-green), var(--accent-terracotta)); color: var(--text-on-green); flex: 1;" title="Force all users to sync up" data-i18n="BTN_SYNC" data-i18n-title="BTN_SYNC_TOOLTIP">⚡ SYNC</button>
+            <button id="forceSyncBtn" class="primary" style="flex: 1;" title="Force all users to sync up" data-i18n="BTN_SYNC" data-i18n-title="BTN_SYNC_TOOLTIP">⚡ SYNC</button>
             <select id="forceSyncMode" style="flex: 1; background: var(--card); border: 1px solid var(--border-strong); color: var(--text); padding: 10px 8px; border-radius: 8px; font-size: 11px; font-family: inherit; cursor: pointer; align-self: stretch;" title="Choose sync target" data-i18n-title="OPTION_JUMP_MODE_TOOLTIP">
                 <option value="jump-to-others" data-i18n="OPTION_JUMP_TO_OTHERS">Jump to Others</option>
                 <option value="jump-to-me" data-i18n="OPTION_JUMP_TO_ME">Jump to Me</option>
@@ -865,116 +1055,124 @@
             <div style="font-size: 32px; margin-bottom: 12px;">🔒</div>
             <h3 style="margin: 0 0 8px 0; color: var(--accent); font-size: 15px;" data-i18n="LOBBY_CONNECT_FIRST">Connect to a room first</h3>
             <p style="color: var(--text-muted); font-size: 12px; margin-bottom: 20px;" data-i18n="LOBBY_CONNECT_FIRST_DESC">You need to join a room via an invite link or create a new one to sync videos.</p>
-            <button id="syncTabCreateRoomBtn" class="primary" style="padding: 12px; font-size: 14px; background: linear-gradient(135deg, var(--accent-green), var(--accent-terracotta)); color: var(--text-on-green); box-shadow: 0 4px 12px rgba(86, 174, 108, 0.4);" title="Create a new random room and join it" data-i18n="BTN_CREATE_ROOM_ALT" data-i18n-title="BTN_CREATE_ROOM_ALT_TOOLTIP">Create New Room</button>
+            <button id="syncTabCreateRoomBtn" class="primary" style="padding: 12px; font-size: 14px; box-shadow: 0 4px 12px oklch(0.40 0.10 155 / 0.4);" title="Create a new random room and join it" data-i18n="BTN_CREATE_ROOM_ALT" data-i18n-title="BTN_CREATE_ROOM_ALT_TOOLTIP">Create New Room</button>
         </div>
     </div>
     
     <!-- Settings Tab -->
     <div id="tab-settings" class="tab-content">
         <details class="form-group" name="settings-accordion" open>
-            <summary title="Change your username, theme, and language." data-i18n="LABEL_SETTINGS_GROUP_PROFILE" data-i18n-title="LABEL_SETTINGS_GROUP_PROFILE_TOOLTIP">👤 Profile & Theme</summary>
+            <summary title="Change your username, theme, and language." data-i18n="LABEL_SETTINGS_GROUP_PROFILE" data-i18n-title="LABEL_SETTINGS_GROUP_PROFILE_TOOLTIP">Profile &amp; Appearance</summary>
             <div class="details-content">
-                <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px;">
-                    <label for="username" style="margin-bottom: 0;" title="Username helps others identify you." data-i18n="LABEL_USERNAME" data-i18n-title="LABEL_USERNAME_TOOLTIP">Your Username</label>
-                    <input type="text" id="username" data-i18n-placeholder="PLACEHOLDER_USERNAME" placeholder="Anonymous Koala" maxlength="20" style="width: 150px;">
+                <div class="settings-row">
+                    <label for="username" title="Username helps others identify you." data-i18n="LABEL_USERNAME" data-i18n-title="LABEL_USERNAME_TOOLTIP">Your Username</label>
+                    <input type="text" id="username" data-i18n-placeholder="PLACEHOLDER_USERNAME" placeholder="Anonymous Koala" maxlength="20">
                 </div>
-                <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px;">
-                    <label id="themeLabel" for="themeSelector" style="margin-bottom: 0;" title="Follow the system theme or choose a fixed appearance">Appearance</label>
-                    <select id="themeSelector" aria-label="Appearance" style="width: 150px; background: var(--bg); border: 1px solid var(--border-strong); color: var(--text); padding: 6px 10px; border-radius: 8px; font-size: 13px; cursor: pointer; outline: none; font-family: inherit;">
-                        <option id="themeOptionSystem" value="system">💻 System</option>
-                        <option id="themeOptionDark" value="dark">🌙 Dark</option>
-                        <option id="themeOptionLight" value="light">☀️ Light</option>
-                    </select>
+                <div class="settings-row">
+                    <label id="themeLabel" for="themeSelector" title="Follow the system theme or choose a fixed appearance">Appearance</label>
+                    <span class="settings-select">
+                        <select id="themeSelector" class="settings-control" aria-label="Appearance">
+                            <option id="themeOptionSystem" value="system">System</option>
+                            <option id="themeOptionDark" value="dark">Dark</option>
+                            <option id="themeOptionLight" value="light">Light</option>
+                        </select>
+                    </span>
                 </div>
-                <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px;">
-                    <label for="langSelector" style="margin-bottom: 0;" data-i18n="LABEL_LANGUAGE" data-i18n-title="LABEL_LANGUAGE_TOOLTIP" title="Choose your preferred extension language">App Language</label>
-                    <select id="langSelector" style="width: 150px; background: var(--bg); border: 1px solid var(--border-strong); color: var(--text); padding: 6px 10px; border-radius: 8px; font-size: 13px; cursor: pointer; outline: none; font-family: inherit;">
-                        <option value="en">🇬🇧 English</option>
-                        <option value="de">🇩🇪 Deutsch</option>
-                        <option value="fr">🇫🇷 Français</option>
-                        <option value="es">🇪🇸 Español</option>
-                        <option value="pt-BR">🇧🇷 Português (Brasil)</option>
-                        <option value="ru">🇷🇺 Русский</option>
-                        <option value="it">🇮🇹 Italiano</option>
-                        <option value="pl">🇵🇱 Polski</option>
-                        <option value="tr">🇹🇷 Türkçe</option>
-                        <option value="nl">🇳🇱 Nederlands</option>
-                        <option value="ja">🇯🇵 日本語</option>
-                        <option value="ko">🇰🇷 한국어</option>
-                        <option value="zh">🇨🇳 中文</option>
-                        <option value="uk">🇺🇦 Українська</option>
-                        <option value="pt">🇵🇹 Português (Portugal)</option>
-                    </select>
+                <div class="settings-row">
+                    <label for="langSelector" data-i18n="LABEL_LANGUAGE" data-i18n-title="LABEL_LANGUAGE_TOOLTIP" title="Choose your preferred extension language">App Language</label>
+                    <span class="settings-select">
+                        <select id="langSelector" class="settings-control">
+                            <option value="en">English</option>
+                            <option value="de">Deutsch</option>
+                            <option value="fr">Français</option>
+                            <option value="es">Español</option>
+                            <option value="pt-BR">Português (Brasil)</option>
+                            <option value="ru">Русский</option>
+                            <option value="it">Italiano</option>
+                            <option value="pl">Polski</option>
+                            <option value="tr">Türkçe</option>
+                            <option value="nl">Nederlands</option>
+                            <option value="ja">日本語</option>
+                            <option value="ko">한국어</option>
+                            <option value="zh">中文</option>
+                            <option value="uk">Українська</option>
+                            <option value="pt">Português (Portugal)</option>
+                        </select>
+                    </span>
                 </div>
             </div>
         </details>
 
         <details class="form-group" name="settings-accordion">
-            <summary title="Choose which titles are sent to the room." data-i18n="LABEL_PRIVACY_SETTINGS" data-i18n-title="LABEL_PRIVACY_SETTINGS_TOOLTIP">🔒 Privacy Settings</summary>
+            <summary title="Choose which titles are sent to the room." data-i18n="LABEL_PRIVACY_SETTINGS" data-i18n-title="LABEL_PRIVACY_SETTINGS_TOOLTIP">Privacy</summary>
             <div class="details-content">
-                <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px;">
-                    <label for="sendTabTitle" style="margin-bottom: 0; cursor: help;" title="Send the selected browser tab title to the room." data-i18n="LABEL_SEND_TAB_TITLE" data-i18n-title="LABEL_SEND_TAB_TITLE_TOOLTIP">Send tab title</label>
+                <div class="settings-row">
+                    <label for="sendTabTitle" title="Send the selected browser tab title to the room." data-i18n="LABEL_SEND_TAB_TITLE" data-i18n-title="LABEL_SEND_TAB_TITLE_TOOLTIP">Send tab title</label>
                     <label class="toggle-switch">
                         <input type="checkbox" id="sendTabTitle" checked>
                         <span class="slider"></span>
                     </label>
                 </div>
-                <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px;">
-                    <label for="mediaTitlePrivacyMode" style="margin-bottom: 0; cursor: help;" title="Choose how media titles are sent to the room." data-i18n="LABEL_MEDIA_TITLE_PRIVACY" data-i18n-title="LABEL_MEDIA_TITLE_PRIVACY_TOOLTIP">Media title</label>
-                    <select id="mediaTitlePrivacyMode" style="width: 150px; background: var(--bg); border: 1px solid var(--border-strong); color: var(--text); padding: 6px 10px; border-radius: 8px; font-size: 12px; cursor: pointer; outline: none; font-family: inherit;">
-                        <option value="full" data-i18n="OPTION_TITLE_PRIVACY_FULL">Send full title</option>
-                        <option value="episode" data-i18n="OPTION_TITLE_PRIVACY_EPISODE">Send episode ID</option>
-                        <option value="hidden" data-i18n="OPTION_TITLE_PRIVACY_HIDDEN">Do not send</option>
-                    </select>
+                <div class="settings-row">
+                    <label for="mediaTitlePrivacyMode" title="Choose how media titles are sent to the room." data-i18n="LABEL_MEDIA_TITLE_PRIVACY" data-i18n-title="LABEL_MEDIA_TITLE_PRIVACY_TOOLTIP">Media title</label>
+                    <span class="settings-select">
+                        <select id="mediaTitlePrivacyMode" class="settings-control">
+                            <option value="full" data-i18n="OPTION_TITLE_PRIVACY_FULL">Send full title</option>
+                            <option value="episode" data-i18n="OPTION_TITLE_PRIVACY_EPISODE">Send episode ID</option>
+                            <option value="hidden" data-i18n="OPTION_TITLE_PRIVACY_HIDDEN">Do not send</option>
+                        </select>
+                    </span>
                 </div>
             </div>
         </details>
 
         <details class="form-group" name="settings-accordion">
-            <summary title="Customize playback, notifications, and audio preferences." data-i18n="LABEL_SETTINGS_GROUP_SYNC" data-i18n-title="LABEL_SETTINGS_GROUP_SYNC_TOOLTIP">⚡ Playback & Sync</summary>
+            <summary title="Customize playback, notifications, and audio preferences." data-i18n="LABEL_SETTINGS_GROUP_SYNC" data-i18n-title="LABEL_SETTINGS_GROUP_SYNC_TOOLTIP">Playback &amp; Sync</summary>
             <div class="details-content">
-                <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px;">
-                    <label for="autoSyncNextEpisode" style="margin-bottom: 0; cursor: help;" title="Pauses automatically and waits for all peers when an episode changes, then sync-starts together." data-i18n="LABEL_AUTO_SYNC_NEXT" data-i18n-title="LABEL_AUTO_SYNC_NEXT_TOOLTIP">Auto-Sync Next Episode</label>
+                <div class="settings-row">
+                    <label for="autoSyncNextEpisode" title="Pauses automatically and waits for all peers when an episode changes, then sync-starts together." data-i18n="LABEL_AUTO_SYNC_NEXT" data-i18n-title="LABEL_AUTO_SYNC_NEXT_TOOLTIP">Auto-Sync Next Episode</label>
                     <label class="toggle-switch">
                         <input type="checkbox" id="autoSyncNextEpisode">
                         <span class="slider"></span>
                     </label>
                 </div>
-                <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px;">
-                    <label for="filterNoise" style="margin-bottom: 0; cursor: help;" title="Filters out non-video tabs and unrelated domains to keep the list clean" data-i18n="LABEL_HIDE_CLUTTER" data-i18n-title="LABEL_HIDE_CLUTTER_TOOLTIP">Hide Clutter Tabs</label>
+                <div class="settings-row">
+                    <label for="filterNoise" title="Filters out non-video tabs and unrelated domains to keep the list clean" data-i18n="LABEL_HIDE_CLUTTER" data-i18n-title="LABEL_HIDE_CLUTTER_TOOLTIP">Hide Clutter Tabs</label>
                     <label class="toggle-switch">
                         <input type="checkbox" id="filterNoise" checked>
                         <span class="slider"></span>
                     </label>
                 </div>
-                <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px;">
-                    <label for="autoCopyInvite" style="margin-bottom: 0; cursor: help;" title="Automatically copies the invite link to your clipboard when creating a new room." data-i18n="LABEL_AUTO_COPY_INVITE" data-i18n-title="LABEL_AUTO_COPY_INVITE_TOOLTIP">Auto-Copy Invite Link</label>
+                <div class="settings-row">
+                    <label for="autoCopyInvite" title="Automatically copies the invite link to your clipboard when creating a new room." data-i18n="LABEL_AUTO_COPY_INVITE" data-i18n-title="LABEL_AUTO_COPY_INVITE_TOOLTIP">Auto-Copy Invite Link</label>
                     <label class="toggle-switch">
                         <input type="checkbox" id="autoCopyInvite" checked>
                         <span class="slider"></span>
                     </label>
                 </div>
-                <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px;">
-                    <label for="browserNotifications" style="margin-bottom: 0; cursor: help;" title="Shows native system notifications when someone joins/leaves or plays/pauses." data-i18n="LABEL_NOTIFICATIONS" data-i18n-title="LABEL_NOTIFICATIONS_TOOLTIP">Browser Notifications</label>
+                <div class="settings-row">
+                    <label for="browserNotifications" title="Shows native system notifications when someone joins/leaves or plays/pauses." data-i18n="LABEL_NOTIFICATIONS" data-i18n-title="LABEL_NOTIFICATIONS_TOOLTIP">Browser Notifications</label>
                     <label class="toggle-switch">
                         <input type="checkbox" id="browserNotifications">
                         <span class="slider"></span>
                     </label>
                 </div>
-                <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px;">
-                    <label id="audioProcessingLabel" style="margin-bottom: 0; cursor: help; white-space: nowrap; font-size: 13px;" data-i18n="LABEL_AUDIO_PROCESSING" data-i18n-title="LABEL_AUDIO_PROCESSING_TOOLTIP">Audio Processing</label>
-                    <a id="audioSettingsLink" href="#" style="font-size: 11px; color: var(--accent); text-decoration: none; white-space: nowrap; background: rgba(86, 174, 108, 0.12); padding: 5px 12px; border-radius: 6px; font-weight: 600; transition: background 0.2s;" data-i18n="AUDIO_OPEN_SETTINGS">Open</a>
+                <div class="settings-row">
+                    <label id="audioProcessingLabel" data-i18n="LABEL_AUDIO_PROCESSING" data-i18n-title="LABEL_AUDIO_PROCESSING_TOOLTIP">Audio Processing</label>
+                    <a id="audioSettingsLink" class="settings-action" href="#" data-i18n="AUDIO_OPEN_SETTINGS">Open</a>
                 </div>
             </div>
         </details>
 
         <details class="form-group" name="settings-accordion">
-            <summary title="Tools for fixing connection issues." data-i18n="LABEL_TROUBLESHOOTING" data-i18n-title="LABEL_TROUBLESHOOTING_TOOLTIP">🔧 Troubleshooting</summary>
-            <div class="details-content" style="gap: 8px;">
-                <button id="restartTourBtn" class="secondary" style="width: 100%; font-size: 11px;" title="Restart the onboarding tutorial" data-i18n="BTN_RESTART_TOUR" data-i18n-title="BTN_RESTART_TOUR_TOOLTIP">Restart Tutorial</button>
-                <button id="regenId" class="secondary" style="width: 100%; font-size: 11px; margin-top: 4px;" title="Regenerate your internal ID and reconnect" data-i18n="BTN_REGEN_ID" data-i18n-title="BTN_REGEN_ID_TOOLTIP">Regenerate Peer ID</button>
-                <p style="font-size: 9px; color: var(--text-muted); margin-top: 4px; text-align: center;" data-i18n="REGEN_ID_DESC">Use this if you see "Duplicate Identity" errors.</p>
-                <p style="font-size: 9px; text-align: center; margin-top: 4px; border-top: 1px solid var(--border-soft); padding-top: 8px;"><a href="https://github.com/Shik3i/KoalaSync/issues" target="_blank" style="color: var(--accent); text-decoration: none;" data-i18n="REGEN_ID_OTHER_ISSUE">Other issue? Open a GitHub Issue</a></p>
+            <summary title="Tools for fixing connection issues." data-i18n="LABEL_TROUBLESHOOTING" data-i18n-title="LABEL_TROUBLESHOOTING_TOOLTIP">Troubleshooting</summary>
+            <div class="details-content">
+                <div class="settings-tools">
+                    <button id="restartTourBtn" class="secondary" title="Restart the onboarding tutorial" data-i18n="BTN_RESTART_TOUR" data-i18n-title="BTN_RESTART_TOUR_TOOLTIP">Restart Tutorial</button>
+                    <button id="regenId" class="secondary" title="Regenerate your internal ID and reconnect" data-i18n="BTN_REGEN_ID" data-i18n-title="BTN_REGEN_ID_TOOLTIP">Regenerate Peer ID</button>
+                </div>
+                <p class="settings-note" data-i18n="REGEN_ID_DESC">Use this if you see "Duplicate Identity" errors.</p>
+                <p class="settings-issue-link"><a href="https://github.com/Shik3i/KoalaSync/issues" target="_blank" data-i18n="REGEN_ID_OTHER_ISSUE">Other issue? Open a GitHub Issue</a></p>
             </div>
         </details>
     </div>
@@ -1024,17 +1222,15 @@
         </div>
     </div>
 
-    <div class="popup-footer" style="margin-top: 16px; border-top: 1px solid var(--border-soft); padding-top: 12px; text-align: center;">
-        <div style="font-size: 9px; color: var(--text-muted); opacity: 0.6; margin-bottom: 6px; line-height: 1.3;" data-i18n="FOOTER_SUPPORT_PROMPT">Enjoying KoalaSync? Leave a review!</div>
-        <div style="display: flex; justify-content: space-between; align-items: center; font-size: 10px;">
-            <a href="https://github.com/Shik3i/KoalaSync" target="_blank" style="color: var(--text-muted); text-decoration: none; opacity: 0.6;" data-i18n="LABEL_GITHUB">GitHub</a>
-            <span>
-                <a id="settingsReviewLink" href="#" target="_blank" style="color: var(--text-muted); text-decoration: none;" data-i18n="FOOTER_REVIEW">★ Rate us</a>
-                <span style="color: var(--text-muted); opacity: 0.4;"> · </span>
-                <a id="settingsSupportLink" href="#" target="_blank" style="color: var(--text-muted); text-decoration: none;" data-i18n="FOOTER_SUPPORT">Support</a>
-            </span>
-            <span id="settingsVersion" style="color: var(--text-muted); opacity: 0.6;">v0.0.0</span>
+    <div class="popup-footer">
+        <div class="footer-support">
+            <p class="footer-prompt" data-i18n="FOOTER_SUPPORT_PROMPT">Enjoying KoalaSync? Leave a review!</p>
+            <a id="settingsReviewLink" class="footer-review" href="#" target="_blank" data-i18n="FOOTER_REVIEW">★ Rate us</a>
         </div>
+        <nav class="footer-links" aria-label="KoalaSync links">
+            <a href="https://github.com/Shik3i/KoalaSync" target="_blank" data-i18n="LABEL_GITHUB">GitHub</a>
+            <a id="settingsSupportLink" href="#" target="_blank" data-i18n="FOOTER_SUPPORT">Support</a>
+        </nav>
     </div>
     </main>
 
