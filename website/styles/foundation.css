@@ -1061,8 +1061,18 @@ nav {
 }
 
 nav.nav-scrolled {
-    padding: 0.75rem 0;
+    padding: 0.45rem 0;
     background: oklch(0.20 0.025 140 / 0.9);
+}
+
+nav.nav-scrolled .logo-area img {
+    height: 44px;
+    width: 44px;
+    margin: 0;
+}
+
+nav.nav-scrolled .logo-area {
+    font-size: 1.25rem;
 }
 
 html.theme-light nav.nav-scrolled {
@@ -1081,6 +1091,7 @@ html.theme-light nav.nav-scrolled {
     font-weight: 800;
     font-size: 1.5rem;
     letter-spacing: -0.5px;
+    transition: font-size 0.3s ease;
 }
 
 /* Logo can be a plain <a>; without this it falls back to the UA link blue,
@@ -1099,6 +1110,7 @@ a.logo-area {
     object-fit: contain;
     border-radius: 8px;
     margin: -4px 0;
+    transition: height 0.3s ease, width 0.3s ease, margin 0.3s ease;
 }
 
 .nav-ext-status {
