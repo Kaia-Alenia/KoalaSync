@@ -5623,10 +5623,6 @@ html.theme-light .hero-demo-scene .demo-video::after {
 .hero-demo-scene .film-mid-scroll > * { fill: var(--demo-midground) !important; }
 .hero-demo-scene .film-fore-scroll > * { fill: var(--demo-foreground) !important; }
 
-/* By day the birds read as silhouettes, not chalk marks */
-html.theme-light .hero-demo-scene .film-birds { stroke: oklch(0.32 0.06 145 / 0.65); }
-html.theme-light :is(.hero-demo-scene, .step-illustration-3) .film-hero-bird { stroke: oklch(0.32 0.06 145 / 0.75); }
-
 /* Stars: staggered twinkle so the sky feels alive */
 .film-star {
     transform-box: fill-box;
@@ -5690,24 +5686,6 @@ html.theme-light :is(.hero-demo-scene, .step-illustration-3) .film-hero-bird { s
 .film-fore-scroll {
     transform: translateX(var(--scroll-fore, 0px));
 }
-/* A single gliding bird carries the scene: the outer group rides the
-   JS-driven drift vars, the inner group flaps its wings via scaleY. */
-.film-hero-bird-drift {
-    transform: translate(var(--lantern-x, 0px), var(--bounce-y, 0px));
-}
-
-.film-hero-bird {
-    transform-box: fill-box;
-    transform-origin: center;
-    animation: filmWingFlap 0.85s ease-in-out infinite alternate;
-    animation-play-state: paused;
-}
-
-@keyframes filmWingFlap {
-    from { transform: scaleY(1); }
-    to { transform: scaleY(0.5); }
-}
-
 /* Twinkle & Glow play state bindings */
 .film-star {
     transform-box: fill-box;
@@ -5715,7 +5693,7 @@ html.theme-light :is(.hero-demo-scene, .step-illustration-3) .film-hero-bird { s
     animation: filmTwinkle 2.8s ease-in-out infinite;
     animation-play-state: paused;
 }
-.demo-tab-card.playing :is(.film-star, .film-moon, .film-moon-g, .film-cloud, .film-shooting-star, .film-birds, .film-hero-bird) {
+.demo-tab-card.playing :is(.film-star, .film-moon, .film-moon-g, .film-cloud, .film-shooting-star) {
     animation-play-state: running;
 }
 
@@ -5747,19 +5725,6 @@ html.theme-light :is(.hero-demo-scene, .step-illustration-3) .film-hero-bird { s
     0%, 87% { opacity: 0; transform: translate(0, 0); }
     89% { opacity: 0.9; }
     95%, 100% { opacity: 0; transform: translate(-46px, 20px); }
-}
-
-/* A distant flock crosses the valley, fading out mid-flight */
-.film-birds {
-    animation: filmBirds 16s linear infinite;
-    animation-play-state: paused;
-}
-
-@keyframes filmBirds {
-    0% { transform: translate(0, 0); opacity: 0; }
-    4% { opacity: 0.75; }
-    42% { opacity: 0.75; }
-    48%, 100% { transform: translate(185px, -12px); opacity: 0; }
 }
 
 /* Valley mist rides the slow background parallax between tree layers */
@@ -6118,10 +6083,6 @@ html.theme-light :is(.hero-demo-scene, .step-illustration-3) .film-hero-bird { s
 }
 .step-illustration-3 .film-fore-scroll {
     animation: scrollFore 3s linear infinite !important;
-}
-.step-illustration-3 .film-hero-bird {
-    animation: filmWingFlap 0.85s ease-in-out infinite !important;
-    animation-direction: alternate !important;
 }
 
 @keyframes scrollBack {

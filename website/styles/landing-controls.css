@@ -17,7 +17,11 @@ html:not(.lang-de) [lang="de"] {
     -webkit-backdrop-filter: blur(12px);
     border: 1px solid rgba(255, 255, 255, 0.08);
     border-radius: 9999px;
-    padding: 6px 14px;
+    /* No own padding: the <select> carries it, so the button (and its
+       focus/hover highlight in appearance:base-select) fills the whole pill
+       instead of only the inner ~110px. */
+    padding: 0;
+    overflow: hidden;
     transition: background-color 0.3s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.3s cubic-bezier(0.4, 0, 0.2, 1), color 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     color: var(--text-muted);
 }
@@ -69,11 +73,13 @@ html:not(.lang-de) [lang="de"] {
     font-weight: 600;
     color: currentColor;
     cursor: pointer;
-    padding: 0 28px 0 0;
+    /* Padding moved here from the container so the control fills the pill. */
+    padding: 6px 32px 6px 14px;
     margin: 0;
     width: auto;
     min-width: 110px;
     overflow: hidden;
+    border-radius: inherit;
 }
 
 @supports (appearance: base-select) {

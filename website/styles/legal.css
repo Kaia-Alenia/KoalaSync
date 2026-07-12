@@ -120,7 +120,7 @@
         margin: 0;
     }
     .lang-select-container {
-        padding: 4px 10px;
+        padding: 0;
         gap: 4px;
     }
     .lang-select-container .globe-icon {
@@ -129,7 +129,9 @@
     }
     .lang-dropdown {
         font-size: 0.7rem;
-        padding: 0 6px 0 0;
+        /* Padding on the control (not the container) so the highlight fills
+           the whole pill — matches the desktop rule in landing-controls.css. */
+        padding: 4px 24px 4px 10px;
     }
     .lang-select-container .chevron-icon {
         width: 10px;
