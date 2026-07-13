@@ -1,10 +1,13 @@
 /* --- Hero Section --- */
 .hero {
-    min-height: 100vh;
+    min-height: 100svh;
     display: flex;
-    align-items: flex-start;
-    padding-top: clamp(8rem, 12vh, 10rem);
-    padding-bottom: clamp(2rem, 5vh, 4rem);
+    /* Centre the hero content vertically so the empty space is balanced above
+       and below instead of pooling under the CTAs. Padding-top only needs to
+       clear the fixed nav. */
+    align-items: center;
+    padding-top: clamp(6rem, 9vh, 8rem);
+    padding-bottom: clamp(3rem, 6vh, 5rem);
 }
 
 .hero-grid {
@@ -20,7 +23,6 @@
     gap: 3rem;
     text-align: left;
     width: 100%;
-    min-height: calc(100svh - 12.5rem);
 }
 
 @media (min-width: 1024px) {
@@ -332,6 +334,25 @@ html.theme-light .koala-speech-bubble::after {
 
 .btn-install.is-detected .btn-label-short { display: none; }
 .btn-install.is-detected .btn-label-full { display: inline; }
+
+/* GitHub is the tertiary hero action. Strip the button chrome so it reads as a
+   quiet link beside the two install CTAs, keeping a clear primary → secondary →
+   tertiary hierarchy (Chrome filled → Firefox outline → GitHub text). The
+   theme-light selector matches the specificity of the light-theme .btn-secondary
+   override in foundation.css so the transparent treatment wins in both themes. */
+.hero-github-cta.btn-secondary,
+html.theme-light .hero-github-cta.btn-secondary {
+    background: transparent;
+    border-color: transparent;
+    color: var(--text-muted);
+}
+
+.hero-github-cta.btn-secondary:hover,
+html.theme-light .hero-github-cta.btn-secondary:hover {
+    background: transparent;
+    color: var(--text);
+    transform: none;
+}
 
 .version-badge {
     display: inline-block;

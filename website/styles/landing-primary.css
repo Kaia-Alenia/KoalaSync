@@ -51,15 +51,8 @@
     pointer-events: none;
 }
 
-.feature-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 15px 30px oklch(0.68 0.13 150 / 0.2);
-    border-color: oklch(0.68 0.13 150 / 0.3);
-}
-
-.feature-card:hover::before {
-    background: linear-gradient(to bottom right, oklch(0.68 0.13 150 / 0.3), transparent);
-}
+/* Feature cards are static content, not links — no hover lift/glow, so they
+   don't read as clickable. */
 
 /* Feature Icon with Inline SVG Wrapper */
 .feature-icon-svg {
@@ -73,14 +66,6 @@
     color: var(--accent);
     border-radius: 12px;
     margin-right: 14px;
-    transition: background 0.3s ease, color 0.3s ease, box-shadow 0.3s ease, transform 0.3s ease;
-}
-
-.feature-card:hover .feature-icon-svg {
-    background: var(--accent);
-    color: var(--text-on-green);
-    box-shadow: 0 0 15px var(--accent-glow);
-    transform: scale(1.05);
 }
 
 .bento-icon {
@@ -152,11 +137,6 @@
     right: 2.5rem;
     height: 2px;
     background: linear-gradient(90deg, transparent, oklch(0.68 0.13 150 / 0.4), transparent);
-    opacity: 0;
-    transition: opacity 0.3s ease;
-}
-
-.feature-card.bento-large:hover::after {
     opacity: 1;
 }
 
@@ -237,7 +217,7 @@
 .steps {
     display: flex;
     flex-direction: column;
-    gap: 4rem;
+    gap: 2.75rem;
 }
 
 .step {
@@ -331,11 +311,7 @@ html.theme-light .step-num {
     }
 }
 
-.step-illustration-1:hover, .step-illustration-2:hover, .step-illustration-3:hover {
-    transform: translateY(-6px) scale(1.02);
-    border-color: oklch(0.68 0.13 150 / 0.25);
-    box-shadow: 0 25px 50px oklch(0.68 0.13 150 / 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.1);
-}
+/* Step illustrations are screenshots, not controls — no hover lift/scale. */
 
 /* ==========================================================================
    Step 1 Illustration: Browser & Installed Success Popup
@@ -704,28 +680,14 @@ html.theme-light .step-num {
     position: relative;
     overflow: hidden;
     cursor: default;
-    animation: create-btn-pulse 2s infinite alternate;
+    /* Static: the constant scale/shadow pulse pulled the eye away from the
+       copy while reading the steps (step 3 keeps the lively animation). */
 }
 
-@keyframes create-btn-pulse {
-    0% { transform: scale(1); box-shadow: 0 4px 12px oklch(0.68 0.13 150 / 0.3); }
-    100% { transform: scale(1.03); box-shadow: 0 6px 16px oklch(0.68 0.13 150 / 0.5); }
-}
-
+/* Shine sweep removed — kept the element off-canvas so the button reads as a
+   calm static control rather than a repeatedly glinting one. */
 .illus-btn-shine {
-    position: absolute;
-    top: 0;
-    left: -100%;
-    width: 50%;
-    height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.25), transparent);
-    transform: skewX(-20deg);
-    animation: shimmer-sweep 3s infinite ease-in-out;
-}
-
-@keyframes shimmer-sweep {
-    0% { left: -100%; }
-    50%, 100% { left: 150%; }
+    display: none;
 }
 
 .illus-collapsed-details {
@@ -764,14 +726,10 @@ html.theme-light .step-num {
     align-items: center;
     gap: 4px;
     box-shadow: 0 6px 14px rgba(0, 0, 0, 0.45), 0 0 12px oklch(0.68 0.13 150 / 0.18);
-    animation: floating-success-fade 5s infinite;
+    /* Shown statically instead of fading in and out on a loop — the toast now
+       reads as part of the popup state rather than a flashing notification. */
     white-space: nowrap;
     z-index: 10;
-}
-
-@keyframes floating-success-fade {
-    0%, 100%, 75% { opacity: 0; transform: translate(-50%, 5px) scale(0.9); }
-    15%, 60% { opacity: 1; transform: translate(-50%, 0) scale(1); }
 }
 
 .illus-floating-success .success-icon {
@@ -1020,16 +978,6 @@ html.theme-light .step-illustration-3 {
     box-shadow:
         0 18px 38px oklch(0.20 0.025 140 / 0.12),
         inset 0 1px 0 rgba(255, 255, 255, 0.9);
-}
-
-html.theme-light .step-illustration-1:hover,
-html.theme-light .step-illustration-2:hover,
-html.theme-light .step-illustration-3:hover {
-    border-color: oklch(0.56 0.13 150 / 0.28);
-    box-shadow:
-        0 22px 44px oklch(0.20 0.025 140 / 0.15),
-        0 0 22px oklch(0.56 0.13 150 / 0.10),
-        inset 0 1px 0 #ffffff;
 }
 
 html.theme-light .step-illustration-1 .illus-popup-card,

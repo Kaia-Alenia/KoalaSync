@@ -1147,12 +1147,8 @@ html.theme-light .hero-demo-scene .demo-video::after {
     font-size: 1.1rem;
     pointer-events: none;
     z-index: 10;
-    animation: pointer-click 1.6s infinite ease-in-out;
-}
-
-@keyframes pointer-click {
-    0%, 100% { transform: translate(0, 0) scale(1); }
-    50% { transform: translate(-3px, -3px) scale(0.9); }
+    /* Static hand — the looping tap bob was the busiest part of step 2 and
+       distracted from the copy (step 3 keeps its lively animation). */
 }
 
 /* Step 3 forest movie continuous animation bindings */

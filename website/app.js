@@ -379,19 +379,19 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         };
 
+        // Listen for `click`, not `pointerdown`: a click never fires while the
+        // page is being scrolled, so touch users no longer trigger a shower of
+        // leaves every time they swipe. Leaves are also only shed by actual
+        // interactive controls (links/buttons and the demo widgets), so a stray
+        // tap on plain text or an illustration stays quiet.
         let lastBurst = 0;
-        document.addEventListener('pointerdown', (e) => {
-            if (e.button !== 0 || !e.isPrimary) return;
+        document.addEventListener('click', (e) => {
+            const control = e.target.closest('a, button, [role="button"], .btn, .mock-tab, select, .demo-progress');
+            if (!control) return;
             const now = Date.now();
             if (now - lastBurst < 180) return;
             lastBurst = now;
-            const control = e.target.closest('button, [role="button"], .btn, .mock-tab, select, .demo-progress');
-            if (control) {
-                burstFromElement(control);
-            } else {
-                const count = 4 + Math.floor(Math.random() * 3);
-                for (let i = 0; i < count; i++) spawnLeaf(e.clientX, e.clientY);
-            }
+            burstFromElement(control);
         }, { passive: true });
     }
 

@@ -1,6 +1,6 @@
 /* --- Use Cases / Anwendungsszenarien Section --- */
 .use-cases-section {
-    padding: 6rem 0;
+    padding: clamp(3.5rem, 6.5vh, 5rem) 0;
     position: relative;
     border-bottom: 0;
 }
@@ -10,6 +10,18 @@
     grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
     gap: 2rem;
     margin-top: 1rem;
+}
+
+/* Sub-heading that separates the use-case scenarios from the feature tiles so
+   the two card types read as intentional groups (and gives the "Features" nav
+   link a real target). */
+.section-subheading {
+    text-align: center;
+    font-size: 1.55rem;
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    margin: 3.25rem 0 1.5rem;
+    scroll-margin-top: 96px;
 }
 
 .use-cases-feature-grid {
@@ -63,13 +75,9 @@
 .use-case-card:nth-child(3) { --card-accent-border: oklch(0.75 0.10 150); }
 
 
-.use-case-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.35);
-    border-color: rgba(255, 255, 255, 0.15);
-}
-
-.use-case-card:hover::before {
+/* Use-case cards are static content, not links — no hover lift so they don't
+   read as clickable. The top accent bar (::before) stays visible instead. */
+.use-case-card::before {
     opacity: 1;
 }
 
@@ -91,30 +99,30 @@
     margin: 1.5rem auto;
 }
 
+/* Shared framing so the section mascots read as one set even though the
+   underlying illustrations differ slightly in style (a consistent, soft ground
+   shadow — true art-direction alignment needs the assets themselves redrawn). */
+.compat-mascot,
+.features-questions-mascot,
+.comparison-mascot,
+.selfhost-mascot {
+    filter: drop-shadow(0 6px 14px oklch(0.15 0.02 145 / 0.22));
+}
+
 .features-questions-mascot {
     display: block;
     width: 100%;
-    max-width: 250px;
+    max-width: 185px;
     height: auto;
-    margin: -1.5rem auto 0.2rem auto;
-    transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-}
-
-.features-questions-mascot:hover {
-    transform: scale(1.05) translateY(-4px) rotate(-1.5deg);
+    margin: -1rem auto 0.4rem auto;
 }
 
 .comparison-mascot {
     display: block;
     width: 100%;
-    max-width: 260px;
+    max-width: 195px;
     height: auto;
-    margin: -2.2rem auto 0.2rem auto;
-    transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-}
-
-.comparison-mascot:hover {
-    transform: scale(1.05) translateY(-4px) rotate(1deg);
+    margin: -1.4rem auto 0.4rem auto;
 }
 
 .use-case-icon {
@@ -141,7 +149,7 @@
 
 /* --- Comparison Section --- */
 .comparison-section {
-    padding: 6rem 0;
+    padding: clamp(3.5rem, 6.5vh, 5rem) 0;
     background: transparent;
     border-bottom: 0;
 }

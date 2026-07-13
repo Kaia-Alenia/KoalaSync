@@ -101,6 +101,16 @@
     .nav-links.open {
         display: flex;
     }
+    /* The dropdown panel is dark-green by default; in the light theme that
+       hard-coded colour clashed with the pale navbar and washed out the link
+       text. Match the panel and its links to the active theme instead. */
+    .nav-links a {
+        color: var(--text);
+    }
+    html.theme-light .nav-links {
+        background: oklch(0.95 0.01 100 / 0.97);
+        border-bottom-color: oklch(0.20 0.025 140 / 0.10);
+    }
     .nav-right {
         margin-left: auto;
     }
@@ -144,12 +154,8 @@
 
 @media (min-width: 769px) and (max-height: 920px) {
     .hero {
-        padding-top: clamp(7.5rem, 10vh, 9rem);
-        padding-bottom: clamp(1.5rem, 3vh, 2.75rem);
-    }
-
-    .hero-grid {
-        min-height: calc(100svh - 9.5rem);
+        padding-top: clamp(6.5rem, 9vh, 8rem);
+        padding-bottom: clamp(2rem, 4vh, 3.5rem);
     }
 }
 

@@ -119,8 +119,11 @@ body {
 
 /* --- Animated Bamboo Forest Background (v3 Greens Update) --- */
 .bg-nature {
-    --sway: 1.2deg;
-    --leaf-drift: 26px;
+    /* Motion dialled back so the scene reads as a calm backdrop rather than
+       competing with the text that scrolls over it (sway/drift roughly
+       halved from the original 1.2deg / 26px). */
+    --sway: 0.6deg;
+    --leaf-drift: 13px;
 }
 
 .bg-nature {
@@ -354,9 +357,18 @@ body {
 
 @keyframes leafFall {
     0% { transform: translateY(-40px) rotate(0); opacity: 0; }
-    8% { opacity: 0.65; }
-    92% { opacity: 0.5; }
+    8% { opacity: 0.3; }
+    92% { opacity: 0.24; }
     100% { transform: translateY(110vh) translateX(120px) rotate(280deg); opacity: 0; }
+}
+
+/* Thin the drifting leaves down to four so fewer of them cross the reading
+   column at once (the even ones stay hidden, keeping an even spread). */
+.fall-leaf-2,
+.fall-leaf-4,
+.fall-leaf-6,
+.fall-leaf-8 {
+    display: none;
 }
 
 @keyframes leafSway {
@@ -413,8 +425,8 @@ body {
 .godray-3 { left: 56%; width: 140px; animation-duration: 13s; animation-delay: -6s; background: linear-gradient(180deg, oklch(0.85 0.05 110 / 0.08), transparent 75%); }
 
 @keyframes rayShimmer {
-    0% { opacity: 0.45; }
-    100% { opacity: 1; }
+    0% { opacity: 0.35; }
+    100% { opacity: 0.6; }
 }
 
 /* (e) Canopy: dark vignette at the top plus hanging leaf arcs */
@@ -579,8 +591,8 @@ body {
 }
 
 @keyframes fireflyPulse {
-    0%, 100% { opacity: 0.2; transform: scale(1); }
-    50% { opacity: 0.9; transform: scale(1.35); }
+    0%, 100% { opacity: 0.15; transform: scale(1); }
+    50% { opacity: 0.55; transform: scale(1.2); }
 }
 
 @keyframes fireflyWander {
@@ -675,8 +687,8 @@ html.theme-light .bg-horizon {
     left: -30%;
     width: 160%;
     height: 160%;
-    background: linear-gradient(115deg, transparent 42%, oklch(0.68 0.13 150 / 0.05) 50%, transparent 58%);
-    animation: lightSweep 26s ease-in-out infinite alternate;
+    background: linear-gradient(115deg, transparent 42%, oklch(0.68 0.13 150 / 0.03) 50%, transparent 58%);
+    animation: lightSweep 38s ease-in-out infinite alternate;
     will-change: transform;
 }
 
@@ -1061,12 +1073,15 @@ html.theme-light :is(.use-case-card, .feature-card, .faq-item, .comparison-table
     padding: 0 2rem;
 }
 
+/* Unified vertical rhythm: every content section shares one padding scale so
+   the page reads as an even cadence instead of a series of tall, half-empty
+   panels. Tightened from the old fixed 6rem. */
 section {
-    padding: 6rem 0;
+    padding: clamp(3.5rem, 6.5vh, 5rem) 0;
 }
 
 #how-it-works {
-    padding: 4.5rem 0;
+    padding: clamp(3.5rem, 6.5vh, 5rem) 0;
 }
 
 /* Content-visibility for offscreen sections to improve INP */
