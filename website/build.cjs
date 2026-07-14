@@ -7,6 +7,7 @@ const path = require('path');
 const crypto = require('crypto');
 const sharp = require('sharp');
 const esbuild = require('esbuild');
+const htmlnano = require('htmlnano');
 const { optimize: svgoOptimize } = require('svgo');
 
 // CSS minifier: simple regex-based (proven, 27% reduction, no deps)
@@ -24,16 +25,29 @@ function minifyCSS(code) {
 if (minifyCSS('.parent :is(.a, .b) { color: red; }') !== '.parent :is(.a,.b){color:red}') {
     throw new Error('CSS minifier must preserve descendant combinators before functional pseudo-classes');
 }
-// HTML minifier: comments + indentation only. Newlines are preserved so
-// inline scripts/JSON-LD stay valid; <pre> blocks keep their formatting.
-function minifyHTML(html) {
-    return html.split(/(<pre\b[\s\S]*?<\/pre>)/).map((part, i) => {
-        if (i % 2 === 1) return part;
-        return part
-            .replace(/<!--(?!\[)[\s\S]*?-->/g, '')
-            .replace(/\n[ \t]+/g, '\n')
-            .replace(/\n{2,}/g, '\n');
-    }).join('');
+// HTML only: parser-based comment removal and conservative whitespace collapse.
+// CSS, JS, JSON, and SVG keep their dedicated build steps below.
+const HTML_MINIFY_OPTIONS = Object.freeze({
+    skipConfigLoading: true,
+    removeComments: 'safe',
+    collapseWhitespace: 'conservative'
+});
+const HTML_MINIFY_PRESET = Object.freeze({});
+
+async function minifyHTML(html) {
+    return (await htmlnano.process(html, HTML_MINIFY_OPTIONS, HTML_MINIFY_PRESET)).html;
+}
+
+async function verifyHTMLMinifier() {
+    const pre = '<pre>  keep\n    exactly  </pre>';
+    const jsonLd = '<script type="application/ld+json">{"name":"KoalaSync"}</script>';
+    const conditional = '<!--[if IE]>legacy<![endif]-->';
+    const result = await minifyHTML(`<!<!--nested-->--unsafe-->${pre}${jsonLd}${conditional}`);
+    const ordinaryComments = result.replace(conditional, '');
+    if (ordinaryComments.includes('<!--') || !result.includes(pre) || !result.includes(conditional)) {
+        throw new Error('HTML minifier security/preservation invariant failed');
+    }
+    JSON.parse(result.match(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/)[1]);
 }
 
 // ── Country-flag font subset (committed artifact, validated here) ────────
@@ -144,6 +158,7 @@ function minifyInlineSvgs(html) {
 }
 
 async function compile() {
+    await verifyHTMLMinifier();
     console.log('Starting KoalaSync i18n compilation...');
     const websiteDir = __dirname;
     const wwwDir = path.join(websiteDir, 'www');
@@ -611,15 +626,15 @@ async function compile() {
 
     // ── 8. Post-process ALL HTML files ──
     console.log('Post-processing HTML...');
-    function walkHtml(dir, fn) {
+    async function walkHtml(dir, fn) {
         for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
             const p = path.join(dir, entry.name);
-            if (entry.isDirectory()) { walkHtml(p, fn); }
-            else if (entry.name.endsWith('.html')) { fn(p); }
+            if (entry.isDirectory()) { await walkHtml(p, fn); }
+            else if (entry.name.endsWith('.html')) { await fn(p); }
         }
     }
 
-    walkHtml(wwwDir, (filePath) => {
+    await walkHtml(wwwDir, async (filePath) => {
         let html = fs.readFileSync(filePath, 'utf8');
 
         // 8a. Replace hashed asset refs and inject SRI (Subresource Integrity)
@@ -661,7 +676,7 @@ async function compile() {
         }
 
         // 8e. Minify HTML (comments + indentation)
-        html = minifyHTML(html);
+        html = await minifyHTML(html);
 
         fs.writeFileSync(filePath, html);
     });
