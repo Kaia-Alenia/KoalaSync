@@ -4,7 +4,22 @@ All notable changes to the KoalaSync browser extension and relay server.
 
 ---
 
-## Unreleased
+## [v2.6.0] — Unreleased
+
+### Added
+- **Website: Expanded comparison guides** — Added fully localized comparison pages for Kosmi, Scener, and TwoSeven, plus improved existing alternatives pages and navigation.
+- **Extension: Appearance controls** — Added localized system, light, and dark theme options with an early theme initializer to avoid flashes during popup startup.
+
+### Changed
+- **Website: Koala nature redesign** — Rebuilt the landing page around a responsive day/night forest theme with richer motion, an improved interactive demo, clearer onboarding, polished legal/join/error pages, and stronger mobile behavior.
+- **Extension: Popup and settings redesign** — Unified controls, status surfaces, colors, icons, badges, and accessibility behavior; settings are now organized into mutually exclusive accordion groups.
+- **Website: Faster rendering and builds** — Split page CSS by responsibility, removed startup forced reflows, added responsive mascot assets, cached AVIF generation, subset the flag font, minified generated HTML, and added integrity metadata for scripts and styles.
+- **Website: SEO and localization** — Added richer structured metadata, AI-crawler guidance, dynamic sitemap generation, and complete translations for the expanded alternatives content.
+
+### Fixed
+- **Extension: Episode Lobby reliability** — Prevented the lobby from remaining stuck in a loading state and stopped episode transitions from triggering on non-episodic media.
+- **Extension: Tab-title normalization** — Notification counters such as `(14)`, `[7]`, and `(99+)` are removed reliably without stripping legitimate large numeric titles.
+- **Website and extension: Theme contrast and navigation** — Fixed light-theme contrast, language highlighting, mobile join navigation, and several control-label and tooltip inconsistencies.
 
 ---
 
