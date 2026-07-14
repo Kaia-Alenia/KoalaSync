@@ -335,25 +335,6 @@ html.theme-light .koala-speech-bubble::after {
 .btn-install.is-detected .btn-label-short { display: none; }
 .btn-install.is-detected .btn-label-full { display: inline; }
 
-/* GitHub is the tertiary hero action. Strip the button chrome so it reads as a
-   quiet link beside the two install CTAs, keeping a clear primary → secondary →
-   tertiary hierarchy (Chrome filled → Firefox outline → GitHub text). The
-   theme-light selector matches the specificity of the light-theme .btn-secondary
-   override in foundation.css so the transparent treatment wins in both themes. */
-.hero-github-cta.btn-secondary,
-html.theme-light .hero-github-cta.btn-secondary {
-    background: transparent;
-    border-color: transparent;
-    color: var(--text-muted);
-}
-
-.hero-github-cta.btn-secondary:hover,
-html.theme-light .hero-github-cta.btn-secondary:hover {
-    background: transparent;
-    color: var(--text);
-    transform: none;
-}
-
 .version-badge {
     display: inline-block;
     background: oklch(0.68 0.13 150 / 0.1);
