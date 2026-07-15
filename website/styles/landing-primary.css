@@ -244,7 +244,9 @@
 }
 
 html.theme-light .step-num {
-    background: linear-gradient(135deg, oklch(0.45 0.10 150), oklch(0.40 0.08 120));
+    color: oklch(0.36 0.10 145);
+    background: none;
+    -webkit-text-fill-color: currentColor;
 }
 
 .step-text h3 {

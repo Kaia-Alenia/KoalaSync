@@ -75,7 +75,15 @@ for (const className of gettingStartedLightSurfaces) {
   }
 }
 
+const stepNumberLightRule = landingPrimaryCss.match(/html\.theme-light \.step-num\s*\{([^}]*)\}/)?.[1] || '';
+if (!/color:\s*oklch\(/.test(stepNumberLightRule)
+    || !/background:\s*none/.test(stepNumberLightRule)
+    || !/-webkit-text-fill-color:\s*currentColor/.test(stepNumberLightRule)) {
+  throw new Error('Getting Started step numbers must use solid readable text in light mode');
+}
+
 console.log('Extension mockup theme-sensitive text uses theme-aware colors');
 console.log('Landing CSS is render-blocking, single-request, and cascade-stable');
 console.log('Foreground film birds use complete, always-on wing and glide animations');
 console.log('All Getting Started mockups define explicit light-theme surfaces');
+console.log('Getting Started step numbers stay readable in light mode');
