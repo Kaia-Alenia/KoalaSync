@@ -1,6 +1,6 @@
 # KoalaSync Changelog
 
-All notable changes to the KoalaSync browser extension, relay server, and release tooling.
+All notable changes to the KoalaSync browser extension and relay server.
 
 ---
 
