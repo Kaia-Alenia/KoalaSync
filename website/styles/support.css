@@ -210,16 +210,6 @@
     min-width: 180px;
 }
 
-.support-separate-issue {
-    border-color: color-mix(in oklch, var(--accent-terracotta) 45%, transparent);
-}
-
-.support-separate-issue .support-eyebrow {
-    border-color: color-mix(in oklch, var(--accent-terracotta) 40%, transparent);
-    background: color-mix(in oklch, var(--accent-terracotta) 10%, var(--card));
-    color: var(--accent-terracotta);
-}
-
 html.theme-light .support-card,
 html.theme-light .support-callout {
     background-color: var(--card-surface);

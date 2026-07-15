@@ -38,8 +38,8 @@ assert.match(helpPage, /Access requested/,
     'help page must explain the new Chromium access-request UI');
 assert.match(helpPage, /Firefox/,
     'help page must include Firefox-specific recovery instructions');
-assert.match(helpPage, /“Peers \(1\)” only shows yourself/,
-    'help page must distinguish relay peer visibility from website access');
+assert.doesNotMatch(helpPage, /Peers \(1\)|Separate issue/,
+    'website-access help must not include unrelated relay troubleshooting');
 assert.match(helpPage, /video and audio stream never leave your browser/,
     'help page must explain the privacy boundary of the permission');
 assert.match(helpPage, /support\.google\.com\/chrome/);
