@@ -243,5 +243,18 @@
   "LABEL_SETTINGS_GROUP_PROFILE": "个人资料与外观",
   "LABEL_SETTINGS_GROUP_PROFILE_TOOLTIP": "更改您的用户名、主题和语言首选项。",
   "LABEL_SETTINGS_GROUP_SYNC": "播放与同步",
-  "LABEL_SETTINGS_GROUP_SYNC_TOOLTIP": "自定义播放、通知和音频首选项。"
+  "LABEL_SETTINGS_GROUP_SYNC_TOOLTIP": "自定义播放、通知和音频首选项。",
+  "CHAT_TITLE": "房间聊天",
+  "CHAT_LIVE_ONLY": "仅实时显示，无历史记录。",
+  "CHAT_OPEN": "打开房间聊天",
+  "CHAT_CLOSE": "关闭聊天",
+  "CHAT_DOCK_LEFT": "将聊天固定在左侧",
+  "CHAT_DOCK_RIGHT": "将聊天固定在右侧",
+  "CHAT_DETACHED": "浮动聊天",
+  "CHAT_PLACEHOLDER": "输入消息...",
+  "CHAT_SEND": "发送",
+  "CHAT_MISSING_KEY": "聊天仅可通过当前邀请链接使用。",
+  "CHAT_TOO_LONG": "最多500个字符。",
+  "CHAT_SEND_FAILED": "无法发送消息。",
+  "CHAT_EMPTY": "暂无消息。聊天仅实时显示。"
 }

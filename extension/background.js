@@ -523,6 +523,7 @@ function markRoomPotentiallyIdle() {
 }
 
 function clearTargetTabForIdle() {
+    if (currentTabId) chrome.tabs.sendMessage(Number(currentTabId), { type: 'CHAT_DESTROY' }).catch(() => {});
     currentTabId = null;
     currentTabTitle = null;
     lastContentHeartbeatAt = null;
@@ -550,6 +551,7 @@ async function leaveRoomAfterIdleGrace(reason) {
     // Notify content.js/popup BEFORE currentTabId is cleared so they can reset
     // any stale guest-side HCM state (dialog/badge/desync) — H-2.
     broadcastControlMode();
+    if (currentTabId) chrome.tabs.sendMessage(Number(currentTabId), { type: 'CHAT_DESTROY' }).catch(() => {});
     currentTabId = null;
     currentTabTitle = null;
     roomIdleSince = null;
@@ -1049,6 +1051,7 @@ async function handleServerEvent(event, data) {
             hostPeerId = data.hostPeerId || null;
             controllers = Array.isArray(data.controllers) ? data.controllers : [];
             serverCapabilities = Array.isArray(data.capabilities) ? data.capabilities : [];
+            if (currentTabId) chrome.tabs.sendMessage(Number(currentTabId), { type: 'CHAT_CONTEXT_UPDATE' }).catch(() => {});
             hcmEnforceDesyncInvariant();
             broadcastControlMode();
             markRoomPotentiallyIdle();
@@ -1829,7 +1832,7 @@ async function injectContentScript(tabId) {
     });
     return chrome.scripting.executeScript({
         target: { tabId },
-        files: ['content.js']
+        files: ['chat-format.js', 'chat-overlay.js', 'content.js']
     });
 }
 
@@ -1899,6 +1902,7 @@ chrome.alarms.onAlarm.addListener(async (alarm) => {
 
 function leaveOldRoomIfSwitching(newRoomId) {
     if (currentRoom && currentRoom.roomId !== newRoomId) {
+        if (currentTabId) chrome.tabs.sendMessage(Number(currentTabId), { type: 'CHAT_RESET' }).catch(() => {});
         addLog(`Switching rooms: leaving ${currentRoom.roomId} to join ${newRoomId}`, 'info');
         forceDisconnect();
         currentRoom = null;
@@ -2033,6 +2037,41 @@ async function handleAsyncMessage(message, sender, sendResponse) {
             chatSupported: serverSupports(CAPABILITIES.CHAT),
             hasChatKey: !!(await getSettings()).chatKey
         });
+    } else if (message.type === 'GET_CHAT_CONTEXT') {
+        const senderTabId = sender.tab?.id;
+        if (!currentRoom || !currentTabId || senderTabId !== Number(currentTabId)) {
+            sendResponse({ supported: false, hasKey: false });
+            return;
+        }
+        const settings = await getSettings();
+        const localeData = await chrome.storage.local.get(['locale']);
+        await loadLocale(localeData.locale || getSystemLanguage());
+        const translated = key => {
+            const value = getMessage(key);
+            return value === key ? '' : value;
+        };
+        sendResponse({
+            supported: serverSupports(CAPABILITIES.CHAT),
+            hasKey: !!settings.chatKey,
+            peerId,
+            roomId: currentRoom.roomId,
+            strings: {
+                title: translated('CHAT_TITLE'),
+                liveOnly: translated('CHAT_LIVE_ONLY'),
+                open: translated('CHAT_OPEN'),
+                close: translated('CHAT_CLOSE'),
+                dockLeft: translated('CHAT_DOCK_LEFT'),
+                dockRight: translated('CHAT_DOCK_RIGHT'),
+                detached: translated('CHAT_DETACHED'),
+                placeholder: translated('CHAT_PLACEHOLDER'),
+                send: translated('CHAT_SEND'),
+                missingKey: translated('CHAT_MISSING_KEY'),
+                tooLong: translated('CHAT_TOO_LONG'),
+                sendFailed: translated('CHAT_SEND_FAILED'),
+                empty: translated('CHAT_EMPTY'),
+                you: translated('LABEL_YOU')
+            }
+        });
     } else if (message.type === 'CHAT_SEND') {
         const senderTabId = sender.tab?.id;
         if (!currentRoom || !currentTabId || senderTabId !== Number(currentTabId)) {
@@ -2150,6 +2189,7 @@ async function handleAsyncMessage(message, sender, sendResponse) {
         // Notify content.js/popup BEFORE currentTabId is cleared so they drop any
         // stale guest-side HCM state (dialog/badge/desync) — H-2/H-3.
         broadcastControlMode();
+        if (currentTabId) chrome.tabs.sendMessage(Number(currentTabId), { type: 'CHAT_DESTROY' }).catch(() => {});
         currentTabId = null;
         currentTabTitle = null;
         roomIdleSince = null;
@@ -2223,6 +2263,7 @@ async function handleAsyncMessage(message, sender, sendResponse) {
 
             if (roomId && currentRoom && currentRoom.roomId === roomId && socket && socket.readyState === WebSocket.OPEN && isNamespaceJoined && desiredUrl === currentServerUrl) {
                 broadcastConnectionStatus('connected');
+                if (currentTabId) chrome.tabs.sendMessage(Number(currentTabId), { type: 'CHAT_CONTEXT_UPDATE' }).catch(() => {});
                 const tabs = await new Promise(resolve => chrome.tabs.query({}, resolve));
                 for (const tab of tabs) {
                     chrome.tabs.sendMessage(tab.id, { type: 'JOIN_STATUS', success: true, message: 'Already in room' }).catch(() => {});
@@ -2550,6 +2591,7 @@ async function handleAsyncMessage(message, sender, sendResponse) {
 
         if (previousTabId && previousTabId !== currentTabId) {
             resetAudioProcessingInTab(previousTabId);
+            chrome.tabs.sendMessage(Number(previousTabId), { type: 'CHAT_DESTROY' }).catch(() => {});
         }
         
         if (currentTabId) {

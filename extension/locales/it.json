@@ -243,5 +243,18 @@
   "LABEL_SETTINGS_GROUP_PROFILE": "Profilo & Aspetto",
   "LABEL_SETTINGS_GROUP_PROFILE_TOOLTIP": "Modifica il tuo nome utente, tema e preferenze di lingua.",
   "LABEL_SETTINGS_GROUP_SYNC": "Riproduzione & Sync",
-  "LABEL_SETTINGS_GROUP_SYNC_TOOLTIP": "Personalizza la riproduzione, le notifiche e le preferenze audio."
+  "LABEL_SETTINGS_GROUP_SYNC_TOOLTIP": "Personalizza la riproduzione, le notifiche e le preferenze audio.",
+  "CHAT_TITLE": "Chat della stanza",
+  "CHAT_LIVE_ONLY": "Solo in diretta. Nessuna cronologia.",
+  "CHAT_OPEN": "Apri la chat della stanza",
+  "CHAT_CLOSE": "Chiudi chat",
+  "CHAT_DOCK_LEFT": "Aggancia chat a sinistra",
+  "CHAT_DOCK_RIGHT": "Aggancia chat a destra",
+  "CHAT_DETACHED": "Sgancia chat",
+  "CHAT_PLACEHOLDER": "Scrivi un messaggio...",
+  "CHAT_SEND": "Invia",
+  "CHAT_MISSING_KEY": "La chat è disponibile solo tramite un link di invito attuale.",
+  "CHAT_TOO_LONG": "Massimo 500 caratteri.",
+  "CHAT_SEND_FAILED": "Impossibile inviare il messaggio.",
+  "CHAT_EMPTY": "Nessun messaggio. La chat è solo in diretta."
 }
