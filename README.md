@@ -140,7 +140,6 @@ gh attestation verify dist/koalasync-chrome.zip \
 - **[ROADMAP.md](docs/ROADMAP.md)**: Planned features, backlog, and rejected ideas.
 - **[SECURITY.md](SECURITY.md)**: Disclosure policy and security practices.
 - **[AI_INIT.md](docs/AI_INIT.md)**: Maintainer and agent onboarding notes for safe code changes.
-- **[llms.txt](website/llms.txt)**: AI-readable product profile covering fit, limitations, privacy, architecture, installation, and support.
 - **[Caddyfile.example](examples/Caddyfile.example)**: Production Caddy configuration for website and relay.
 
 ---
