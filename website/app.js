@@ -1,6 +1,14 @@
 // KoalaSync Landing Page Logic
 
 document.addEventListener('DOMContentLoaded', () => {
+    const siteAccessBanner = document.querySelector('.site-access-banner');
+    const siteAccessBannerDismiss = document.querySelector('.site-access-banner-dismiss');
+    if (siteAccessBanner && siteAccessBannerDismiss) {
+        siteAccessBannerDismiss.addEventListener('click', () => {
+            siteAccessBanner.hidden = true;
+        });
+    }
+
     // Mockup Video Title Randomization on Load
     const SERIES_NAMES = [
         'Stranger Things',
