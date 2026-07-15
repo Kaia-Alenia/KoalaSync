@@ -12,16 +12,23 @@ export function normalizeTabId(value) {
     return Number.isSafeInteger(tabId) ? tabId : null;
 }
 
-export function describeTabUrl(rawUrl) {
+function browserSupportsPortMatchPatterns(chromeApi) {
+    // runtime.getBrowserInfo is a Firefox-only WebExtension API. Firefox does
+    // not accept ports in match patterns, while Chromium does.
+    return typeof chromeApi?.runtime?.getBrowserInfo !== 'function';
+}
+
+export function describeTabUrl(rawUrl, { includePort = true } = {}) {
     if (typeof rawUrl !== 'string' || !rawUrl) return null;
 
     try {
         const url = new URL(rawUrl);
         if (url.protocol === 'http:' || url.protocol === 'https:') {
+            const permissionHost = includePort ? url.host : url.hostname;
             return {
                 url: rawUrl,
                 host: url.host,
-                originPattern: `${url.origin}/*`
+                originPattern: `${url.protocol}//${permissionHost}/*`
             };
         }
         if (url.protocol === 'file:') {
@@ -40,7 +47,11 @@ export function describeTabUrl(rawUrl) {
 
 export async function inspectTabHostAccess(chromeApi, tabId) {
     const tab = await chromeApi.tabs.get(tabId);
-    const descriptor = describeTabUrl(tab?.pendingUrl || tab?.url || '');
+    // executeScript targets the committed document. pendingUrl may already point
+    // at another origin while tab.url is still the document being injected into.
+    const descriptor = describeTabUrl(tab?.url || tab?.pendingUrl || '', {
+        includePort: browserSupportsPortMatchPatterns(chromeApi)
+    });
     if (!descriptor) {
         return {
             tab,
@@ -59,7 +70,8 @@ export async function inspectTabHostAccess(chromeApi, tabId) {
         const granted = await callBooleanPermissionMethod(
             chromeApi,
             'contains',
-            { origins: [descriptor.originPattern] }
+            { origins: [descriptor.originPattern] },
+            { timeoutMs: 1000 }
         );
         return {
             tab,
@@ -73,20 +85,29 @@ export async function inspectTabHostAccess(chromeApi, tabId) {
     }
 }
 
-function callBooleanPermissionMethod(chromeApi, methodName, request) {
+function callBooleanPermissionMethod(chromeApi, methodName, request, { timeoutMs = null } = {}) {
     const method = chromeApi.permissions?.[methodName];
     if (typeof method !== 'function') return Promise.resolve(null);
 
     return new Promise((resolve, reject) => {
         let settled = false;
+        let timeout = null;
+        const clearSettlementTimeout = () => {
+            if (timeout !== null) {
+                clearTimeout(timeout);
+                timeout = null;
+            }
+        };
         const finish = (value) => {
             if (settled) return;
             settled = true;
-            resolve(value === true);
+            clearSettlementTimeout();
+            resolve(value === true ? true : value === false ? false : null);
         };
         const fail = (error) => {
             if (settled) return;
             settled = true;
+            clearSettlementTimeout();
             reject(error instanceof Error ? error : new Error(String(error || 'Permission request failed')));
         };
         const callback = (value) => {
@@ -97,6 +118,10 @@ function callBooleanPermissionMethod(chromeApi, methodName, request) {
             }
             finish(value);
         };
+
+        if (Number.isFinite(timeoutMs) && timeoutMs > 0) {
+            timeout = setTimeout(() => finish(null), timeoutMs);
+        }
 
         try {
             const result = method.call(chromeApi.permissions, request, callback);
@@ -120,7 +145,8 @@ export function requestOriginPermission(chromeApi, originPattern) {
     return callBooleanPermissionMethod(
         chromeApi,
         'request',
-        { origins: [originPattern] }
+        { origins: [originPattern] },
+        { timeoutMs: 60000 }
     ).catch(() => false);
 }
 

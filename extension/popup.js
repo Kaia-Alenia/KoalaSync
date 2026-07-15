@@ -3,7 +3,7 @@ import { BLACKLIST_DOMAINS } from './shared/blacklist.js';
 import { getAvatarForName, generateUsername, USERNAME_ADJECTIVES, USERNAME_NOUNS } from './shared/names.js';
 import { loadLocale, translateDOM, getMessage, getSystemLanguage } from './i18n.js';
 import { TITLE_PRIVACY_MODES, normalizeSendTabTitle, normalizeTabTitle } from './title-privacy.js';
-import { requestOriginPermission } from './host-access.js';
+import { normalizeTabId, requestOriginPermission } from './host-access.js';
 
 
 const elements = {
@@ -415,7 +415,11 @@ async function init() {
             }
             
             if (res.pendingTargetTabId) {
-                showSiteAccessNotice(res.pendingTargetHost, res.pendingTargetOriginPattern);
+                showSiteAccessNotice(
+                    res.pendingTargetHost,
+                    res.pendingTargetOriginPattern,
+                    res.pendingTargetTabId
+                );
             } else {
                 hideSiteAccessNotice();
             }
@@ -477,6 +481,7 @@ let hcmGuestLocked = false;
 let siteAccessBlocked = false;
 let siteAccessHost = null;
 let siteAccessOriginPattern = null;
+let siteAccessTabId = null;
 
 // Co-Host state mirrored for the peer-list renderer (promote/demote + role badges).
 let hcmAmOwner = false;
@@ -557,14 +562,20 @@ function setRemoteControlsLocked(locked) {
     if (elements.pauseBtn) elements.pauseBtn.textContent = getMessage('BTN_PAUSE') || 'Pause';
 }
 
-function showSiteAccessNotice(host, originPattern = null) {
+function showSiteAccessNotice(host, originPattern = null, tabId = null) {
     siteAccessBlocked = true;
-    siteAccessHost = host || siteAccessHost || 'website';
-    siteAccessOriginPattern = originPattern || siteAccessOriginPattern;
+    siteAccessHost = typeof host === 'string' && host.length > 0 ? host : 'website';
+    siteAccessOriginPattern = typeof originPattern === 'string' && originPattern.length > 0
+        ? originPattern
+        : null;
+    siteAccessTabId = normalizeTabId(tabId);
     if (elements.siteAccessMessage) {
         elements.siteAccessMessage.textContent = getMessage('SITE_ACCESS_REQUIRED', {
             host: siteAccessHost
         });
+    }
+    if (elements.siteAccessRetry) {
+        elements.siteAccessRetry.disabled = !siteAccessOriginPattern || siteAccessTabId === null;
     }
     if (elements.siteAccessNotice) elements.siteAccessNotice.style.display = 'block';
     setRemoteControlsLocked(hcmGuestLocked);
@@ -574,13 +585,15 @@ function hideSiteAccessNotice() {
     siteAccessBlocked = false;
     siteAccessHost = null;
     siteAccessOriginPattern = null;
+    siteAccessTabId = null;
+    if (elements.siteAccessRetry) elements.siteAccessRetry.disabled = false;
     if (elements.siteAccessNotice) elements.siteAccessNotice.style.display = 'none';
     setRemoteControlsLocked(hcmGuestLocked);
 }
 
 function handleTargetTabResponse(response) {
     if (response?.status === 'host_permission_required') {
-        showSiteAccessNotice(response.host, response.originPattern);
+        showSiteAccessNotice(response.host, response.originPattern, response.tabId);
         return false;
     }
     if (response?.status === 'ok') {
@@ -603,6 +616,32 @@ function selectTargetTab(tabId, tabTitle) {
             resolve(handleTargetTabResponse(response));
         });
     });
+}
+
+async function refreshTargetAccessState() {
+    const status = await new Promise(resolve => {
+        chrome.runtime.sendMessage({ type: 'GET_STATUS' }, response => {
+            if (chrome.runtime.lastError) {
+                resolve(null);
+                return;
+            }
+            resolve(response || null);
+        });
+    });
+    if (!status) return;
+    if (status.pendingTargetTabId) {
+        showSiteAccessNotice(
+            status.pendingTargetHost,
+            status.pendingTargetOriginPattern,
+            status.pendingTargetTabId
+        );
+    } else {
+        hideSiteAccessNotice();
+    }
+    await populateTabs(
+        status.peers,
+        status.targetTabId ?? status.pendingTargetTabId ?? null
+    );
 }
 
 if (elements.hostControlToggle) {
@@ -1537,7 +1576,11 @@ if (elements.langSelector) {
                 updateUI(data.roomId, data.password, data.useCustomServer, data.serverUrl);
                 
                 if (res.pendingTargetTabId) {
-                    showSiteAccessNotice(res.pendingTargetHost, res.pendingTargetOriginPattern);
+                    showSiteAccessNotice(
+                        res.pendingTargetHost,
+                        res.pendingTargetOriginPattern,
+                        res.pendingTargetTabId
+                    );
                 } else {
                     hideSiteAccessNotice();
                 }
@@ -1831,26 +1874,29 @@ elements.targetTab.addEventListener('change', async () => {
 
 if (elements.siteAccessRetry) {
     elements.siteAccessRetry.addEventListener('click', async () => {
-        const val = elements.targetTab.value;
-        const tabId = val ? parseInt(val) : null;
+        const tabId = normalizeTabId(elements.targetTab.value);
         const tabTitle = elements.targetTab.options[elements.targetTab.selectedIndex]?.dataset.originalTitle || null;
-        if (!tabId) {
+        if (tabId === null || siteAccessTabId !== tabId || !siteAccessOriginPattern) {
             showToast(getMessage('ERR_SELECT_VIDEO'), 'warning');
             return;
         }
         const requestedOriginPattern = siteAccessOriginPattern;
+        const requestedTabId = siteAccessTabId;
         elements.siteAccessRetry.disabled = true;
         elements.targetTab.disabled = true;
         try {
-            await requestOriginPermission(chrome, requestedOriginPattern);
-            const selectedTabId = parseInt(elements.targetTab.value);
+            const granted = await requestOriginPermission(chrome, requestedOriginPattern);
+            if (granted !== true) return;
+            const selectedTabId = normalizeTabId(elements.targetTab.value);
             // permissions.onAdded may already have completed activation, or a
             // newer selection may have replaced this request while it was open.
             if (!siteAccessBlocked || selectedTabId !== tabId
+                || siteAccessTabId !== requestedTabId
                 || siteAccessOriginPattern !== requestedOriginPattern) return;
             await selectTargetTab(tabId, tabTitle);
         } finally {
-            elements.siteAccessRetry.disabled = false;
+            elements.siteAccessRetry.disabled = siteAccessBlocked
+                && (!siteAccessOriginPattern || siteAccessTabId === null);
             elements.targetTab.disabled = false;
         }
     });
@@ -1865,6 +1911,11 @@ elements.forceSyncBtn.addEventListener('click', async () => {
 
     const status = await new Promise(r => chrome.runtime.sendMessage({ type: 'GET_STATUS' }, r));
     if (chrome.runtime.lastError || !status || !status.targetTabId) {
+        elements.forceSyncBtn.disabled = false;
+        return;
+    }
+    const tabId = normalizeTabId(status.targetTabId);
+    if (tabId === null) {
         elements.forceSyncBtn.disabled = false;
         return;
     }
@@ -1909,9 +1960,9 @@ elements.forceSyncBtn.addEventListener('click', async () => {
         }
     };
     forceSyncResetTimer = setTimeout(forceSyncReset, syncTimeoutMs);
-    const tabId = parseInt(status.targetTabId);
 
     const failForceSyncTime = () => {
+        if (forceSyncDone) return;
         if (forceSyncResetTimer) { clearTimeout(forceSyncResetTimer); forceSyncResetTimer = null; }
         showError(getMessage('ERR_NO_VIDEO_TAB'));
         forceSyncDone = true;
@@ -1919,7 +1970,17 @@ elements.forceSyncBtn.addEventListener('click', async () => {
         elements.forceSyncBtn.textContent = originalText;
     };
 
-    const sendForceSync = (time) => {
+    const targetIsStillCurrent = () => new Promise(resolve => {
+        chrome.runtime.sendMessage({ type: 'GET_STATUS' }, currentStatus => {
+            if (chrome.runtime.lastError) {
+                resolve(false);
+                return;
+            }
+            resolve(normalizeTabId(currentStatus?.targetTabId) === tabId);
+        });
+    });
+
+    const sendForceSync = async (time) => {
         if (time === null || time === undefined) {
             failForceSyncTime();
             return;
@@ -1929,15 +1990,28 @@ elements.forceSyncBtn.addEventListener('click', async () => {
             failForceSyncTime();
             return;
         }
+        if (!(await targetIsStillCurrent())) {
+            failForceSyncTime();
+            return;
+        }
         chrome.runtime.sendMessage({
             type: 'CONTENT_EVENT',
             action: EVENTS.FORCE_SYNC_PREPARE,
+            expectedTabId: tabId,
             payload: { targetTime: target }
+        }, response => {
+            if (chrome.runtime.lastError || response?.status === 'stale_target') {
+                failForceSyncTime();
+            }
         });
     };
 
     if (mode === 'jump-to-me') {
-        const retryQueryTime = () => {
+        const retryQueryTime = async () => {
+            if (!(await targetIsStillCurrent())) {
+                failForceSyncTime();
+                return;
+            }
             chrome.tabs.sendMessage(tabId, { action: 'get_current_time' }, (retryResponse) => {
                 if (chrome.runtime.lastError || !retryResponse || !Number.isFinite(retryResponse.currentTime)) {
                     failForceSyncTime();
@@ -1952,10 +2026,18 @@ elements.forceSyncBtn.addEventListener('click', async () => {
                 return;
             }
             if (chrome.runtime.lastError || !response) {
-                chrome.runtime.sendMessage({ type: 'INJECT_CONTENT_SCRIPT', tabId }, (injectResponse) => {
+                chrome.runtime.sendMessage({
+                    type: 'INJECT_CONTENT_SCRIPT',
+                    tabId,
+                    expectedCurrentTabId: tabId
+                }, (injectResponse) => {
                     if (chrome.runtime.lastError || !injectResponse || injectResponse.status !== 'ok') {
                         if (injectResponse?.status === 'host_permission_required') {
-                            showSiteAccessNotice(injectResponse.host, injectResponse.originPattern);
+                            showSiteAccessNotice(
+                                injectResponse.host,
+                                injectResponse.originPattern,
+                                injectResponse.tabId
+                            );
                         }
                         failForceSyncTime();
                         return;
@@ -2251,14 +2333,11 @@ chrome.runtime.onMessage.addListener((msg) => {
             });
         }
     } else if (msg.type === 'TARGET_TAB_READY') {
-        hideSiteAccessNotice();
-        populateTabs(null, msg.tabId);
+        refreshTargetAccessState().catch(() => {});
     } else if (msg.type === 'TARGET_TAB_ACCESS_REQUIRED') {
-        showSiteAccessNotice(msg.host, msg.originPattern);
-        populateTabs(null, msg.tabId);
+        refreshTargetAccessState().catch(() => {});
     } else if (msg.type === 'TARGET_TAB_CLEARED') {
-        hideSiteAccessNotice();
-        populateTabs();
+        refreshTargetAccessState().catch(() => {});
     } else if (msg.type === 'PING_UPDATE') {
         updatePingDisplay(msg.ping);
     } else if (msg.type === 'HISTORY_UPDATE') {

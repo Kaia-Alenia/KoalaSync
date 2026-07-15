@@ -34,6 +34,11 @@ assert.deepEqual(describeTabUrl('http://localhost:8096/web/'), {
     host: 'localhost:8096',
     originPattern: 'http://localhost:8096/*'
 });
+assert.deepEqual(describeTabUrl('http://localhost:8096/web/', { includePort: false }), {
+    url: 'http://localhost:8096/web/',
+    host: 'localhost:8096',
+    originPattern: 'http://localhost/*'
+});
 assert.equal(describeTabUrl('chrome://extensions/'), null);
 assert.equal(describeTabUrl('not a url'), null);
 
@@ -53,6 +58,39 @@ const access = await inspectTabHostAccess(deniedChrome, 42);
 assert.equal(access.granted, false);
 assert.equal(access.host, 'video.example');
 assert.deepEqual(containsRequest, { origins: ['https://video.example/*'] });
+
+let firefoxContainsRequest = null;
+const firefoxChrome = {
+    runtime: { getBrowserInfo: async () => ({ name: 'Firefox' }) },
+    tabs: {
+        get: async tabId => ({
+            id: tabId,
+            url: 'http://localhost:8096/web/',
+            pendingUrl: 'https://different.example/loading'
+        })
+    },
+    permissions: {
+        contains: async request => {
+            firefoxContainsRequest = request;
+            return false;
+        }
+    }
+};
+const firefoxAccess = await inspectTabHostAccess(firefoxChrome, 42);
+assert.equal(firefoxAccess.host, 'localhost:8096');
+assert.equal(firefoxAccess.originPattern, 'http://localhost/*');
+assert.deepEqual(firefoxContainsRequest, { origins: ['http://localhost/*'] });
+
+const unknownPermissionChrome = {
+    runtime: {},
+    tabs: {
+        get: async tabId => ({ id: tabId, url: 'https://video.example/watch' })
+    },
+    permissions: {
+        contains: (_request, callback) => { callback(undefined); }
+    }
+};
+assert.equal((await inspectTabHostAccess(unknownPermissionChrome, 42)).granted, null);
 
 let requestedTabId = null;
 const requestChrome = {
@@ -88,6 +126,7 @@ assert.equal(await requestOriginPermission({ permissions: {} }, 'https://video.e
 const background = fs.readFileSync(path.join(cwd(), 'extension', 'background.js'), 'utf8');
 const popup = fs.readFileSync(path.join(cwd(), 'extension', 'popup.js'), 'utf8');
 const popupHtml = fs.readFileSync(path.join(cwd(), 'extension', 'popup.html'), 'utf8');
+const tabManager = fs.readFileSync(path.join(cwd(), 'extension', 'modules', 'tab-manager.js'), 'utf8');
 
 assert.match(background, /await activateTargetTab\(message\.tabId, message\.tabTitle\)/,
     'SET_TARGET_TAB must await successful activation before acknowledging it');
@@ -97,6 +136,18 @@ assert.match(background, /retryPendingTarget\(\)/,
     'pending target must resume after the user grants access');
 assert.match(background, /activationGeneration !== targetActivationGeneration/,
     'stale concurrent tab activations must not overwrite the newest selection');
+assert.match(background, /pendingTargetRequestId/,
+    'pending access recovery must use an identity token');
+assert.match(background, /addedOrigins\.includes\(pending\.originPattern\)/,
+    'unrelated permission grants must not activate a pending target');
+assert.match(background, /isCurrentTargetIdentity\(tabId, targetGeneration\)/,
+    'stale content-routing retries must not reactivate an old target');
+assert.match(background, /message\.expectedTabId/,
+    'popup playback events must be rejected after their target changes');
+assert.match(background, /completeForceSyncBeforeTargetChange\(selectedTabId\)/,
+    'a target switch must finish an in-flight force sync on the old target');
+assert.match(background, /FORCE_SYNC_ACK'[\s\S]*ignored_unselected_tab/,
+    'stale content scripts must not acknowledge force sync for a new target');
 const activateTargetBody = background.slice(
     background.indexOf('async function activateTargetTab'),
     background.indexOf('async function retryPendingTarget')
@@ -111,6 +162,18 @@ assert.match(popup, /response\?\.status === 'host_permission_required'/,
     'popup must render the structured host-access failure');
 assert.match(popup, /requestOriginPermission\(chrome, requestedOriginPattern\)/,
     'retry button must request withheld host access directly');
+assert.match(popup, /expectedCurrentTabId: tabId/,
+    'manual reinjection must be tied to the selected target identity');
+assert.match(popup, /expectedTabId: tabId/,
+    'force sync must be tied to the tab whose time was sampled');
+assert.doesNotMatch(tabManager, /injectContentScript/,
+    'tab reload recovery must use the guarded background activation path');
+assert.equal(
+    (background.match(/tabs\.onRemoved\.addListener/g) || []).length
+        + (tabManager.match(/tabs\.onRemoved\.addListener/g) || []).length,
+    1,
+    'target-tab closure must have exactly one state owner'
+);
 assert.match(popupHtml, /id="siteAccessNotice"/,
     'popup must contain a persistent site-access notice');
 
