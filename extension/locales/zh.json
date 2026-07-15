@@ -70,11 +70,11 @@
   "LABEL_REMOTE_CONTROL": "遥控",
   "BTN_COPY_INVITE": "📋 邀请链接",
   "BTN_COPY_INVITE_TOOLTIP": "复制邀请链接",
-  "BTN_PLAY": "▶ 播放",
+  "BTN_PLAY": "播放",
   "BTN_PLAY_TOOLTIP": "向所有人发送播放命令",
-  "BTN_PAUSE": "⏸ 暂停",
+  "BTN_PAUSE": "暂停",
   "BTN_PAUSE_TOOLTIP": "向所有人发送暂停命令",
-  "BTN_SYNC": "⚡ 同步",
+  "BTN_SYNC": "同步",
   "BTN_SYNC_TOOLTIP": "强制所有用户同步",
   "OPTION_JUMP_TO_OTHERS": "跳转到其他",
   "OPTION_JUMP_TO_ME": "跳到我这里",
@@ -209,6 +209,7 @@
   "LABEL_AUDIO_PROCESSING_TOOLTIP": "将压缩等音频效果应用于视频播放",
   "AUDIO_OPEN_SETTINGS": "打开",
   "NEW_FEATURE_AUDIO": "新功能：音频处理 - 尝试压缩器！",
+  "NEW_FEATURE_THEME": "新功能：主题 — 切换到经典外观或极简石墨风格。",
   "AUDIO_BACK": "← 返回",
   "AUDIO_PAGE_TITLE": "音频设置",
   "AUDIO_MASTER_TOGGLE": "音频处理",
@@ -238,5 +239,9 @@
   "LABEL_SEND_TAB_TITLE": "发送标签页标题",
   "LABEL_SEND_TAB_TITLE_TOOLTIP": "将所选浏览器标签页的标题发送到房间。",
   "LABEL_MEDIA_TITLE_PRIVACY": "媒体标题",
-  "LABEL_MEDIA_TITLE_PRIVACY_TOOLTIP": "选择媒体标题发送到房间的方式。"
+  "LABEL_MEDIA_TITLE_PRIVACY_TOOLTIP": "选择媒体标题发送到房间的方式。",
+  "LABEL_SETTINGS_GROUP_PROFILE": "个人资料与外观",
+  "LABEL_SETTINGS_GROUP_PROFILE_TOOLTIP": "更改您的用户名、主题和语言首选项。",
+  "LABEL_SETTINGS_GROUP_SYNC": "播放与同步",
+  "LABEL_SETTINGS_GROUP_SYNC_TOOLTIP": "自定义播放、通知和音频首选项。"
 }

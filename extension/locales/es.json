@@ -70,11 +70,11 @@
   "LABEL_REMOTE_CONTROL": "Control remoto",
   "BTN_COPY_INVITE": "📋 Enlace de invitación",
   "BTN_COPY_INVITE_TOOLTIP": "Copiar enlace de invitación",
-  "BTN_PLAY": "▶ Reproducir",
+  "BTN_PLAY": "Reproducir",
   "BTN_PLAY_TOOLTIP": "Enviar un comando de reproducción a todos",
-  "BTN_PAUSE": "⏸ Pausar",
+  "BTN_PAUSE": "Pausar",
   "BTN_PAUSE_TOOLTIP": "Enviar un comando de pausa a todos",
-  "BTN_SYNC": "⚡ SYNC",
+  "BTN_SYNC": "Sync",
   "BTN_SYNC_TOOLTIP": "Forzar la sincronización de todos los usuarios",
   "OPTION_JUMP_TO_OTHERS": "Ir a la posición de otros",
   "OPTION_JUMP_TO_ME": "Traerlos a mi posición",
@@ -209,6 +209,7 @@
   "LABEL_AUDIO_PROCESSING_TOOLTIP": "Aplica efectos de audio como compresión a la reproducción de video",
   "AUDIO_OPEN_SETTINGS": "Abrir",
   "NEW_FEATURE_AUDIO": "Nuevo: Procesamiento de audio — ¡prueba el compresor!",
+  "NEW_FEATURE_THEME": "Nuevo: Temas — cambia al aspecto clásico o al grafito minimalista.",
   "AUDIO_BACK": "← Volver",
   "AUDIO_PAGE_TITLE": "Configuración de audio",
   "AUDIO_MASTER_TOGGLE": "Procesamiento de audio",
@@ -238,5 +239,9 @@
   "LABEL_SEND_TAB_TITLE": "Enviar título de pestaña",
   "LABEL_SEND_TAB_TITLE_TOOLTIP": "Envía a la sala el título de la pestaña del navegador seleccionada.",
   "LABEL_MEDIA_TITLE_PRIVACY": "Título multimedia",
-  "LABEL_MEDIA_TITLE_PRIVACY_TOOLTIP": "Elige cómo se envían los títulos multimedia a la sala."
+  "LABEL_MEDIA_TITLE_PRIVACY_TOOLTIP": "Elige cómo se envían los títulos multimedia a la sala.",
+  "LABEL_SETTINGS_GROUP_PROFILE": "Perfil y Apariencia",
+  "LABEL_SETTINGS_GROUP_PROFILE_TOOLTIP": "Cambia tu nombre de usuario, tema y preferencias de idioma.",
+  "LABEL_SETTINGS_GROUP_SYNC": "Reproducción y Sincronización",
+  "LABEL_SETTINGS_GROUP_SYNC_TOOLTIP": "Personaliza la reproducción, las notificaciones y las preferencias de audio."
 }

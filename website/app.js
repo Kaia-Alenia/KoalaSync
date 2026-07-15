@@ -60,6 +60,19 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
+    const restartAnimation = (el, className) => {
+        if (!el) return;
+        el.classList.remove(className);
+        requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+                el.classList.add(className);
+            });
+        });
+    };
+
+    // Populated by the forest renderer further down (no-op until then)
+    let forestGreet = null;
+
     // Theme toggle (saved preference wins; otherwise follows system preference,
     // pre-paint class is applied by lang-init.js to avoid a flash)
     const themeToggle = document.getElementById('theme-toggle');
@@ -86,7 +99,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const syncThemeMeta = () => {
         if (themeMeta) {
-            themeMeta.setAttribute('content', document.documentElement.classList.contains('theme-light') ? '#f1f5f9' : '#0f172a');
+            themeMeta.setAttribute('content', document.documentElement.classList.contains('theme-light') ? '#f0efe7' : '#10190e');
         }
     };
     syncThemeMeta();
@@ -108,6 +121,12 @@ document.addEventListener('DOMContentLoaded', () => {
             applyTheme(nextTheme);
             safeSetLocalStorage(themeStorageKey, nextTheme);
             syncThemeMeta();
+            // Switching into light mode flares the horizon once (sunrise)
+            const scene = document.querySelector('.bg-nature');
+            if (nextTheme === 'light' && scene && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+                restartAnimation(scene, 'sunrise');
+                setTimeout(() => scene.classList.remove('sunrise'), 1700);
+            }
         });
     }
 
@@ -173,6 +192,19 @@ document.addEventListener('DOMContentLoaded', () => {
     // Scroll Reveal Logic (IntersectionObserver for performance)
     const revealElements = document.querySelectorAll('[data-reveal]');
 
+    // Hash navigation must never land on an intentionally transparent state.
+    // Reveal the destination before the smooth scroll begins; the observer
+    // continues to animate sections reached through ordinary scrolling.
+    const revealHashTarget = () => {
+        const id = decodeURIComponent(window.location.hash.slice(1));
+        const target = id ? document.getElementById(id) : null;
+        if (!target) return;
+        if (target.matches('[data-reveal]')) target.classList.add('revealed');
+        target.querySelectorAll('[data-reveal]').forEach(el => el.classList.add('revealed'));
+    };
+    revealHashTarget();
+    window.addEventListener('hashchange', revealHashTarget);
+
     if ('IntersectionObserver' in window) {
         const revealObserver = new IntersectionObserver((entries) => {
             entries.forEach(entry => {
@@ -182,7 +214,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             });
         }, {
-            rootMargin: '0px 0px -30px 0px',
+            rootMargin: '0px 0px 12% 0px',
             threshold: 0.05
         });
 
@@ -199,7 +231,12 @@ document.addEventListener('DOMContentLoaded', () => {
         const sectionObserver = new IntersectionObserver((entries) => {
             entries.forEach(entry => {
                 if (entry.isIntersecting) {
-                    history.replaceState(null, null, '#' + entry.target.id);
+                    if (entry.target.id === 'top') {
+                        history.replaceState(null, null, window.location.pathname + window.location.search);
+                    } else {
+                        history.replaceState(null, null, '#' + entry.target.id);
+                    }
+                    if (forestGreet) forestGreet();
                 }
             });
         }, { threshold: 0.3 });
@@ -211,6 +248,152 @@ document.addEventListener('DOMContentLoaded', () => {
     window.addEventListener('scroll', () => {
         nav.classList.toggle('nav-scrolled', window.scrollY > 50);
     }, { passive: true });
+
+    // Bamboo forest: scroll journey + parallax (background layers only).
+    // The vertical drift maps scroll PROGRESS (0..1 over the whole page) onto
+    // the stalks' 20% overscan, so the parallax runs for the entire scroll
+    // instead of saturating after a few hundred pixels. The same progress
+    // value crossfades the scene from sunlit canopy into misty dusk, and on
+    // pointer devices the layers tilt slightly toward the cursor.
+    const bambooFar = document.getElementById('bamboo-far');
+    const bambooMid = document.getElementById('bamboo-mid');
+    const bambooNear = document.getElementById('bamboo-near');
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (bambooFar && bambooNear && !prefersReducedMotion) {
+        const depthDay = document.querySelector('.bg-depth-day');
+        const fireflies = Array.from(document.querySelectorAll('.firefly-wrap'), (el) => ({ el, x: 0, y: 0 }));
+        const canHover = window.matchMedia('(hover: hover)').matches;
+        let mouseX = 0;
+        let mouseY = 0;
+        let pointerX = -9999;
+        let pointerY = -9999;
+        let framePending = false;
+
+        const renderForest = () => {
+            framePending = false;
+            bambooFar.style.transform = `translateX(${(-mouseX * 5).toFixed(1)}px)`;
+            bambooNear.style.transform = `translateX(${(mouseX * 11).toFixed(1)}px)`;
+            if (bambooMid) bambooMid.style.transform = `translateX(${(mouseX * 4).toFixed(1)}px)`;
+            if (depthDay) depthDay.style.transform = `translate(${(-mouseX * 2.5).toFixed(1)}px, ${(mouseY * 1.5).toFixed(1)}px)`;
+
+            // Fireflies shy away from the cursor and drift back once it leaves
+            let settling = false;
+            for (const fly of fireflies) {
+                const cx = fly.el.offsetLeft + 2;
+                const cy = fly.el.offsetTop + 2;
+                const dx = cx - pointerX;
+                const dy = cy - pointerY;
+                const dist = Math.hypot(dx, dy);
+                let tx = 0;
+                let ty = 0;
+                if (dist < 130 && dist > 0.001) {
+                    const push = ((130 - dist) / 130) * 46;
+                    tx = (dx / dist) * push;
+                    ty = (dy / dist) * push;
+                }
+                fly.x += (tx - fly.x) * 0.14;
+                fly.y += (ty - fly.y) * 0.14;
+                if (Math.abs(tx - fly.x) > 0.4 || Math.abs(ty - fly.y) > 0.4) settling = true;
+                fly.el.style.transform = `translate(${fly.x.toFixed(1)}px, ${fly.y.toFixed(1)}px)`;
+            }
+            if (settling) requestForestFrame();
+        };
+
+        const requestForestFrame = () => {
+            if (!framePending) {
+                framePending = true;
+                requestAnimationFrame(renderForest);
+            }
+        };
+        // Let one firefly greet newly reached sections (used by the section
+        // observer below; index rotates so it is not always the same one)
+        let helloIndex = 0;
+        forestGreet = () => {
+            if (!fireflies.length) return;
+            const wrap = fireflies[helloIndex % fireflies.length].el;
+            helloIndex += 1;
+            restartAnimation(wrap, 'firefly-hello');
+            setTimeout(() => wrap.classList.remove('firefly-hello'), 1300);
+        };
+        window.addEventListener('resize', requestForestFrame, { passive: true });
+        if (canHover) {
+            window.addEventListener('pointermove', (e) => {
+                mouseX = (e.clientX / window.innerWidth - 0.5) * 2;
+                mouseY = (e.clientY / window.innerHeight - 0.5) * 2;
+                pointerX = e.clientX;
+                pointerY = e.clientY;
+                requestForestFrame();
+            }, { passive: true });
+            window.addEventListener('pointerleave', () => {
+                pointerX = -9999;
+                pointerY = -9999;
+                requestForestFrame();
+            });
+        }
+        renderForest();
+    }
+
+    // Eucalyptus click confetti: leaves burst from wherever the visitor
+    // presses. Buttons and other controls shed leaves along their whole
+    // width; anywhere else a small fan rises from the pointer itself. The
+    // hero walkthrough's scripted cursor calls burstFromElement directly so
+    // its fake clicks scatter leaves too. Rate-capped, pointer-events:none —
+    // it can never block a click or flood the DOM.
+    let burstFromElement = () => {};
+    if (!prefersReducedMotion) {
+        const spawnLeaf = (x, y) => {
+            const leaf = document.createElement('span');
+            // Three tones of the palette: deep green, sage, a dash of amber
+            const tone = Math.random();
+            leaf.className = 'click-leaf' + (tone < 0.25 ? ' click-leaf-amber' : tone < 0.55 ? ' click-leaf-sage' : '');
+            // Fan out upward to a burst peak; the keyframes brake there and
+            // let the leaf sink past it while the inner element rocks.
+            const angle = (-90 + (Math.random() - 0.5) * 150) * Math.PI / 180;
+            const dist = 26 + Math.random() * 38;
+            const dur = 0.9 + Math.random() * 0.5;
+            leaf.style.left = x + 'px';
+            leaf.style.top = y + 'px';
+            leaf.style.setProperty('--leaf-x', (Math.cos(angle) * dist).toFixed(1) + 'px');
+            leaf.style.setProperty('--leaf-y', (Math.sin(angle) * dist).toFixed(1) + 'px');
+            leaf.style.setProperty('--leaf-rot', ((Math.random() - 0.5) * 160).toFixed(0) + 'deg');
+            leaf.style.setProperty('--leaf-scale', (0.55 + Math.random() * 0.6).toFixed(2));
+            leaf.style.setProperty('--leaf-dur', dur.toFixed(2) + 's');
+            leaf.style.setProperty('--flutter-dur', (0.4 + Math.random() * 0.35).toFixed(2) + 's');
+            leaf.appendChild(document.createElement('i'));
+            document.body.appendChild(leaf);
+            setTimeout(() => leaf.remove(), dur * 1000 + 150);
+        };
+
+        burstFromElement = (el) => {
+            if (!el) return;
+            const r = el.getBoundingClientRect();
+            if (!r.width || r.bottom < 0 || r.top > window.innerHeight) return;
+            // Leaf count scales with the control's width so a wide demo card
+            // sheds a few more than a compact icon button, capped for subtlety.
+            const count = Math.max(4, Math.min(9, Math.round(r.width / 26)));
+            for (let i = 0; i < count; i++) {
+                const x = r.left + 4 + Math.random() * Math.max(1, r.width - 8);
+                // Spawn along the upper edge, like leaves knocked off the top
+                const y = r.top + r.height * (0.1 + Math.random() * 0.4);
+                spawnLeaf(x, y);
+            }
+        };
+
+        // Listen for `click`, not `pointerdown`: a click never fires while the
+        // page is being scrolled, so touch users no longer trigger a shower of
+        // leaves every time they swipe. Leaves are also only shed by actual
+        // interactive controls (links/buttons and the demo widgets), so a stray
+        // tap on plain text or an illustration stays quiet.
+        let lastBurst = 0;
+        document.addEventListener('click', (e) => {
+            const control = e.target.closest('a, button, [role="button"], .btn, .mock-tab, select, .demo-progress');
+            if (!control) return;
+            const now = Date.now();
+            if (now - lastBurst < 180) return;
+            lastBurst = now;
+            burstFromElement(control);
+        }, { passive: true });
+    }
 
     // Invite Detection & Bridge
     const checkInvite = () => {
@@ -602,16 +785,16 @@ document.addEventListener('DOMContentLoaded', () => {
             const midOffset = (t * -24) % 160;
             const foreOffset = (t * -48) % 160;
             
-            // Bouncing ball logic (bounce Y is computed as parabolic arc)
-            const bouncePeriod = 0.8;
-            const bounceProgress = (t % bouncePeriod) / bouncePeriod;
-            const bounceHeight = 16;
-            const bounceY = 4 * bounceProgress * (1 - bounceProgress) * -bounceHeight;
-            
+            // Floating lantern: slow vertical bob + softer horizontal sway on
+            // detuned periods, so the drift never repeats exactly in sync
+            const bounceY = Math.sin((t % 5.2) / 5.2 * Math.PI * 2) * 3.5;
+            const lanternX = Math.cos((t % 8.6) / 8.6 * Math.PI * 2) * 4;
+
             tab.root.style.setProperty('--scroll-back', backOffset.toFixed(2) + 'px');
             tab.root.style.setProperty('--scroll-mid', midOffset.toFixed(2) + 'px');
             tab.root.style.setProperty('--scroll-fore', foreOffset.toFixed(2) + 'px');
             tab.root.style.setProperty('--bounce-y', bounceY.toFixed(2) + 'px');
+            tab.root.style.setProperty('--lantern-x', lanternX.toFixed(2) + 'px');
         };
 
         const updateSyncUI = () => {
@@ -671,10 +854,7 @@ document.addEventListener('DOMContentLoaded', () => {
         };
 
         const pulse = (key) => {
-            const el = tabs[key].root;
-            el.classList.remove('sync-pulse');
-            void el.offsetWidth; // restart the CSS animation
-            el.classList.add('sync-pulse');
+            restartAnimation(tabs[key].root, 'sync-pulse');
         };
 
         const NAMES = { a: '🐱 ChillCat', b: '🐶 HappyDog' };
@@ -732,16 +912,15 @@ document.addEventListener('DOMContentLoaded', () => {
         let seekFlashTimers = [];
         const flashSeek = (root) => {
             if (!root) return;
-            root.classList.remove('demo-seeking');
             // Restart every animated layer from frame zero so the jump is visible
             const film = root.querySelector('.demo-film');
             if (film) {
                 film.classList.add('demo-reset');
-                void film.offsetWidth; // force reflow so the browser commits the reset
-                film.classList.remove('demo-reset');
+                requestAnimationFrame(() => {
+                    film.classList.remove('demo-reset');
+                });
             }
-            void root.offsetWidth;
-            root.classList.add('demo-seeking');
+            restartAnimation(root, 'demo-seeking');
             const t = setTimeout(() => root.classList.remove('demo-seeking'), 360);
             seekFlashTimers.push(t);
         };
@@ -834,10 +1013,13 @@ document.addEventListener('DOMContentLoaded', () => {
             inviteFly.style.left = fromPoint.x + 'px';
             inviteFly.style.top = fromPoint.y + 'px';
             inviteFly.style.opacity = '1';
-            void inviteFly.offsetWidth;
-            inviteFly.style.transition = '';
-            inviteFly.style.left = (toPoint.x - 40) + 'px';
-            inviteFly.style.top = (toPoint.y + 2) + 'px';
+            requestAnimationFrame(() => {
+                requestAnimationFrame(() => {
+                    inviteFly.style.transition = '';
+                    inviteFly.style.left = (toPoint.x - 40) + 'px';
+                    inviteFly.style.top = (toPoint.y + 2) + 'px';
+                });
+            });
             setTimeout(() => {
                 inviteFly.style.opacity = '0';
                 resolve();
@@ -850,9 +1032,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (videoSelect.options.length > 1) {
                 videoSelect.selectedIndex = 1;
             }
-            videoSelect.classList.remove('demo-attn');
-            void videoSelect.offsetWidth;
-            videoSelect.classList.add('demo-attn');
+            restartAnimation(videoSelect, 'demo-attn');
         };
 
         if (createRoomBtn) createRoomBtn.addEventListener('click', () => setRoomJoined(true));
@@ -870,8 +1050,9 @@ document.addEventListener('DOMContentLoaded', () => {
             setConnected(false);
             setRoomJoined(false);
         }
-        void scene.offsetWidth;
-        scene.classList.remove('demo-no-anim');
+        requestAnimationFrame(() => {
+            scene.classList.remove('demo-no-anim');
+        });
 
         const showHint = () => {
             if (hint) hint.classList.add('show');
@@ -916,9 +1097,10 @@ document.addEventListener('DOMContentLoaded', () => {
             seekFlashTimers.forEach(clearTimeout);
             seekFlashTimers = [];
 
-            // Force reflow and remove demo-no-anim:
-            void scene.offsetWidth;
-            scene.classList.remove('demo-no-anim');
+            // Remove demo-no-anim on next frame:
+            requestAnimationFrame(() => {
+                scene.classList.remove('demo-no-anim');
+            });
         };
         const finishDemo = () => {
             if (demoFinished) return;
@@ -997,12 +1179,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (userTookOver || demoRunId !== myRunId || !el) return false;
                 await moveTo(el, fx);
                 if (userTookOver || demoRunId !== myRunId) return false;
-                cursor.classList.remove('clicking');
-                void cursor.offsetWidth;
-                cursor.classList.add('clicking');
+                restartAnimation(cursor, 'clicking');
                 await wait(180);
                 if (userTookOver || demoRunId !== myRunId) return false;
                 if (action) action(); else el.click();
+                // The scripted cursor's clicks scatter leaves like real ones
+                burstFromElement(el);
                 await wait(320 + (pause || 0));
                 return !userTookOver && demoRunId === myRunId;
             };
@@ -1499,7 +1681,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (heroBtns && heroBtns.length > 0) {
                     heroBtns.forEach(btn => {
                         const isFF = btn.classList.contains('btn-firefox');
-                        const glowColor = isFF ? 'rgba(249, 115, 22, ' : 'rgba(99, 102, 241, ';
+                        const glowColor = isFF ? 'rgba(201, 103, 54, ' : 'rgba(86, 174, 108, ';
                         btn.animate([
                             { transform: 'scale(1)', boxShadow: `0 0 15px ${glowColor}0.2)` },
                             { transform: 'scale(1.05)', boxShadow: `0 0 25px ${glowColor}0.5)` },

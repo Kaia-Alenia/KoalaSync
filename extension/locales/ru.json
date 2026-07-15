@@ -70,11 +70,11 @@
   "LABEL_REMOTE_CONTROL": "Дистанционное управление",
   "BTN_COPY_INVITE": "📋 Ссылка",
   "BTN_COPY_INVITE_TOOLTIP": "Копировать ссылку-приглашение",
-  "BTN_PLAY": "▶ Запуск",
+  "BTN_PLAY": "Запуск",
   "BTN_PLAY_TOOLTIP": "Отправить команду воспроизведения всем",
-  "BTN_PAUSE": "⏸ Пауза",
+  "BTN_PAUSE": "Пауза",
   "BTN_PAUSE_TOOLTIP": "Отправить команду паузы всем",
-  "BTN_SYNC": "⚡ СИНХРО",
+  "BTN_SYNC": "Синхро",
   "BTN_SYNC_TOOLTIP": "Принудительно синхронизировать всех участников",
   "OPTION_JUMP_TO_OTHERS": "Перейти к другим",
   "OPTION_JUMP_TO_ME": "Синхронизировать по мне",
@@ -209,6 +209,7 @@
   "LABEL_AUDIO_PROCESSING_TOOLTIP": "Применяет аудиоэффекты, такие как сжатие, к воспроизведению видео",
   "AUDIO_OPEN_SETTINGS": "Открыть",
   "NEW_FEATURE_AUDIO": "Новое: Обработка звука — попробуйте компрессор!",
+  "NEW_FEATURE_THEME": "Новое: Темы — переключитесь на классический вид или минимальный графит.",
   "AUDIO_BACK": "← Назад",
   "AUDIO_PAGE_TITLE": "Настройки звука",
   "AUDIO_MASTER_TOGGLE": "Обработка звука",
@@ -238,5 +239,9 @@
   "LABEL_SEND_TAB_TITLE": "Отправлять название вкладки",
   "LABEL_SEND_TAB_TITLE_TOOLTIP": "Отправляет в комнату название выбранной вкладки браузера.",
   "LABEL_MEDIA_TITLE_PRIVACY": "Название медиа",
-  "LABEL_MEDIA_TITLE_PRIVACY_TOOLTIP": "Выберите, как названия медиа отправляются в комнату."
+  "LABEL_MEDIA_TITLE_PRIVACY_TOOLTIP": "Выберите, как названия медиа отправляются в комнату.",
+  "LABEL_SETTINGS_GROUP_PROFILE": "Профиль и Оформление",
+  "LABEL_SETTINGS_GROUP_PROFILE_TOOLTIP": "Измените имя пользователя, тему и настройки языка.",
+  "LABEL_SETTINGS_GROUP_SYNC": "Воспроизведение и Синхронизация",
+  "LABEL_SETTINGS_GROUP_SYNC_TOOLTIP": "Настройте воспроизведение, уведомления и параметры звука."
 }

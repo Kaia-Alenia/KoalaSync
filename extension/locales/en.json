@@ -70,11 +70,11 @@
   "LABEL_REMOTE_CONTROL": "Remote Control",
   "BTN_COPY_INVITE": "📋 Invite Link",
   "BTN_COPY_INVITE_TOOLTIP": "Copy Invite Link",
-  "BTN_PLAY": "▶ Play",
+  "BTN_PLAY": "Play",
   "BTN_PLAY_TOOLTIP": "Send a Play command to everyone",
-  "BTN_PAUSE": "⏸ Pause",
+  "BTN_PAUSE": "Pause",
   "BTN_PAUSE_TOOLTIP": "Send a Pause command to everyone",
-  "BTN_SYNC": "⚡ SYNC",
+  "BTN_SYNC": "Sync",
   "BTN_SYNC_TOOLTIP": "Force all users to sync up",
   "OPTION_JUMP_TO_OTHERS": "Jump to Others",
   "OPTION_JUMP_TO_ME": "Jump to Me",
@@ -209,6 +209,7 @@
   "LABEL_AUDIO_PROCESSING_TOOLTIP": "Apply audio effects like compression to video playback",
   "AUDIO_OPEN_SETTINGS": "Open",
   "NEW_FEATURE_AUDIO": "New: Audio Processing — try the compressor!",
+  "NEW_FEATURE_THEME": "New: Themes — switch to the classic look or minimal graphite.",
   "AUDIO_BACK": "← Back",
   "AUDIO_PAGE_TITLE": "Audio Settings",
   "AUDIO_MASTER_TOGGLE": "Audio Processing",
@@ -238,5 +239,9 @@
   "LABEL_SEND_TAB_TITLE": "Send tab title",
   "LABEL_SEND_TAB_TITLE_TOOLTIP": "Send the selected browser tab title to the room.",
   "LABEL_MEDIA_TITLE_PRIVACY": "Media title",
-  "LABEL_MEDIA_TITLE_PRIVACY_TOOLTIP": "Choose how media titles are sent to the room."
+  "LABEL_MEDIA_TITLE_PRIVACY_TOOLTIP": "Choose how media titles are sent to the room.",
+  "LABEL_SETTINGS_GROUP_PROFILE": "Profile & Appearance",
+  "LABEL_SETTINGS_GROUP_PROFILE_TOOLTIP": "Change your username, theme, and language preferences.",
+  "LABEL_SETTINGS_GROUP_SYNC": "Playback & Sync",
+  "LABEL_SETTINGS_GROUP_SYNC_TOOLTIP": "Customize playback, notifications, and audio preferences."
 }

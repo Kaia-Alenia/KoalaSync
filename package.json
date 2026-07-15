@@ -9,6 +9,7 @@
     "indexnow": "node website/submit-indexnow.cjs",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
+    "subset-flags": "node website/tools/subset-flag-font.mjs",
     "test": "npm run verify",
     "test:unit": "vitest run",
     "verify": "node scripts/verify-release.mjs"
@@ -20,6 +21,7 @@
     "esbuild": "^0.28.1",
     "eslint": "^10.4.0",
     "fs-extra": "^11.2.0",
+    "htmlnano": "^3.4.0",
     "sharp": "^0.34.5",
     "svgo": "^4.0.1",
     "vitest": "^4.1.9"

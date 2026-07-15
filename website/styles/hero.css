@@ -1,0 +1,941 @@
+/* --- Hero Section --- */
+.hero {
+    min-height: 100svh;
+    display: flex;
+    /* Centre the hero content vertically so the empty space is balanced above
+       and below instead of pooling under the CTAs. Padding-top only needs to
+       clear the fixed nav. */
+    align-items: center;
+    padding-top: clamp(6rem, 9vh, 8rem);
+    padding-bottom: clamp(3rem, 6vh, 5rem);
+}
+
+.hero-grid {
+    display: grid;
+    /* Single column until the interactive demo appears (1024px). Below that the
+       headline gets the full width and the install CTAs stay prominent while the
+       demo stacks underneath, matching the demo's own 1024px breakpoint. */
+    grid-template-columns: minmax(0, 1fr);
+    align-content: center;
+    /* Keep the whole hero vertically centered. Do not use grid alignment to fix
+       the demo top edge; that moves the headline and breaks the hero balance. */
+    align-items: center;
+    gap: 3rem;
+    text-align: left;
+    width: 100%;
+}
+
+@media (min-width: 1024px) {
+    .container {
+        max-width: 1200px;
+    }
+    .hero-grid {
+        grid-template-columns: 1.35fr 1fr;
+        gap: 3.5rem;
+    }
+    .cta-group {
+        gap: 0.75rem;
+    }
+    .cta-group .btn {
+        padding: 0.8rem 1.35rem;
+    }
+}
+
+.hero-text h1 {
+    font-size: clamp(2.9rem, 4.1vw, 4rem);
+    font-weight: 800;
+    line-height: 1.12;
+    margin-bottom: 1.4rem;
+    padding-bottom: 0.1em;
+    color: var(--text);
+    letter-spacing: -0.02em;
+}
+
+.hero-text h1 .hero-highlight {
+    background: linear-gradient(90deg, var(--accent-green), var(--accent-terracotta), var(--accent-green));
+    background-size: 300% 100%;
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    white-space: nowrap;
+    animation: hero-gradient-pan 10s linear infinite;
+    /* background-clip: text only paints inside the layout box; with the
+       negative h1 letter-spacing the last glyph overhangs it and gets cut
+       off. Invisible padding extends the paint area without moving text. */
+    padding-right: 0.08em;
+    margin-right: -0.08em;
+}
+
+@keyframes hero-gradient-pan {
+    from { background-position: 0% 50%; }
+    to { background-position: 300% 50%; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .hero-text h1 .hero-highlight {
+        animation: none;
+    }
+}
+
+.hero-text p, .hero-subtitle {
+    font-size: 1.25rem;
+    color: var(--text-muted);
+    margin-bottom: 1.9rem;
+    max-width: 600px;
+    font-weight: 400;
+    line-height: 1.6;
+}
+
+.hero-mascot-container {
+    position: relative;
+    display: block;
+    margin-bottom: -0.5rem;
+    margin-left: 2.2rem;
+}
+
+.hero-lookdown-mascot {
+    display: block;
+    width: 90px;
+    height: auto;
+}
+
+/* Changelog link as the koala's comic speech bubble. Absolutely positioned
+   so it never moves the koala out of its spot above the install buttons. */
+.koala-speech-bubble {
+    position: absolute;
+    left: 108px;
+    top: 0.2rem;
+    width: max-content;
+    max-width: min(240px, calc(100% - 120px));
+    display: block;
+    text-decoration: none;
+    text-align: left;
+    background: oklch(0.27 0.035 130 / 0.95);
+    border: 1px solid oklch(0.68 0.13 150 / 0.45);
+    border-radius: 14px;
+    border-bottom-left-radius: 4px;
+    padding: 0.6rem 0.9rem;
+    line-height: 1.35;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+    animation: bubble-float 4s ease-in-out infinite;
+    transition: border-color 0.25s ease, box-shadow 0.25s ease;
+}
+
+/* Tail: outline triangle + fill triangle so it reads as part of the bubble */
+.koala-speech-bubble::before,
+.koala-speech-bubble::after {
+    content: '';
+    position: absolute;
+    width: 0;
+    height: 0;
+}
+
+.koala-speech-bubble::before {
+    left: -11px;
+    bottom: 10px;
+    border-top: 8px solid transparent;
+    border-bottom: 4px solid transparent;
+    border-right: 11px solid oklch(0.68 0.13 150 / 0.45);
+}
+
+.koala-speech-bubble::after {
+    left: -9px;
+    bottom: 11px;
+    border-top: 7px solid transparent;
+    border-bottom: 3px solid transparent;
+    border-right: 10px solid oklch(0.27 0.035 130 / 0.95);
+}
+
+.koala-speech-bubble:hover {
+    border-color: oklch(0.68 0.13 150 / 0.85);
+    box-shadow: 0 8px 28px oklch(0.68 0.13 150 / 0.35);
+}
+
+.koala-speech-bubble .version-text-en,
+.koala-speech-bubble .version-text-de {
+    display: block;
+}
+
+.koala-speech-bubble .bubble-title {
+    display: block;
+    font-size: 0.85rem;
+    font-weight: 800;
+    color: var(--text);
+    letter-spacing: 0;
+    white-space: nowrap;
+}
+
+.koala-speech-bubble .bubble-sub {
+    display: block;
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: var(--accent);
+    margin-top: 2px;
+}
+
+html.theme-light .koala-speech-bubble {
+    background: rgba(255, 255, 255, 0.96);
+    box-shadow: 0 8px 24px oklch(0.20 0.025 140 / 0.12);
+}
+
+html.theme-light .koala-speech-bubble::after {
+    border-right-color: rgba(255, 255, 255, 0.96);
+}
+
+@keyframes bubble-float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-4px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .koala-speech-bubble {
+        animation: none;
+    }
+}
+
+/* Stacked hero (below the 1024px demo breakpoint): the text block owns the
+   full row, so the whole column — headline, subtitle, koala, CTAs — reads
+   as one centered axis instead of a left-aligned half of a two-column grid. */
+@media (max-width: 1023px) {
+    .hero-grid {
+        text-align: center;
+    }
+    /* Lift the desktop measure cap: the text block is the full row here,
+       so a left-flushed 42rem box would sit visibly off-center. */
+    .hero-text {
+        max-width: none;
+    }
+    .hero-text p,
+    .hero-subtitle,
+    .hero-text .cta-trust {
+        margin-inline: auto;
+    }
+    .cta-group {
+        justify-content: center;
+    }
+    /* The koala keeps standing on the active install CTA; app.js updates the
+       offset from the real button geometry when the row wraps. */
+    .hero-mascot-container {
+        --hero-mascot-offset: 0px;
+        margin-left: 0;
+        display: flex;
+        justify-content: center;
+    }
+    .hero-lookdown-mascot {
+        transform: translateX(var(--hero-mascot-offset));
+    }
+    .koala-speech-bubble {
+        left: calc(50% + var(--hero-mascot-offset) + 50px);
+        right: 0.75rem;
+        top: 0.3rem;
+        max-width: 240px;
+        padding: 0.5rem 0.75rem;
+    }
+    .koala-speech-bubble .bubble-title {
+        font-size: 0.8rem;
+    }
+    .koala-speech-bubble .bubble-sub {
+        font-size: 0.68rem;
+    }
+    /* The relative release time is too much text for the small mobile bubble */
+    .koala-speech-bubble .bubble-ago {
+        display: none;
+    }
+}
+
+.cta-group {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+/* Quiet trust line under the install buttons; answers "is it free, is it
+   legit, do I need an account" right at the moment of the click decision. */
+.hero-text .cta-trust {
+    margin-top: 0.85rem;
+    margin-bottom: 0;
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: var(--text-muted);
+    opacity: 0.75;
+    letter-spacing: 0.01em;
+    max-width: none;
+}
+
+.btn {
+    padding: 0.85rem 1.75rem;
+    border-radius: 12px;
+    font-weight: 600;
+    text-decoration: none;
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1), color 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.95rem;
+}
+.btn-primary {
+    background: linear-gradient(135deg, oklch(0.48 0.13 150), oklch(0.39 0.10 145));
+    color: #fff;
+    border: 1px solid oklch(0.72 0.11 95 / 0.24);
+    box-shadow: 0 12px 24px -8px oklch(0.38 0.11 148 / 0.65), 0 0 0 1px oklch(0.80 0.08 90 / 0.06) inset;
+}
+
+.btn-primary:hover {
+    background: linear-gradient(135deg, oklch(0.54 0.14 150), oklch(0.44 0.11 145));
+    transform: translateY(-2px);
+    box-shadow: 0 18px 32px -8px oklch(0.38 0.11 148 / 0.75), 0 0 18px oklch(0.68 0.13 150 / 0.18);
+}
+
+.btn-firefox {
+    background: oklch(0.62 0.14 45);
+    color: white;
+    box-shadow: 0 10px 15px -3px oklch(0.62 0.14 45 / 0.3);
+}
+
+.btn-firefox:hover {
+    background: oklch(0.68 0.14 45);
+    transform: translateY(-2px);
+    box-shadow: 0 20px 25px -5px oklch(0.62 0.14 45 / 0.4);
+}
+
+.btn-secondary {
+    background: var(--card);
+    color: var(--text);
+    border: 1px solid var(--glass-border);
+}
+
+.btn-secondary:hover {
+    background: oklch(0.30 0.03 125);
+    transform: translateY(-2px);
+}
+
+.btn-demo-mobile {
+    display: none;
+    border: 1px solid oklch(0.68 0.13 150 / 0.34);
+    cursor: pointer;
+    font: inherit;
+}
+
+.btn-demo-mobile svg {
+    flex-shrink: 0;
+}
+
+/* Install buttons: compact by default (just the browser name) so all three
+   CTAs fit one line; the detected browser expands to the full call to action.
+   The GitHub button stays compact always. */
+.btn-label-full { display: none; }
+
+.btn-install:not(.is-detected),
+.btn-compact {
+    padding: 0.62rem 1.05rem;
+    font-size: 0.9rem;
+    gap: 0.4rem;
+}
+
+.btn-install.is-detected .btn-label-short { display: none; }
+.btn-install.is-detected .btn-label-full { display: inline; }
+
+.version-badge {
+    display: inline-block;
+    background: oklch(0.68 0.13 150 / 0.1);
+    color: var(--accent);
+    padding: 0.4rem 1rem;
+    border-radius: 99px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    margin-bottom: 1.5rem;
+    border: 1px solid oklch(0.68 0.13 150 / 0.3);
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s, background 0.2s;
+}
+
+.version-badge-below {
+    margin-bottom: 0;
+    margin-top: 1.5rem;
+}
+
+.version-badge:hover {
+    background: oklch(0.68 0.13 150 / 0.2);
+    box-shadow: 0 0 16px oklch(0.68 0.13 150 / 0.3);
+    transform: translateY(-1px);
+}
+
+/* --- Interactive CSS Extension Mockup --- */
+.hero-mockup-wrapper {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+}
+
+.extension-mockup {
+    width: 100%;
+    max-width: 320px;
+    height: 528px;
+    background: oklch(0.20 0.025 140);
+    border-radius: 20px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4), 0 0 20px oklch(0.68 0.13 150 / 0.15);
+    display: flex;
+    flex-direction: column;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    overflow: hidden;
+    position: relative;
+    user-select: none;
+    padding: 14px;
+    padding-bottom: 0;
+    box-sizing: border-box;
+}
+
+.mock-header-row {
+    display: flex;
+    align-items: center;
+    margin-bottom: 12px;
+    flex-shrink: 0;
+}
+
+.mock-header-title {
+    font-size: 18px;
+    margin: 0;
+    color: var(--accent);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 800;
+}
+
+.mock-header-title picture {
+    display: contents;
+}
+
+.mock-header-title img {
+    width: 28px;
+    height: 28px;
+    object-fit: contain;
+    border-radius: 6px;
+}
+
+.mock-version-link {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 10px;
+    color: var(--text-muted);
+    text-decoration: none;
+    opacity: 0.5;
+    transition: opacity 0.2s, color 0.2s;
+    cursor: pointer;
+}
+
+.mock-version-link:hover {
+    opacity: 1;
+    color: var(--accent);
+}
+
+/* Close button for the hero demo popup (hidden in the static mobile mockup) */
+.mock-close-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    margin-left: 8px;
+    padding: 0;
+    flex-shrink: 0;
+    background: transparent;
+    border: none;
+    border-radius: 6px;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: color 0.2s, background 0.2s;
+}
+
+.mock-close-btn:hover {
+    color: #fff;
+    background: rgba(255, 255, 255, 0.1);
+}
+
+@media (max-width: 1024px) {
+    .mock-close-btn {
+        display: none;
+    }
+}
+
+.mock-tabs {
+    display: flex;
+    gap: 4px;
+    background: oklch(0.27 0.035 130);
+    padding: 4px;
+    border-radius: 12px;
+    margin-bottom: 14px;
+    flex-shrink: 0;
+}
+
+.mock-tab {
+    flex: 1;
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 7px 4px;
+    cursor: pointer;
+    border-radius: 8px;
+    transition: color 0.2s, background-color 0.2s;
+    text-align: center;
+}
+
+.mock-tab:hover {
+    color: var(--text);
+}
+
+.mock-tab.active {
+    background: var(--accent);
+    color: var(--text-on-green);
+}
+
+.mock-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 0;
+    padding-bottom: 12px;
+    display: flex;
+    flex-direction: column;
+    font-size: 0.8rem;
+    scrollbar-width: none; /* Firefox */
+}
+
+.mock-body::-webkit-scrollbar {
+    display: none; /* Chrome, Safari, Opera */
+}
+
+.mock-screen {
+    display: none;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.mock-screen.active {
+    display: flex;
+}
+
+/* Common Mockup Components */
+.mock-card {
+    background: oklch(0.27 0.035 130);
+    border: 1px solid oklch(0.32 0.03 125);
+    border-radius: 8px;
+    padding: 10px;
+}
+
+.mock-label {
+    font-size: 0.65rem;
+    font-weight: 700;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 0.3rem;
+}
+
+.mock-section-label {
+    display: block;
+    font-size: 11px;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 4px;
+    font-weight: 700;
+}
+
+.mock-input {
+    background: oklch(0.27 0.035 130);
+    border: 1px solid oklch(0.32 0.03 125);
+    border-radius: 8px;
+    color: white;
+    padding: 8px 10px;
+    font-size: 0.75rem;
+    width: 100%;
+    outline: none;
+}
+
+.mock-btn {
+    background: var(--accent);
+    color: var(--text-on-green);
+    border: none;
+    border-radius: 6px;
+    padding: 0.5rem;
+    font-weight: 600;
+    font-size: 0.75rem;
+    cursor: pointer;
+    transition: background 0.2s;
+    text-align: center;
+}
+
+.mock-btn:hover {
+    background: oklch(0.60 0.12 150);
+}
+
+/* Room Tab Details */
+.mock-joined-room {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: oklch(0.68 0.13 150 / 0.1);
+    border: 1px solid oklch(0.68 0.13 150 / 0.2);
+    border-radius: 8px;
+    padding: 0.6rem 0.75rem;
+}
+
+.mock-room-name {
+    font-weight: 700;
+    color: var(--accent);
+    font-size: 0.85rem;
+}
+
+.mock-server-badge {
+    background: oklch(0.68 0.13 150 / 0.2);
+    color: var(--accent);
+    font-size: 0.6rem;
+    font-weight: 700;
+    padding: 2px 6px;
+    border-radius: 4px;
+}
+
+.mock-invite-box {
+    display: flex;
+    gap: 0.35rem;
+}
+
+.mock-invite-box input {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.demo-room-empty {
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 24px 10px;
+    text-align: center;
+}
+.demo-room-empty img {
+    border-radius: 10px;
+    opacity: 0.85;
+    box-shadow: 0 4px 12px oklch(0.68 0.13 150 / 0.2);
+}
+.demo-room-empty-text {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    font-weight: 600;
+}
+.demo-create-room-btn {
+    background: var(--accent);
+    border: none;
+    color: var(--text-on-green);
+    font-weight: 700;
+    padding: 10px 18px;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+.demo-create-room-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px oklch(0.68 0.13 150 / 0.4);
+}
+.demo-create-room-btn:active {
+    transform: scale(0.96);
+}
+
+.mock-peer-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+}
+
+.mock-peer-item {
+    display: flex;
+    flex-direction: column;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.03);
+    border-radius: 8px;
+    padding: 0.45rem 0.55rem;
+}
+
+.mock-peer-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.2rem;
+}
+
+.mock-peer-name {
+    font-weight: 700;
+    color: var(--text);
+}
+
+.mock-peer-meta {
+    font-size: 0.65rem;
+    color: var(--text-muted);
+}
+
+.mock-peer-tab {
+    font-size: 0.7rem;
+    color: var(--accent);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.mock-peer-status {
+    font-size: 0.65rem;
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+/* Sync Tab Details */
+.mock-target-box {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    background: oklch(0.62 0.14 45 / 0.1);
+    border: 1px solid oklch(0.62 0.14 45 / 0.2);
+    color: oklch(0.72 0.13 50);
+    padding: 0.5rem 0.6rem;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 0.7rem;
+}
+
+.mock-ctrl-buttons {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.5rem;
+}
+
+.mock-btn-play { background: oklch(0.68 0.13 150); }
+.mock-btn-play:hover { background: oklch(0.60 0.12 150); }
+.mock-btn-pause { background: oklch(0.55 0.15 25); color: #fff; }
+.mock-btn-pause:hover { background: oklch(0.48 0.14 25); }
+.mock-btn-force { background: var(--accent); grid-column: span 2; }
+
+/* Contrast-safe palette for the decorative hero demo. Lighthouse/axe audits
+   sighted text contrast even inside aria-hidden, so every walkthrough state
+   must meet WCAG AA. Accent shown as text gets a lighter indigo; buttons that
+   put white text on a colour get a darker shade (these beat inline styles). */
+.hero-demo-scene {
+    --accent: oklch(0.80 0.10 150);
+}
+/* The step-3 sync theater reuses the film SVG and must follow the same
+   day/night palette; --accent stays hero-only (its cards sit on the page
+   surface, not on the demo sky). */
+.hero-demo-scene,
+.illus-sync-theater {
+    --demo-sky-top: oklch(0.22 0.055 152);
+    --demo-sky-mid: oklch(0.145 0.035 150);
+    --demo-sky-bottom: oklch(0.075 0.018 145);
+    --demo-glow: oklch(0.76 0.13 150 / 0.34);
+    --demo-stars: oklch(0.94 0.025 95);
+    --demo-moon: oklch(0.97 0.025 92);
+    --demo-mountain: oklch(0.18 0.055 148 / 0.9);
+    --demo-midground: oklch(0.22 0.065 145 / 0.88);
+    --demo-foreground: oklch(0.065 0.025 145);
+    --demo-card: oklch(0.18 0.032 142);
+    --demo-toolbar: oklch(0.12 0.025 142);
+    --demo-control-fade: oklch(0.055 0.015 145 / 0.94);
+    --demo-track: oklch(0.92 0.02 95 / 0.2);
+}
+.hero-demo-scene .mock-tab.active,
+.hero-demo-scene .mock-btn-force,
+.hero-demo-scene #demo-force-sync,
+.hero-demo-scene .demo-create-room-btn {
+    background: oklch(0.42 0.09 150) !important;
+    color: #fff;
+}
+.hero-demo-scene .mock-btn-play {
+    background: oklch(0.50 0.11 150) !important;
+}
+.hero-demo-scene .mock-btn-pause,
+.hero-demo-scene #demo-room-joined > button.mock-btn {
+    background: oklch(0.45 0.14 25) !important;
+}
+.hero-demo-scene .mock-version-link {
+    opacity: 0.85;
+}
+
+html.theme-light .hero-demo-scene {
+    --accent: oklch(0.60 0.12 150);
+}
+html.theme-light .hero-demo-scene,
+html.theme-light .illus-sync-theater {
+    --demo-sky-top: oklch(0.86 0.085 78);
+    --demo-sky-mid: oklch(0.76 0.095 112);
+    --demo-sky-bottom: oklch(0.54 0.10 150);
+    --demo-glow: oklch(0.92 0.13 72 / 0.44);
+    --demo-stars: oklch(0.98 0.025 90);
+    --demo-moon: oklch(0.99 0.025 88);
+    --demo-mountain: oklch(0.48 0.095 150 / 0.82);
+    --demo-midground: oklch(0.40 0.10 148 / 0.8);
+    --demo-foreground: oklch(0.24 0.075 145);
+    --demo-card: oklch(0.985 0.008 95);
+    --demo-toolbar: oklch(0.955 0.014 100);
+    --demo-control-fade: oklch(0.16 0.035 145 / 0.88);
+    --demo-track: oklch(0.98 0.01 95 / 0.34);
+}
+
+
+html.theme-light .hero-demo-scene .demo-tab-card {
+    background: var(--demo-card);
+    border-color: oklch(0.20 0.025 140 / 0.1);
+    box-shadow:
+        0 18px 38px oklch(0.20 0.025 140 / 0.16),
+        0 0 28px oklch(0.82 0.10 85 / 0.14),
+        inset 0 1px rgba(255, 255, 255, 0.9);
+}
+
+html.theme-light .hero-demo-scene .demo-tab-titlebar {
+    background: var(--demo-toolbar);
+    border-bottom-color: oklch(0.88 0.015 90);
+    color: oklch(0.45 0.02 110);
+}
+
+html.theme-light .hero-demo-scene .demo-tab-dots i {
+    background: oklch(0.78 0.02 90);
+}
+
+html.theme-light .hero-demo-scene .demo-ext-launcher {
+    background: #ffffff;
+    border-color: oklch(0.78 0.02 90);
+}
+
+html.theme-light .hero-demo-scene .demo-sync-chip {
+    background: oklch(0.55 0.12 150 / 0.1);
+    border-color: oklch(0.55 0.12 150 / 0.26);
+    color: oklch(0.40 0.10 150);
+}
+
+.mock-status-display {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.mock-status-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    background: oklch(0.68 0.13 150 / 0.1);
+    border: 1px solid oklch(0.68 0.13 150 / 0.2);
+    color: oklch(0.68 0.13 150);
+    padding: 2px 8px;
+    border-radius: 99px;
+    font-size: 0.65rem;
+    font-weight: 700;
+}
+
+.mock-log-item {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    border-left: 2px solid var(--accent);
+    padding-left: 0.4rem;
+    margin-top: 0.4rem;
+}
+
+/* Settings Tab Details */
+.mock-settings-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5rem;
+    margin-bottom: 0.6rem;
+}
+
+.mock-settings-row input[type="checkbox"] {
+    margin-top: 0.2rem;
+    cursor: pointer;
+}
+
+.mock-settings-row label {
+    cursor: pointer;
+    font-weight: 600;
+}
+
+.mock-settings-row p {
+    font-size: 0.65rem;
+    color: var(--text-muted);
+    margin-top: 0.1rem;
+}
+
+/* Mock Toggle Switch Details */
+.mock-toggle-switch {
+    position: relative;
+    display: inline-block;
+    width: 36px;
+    height: 20px;
+    flex-shrink: 0;
+}
+
+.mock-toggle-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.mock-slider {
+    position: absolute;
+    cursor: default;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background-color: oklch(0.32 0.03 125);
+    transition: .3s;
+    border-radius: 20px;
+}
+
+.mock-slider:before {
+    position: absolute;
+    content: "";
+    height: 14px;
+    width: 14px;
+    left: 3px;
+    bottom: 3px;
+    background-color: oklch(0.68 0.02 100);
+    transition: .3s;
+    border-radius: 50%;
+}
+
+input:checked + .mock-slider {
+    background-color: var(--accent);
+}
+
+input:checked + .mock-slider:before {
+    transform: translateX(16px);
+    background-color: white;
+}
+
+/* Dev Tab Details */
+.mock-diagnostic-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.4rem;
+}
+
+.mock-diag-box {
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.04);
+    border-radius: 6px;
+    padding: 0.4rem;
+}
+
+.mock-diag-box .diag-val {
+    font-family: monospace;
+    font-weight: 700;
+    color: var(--accent);
+    font-size: 0.75rem;
+}
+

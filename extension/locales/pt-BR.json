@@ -70,11 +70,11 @@
   "LABEL_REMOTE_CONTROL": "Controle remoto",
   "BTN_COPY_INVITE": "📋 Link de convite",
   "BTN_COPY_INVITE_TOOLTIP": "Copiar link de convite",
-  "BTN_PLAY": "▶ Reproduzir",
+  "BTN_PLAY": "Reproduzir",
   "BTN_PLAY_TOOLTIP": "Iniciar a reprodução para todos",
-  "BTN_PAUSE": "⏸ Pausar",
+  "BTN_PAUSE": "Pausar",
   "BTN_PAUSE_TOOLTIP": "Pausar o vídeo para todos",
-  "BTN_SYNC": "⚡ SINCRO",
+  "BTN_SYNC": "Sincro",
   "BTN_SYNC_TOOLTIP": "Forçar todos os usuários a sincronizar",
   "OPTION_JUMP_TO_OTHERS": "Ir para a posição dos outros",
   "OPTION_JUMP_TO_ME": "Trazer para a minha posição",
@@ -209,6 +209,7 @@
   "LABEL_AUDIO_PROCESSING_TOOLTIP": "Aplica efeitos de áudio (como compressão) aos vídeos",
   "AUDIO_OPEN_SETTINGS": "Abrir",
   "NEW_FEATURE_AUDIO": "Novo: Processamento de áudio — experimente o compressor!",
+  "NEW_FEATURE_THEME": "Novo: Temas — mude para o visual clássico ou grafite minimalista.",
   "AUDIO_BACK": "← Voltar",
   "AUDIO_PAGE_TITLE": "Configurações de áudio",
   "AUDIO_MASTER_TOGGLE": "Processamento de áudio",
@@ -238,5 +239,9 @@
   "LABEL_SEND_TAB_TITLE": "Enviar título da aba",
   "LABEL_SEND_TAB_TITLE_TOOLTIP": "Envia para a sala o título da aba selecionada do navegador.",
   "LABEL_MEDIA_TITLE_PRIVACY": "Título da mídia",
-  "LABEL_MEDIA_TITLE_PRIVACY_TOOLTIP": "Escolha como os títulos de mídia são enviados para a sala."
+  "LABEL_MEDIA_TITLE_PRIVACY_TOOLTIP": "Escolha como os títulos de mídia são enviados para a sala.",
+  "LABEL_SETTINGS_GROUP_PROFILE": "Perfil e Aparência",
+  "LABEL_SETTINGS_GROUP_PROFILE_TOOLTIP": "Altere o seu nome de usuário, tema e preferências de idioma.",
+  "LABEL_SETTINGS_GROUP_SYNC": "Reprodução e Sincronização",
+  "LABEL_SETTINGS_GROUP_SYNC_TOOLTIP": "Personalize a reprodução, as notificações e as preferências de áudio."
 }

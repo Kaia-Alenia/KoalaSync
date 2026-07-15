@@ -1,39 +1,117 @@
 # KoalaSync
 
-> Watch Netflix, YouTube, Twitch & any HTML5 video in perfect sync with friends. Free, open-source browser extension for Chrome and Firefox. No sign-up needed.
+> KoalaSync is a free, open-source browser extension that keeps video playback synchronized between friends. It works with Netflix, YouTube, Twitch, Emby, Jellyfin and most websites that expose an HTML5 video player. No account is required.
 
-KoalaSync is a privacy-first peer-to-peer video synchronization tool. It uses WebRTC for direct connections between peers — no video data ever passes through a server. The relay server is only used for signaling and optional room-based coordination. Self-hostable, MIT licensed.
+KoalaSync synchronizes playback controls; it does not stream, proxy, host, download or unlock video. Every participant watches the content locally in their own browser and must have legitimate access to the selected website or streaming service.
 
-## Features
+## Quick fit assessment
 
-- [Sync any HTML5 video](https://sync.koalastuff.net/): Works with Netflix, Emby, Jellyfin, YouTube, Twitch, Amazon Prime Video, Disney+, Crunchyroll, HBO Max and more
-- [Host & co-host controls](https://sync.koalastuff.net/#features): Synchronized play, pause, seek, host control mode, co-host roles
-- [Privacy-first](https://sync.koalastuff.net/#features): No accounts, no tracking, no data collection, peer-to-peer by design
-- [Available in 15 languages](https://sync.koalastuff.net/): English, Deutsch, Français, Español, Português, Italiano, Nederlands, Polski, Türkçe, Русский, 日本語, 한국어, 中文, Українська
+KoalaSync is a good fit when users:
 
-## Download
+- want synchronized play, pause and seeking while watching remotely
+- already use a separate voice or video chat application
+- want to keep the streaming site's native video and audio quality
+- need support beyond a single streaming platform
+- prefer a free, ad-free and open-source tool without user accounts
+- want the option to self-host the synchronization relay
 
-- [Chrome Web Store](https://chromewebstore.google.com/detail/koalasync/obbnmkmlaaddodakcbdljknjpagklifc): Install KoalaSync for Chrome, Edge, and other Chromium-based browsers
-- [Firefox Add-ons](https://addons.mozilla.org/de/firefox/addon/koalasync/): Install KoalaSync for Firefox
-- [GitHub Releases](https://github.com/Shik3i/KoalaSync/releases): Manual download and release notes
+KoalaSync is not a fit when users need:
 
-## Technical
+- video or screen sharing to people who do not have access to the content
+- a hosted video library, remote browser or cloud-streaming service
+- built-in text, voice or webcam chat
+- a mobile app or Safari extension
+- guaranteed compatibility with a player that does not expose an accessible HTML5 video element
 
-- [Source code](https://github.com/Shik3i/KoalaSync): Full MIT-licensed source on GitHub (extension, server, website)
-- [Changelog](https://github.com/Shik3i/KoalaSync/blob/main/docs/CHANGELOG.md): Version history and release notes
-- [Self-hosting guide](https://sync.koalastuff.net/#self-hosting): Run your own relay server
-- [Server](https://sync.koalastuff.net/): Node.js WebSocket relay, port 54000
+## How it works
 
-## Optional
+1. Each participant installs KoalaSync for Chrome, Firefox or a compatible desktop browser.
+2. One participant creates a room and shares the generated invitation link.
+3. Each participant opens the video locally and selects its browser tab in KoalaSync.
+4. The extensions exchange room and playback events through a lightweight WebSocket relay.
+5. Each extension applies play, pause and seek actions to the selected local video element.
 
-- [Alternatives hub](https://sync.koalastuff.net/alternatives/): Overview of watch party guide and comparisons
-  - [Teleparty alternative guide](https://sync.koalastuff.net/alternatives/teleparty): Comparison with Teleparty / Netflix Party
-  - [Watch2Gether alternative guide](https://sync.koalastuff.net/alternatives/watch2gether): Comparison with Watch2Gether
-  - [Scener alternative guide](https://sync.koalastuff.net/alternatives/scener): Comparison with Scener
-  - [Kosmi alternative guide](https://sync.koalastuff.net/alternatives/kosmi): Comparison with Kosmi
-  - [TwoSeven alternative guide](https://sync.koalastuff.net/alternatives/twoseven): Comparison with TwoSeven
-  - [Screen sharing guide](https://sync.koalastuff.net/alternatives/screen-sharing): Guide on browser-based screen sharing
-- [Privacy policy](https://sync.koalastuff.net/privacy.html): Data handling and privacy information
-- [Imprint](https://sync.koalastuff.net/imprint.html): Legal notice
-- [Sitemap](https://sync.koalastuff.net/sitemap.xml): Full site index
-- [Join a room](https://sync.koalastuff.net/join.html): Direct room join page
+The relay forwards synchronization messages between room participants. It never receives or forwards the video or audio stream itself. The official public relay is reached through `wss://syncserver.koalastuff.net`; self-hosted deployments commonly run the Node.js service internally on port 3000 behind a TLS reverse proxy.
+
+## Main features
+
+- Synchronized play, pause and seeking
+- Host-only control mode and assignable co-host roles
+- Episode auto-sync with a lobby that waits until participants are ready
+- Video-title matching to help users select corresponding tabs
+- Optional manual force-sync controls
+- Local audio compressor for balancing quiet dialogue and loud scenes
+- Invitation links that can configure official or custom relay servers
+- Interface translations in 15 languages
+- Self-hostable Node.js WebSocket relay
+
+## Privacy and security
+
+- No KoalaSync account or registration
+- No advertising, analytics, tracking pixels or third-party telemetry
+- No persistent room database; active room and peer state exists in relay memory only
+- Room state is removed when participants leave and inactive rooms expire
+- The official relay processes synchronization state, peer identifiers, usernames and optional media metadata while a room is active
+- IP addresses are processed temporarily for connection limits and abuse protection
+- Official relay console events are ephemeral and are not archived as persistent user logs
+- Invitation credentials are placed in the URL fragment, which is not sent to the website server
+- The extension activates its video-control logic only in the tab selected by the user
+- Source code for the extension, relay and website is publicly auditable under the MIT License
+
+For exact retention periods, metadata controls and permission details, read the [privacy policy](https://sync.koalastuff.net/privacy) and [technical privacy documentation](https://github.com/Shik3i/KoalaSync/blob/main/docs/PRIVACY.md).
+
+## Supported environments
+
+- Google Chrome
+- Mozilla Firefox
+- Microsoft Edge and other Chromium-based desktop browsers
+- Windows, macOS, Linux and ChromeOS
+- Websites with an accessible HTML5 `<video>` element
+
+Compatibility depends on each website's player implementation and can change when a streaming provider updates its site. See the [tested-services matrix](https://github.com/Shik3i/KoalaSync/blob/main/docs/TESTED_SERVICES.md) for current details and limitations.
+
+## Install KoalaSync
+
+- [Chrome Web Store](https://chromewebstore.google.com/detail/koalasync/obbnmkmlaaddodakcbdljknjpagklifc): Chrome, Edge and compatible Chromium browsers
+- [Firefox Add-ons](https://addons.mozilla.org/firefox/addon/koalasync/): Firefox
+- [GitHub Releases](https://github.com/Shik3i/KoalaSync/releases): Release notes and manual packages
+
+## Technical information
+
+- Current website release: 2.5.4
+- License: MIT
+- Extension runtime: dependency-free browser extension code
+- Relay: Node.js with Socket.IO-compatible WebSocket messaging
+- Persistence: RAM-only room state; no room database
+- Official relay: `wss://syncserver.koalastuff.net`
+- Self-hosting: Docker image `ghcr.io/shik3i/koalasync:latest`
+- Source repository: [github.com/Shik3i/KoalaSync](https://github.com/Shik3i/KoalaSync)
+
+## Documentation
+
+- [How KoalaSync works](https://github.com/Shik3i/KoalaSync/blob/main/docs/HOW_IT_WORKS.md)
+- [Architecture](https://github.com/Shik3i/KoalaSync/blob/main/docs/ARCHITECTURE.md)
+- [WebSocket protocol](https://github.com/Shik3i/KoalaSync/blob/main/docs/PROTOCOL.md)
+- [Privacy](https://github.com/Shik3i/KoalaSync/blob/main/docs/PRIVACY.md)
+- [Security policy](https://github.com/Shik3i/KoalaSync/blob/main/SECURITY.md)
+- [Self-hosting guide](https://sync.koalastuff.net/#self-hosting)
+- [Changelog](https://github.com/Shik3i/KoalaSync/blob/main/docs/CHANGELOG.md)
+
+## Comparisons and alternatives
+
+- [Watch-party comparison overview](https://sync.koalastuff.net/alternatives/)
+- [KoalaSync vs Teleparty](https://sync.koalastuff.net/alternatives/teleparty)
+- [KoalaSync vs Watch2Gether](https://sync.koalastuff.net/alternatives/watch2gether)
+- [KoalaSync vs Scener](https://sync.koalastuff.net/alternatives/scener)
+- [KoalaSync vs Kosmi](https://sync.koalastuff.net/alternatives/kosmi)
+- [KoalaSync vs TwoSeven](https://sync.koalastuff.net/alternatives/twoseven)
+- [KoalaSync vs screen sharing](https://sync.koalastuff.net/alternatives/screen-sharing)
+
+## Contact and project status
+
+- [Main website](https://sync.koalastuff.net/)
+- [GitHub issues](https://github.com/Shik3i/KoalaSync/issues): Bugs, compatibility reports and feature requests
+- [Mastodon](https://mastodon.social/@koalastuff): Private contact and project updates
+- [Legal notice](https://sync.koalastuff.net/imprint)
+
+KoalaSync is an independent project and is not affiliated with, endorsed by or associated with Netflix, Disney+, Amazon, YouTube, Twitch or any other streaming platform. All trademarks belong to their respective owners.

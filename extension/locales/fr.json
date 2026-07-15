@@ -70,11 +70,11 @@
   "LABEL_REMOTE_CONTROL": "Contrôle à distance",
   "BTN_COPY_INVITE": "📋 Lien d'invitation",
   "BTN_COPY_INVITE_TOOLTIP": "Copier le lien d'invitation",
-  "BTN_PLAY": "▶ Lecture",
+  "BTN_PLAY": "Lecture",
   "BTN_PLAY_TOOLTIP": "Envoyer une commande Lecture à tout le monde",
-  "BTN_PAUSE": "⏸ Pause",
+  "BTN_PAUSE": "Pause",
   "BTN_PAUSE_TOOLTIP": "Envoyer une commande Pause à tout le monde",
-  "BTN_SYNC": "⚡ SYNC",
+  "BTN_SYNC": "Sync",
   "BTN_SYNC_TOOLTIP": "Forcer tous les utilisateurs à se synchroniser",
   "OPTION_JUMP_TO_OTHERS": "Rejoindre les autres",
   "OPTION_JUMP_TO_ME": "Les amener à moi",
@@ -209,6 +209,7 @@
   "LABEL_AUDIO_PROCESSING_TOOLTIP": "Applique des effets audio comme la compression à la lecture vidéo",
   "AUDIO_OPEN_SETTINGS": "Ouvrir",
   "NEW_FEATURE_AUDIO": "Nouveau : Traitement audio — essayez le compresseur !",
+  "NEW_FEATURE_THEME": "Nouveau : Thèmes — passez au look classique ou au graphite minimal.",
   "AUDIO_BACK": "← Retour",
   "AUDIO_PAGE_TITLE": "Paramètres audio",
   "AUDIO_MASTER_TOGGLE": "Traitement audio",
@@ -238,5 +239,9 @@
   "LABEL_SEND_TAB_TITLE": "Envoyer le titre de l’onglet",
   "LABEL_SEND_TAB_TITLE_TOOLTIP": "Envoie au salon le titre de l’onglet de navigateur sélectionné.",
   "LABEL_MEDIA_TITLE_PRIVACY": "Titre du média",
-  "LABEL_MEDIA_TITLE_PRIVACY_TOOLTIP": "Choisissez comment les titres des médias sont envoyés au salon."
+  "LABEL_MEDIA_TITLE_PRIVACY_TOOLTIP": "Choisissez comment les titres des médias sont envoyés au salon.",
+  "LABEL_SETTINGS_GROUP_PROFILE": "Profil & Apparence",
+  "LABEL_SETTINGS_GROUP_PROFILE_TOOLTIP": "Modifiez votre nom d'utilisateur, votre thème et vos préférences linguistiques.",
+  "LABEL_SETTINGS_GROUP_SYNC": "Lecture & Sync",
+  "LABEL_SETTINGS_GROUP_SYNC_TOOLTIP": "Personnalisez la lecture, les notifications et les préférences audio."
 }

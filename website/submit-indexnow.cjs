@@ -3,7 +3,7 @@ const path = require('path');
 const https = require('https');
 
 const websiteDir = __dirname;
-const sitemapPath = path.join(websiteDir, 'sitemap.xml');
+const sitemapPath = path.join(websiteDir, 'www', 'sitemap.xml');
 
 // 1. Find the IndexNow key file in the website directory
 const files = fs.readdirSync(websiteDir);
@@ -34,7 +34,7 @@ console.log(`Key Location: ${keyLocation}`);
 
 // 2. Parse URLs from sitemap.xml
 if (!fs.existsSync(sitemapPath)) {
-    console.error(`Error: sitemap.xml not found at ${sitemapPath}`);
+    console.error(`Error: generated sitemap.xml not found at ${sitemapPath}. Run \`node website/build.cjs\` first.`);
     process.exit(1);
 }
 

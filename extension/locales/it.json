@@ -70,11 +70,11 @@
   "LABEL_REMOTE_CONTROL": "Telecomando",
   "BTN_COPY_INVITE": "📋 Link di Invito",
   "BTN_COPY_INVITE_TOOLTIP": "Copia il link di invito",
-  "BTN_PLAY": "▶ Riproduci",
+  "BTN_PLAY": "Riproduci",
   "BTN_PLAY_TOOLTIP": "Avvia la riproduzione per tutti",
-  "BTN_PAUSE": "⏸ Pausa",
+  "BTN_PAUSE": "Pausa",
   "BTN_PAUSE_TOOLTIP": "Metti in pausa per tutti",
-  "BTN_SYNC": "⚡ SINCRO",
+  "BTN_SYNC": "Sincro",
   "BTN_SYNC_TOOLTIP": "Forza la sincronizzazione per tutti",
   "OPTION_JUMP_TO_OTHERS": "Vai alla posizione degli altri",
   "OPTION_JUMP_TO_ME": "Portali alla mia posizione",
@@ -209,6 +209,7 @@
   "LABEL_AUDIO_PROCESSING_TOOLTIP": "Applica effetti sonori (come il compressore) ai video",
   "AUDIO_OPEN_SETTINGS": "Apri",
   "NEW_FEATURE_AUDIO": "Novità: Elaborazione Audio — prova il compressore!",
+  "NEW_FEATURE_THEME": "Nuovo: Temi — passa all'aspetto classico o al grafite minimale.",
   "AUDIO_BACK": "← Indietro",
   "AUDIO_PAGE_TITLE": "Impostazioni Audio",
   "AUDIO_MASTER_TOGGLE": "Elaborazione Audio",
@@ -238,5 +239,9 @@
   "LABEL_SEND_TAB_TITLE": "Invia titolo scheda",
   "LABEL_SEND_TAB_TITLE_TOOLTIP": "Invia alla stanza il titolo della scheda del browser selezionata.",
   "LABEL_MEDIA_TITLE_PRIVACY": "Titolo multimediale",
-  "LABEL_MEDIA_TITLE_PRIVACY_TOOLTIP": "Scegli come inviare alla stanza i titoli multimediali."
+  "LABEL_MEDIA_TITLE_PRIVACY_TOOLTIP": "Scegli come inviare alla stanza i titoli multimediali.",
+  "LABEL_SETTINGS_GROUP_PROFILE": "Profilo & Aspetto",
+  "LABEL_SETTINGS_GROUP_PROFILE_TOOLTIP": "Modifica il tuo nome utente, tema e preferenze di lingua.",
+  "LABEL_SETTINGS_GROUP_SYNC": "Riproduzione & Sync",
+  "LABEL_SETTINGS_GROUP_SYNC_TOOLTIP": "Personalizza la riproduzione, le notifiche e le preferenze audio."
 }

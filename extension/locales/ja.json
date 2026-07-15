@@ -70,11 +70,11 @@
   "LABEL_REMOTE_CONTROL": "リモートコントロール",
   "BTN_COPY_INVITE": "📋 招待リンク",
   "BTN_COPY_INVITE_TOOLTIP": "招待リンクをコピー",
-  "BTN_PLAY": "▶ 再生",
+  "BTN_PLAY": "再生",
   "BTN_PLAY_TOOLTIP": "全員に再生コマンドを送信",
-  "BTN_PAUSE": "⏸ 一時停止",
+  "BTN_PAUSE": "一時停止",
   "BTN_PAUSE_TOOLTIP": "全員に一時停止コマンドを送信",
-  "BTN_SYNC": "⚡ 同期",
+  "BTN_SYNC": "同期",
   "BTN_SYNC_TOOLTIP": "すべてのユーザーを強制的に同期",
   "OPTION_JUMP_TO_OTHERS": "他の人に合わせる",
   "OPTION_JUMP_TO_ME": "自分に合わせる",
@@ -209,6 +209,7 @@
   "LABEL_AUDIO_PROCESSING_TOOLTIP": "動画再生に圧縮などのオーディオエフェクトを適用します",
   "AUDIO_OPEN_SETTINGS": "開く",
   "NEW_FEATURE_AUDIO": "新機能: オーディオ処理 — コンプレッサーを試してみよう！",
+  "NEW_FEATURE_THEME": "新機能：テーマ — クラシックな外観やミニマルなグラファイトに切り替え。",
   "AUDIO_BACK": "← 戻る",
   "AUDIO_PAGE_TITLE": "オーディオ設定",
   "AUDIO_MASTER_TOGGLE": "オーディオ処理",
@@ -238,5 +239,9 @@
   "LABEL_SEND_TAB_TITLE": "タブタイトルを送信",
   "LABEL_SEND_TAB_TITLE_TOOLTIP": "選択中のブラウザータブのタイトルをルームに送信します。",
   "LABEL_MEDIA_TITLE_PRIVACY": "メディアタイトル",
-  "LABEL_MEDIA_TITLE_PRIVACY_TOOLTIP": "メディアタイトルをルームに送信する方法を選択します。"
+  "LABEL_MEDIA_TITLE_PRIVACY_TOOLTIP": "メディアタイトルをルームに送信する方法を選択します。",
+  "LABEL_SETTINGS_GROUP_PROFILE": "プロフィールと外観",
+  "LABEL_SETTINGS_GROUP_PROFILE_TOOLTIP": "ユーザー名、テーマ、言語設定を変更します。",
+  "LABEL_SETTINGS_GROUP_SYNC": "再生と同期",
+  "LABEL_SETTINGS_GROUP_SYNC_TOOLTIP": "再生、通知、オーディオ設定をカスタマイズします。"
 }

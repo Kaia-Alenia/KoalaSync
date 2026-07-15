@@ -12,6 +12,9 @@ let currentLanguage = null;
  */
 export async function loadLocale(langCode) {
     const resolvedLang = SUPPORTED_LANGUAGES.includes(langCode) ? langCode : DEFAULT_LANGUAGE;
+    if (typeof document !== 'undefined') {
+        document.documentElement.lang = resolvedLang;
+    }
     
     if (currentLanguage === resolvedLang && Object.keys(activeDictionary).length > 0) {
         return;
@@ -90,6 +93,8 @@ export function getMessage(key, placeholders = null) {
  * Performs dynamic DOM replacements for elements carrying data-i18n attributes.
  */
 export function translateDOM() {
+    if (typeof document === 'undefined') return;
+
     // 1. Text Content
     document.querySelectorAll('[data-i18n]').forEach(el => {
         const key = el.getAttribute('data-i18n');

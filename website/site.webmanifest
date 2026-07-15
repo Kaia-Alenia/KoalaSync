@@ -4,8 +4,8 @@
   "description": "Real-time video synchronization for friends. Privacy-first, open source.",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#0f172a",
-  "theme_color": "#0f172a",
+  "background_color": "#10190e",
+  "theme_color": "#10190e",
   "icons": [
     {
       "src": "/assets/NewLogoIcon_64.webp",

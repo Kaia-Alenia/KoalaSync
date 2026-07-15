@@ -70,11 +70,11 @@
   "LABEL_REMOTE_CONTROL": "원격 제어",
   "BTN_COPY_INVITE": "📋 초대 링크",
   "BTN_COPY_INVITE_TOOLTIP": "초대 링크 복사",
-  "BTN_PLAY": "▶ 재생",
+  "BTN_PLAY": "재생",
   "BTN_PLAY_TOOLTIP": "모든 사람에게 재생 명령 전송",
-  "BTN_PAUSE": "⏸ 일시정지",
+  "BTN_PAUSE": "일시정지",
   "BTN_PAUSE_TOOLTIP": "모든 사람에게 일시정지 명령 전송",
-  "BTN_SYNC": "⚡ 동기화",
+  "BTN_SYNC": "동기화",
   "BTN_SYNC_TOOLTIP": "모든 사용자의 강제 동기화",
   "OPTION_JUMP_TO_OTHERS": "다른 사람에게 이동",
   "OPTION_JUMP_TO_ME": "나에게 이동",
@@ -209,6 +209,7 @@
   "LABEL_AUDIO_PROCESSING_TOOLTIP": "비디오 재생에 압축과 같은 오디오 효과를 적용합니다",
   "AUDIO_OPEN_SETTINGS": "열기",
   "NEW_FEATURE_AUDIO": "신규: 오디오 처리 — 컴프레서를 사용해보세요!",
+  "NEW_FEATURE_THEME": "신규: 테마 — 클래식 룩이나 미니멀 그래파이트로 전환하세요.",
   "AUDIO_BACK": "← 뒤로",
   "AUDIO_PAGE_TITLE": "오디오 설정",
   "AUDIO_MASTER_TOGGLE": "오디오 처리",
@@ -238,5 +239,9 @@
   "LABEL_SEND_TAB_TITLE": "탭 제목 보내기",
   "LABEL_SEND_TAB_TITLE_TOOLTIP": "선택한 브라우저 탭 제목을 방에 보냅니다.",
   "LABEL_MEDIA_TITLE_PRIVACY": "미디어 제목",
-  "LABEL_MEDIA_TITLE_PRIVACY_TOOLTIP": "미디어 제목을 방에 보내는 방식을 선택합니다."
+  "LABEL_MEDIA_TITLE_PRIVACY_TOOLTIP": "미디어 제목을 방에 보내는 방식을 선택합니다.",
+  "LABEL_SETTINGS_GROUP_PROFILE": "프로필 및 테마",
+  "LABEL_SETTINGS_GROUP_PROFILE_TOOLTIP": "사용자 이름, 테마 및 언어 설정을 변경합니다.",
+  "LABEL_SETTINGS_GROUP_SYNC": "재생 및 동기화",
+  "LABEL_SETTINGS_GROUP_SYNC_TOOLTIP": "재생, 알림 및 오디오 설정을 맞춤설정합니다."
 }

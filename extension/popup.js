@@ -64,6 +64,8 @@ const elements = {
     autoCopyInvite: document.getElementById('autoCopyInvite'),
     cancelLobbyBtn: document.getElementById('cancelLobbyBtn'),
     langSelector: document.getElementById('langSelector'),
+    themeSelector: document.getElementById('themeSelector'),
+    paletteSelector: document.getElementById('paletteSelector'),
 
     audioSettingsLink: document.getElementById('audioSettingsLink'),
     settingsSupportLink: document.getElementById('settingsSupportLink'),
@@ -114,6 +116,12 @@ const FEATURE_HINTS = [
         selector: '#audioProcessingLabel',
         position: 'beforebegin',
         i18nTooltip: 'NEW_FEATURE_AUDIO'
+    },
+    {
+        key: 'theme_picker',
+        selector: '#paletteLabel',
+        position: 'afterend',
+        i18nTooltip: 'NEW_FEATURE_THEME'
     }
 ];
 
@@ -130,6 +138,118 @@ function configureFooterLinks() {
 
 function openAudioSettingsPage() {
     chrome.tabs.create({ url: chrome.runtime.getURL('audio-options.html') });
+}
+
+function localizeThemeSelector(locale) {
+    const labels = {
+        de: ['Darstellung', 'System', 'Dunkel', 'Hell', 'Folge dem System-Design oder wähle ein festes Design'],
+        fr: ['Apparence', 'Système', 'Sombre', 'Clair', 'Suivre le thème du système ou choisir une apparence fixe'],
+        es: ['Apariencia', 'Sistema', 'Oscuro', 'Claro', 'Seguir el tema del sistema o elegir una apariencia fija'],
+        it: ['Aspetto', 'Sistema', 'Scuro', 'Chiaro', 'Segui il tema di sistema o scegli un aspetto fisso'],
+        nl: ['Weergave', 'Systeem', 'Donker', 'Licht', 'Volg het systeemthema of kies een vaste weergave'],
+        pl: ['Wygląd', 'System', 'Ciemny', 'Jasny', 'Dostosuj do motywu systemowego lub wybierz stały wygląd'],
+        pt: ['Aparência', 'Sistema', 'Escuro', 'Claro', 'Seguir o tema do sistema ou escolher uma aparência fixa'],
+        'pt-BR': ['Aparência', 'Sistema', 'Escuro', 'Claro', 'Seguir o tema do sistema ou escolher uma aparência fixa'],
+        tr: ['Görünüm', 'Sistem', 'Koyu', 'Açık', 'Sistem temasını takip et veya sabit bir görünüm seç'],
+        ru: ['Оформление', 'Системная', 'Тёмная', 'Светлая', 'Следовать системной теме или выбрать фиксированное оформление'],
+        ja: ['外観', 'システム', 'ダーク', 'ライト', 'システムテーマに従うか、固定の外観を選択します'],
+        ko: ['테마', '시스템', '다크', '라이트', '시스템 테마를 따르거나 고정된 테마를 선택하세요'],
+        zh: ['外观', '跟随系统', '深色', '浅色', '跟随系统主题或选择固定外观'],
+        uk: ['Вигляд', 'Системна', 'Темна', 'Світла', 'Дотримуватися системної теми або вибрати фіксоване оформлення'],
+        en: ['Appearance', 'System', 'Dark', 'Light', 'Follow the system theme or choose a fixed appearance']
+    };
+    const [label, system, dark, light, tooltip] = labels[locale] || labels.en;
+    const labelEl = document.getElementById('themeLabel');
+    const systemEl = document.getElementById('themeOptionSystem');
+    const darkEl = document.getElementById('themeOptionDark');
+    const lightEl = document.getElementById('themeOptionLight');
+    const systemButton = document.getElementById('themeChoiceSystem');
+    const darkButton = document.getElementById('themeChoiceDark');
+    const lightButton = document.getElementById('themeChoiceLight');
+    if (labelEl) {
+        labelEl.textContent = label;
+        if (tooltip) labelEl.setAttribute('title', tooltip);
+    }
+    if (systemEl) systemEl.textContent = system;
+    if (darkEl) darkEl.textContent = dark;
+    if (lightEl) lightEl.textContent = light;
+    if (systemButton) systemButton.textContent = system;
+    if (darkButton) darkButton.textContent = dark;
+    if (lightButton) lightButton.textContent = light;
+    if (elements.themeSelector) elements.themeSelector.setAttribute('aria-label', label);
+
+    // The palette scheme names (Eucalyptus / Cyber / Graphite) are brand
+    // words kept verbatim; only the row label is localized.
+    const paletteLabels = {
+        de: ['Farbschema', 'Wähle ein kuratiertes Farbschema für die Erweiterung'],
+        fr: ['Thème', 'Choisissez une palette de couleurs personnalisée pour l\'extension'],
+        es: ['Tema', 'Elige una paleta de colores seleccionada para la extensión'],
+        it: ['Tema', 'Scegli una combinazione di colori curata per l\'estensione'],
+        nl: ['Thema', 'Kies een samengesteld kleurenschema voor de extensie'],
+        pl: ['Motyw', 'Wybierz dopasowany schemat kolorów dla rozszerzenia'],
+        pt: ['Tema', 'Escolha um esquema de cores personalizado para a extensão'],
+        'pt-BR': ['Tema', 'Escolha um esquema de cores personalizado para a extensão'],
+        tr: ['Tema', 'Uzantı için özel olarak seçilmiş bir renk şeması seçin'],
+        ru: ['Тема', 'Выберите цветовую схему для расширения'],
+        ja: ['テーマ', '拡張機能の厳選された配色を選択します'],
+        ko: ['테마', '확장 프로그램에 맞는 특별한 색상 테마를 선택하세요'],
+        zh: ['主题', '为扩展程序选择精心设计的配色方案'],
+        uk: ['Тема', 'Виберіть колірну схему для розширення'],
+        en: ['Theme', 'Pick a curated colour scheme for the extension']
+    };
+    const [paletteLabel, paletteTooltip] = paletteLabels[locale] || paletteLabels.en;
+    const paletteLabelEl = document.getElementById('paletteLabel');
+    if (paletteLabelEl) {
+        paletteLabelEl.textContent = paletteLabel;
+        if (paletteTooltip) paletteLabelEl.setAttribute('title', paletteTooltip);
+    }
+    if (elements.paletteSelector) elements.paletteSelector.setAttribute('aria-label', paletteLabel);
+
+    // Micro-descriptors under each swatch card: [nature, classic, minimal].
+    const paletteDescs = {
+        de: ['Natur', 'Klassik', 'Minimal'], fr: ['Nature', 'Classique', 'Minimal'],
+        es: ['Naturaleza', 'Clásico', 'Minimal'], it: ['Natura', 'Classico', 'Minimal'],
+        nl: ['Natuur', 'Klassiek', 'Minimaal'], pl: ['Natura', 'Klasyczny', 'Minimal'],
+        pt: ['Natureza', 'Clássico', 'Minimal'], 'pt-BR': ['Natureza', 'Clássico', 'Minimal'],
+        tr: ['Doğa', 'Klasik', 'Minimal'], ru: ['Природа', 'Классика', 'Минимал'],
+        ja: ['ネイチャー', 'クラシック', 'ミニマル'], ko: ['자연', '클래식', '미니멀'],
+        zh: ['自然', '经典', '极简'], uk: ['Природа', 'Класика', 'Мінімал'],
+        en: ['Nature', 'Classic', 'Minimal']
+    };
+    const [natureDesc, classicDesc, minimalDesc] = paletteDescs[locale] || paletteDescs.en;
+    const descMap = { eucalyptus: natureDesc, cyber: classicDesc, graphite: minimalDesc };
+    document.querySelectorAll('.palette-choice').forEach(btn => {
+        const desc = btn.querySelector('.palette-desc');
+        if (desc) desc.textContent = descMap[btn.dataset.paletteValue] || desc.textContent;
+    });
+}
+
+function syncThemePicker() {
+    const activeMode = elements.themeSelector?.value || 'system';
+    document.querySelectorAll('.theme-choice').forEach(button => {
+        const active = button.dataset.themeValue === activeMode;
+        button.classList.toggle('active', active);
+        button.setAttribute('aria-pressed', String(active));
+    });
+}
+
+function syncPalettePicker() {
+    const activePalette = elements.paletteSelector?.value || 'eucalyptus';
+    document.querySelectorAll('.palette-choice').forEach(button => {
+        const active = button.dataset.paletteValue === activePalette;
+        button.classList.toggle('active', active);
+        button.setAttribute('aria-pressed', String(active));
+    });
+}
+
+// Briefly enable global colour transitions so a theme/appearance switch
+// cross-fades instead of snapping. Self-clearing; a no-op under reduced motion.
+let themeAnimTimer = null;
+function flashThemeTransition() {
+    const root = document.documentElement;
+    root.classList.add('theme-anim');
+    if (themeAnimTimer) clearTimeout(themeAnimTimer);
+    themeAnimTimer = setTimeout(() => root.classList.remove('theme-anim'), 300);
 }
 
 async function updateFeatureHints() {
@@ -204,7 +324,7 @@ function setRoomRefreshCooldown() {
 async function init() {
     // Local-only by design — settings and room credentials never come from
     // storage.sync (only onboardingComplete + dismissedHints live there).
-    const localData = await chrome.storage.local.get(['serverUrl', 'useCustomServer', 'roomId', 'password', 'username', 'filterNoise', 'autoSyncNextEpisode', 'sendTabTitle', 'mediaTitlePrivacyMode', 'titlePrivacyMode', 'forceSyncMode', 'browserNotifications', 'autoCopyInvite', 'locale', 'audioSettings', 'activeTab']);
+    const localData = await chrome.storage.local.get(['serverUrl', 'useCustomServer', 'roomId', 'password', 'username', 'filterNoise', 'autoSyncNextEpisode', 'sendTabTitle', 'mediaTitlePrivacyMode', 'titlePrivacyMode', 'forceSyncMode', 'browserNotifications', 'autoCopyInvite', 'locale', 'audioSettings', 'activeTab', 'themeMode', 'themePalette']);
 
     let activeLang = localData.locale;
     if (!activeLang) {
@@ -214,8 +334,13 @@ async function init() {
 
     await loadLocale(activeLang);
     translateDOM();
+    localizeThemeSelector(activeLang);
     
     if (elements.langSelector) elements.langSelector.value = activeLang;
+    if (elements.themeSelector) elements.themeSelector.value = ['dark', 'light'].includes(localData.themeMode) ? localData.themeMode : 'system';
+    if (elements.paletteSelector) elements.paletteSelector.value = ['cyber', 'graphite'].includes(localData.themePalette) ? localData.themePalette : 'eucalyptus';
+    syncThemePicker();
+    syncPalettePicker();
     
     let username = localData.username;
     if (!username) {
@@ -476,8 +601,8 @@ function updateLastActionUI(state, peers) {
     const safeAcks = state.acks || [];
 
     const actionNames = {
-        'play': getMessage('BTN_PLAY').replace('▶ ', '').toUpperCase(),
-        'pause': getMessage('BTN_PAUSE').replace('⏸ ', '').toUpperCase(),
+        'play': getMessage('BTN_PLAY'),
+        'pause': getMessage('BTN_PAUSE'),
         'seek': getMessage('NOTIF_SEEK').toUpperCase(),
         'force_sync_prepare': getMessage('BTN_STATE_SYNCING').toUpperCase(),
         'force_sync_execute': getMessage('BTN_STATE_SYNCED').toUpperCase()
@@ -500,7 +625,7 @@ function updateLastActionUI(state, peers) {
     actionSpan.textContent = actionNames[state.action] || state.action.toUpperCase();
     
     const infoSpan = document.createElement('span');
-    infoSpan.style.cssText = 'font-size:9px; color:var(--text-muted);';
+    infoSpan.style.cssText = 'font-size:10px; color:var(--text-muted);';
     infoSpan.textContent = `${senderName} @ ${timeStr}`;
     
     header.appendChild(actionSpan);
@@ -509,14 +634,14 @@ function updateLastActionUI(state, peers) {
 
     if (state.targetTime !== undefined && state.action === 'seek') {
         const timeInfo = document.createElement('div');
-        timeInfo.style.cssText = 'font-size:9px; color:var(--text-muted); margin-top:4px;';
+        timeInfo.style.cssText = 'font-size:10px; color:var(--text-muted); margin-top:4px;';
         timeInfo.textContent = `Target: ${formatTime(state.targetTime)}`;
         elements.lastActionCard.appendChild(timeInfo);
     }
 
     if (state.targetTime !== undefined && state.action.includes('force_sync')) {
         const timeInfo = document.createElement('div');
-        timeInfo.style.cssText = 'font-size:9px; color:var(--text-muted); margin-top:4px;';
+        timeInfo.style.cssText = 'font-size:10px; color:var(--text-muted); margin-top:4px;';
         timeInfo.textContent = `Sync to: ${formatTime(state.targetTime)}`;
         elements.lastActionCard.appendChild(timeInfo);
     }
@@ -529,7 +654,7 @@ function updateLastActionUI(state, peers) {
         if (pId === localPeerId) return;
         const pName = (typeof peer === 'object' && peer.username) ? peer.username : pId.substring(0, 4);
         const isAcked = safeAcks.includes(pId) || pId === state.senderId;
-        const color = isAcked ? 'var(--success)' : '#475569';
+        const color = isAcked ? 'var(--success)' : 'var(--border-strong)';
         const icon = isAcked ? '✓' : '...';
         const avatar = getAvatarForName(pName);
         
@@ -538,11 +663,11 @@ function updateLastActionUI(state, peers) {
         peerItem.style.cssText = `display:flex; flex-direction:column; align-items:center; opacity: ${isAcked ? 1 : 0.6};`;
         
         const dot = document.createElement('div');
-        dot.style.cssText = `width:18px; height:18px; border-radius:50%; background:${color}; color:white; display:flex; align-items:center; justify-content:center; font-size:9px; font-weight:bold; margin-bottom:1px;`;
+        dot.style.cssText = `width:18px; height:18px; border-radius:50%; background:${color}; color:${isAcked ? 'var(--text-on-green)' : 'var(--text-primary)'}; display:flex; align-items:center; justify-content:center; font-size:9px; font-weight:bold; margin-bottom:1px;`;
         dot.textContent = icon;
         
         const nameSpan = document.createElement('span');
-        nameSpan.style.cssText = 'font-size:7px; color:var(--text-muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:36px;';
+        nameSpan.style.cssText = 'font-size:9px; color:var(--text-muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:42px;';
         nameSpan.textContent = `${avatar} ${pName}`;
         
         peerItem.appendChild(dot);
@@ -630,7 +755,10 @@ function renderEmpty(container, type) {
         copyBtn.title = getMessage('BTN_COPY_INVITE_TOOLTIP');
         copyBtn.addEventListener('click', () => {
             navigator.clipboard.writeText(elements.inviteLink.value)
-                .then(() => showToast(getMessage('TOAST_INVITE_COPIED'), 'success', 2000))
+                .then(() => {
+                    showToast(getMessage('TOAST_INVITE_COPIED'), 'success', 2000);
+                    spawnLeafBurst(copyBtn);
+                })
                 .catch(() => showToast(getMessage('TOAST_COPY_FAILED'), 'error'));
         });
         wrapper.appendChild(copyBtn);
@@ -676,7 +804,7 @@ function updatePeerList(peers) {
 
             const peerItem = document.createElement('div');
             peerItem.className = 'peer-item';
-            peerItem.style.cssText = 'position:relative; display:block; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.05);';
+            peerItem.style.cssText = 'position:relative; display:block; padding: 8px 0; border-bottom: 1px solid var(--border-soft);';
 
             const header = document.createElement('div');
             header.style.cssText = 'display:flex; justify-content:space-between; align-items:center; padding-right: 24px;';
@@ -686,7 +814,7 @@ function updatePeerList(peers) {
             const avatar = getAvatarForName(pUsername || pId);
             if (pUsername) {
                 const u = document.createElement('span');
-                u.style.cssText = 'font-weight:600; color:white; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 120px; display: inline-block;';
+                u.style.cssText = 'font-weight:600; color:var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 120px; display: inline-block;';
                 u.textContent = `${avatar} ${pUsername}`;
                 const i = document.createElement('span');
                 i.style.cssText = 'font-size:10px; opacity:0.6; font-style:italic; white-space: nowrap; flex-shrink: 0;';
@@ -725,7 +853,7 @@ function updatePeerList(peers) {
             // Host Control Mode: show "Solo" badge for peers watching on their own.
             if (typeof p === 'object' && p.desynced) {
                 const solo = document.createElement('span');
-                solo.style.cssText = 'font-size:10px; color:#fff; background:#b45309; padding:2px 6px; border-radius:6px; font-weight:600;';
+                solo.style.cssText = 'font-size:10px; color:var(--text-on-warm); background:var(--accent-terracotta); padding:2px 6px; border-radius:6px; font-weight:700;';
                 const soloText = getMessage('BADGE_DESYNCED') || 'Solo';
                 solo.textContent = soloText;
                 solo.title = getMessage('TOOLTIP_PEER_DESYNCED') || soloText;
@@ -742,7 +870,7 @@ function updatePeerList(peers) {
                 const isController = !isOwner && hcmControllers.includes(pId);
                 if (isOwner || isController) {
                     const roleBadge = document.createElement('span');
-                    roleBadge.style.cssText = 'font-size:10px; color:#fff; background:var(--accent); padding:2px 6px; border-radius:6px; font-weight:600;';
+                    roleBadge.style.cssText = 'font-size:10px; color:var(--text-on-green); background:var(--accent); padding:2px 6px; border-radius:6px; font-weight:700;';
                     roleBadge.textContent = isOwner ? (getMessage('BADGE_HOST') || 'Host') : (getMessage('BADGE_CONTROLLER') || 'Controller');
                     rightGroup.appendChild(roleBadge);
                 }
@@ -755,7 +883,7 @@ function updatePeerList(peers) {
                     btn.title = revoke ? (getMessage('BTN_REVOKE_CONTROL') || 'Revoke') : (getMessage('BTN_GIVE_CONTROL') || 'Give control');
                     btn.addEventListener('mouseenter', () => {
                         btn.style.background = revoke ? 'var(--text-muted)' : 'var(--accent)';
-                        btn.style.color = '#fff';
+                        btn.style.color = 'var(--text-on-green)';
                     });
                     btn.addEventListener('mouseleave', () => {
                         btn.style.background = 'transparent';
@@ -1011,25 +1139,8 @@ function applyConnectionStatus(status) {
     const idle = status === 'idle';
 
     if (elements.connDot) {
-        elements.connDot.className = 'status-dot ' + (connected ? 'status-online' : ((connecting || reconnecting) ? 'status-online' : 'status-offline'));
-
-        if (reconnecting) {
-            elements.connDot.style.background = '#f59e0b';
-            elements.connDot.style.boxShadow = '0 0 8px #f59e0b';
-        } else if (connecting) {
-            elements.connDot.style.background = '#fbbf24';
-            elements.connDot.style.boxShadow = '0 0 8px #fbbf24';
-        } else if (idle) {
-            // Neutral grey — ready, not failed.
-            elements.connDot.style.background = '#9ca3af';
-            elements.connDot.style.boxShadow = 'none';
-        } else if (!connected) {
-            elements.connDot.style.background = '#ef4444';
-            elements.connDot.style.boxShadow = 'none';
-        } else {
-            elements.connDot.style.background = '';
-            elements.connDot.style.boxShadow = '';
-        }
+        const dotStatus = connected ? 'status-online' : ((connecting || reconnecting) ? 'status-connecting' : (idle ? 'status-idle' : 'status-offline'));
+        elements.connDot.className = `status-dot ${dotStatus}`;
     }
 
     if (elements.connText) {
@@ -1066,16 +1177,16 @@ function updatePingDisplay(pingMs) {
     if (!elements.connPing) return;
     if (pingMs === null || pingMs === undefined || typeof pingMs !== 'number' || !Number.isFinite(pingMs)) {
         elements.connPing.textContent = '';
-        elements.connPing.style.color = '';
+        elements.connPing.className = 'conn-ping';
         return;
     }
     elements.connPing.textContent = `${Math.round(pingMs)}ms`;
-    if (pingMs < 50) {
-        elements.connPing.style.color = '#22c55e';
+    if (pingMs < 75) {
+        elements.connPing.className = 'conn-ping conn-ping-good';
     } else if (pingMs < 150) {
-        elements.connPing.style.color = '#f59e0b';
+        elements.connPing.className = 'conn-ping conn-ping-warning';
     } else {
-        elements.connPing.style.color = '#ef4444';
+        elements.connPing.className = 'conn-ping conn-ping-bad';
     }
 }
 
@@ -1093,10 +1204,10 @@ function updateHistory(history) {
         const actionLabel = item.action.toUpperCase().replace('FORCE_SYNC_', '');
         
         const entry = document.createElement('div');
-        entry.style.cssText = 'margin-bottom: 4px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 2px;';
+        entry.style.cssText = 'margin-bottom: 4px; border-bottom: 1px solid var(--border-soft); padding-bottom: 2px;';
         
         const timeSpan = document.createElement('span');
-        timeSpan.style.color = '#64748b';
+        timeSpan.style.color = 'var(--text-muted)';
         timeSpan.textContent = `[${time}] `;
         
         const actionBold = document.createElement('b');
@@ -1139,7 +1250,7 @@ function updateRoomList(rooms) {
     rooms.forEach(r => {
         const item = document.createElement('div');
         item.className = 'room-item';
-        item.style.cssText = 'display:flex; justify-content:space-between; align-items:center; padding: 8px; border-bottom: 1px solid rgba(255,255,255,0.05); cursor:pointer;';
+        item.style.cssText = 'display:flex; justify-content:space-between; align-items:center; padding: 8px; border-bottom: 1px solid var(--border-soft); cursor:pointer;';
         item.dataset.id = r.id;
 
         const leftSide = document.createElement('div');
@@ -1273,6 +1384,43 @@ if (elements.autoCopyInvite) {
     });
 }
 
+if (elements.themeSelector) {
+    elements.themeSelector.addEventListener('change', () => {
+        const themeMode = elements.themeSelector.value;
+        flashThemeTransition();
+        window.koalaTheme?.setMode(themeMode);
+        chrome.storage.local.set({ themeMode });
+        syncThemePicker();
+    });
+}
+
+document.querySelectorAll('.theme-choice').forEach(button => {
+    button.addEventListener('click', () => {
+        if (!elements.themeSelector) return;
+        elements.themeSelector.value = button.dataset.themeValue;
+        elements.themeSelector.dispatchEvent(new window.Event('change'));
+    });
+});
+
+if (elements.paletteSelector) {
+    elements.paletteSelector.addEventListener('change', () => {
+        const themePalette = elements.paletteSelector.value;
+        flashThemeTransition();
+        window.koalaTheme?.setPalette(themePalette);
+        chrome.storage.local.set({ themePalette });
+        syncPalettePicker();
+        dismissFeatureHint('theme_picker');
+    });
+}
+
+document.querySelectorAll('.palette-choice').forEach(button => {
+    button.addEventListener('click', () => {
+        if (!elements.paletteSelector) return;
+        elements.paletteSelector.value = button.dataset.paletteValue;
+        elements.paletteSelector.dispatchEvent(new window.Event('change'));
+    });
+});
+
 if (elements.audioSettingsLink) {
     elements.audioSettingsLink.addEventListener('click', async (event) => {
         event.preventDefault();
@@ -1305,6 +1453,7 @@ if (elements.langSelector) {
         await chrome.storage.local.set({ locale: selectedLang });
         await loadLocale(selectedLang);
         translateDOM();
+        localizeThemeSelector(selectedLang);
         configureFooterLinks();
         await updateFeatureHints();
         
@@ -1336,6 +1485,19 @@ if (elements.langSelector) {
         refreshHistory();
     });
 }
+
+// Accordion behavior for settings details categories (collapses others when one opens)
+document.querySelectorAll('#tab-settings details.form-group').forEach(det => {
+    det.addEventListener('toggle', () => {
+        if (det.open) {
+            document.querySelectorAll('#tab-settings details.form-group').forEach(other => {
+                if (other !== det && other.open) {
+                    other.removeAttribute('open');
+                }
+            });
+        }
+    });
+});
 
 elements.serverUrl.addEventListener('change', () => {
     let url = elements.serverUrl.value.trim();
@@ -1387,6 +1549,39 @@ function showToast(message, type = 'info', duration = 3000) {
 
     container.appendChild(toast);
     setTimeout(() => toast.remove(), duration);
+}
+
+// Eucalyptus confetti: a few tiny leaves burst from the given element
+// (matches the website's copy-invite moment). Subtle by design — few,
+// tiny, short-lived — and skipped entirely under reduced motion.
+function spawnLeafBurst(sourceEl) {
+    if (!sourceEl || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    const rect = sourceEl.getBoundingClientRect();
+    if (!rect.width) return;
+    const originY = rect.top + rect.height / 2;
+    const count = 4 + Math.floor(Math.random() * 3);
+    for (let i = 0; i < count; i++) {
+        const leaf = document.createElement('span');
+        // Three tones of the palette: deep green, sage, a dash of amber
+        const tone = Math.random();
+        leaf.className = 'click-leaf' + (tone < 0.25 ? ' click-leaf-amber' : tone < 0.55 ? ' click-leaf-sage' : '');
+        // Fan out upward to a burst peak spread across the button's width;
+        // the keyframes brake there and let each leaf sink while it rocks.
+        const angle = (-90 + (Math.random() - 0.5) * 150) * Math.PI / 180;
+        const dist = 18 + Math.random() * 24;
+        const dur = 0.85 + Math.random() * 0.4;
+        leaf.style.left = (rect.left + 4 + Math.random() * Math.max(1, rect.width - 8)) + 'px';
+        leaf.style.top = (originY - rect.height * 0.2) + 'px';
+        leaf.style.setProperty('--leaf-x', (Math.cos(angle) * dist).toFixed(1) + 'px');
+        leaf.style.setProperty('--leaf-y', (Math.sin(angle) * dist).toFixed(1) + 'px');
+        leaf.style.setProperty('--leaf-rot', ((Math.random() - 0.5) * 160).toFixed(0) + 'deg');
+        leaf.style.setProperty('--leaf-scale', (0.55 + Math.random() * 0.55).toFixed(2));
+        leaf.style.setProperty('--leaf-dur', dur.toFixed(2) + 's');
+        leaf.style.setProperty('--flutter-dur', (0.35 + Math.random() * 0.3).toFixed(2) + 's');
+        leaf.appendChild(document.createElement('i'));
+        document.body.appendChild(leaf);
+        setTimeout(() => leaf.remove(), dur * 1000 + 150);
+    }
 }
 
 function showError(msg) {
@@ -1775,14 +1970,13 @@ elements.copyInvite.addEventListener('click', () => {
     navigator.clipboard.writeText(elements.inviteLink.value).then(() => {
         const original = elements.copyInvite.textContent;
         elements.copyInvite.textContent = '✓';
-        elements.copyInvite.style.background = 'var(--success)';
-        elements.copyInvite.style.color = 'white';
+        elements.copyInvite.classList.add('copy-success');
         showToast(getMessage('TOAST_INVITE_COPIED'), 'success', 2000);
+        spawnLeafBurst(elements.copyInvite);
         setTimeout(() => {
             elements.copyInvite.textContent = original;
-            elements.copyInvite.style.background = '';
-            elements.copyInvite.style.color = '';
-        }, 2000);
+            elements.copyInvite.classList.remove('copy-success');
+        }, 1500);
     }).catch(() => {
         showToast(getMessage('TOAST_COPY_FAILED'), 'error');
     });
@@ -1792,13 +1986,14 @@ if (elements.syncTabCopyInvite) {
     elements.syncTabCopyInvite.addEventListener('click', () => {
         navigator.clipboard.writeText(elements.inviteLink.value).then(() => {
             const original = elements.syncTabCopyInvite.textContent;
-            elements.syncTabCopyInvite.textContent = '✓';
-            elements.syncTabCopyInvite.style.color = 'var(--success)';
+            elements.syncTabCopyInvite.textContent = '✓ Copied';
+            elements.syncTabCopyInvite.classList.add('copy-success');
             showToast(getMessage('TOAST_INVITE_COPIED'), 'success', 2000);
+            spawnLeafBurst(elements.syncTabCopyInvite);
             setTimeout(() => {
                 elements.syncTabCopyInvite.textContent = original;
-                elements.syncTabCopyInvite.style.color = '';
-            }, 2000);
+                elements.syncTabCopyInvite.classList.remove('copy-success');
+            }, 1500);
         });
     });
 }
@@ -2259,7 +2454,7 @@ function refreshDebugInfo() {
 
                 const addSection = (title) => {
                     const div = document.createElement('div');
-                    div.style.cssText = 'margin: 8px 0 4px 0; border-bottom: 1px solid #334155; padding-bottom: 2px; color: var(--accent); font-weight: bold; font-size: 10px; text-transform: uppercase;';
+                    div.style.cssText = 'margin: 8px 0 4px 0; border-bottom: 1px solid var(--border-soft); padding-bottom: 2px; color: var(--accent); font-weight: bold; font-size: 10px; text-transform: uppercase;';
                     div.textContent = title;
                     elements.videoDebug.appendChild(div);
                 };
@@ -2268,7 +2463,7 @@ function refreshDebugInfo() {
                     // No video found — show diagnostic info
                     addSection('Video Detection');
                     const notFound = document.createElement('div');
-                    notFound.style.cssText = 'color: #ef4444; font-weight: 700; margin-bottom: 8px;';
+                    notFound.style.cssText = 'color: var(--status-error-text); font-weight: 700; margin-bottom: 8px;';
                     notFound.textContent = 'NO VIDEO ELEMENT FOUND';
                     elements.videoDebug.appendChild(notFound);
 
@@ -2286,7 +2481,7 @@ function refreshDebugInfo() {
                     }
 
                     const hint = document.createElement('div');
-                    hint.style.cssText = 'margin-top: 12px; padding: 8px; background: rgba(251,191,36,0.1); border-left: 3px solid #fbbf24; border-radius: 4px; font-size: 10px; color: var(--text-muted);';
+                    hint.style.cssText = 'margin-top: 12px; padding: 8px; background: color-mix(in oklch, var(--warning), transparent 88%); border-left: 3px solid var(--warning); border-radius: 4px; font-size: 10px; color: var(--text);';
                     hint.textContent = 'Is a video currently playing? The extension only detects <video> elements. Ensure media is actively loaded on the page.';
                     elements.videoDebug.appendChild(hint);
                     return;
@@ -2294,12 +2489,12 @@ function refreshDebugInfo() {
 
                 // Video found — full debug
                 addSection('Playback');
-                addField('State', state.paused ? 'PAUSED' : 'PLAYING', state.paused ? 'var(--text-muted)' : '#22c55e');
+                addField('State', state.paused ? 'PAUSED' : 'PLAYING', state.paused ? 'var(--text-muted)' : 'var(--status-success-text)');
                 addField('Time', `${state.currentTime.toFixed(2)}s / ${(state.duration || 0).toFixed(2)}s`);
                 addField('ReadyState', `${state.readyState} (${state.readyStateLabel || '?'})`,
-                    state.readyState >= 3 ? '#22c55e' : '#fbbf24');
+                    state.readyState >= 3 ? 'var(--status-success-text)' : 'var(--status-warning-text)');
                 addField('Network', `${state.networkState} (${state.networkStateLabel || '?'})`,
-                    state.networkState === 1 ? '#22c55e' : state.networkState === 3 ? '#ef4444' : 'var(--text-muted)');
+                    state.networkState === 1 ? 'var(--status-success-text)' : state.networkState === 3 ? 'var(--status-error-text)' : 'var(--text-muted)');
                 addField('Buffered', state.buffered || '?');
                 if (state.nativeCurrentTime != null || state.nativeDuration != null) {
                     addField('Native Time', `${state.nativeCurrentTime ?? '?'}s / ${state.nativeDuration ?? '?'}s`);
@@ -2323,18 +2518,18 @@ function refreshDebugInfo() {
 
                 addSection('Dimensions');
                 const dimsOk = state.videoWidth > 0 && state.videoHeight > 0;
-                addField('Resolution', `${state.videoWidth}x${state.videoHeight}`, dimsOk ? '#22c55e' : '#ef4444');
+                addField('Resolution', `${state.videoWidth}x${state.videoHeight}`, dimsOk ? 'var(--status-success-text)' : 'var(--status-error-text)');
                 if (!dimsOk) {
                     const dimHint = document.createElement('div');
-                    dimHint.style.cssText = 'color: #fbbf24; font-size: 9px; margin: 2px 0 6px 12px;';
+                    dimHint.style.cssText = 'color: var(--status-warning-text); font-size: 10px; margin: 2px 0 6px 12px;';
                     dimHint.textContent = '0x0 = video element hidden or not yet loaded';
                     elements.videoDebug.appendChild(dimHint);
                 }
 
                 if (state.error) {
                     addSection('Media Error');
-                    addField('Code', String(state.error.code), '#ef4444');
-                    addField('Message', state.error.message || '?', '#ef4444');
+                    addField('Code', String(state.error.code), 'var(--status-error-text)');
+                    addField('Message', state.error.message || '?', 'var(--status-error-text)');
                 }
 
                 addSection('Detection');
@@ -2410,7 +2605,7 @@ function updateLobbyUI(lobby, peers) {
 
     // Build peer readiness list
     const readySet = new Set(lobby.readyPeers || []);
-    const peerLines = [];
+    const peerHtmls = [];
 
     if (peers && peers.length > 0) {
         peers.forEach(p => {
@@ -2418,14 +2613,15 @@ function updateLobbyUI(lobby, peers) {
             const pName = (typeof p === 'object' && p.username) ? p.username : pId;
             const avatar = getAvatarForName(pName);
             const isReady = readySet.has(pId);
-            const icon = isReady ? '\u2705' : '\u23f3';
+            const icon = isReady ? '✅' : '⏳';
             const label = isReady ? getMessage('LABEL_LOBBY_PEER_READY') : getMessage('LABEL_LOBBY_PEER_LOADING');
-            peerLines.push(`${icon} ${avatar} ${pName} \u2014 ${label}`);
+            const badgeClass = isReady ? 'badge-ready' : 'badge-loading';
+            peerHtmls.push(`<span class="lobby-peer-item">${icon} ${avatar} ${pName} <span class="badge ${badgeClass}">${label}</span></span>`);
         });
     }
 
-    if (peerLines.length > 0 && elements.lobbyPeerStatus) {
-        elements.lobbyPeerStatus.textContent = peerLines.join(' | ');
+    if (peerHtmls.length > 0 && elements.lobbyPeerStatus) {
+        elements.lobbyPeerStatus.innerHTML = peerHtmls.join(' ');
     } else if (elements.lobbyPeerStatus) {
         elements.lobbyPeerStatus.textContent = getMessage('LOBBY_WAITING_PEERS');
     }
@@ -2433,7 +2629,10 @@ function updateLobbyUI(lobby, peers) {
     // Show elapsed time
     if (lobby.createdAt && elements.lobbyPeerStatus) {
         const elapsed = Math.floor((Date.now() - lobby.createdAt) / 1000);
-        elements.lobbyPeerStatus.textContent += ` (${elapsed}s)`;
+        const timerSpan = document.createElement('span');
+        timerSpan.style.cssText = 'font-size: 10px; color: var(--text-muted); margin-left: 6px; display: inline-block; vertical-align: middle;';
+        timerSpan.textContent = `(${elapsed}s)`;
+        elements.lobbyPeerStatus.appendChild(timerSpan);
     }
 }
 

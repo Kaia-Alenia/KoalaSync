@@ -19,7 +19,7 @@ export function normalizeSendTabTitle(sendTabTitle, legacyMode = TITLE_PRIVACY_M
 
 export function normalizeTabTitle(title) {
     if (typeof title !== 'string') return null;
-    const normalized = title.replace(/^\s*(?:\(\d{1,2}\)|\[\d{1,2}\])\s+/, '').trim();
+    const normalized = title.replace(/^\s*(?:\(\d+\+?\)|\[\d+\+?\])\s+/, '').trim();
     return normalized.length > 0 ? normalized : null;
 }
 

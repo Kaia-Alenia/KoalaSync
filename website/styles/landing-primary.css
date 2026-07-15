@@ -1,0 +1,1363 @@
+/* --- Features --- */
+/* Bento Grid Layout Configuration */
+.features-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.5rem;
+    margin-top: 4rem;
+}
+
+.feature-card.feature-card-compact {
+    padding: 1.8rem;
+    border-radius: 16px;
+}
+
+.feature-card.feature-card-compact::before {
+    border-radius: 16px;
+}
+
+.feature-card.feature-card-compact h3 {
+    font-size: 1.1rem;
+    margin-bottom: 0.75rem;
+}
+
+.feature-card.feature-card-compact p {
+    font-size: 0.9rem;
+}
+
+.feature-card {
+    background: oklch(0.27 0.035 130 / 0.45);
+    backdrop-filter: blur(16px) saturate(120%);
+    -webkit-backdrop-filter: blur(16px) saturate(120%);
+    padding: 2.5rem;
+    border-radius: 24px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+}
+
+.feature-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    border-radius: 24px;
+    padding: 1px;
+    background: linear-gradient(to bottom right, rgba(255, 255, 255, 0.12), transparent);
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    pointer-events: none;
+}
+
+/* Feature cards are static content, not links — no hover lift/glow, so they
+   don't read as clickable. */
+
+/* Feature Icon with Inline SVG Wrapper */
+.feature-icon-svg {
+    display: flex;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    background: oklch(0.68 0.13 150 / 0.12);
+    color: var(--accent);
+    border-radius: 12px;
+    margin-right: 14px;
+}
+
+.bento-icon {
+    width: 22px;
+    height: 22px;
+    display: block;
+    flex-shrink: 0;
+}
+
+.feature-card h3 {
+    margin-bottom: 1rem;
+    font-size: 1.25rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+}
+
+.feature-card p {
+    color: var(--text-muted);
+    font-size: 0.95rem;
+    line-height: 1.6;
+}
+
+/* Bento Asymmetric Spanning */
+.feature-card.bento-large {
+    grid-column: span 2;
+    background: linear-gradient(135deg, oklch(0.27 0.035 130 / 0.45) 0%, oklch(0.68 0.13 150 / 0.08) 100%);
+    padding: 3rem 3.5rem;
+    display: grid;
+    grid-template-columns: 1fr 2fr;
+    gap: 3rem;
+    align-items: center;
+}
+
+.feature-card.bento-large h3 {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 1rem;
+    margin-bottom: 0;
+    font-size: 1.25rem;
+}
+
+.feature-card.bento-large .feature-icon,
+.feature-card.bento-large .feature-icon-svg {
+    width: 52px;
+    height: 52px;
+    border-radius: 14px;
+    margin-right: 0;
+    flex-shrink: 0;
+}
+
+.feature-card.bento-large .bento-icon {
+    width: 24px;
+    height: 24px;
+}
+
+.feature-card.bento-large p {
+    font-size: 1rem;
+    line-height: 1.7;
+    margin: 0;
+}
+
+.feature-card.bento-large::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 2.5rem;
+    right: 2.5rem;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, oklch(0.68 0.13 150 / 0.4), transparent);
+    opacity: 1;
+}
+
+@media (max-width: 900px) {
+    .features-grid {
+        /* Keep the Why KoalaSync grid at either three columns or one column.
+           The two-column in-between makes compact cards stretch unevenly. */
+        grid-template-columns: 1fr;
+        gap: 1.25rem;
+    }
+    .feature-card.bento-large {
+        grid-column: span 1;
+        padding: 2.5rem;
+        gap: 2rem;
+    }
+    .feature-card.bento-large h3 {
+        font-size: 1.15rem;
+    }
+}
+
+@media (max-width: 600px) {
+    .features-grid {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+    .feature-card.bento-large {
+        grid-column: span 1;
+        display: flex;
+        flex-direction: column;
+        padding: 1.75rem;
+        gap: 1rem;
+    }
+    .feature-card.bento-large h3 {
+        flex-direction: row;
+        align-items: center;
+        text-align: left;
+        gap: 0.75rem;
+        margin-bottom: 0;
+        font-size: 1.15rem;
+    }
+    .feature-card.bento-large .feature-icon,
+    .feature-card.bento-large .feature-icon-svg {
+        width: 40px;
+        height: 40px;
+        border-radius: 10px;
+        margin-right: 0;
+    }
+    .feature-card.bento-large .bento-icon {
+        width: 18px;
+        height: 18px;
+    }
+    .feature-card.bento-large p {
+        font-size: 0.9rem;
+        line-height: 1.6;
+    }
+    .feature-card.bento-large::after {
+        display: none;
+    }
+    .feature-card {
+        padding: 1.75rem;
+    }
+    .feature-card h3 {
+        font-size: 1.1rem;
+    }
+    .feature-icon-svg {
+        width: 40px;
+        height: 40px;
+        border-radius: 10px;
+        margin-right: 12px;
+    }
+    .bento-icon {
+        width: 18px;
+        height: 18px;
+    }
+}
+
+/* --- How it works --- */
+.steps {
+    display: flex;
+    flex-direction: column;
+    gap: 2.75rem;
+}
+
+.step {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 3rem;
+    align-items: center;
+}
+
+.step:nth-child(even) .step-text {
+    order: 2;
+}
+
+.step-num {
+    font-size: 3.25rem;
+    font-weight: 900;
+    background: linear-gradient(135deg, oklch(0.68 0.13 150 / 0.75), oklch(0.62 0.14 45 / 0.5));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    line-height: 1;
+    margin-bottom: 0.5rem;
+    font-family: inherit;
+    letter-spacing: 0;
+}
+
+html.theme-light .step-num {
+    color: oklch(0.36 0.10 145);
+    background: none;
+    -webkit-text-fill-color: currentColor;
+}
+
+.step-text h3 {
+    font-size: 1.65rem;
+    margin-bottom: 0.75rem;
+    font-weight: 850;
+    color: var(--text-main);
+    letter-spacing: 0;
+}
+
+.step-text p {
+    color: var(--text-muted);
+    font-size: 1rem;
+    line-height: 1.55;
+}
+
+/* Custom CSS Mockups for step illustrations */
+.step-illustration-1, .step-illustration-2, .step-illustration-3 {
+    background: radial-gradient(circle at 10% 10%, oklch(0.20 0.04 145), oklch(0.10 0.015 138));
+    height: 240px;
+    border-radius: 18px;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 20px 45px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.4s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@media (max-width: 900px) {
+    #how-it-works {
+        padding: 3.5rem 0;
+    }
+
+    .steps {
+        gap: 2.75rem;
+    }
+
+    .step {
+        grid-template-columns: minmax(0, 1fr);
+        gap: 1.1rem;
+        text-align: left;
+    }
+
+    #how-it-works .step .step-text {
+        order: 1;
+    }
+
+    #how-it-works .step-illustration-1,
+    #how-it-works .step-illustration-2,
+    #how-it-works .step-illustration-3 {
+        order: 2;
+        height: 220px;
+    }
+
+    .step-num {
+        font-size: 2.5rem;
+    }
+
+    .step-text h3 {
+        font-size: 1.45rem;
+    }
+}
+
+/* Step illustrations are screenshots, not controls — no hover lift/scale. */
+
+/* ==========================================================================
+   Step 1 Illustration: Browser & Installed Success Popup
+   ========================================================================== */
+.illus-browser-container {
+    width: 90%;
+    height: 80%;
+    background: oklch(0.11 0.015 138);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.6);
+    display: flex;
+    flex-direction: column;
+}
+
+.illus-browser-header {
+    background: oklch(0.20 0.025 140 / 0.8);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    padding: 0.6rem 0.8rem;
+    display: flex;
+    align-items: center;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.illus-browser-dots {
+    display: flex;
+    gap: 6px;
+    margin-right: 1.5rem;
+}
+
+.illus-browser-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    opacity: 0.6;
+}
+.illus-browser-dot:nth-child(1) { background: oklch(0.55 0.15 25); }
+.illus-browser-dot:nth-child(2) { background: oklch(0.68 0.14 45); }
+.illus-browser-dot:nth-child(3) { background: oklch(0.68 0.13 150); }
+
+.illus-browser-address-bar {
+    background: oklch(0.13 0.02 138);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 6px;
+    color: var(--text-muted);
+    font-size: 0.68rem;
+    padding: 3px 12px;
+    flex-grow: 1;
+    max-width: 60%;
+    text-align: center;
+    font-family: monospace;
+    letter-spacing: 0.2px;
+}
+
+.illus-browser-address-bar .url-protocol {
+    color: oklch(0.68 0.13 150);
+    font-weight: 600;
+}
+
+.illus-browser-toolbar {
+    display: flex;
+    margin-left: auto;
+}
+
+.illus-extension-btn {
+    width: 22px;
+    height: 22px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: opacity 0.3s, box-shadow 0.3s;
+}
+
+.illus-extension-btn.active {
+    background: oklch(0.68 0.13 150 / 0.2);
+    border: 1px solid var(--accent);
+    box-shadow: 0 0 10px oklch(0.68 0.13 150 / 0.4);
+    animation: active-pulse 2s infinite alternate;
+}
+
+@keyframes active-pulse {
+    0% { transform: scale(1); box-shadow: 0 0 5px oklch(0.68 0.13 150 / 0.4); }
+    100% { transform: scale(1.08); box-shadow: 0 0 12px oklch(0.68 0.13 150 / 0.7); }
+}
+
+.illus-browser-content {
+    flex-grow: 1;
+    padding: 1rem;
+    position: relative;
+    display: flex;
+    align-items: flex-start;
+}
+
+.illus-store-card {
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.04);
+    border-radius: 12px;
+    padding: 0.8rem;
+    width: 65%;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.illus-store-card-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.illus-large-logo {
+    width: 30px;
+    height: 30px;
+    object-fit: contain;
+    border-radius: 6px;
+    box-shadow: 0 0 10px oklch(0.68 0.13 150 / 0.2);
+}
+
+.illus-store-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.illus-store-title {
+    font-size: 0.88rem;
+    font-weight: 800;
+    color: var(--text);
+    line-height: 1.1;
+}
+
+.illus-store-desc {
+    font-size: 0.58rem;
+    color: var(--text-muted);
+    line-height: 1.2;
+    margin-top: 2px;
+}
+
+.illus-store-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.illus-store-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 8px;
+    border-radius: 8px;
+    font-size: 0.58rem;
+    font-weight: 700;
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    background: rgba(255, 255, 255, 0.03);
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    cursor: default;
+    transition: opacity 0.2s, transform 0.2s;
+}
+
+.illus-store-btn img {
+    width: 11px;
+    height: 11px;
+    display: block;
+}
+
+.illus-store-btn.chrome {
+    border-color: oklch(0.68 0.13 150 / 0.25);
+    background: oklch(0.68 0.13 150 / 0.08);
+    box-shadow: 0 0 10px oklch(0.68 0.13 150 / 0.05);
+}
+
+.illus-store-btn.firefox {
+    border-color: oklch(0.62 0.14 45 / 0.25);
+    background: oklch(0.62 0.14 45 / 0.08);
+    box-shadow: 0 0 10px oklch(0.62 0.14 45 / 0.05);
+}
+
+.install-breathe {
+    animation: install-breathe 2.5s ease-in-out infinite;
+    z-index: 2;
+    position: relative;
+}
+
+@keyframes install-breathe {
+    0%, 100% {
+        transform: scale(1);
+        box-shadow: 0 0 15px oklch(0.68 0.13 150 / 0.2);
+    }
+    50% {
+        transform: scale(1.05);
+        box-shadow: 0 0 25px oklch(0.68 0.13 150 / 0.5);
+    }
+}
+
+.install-breathe.firefox,
+.btn-firefox.install-breathe {
+    animation-name: install-breathe-ff;
+}
+
+@keyframes install-breathe-ff {
+    0%, 100% {
+        transform: scale(1);
+        box-shadow: 0 0 15px oklch(0.62 0.14 45 / 0.2);
+    }
+    50% {
+        transform: scale(1.05);
+        box-shadow: 0 0 25px oklch(0.62 0.14 45 / 0.5);
+    }
+}
+
+/* Glassmorphic Dropping Success Card */
+.illus-extension-popup {
+    position: absolute;
+    top: 0.6rem;
+    right: 0.6rem;
+    width: 145px;
+    background: oklch(0.20 0.025 140 / 0.85);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid oklch(0.68 0.13 150 / 0.25);
+    border-radius: 12px;
+    padding: 0.6rem 0.8rem;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.55), 0 0 15px oklch(0.68 0.13 150 / 0.15);
+    animation: popup-float 4s ease-in-out infinite;
+    z-index: 5;
+}
+
+@keyframes popup-float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-4px); }
+}
+
+.illus-extension-popup .popup-title {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 6px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    padding-bottom: 4px;
+}
+
+.illus-extension-popup .popup-title img {
+    width: 12px;
+    height: 12px;
+}
+
+.illus-extension-popup .popup-status {
+    margin-bottom: 4px;
+}
+
+.status-badge-success {
+    background: oklch(0.68 0.13 150 / 0.12);
+    color: oklch(0.68 0.13 150);
+    font-size: 0.6rem;
+    font-weight: 700;
+    padding: 2px 6px;
+    border-radius: 4px;
+    border: 1px solid oklch(0.68 0.13 150 / 0.2);
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    animation: status-glow 2s infinite alternate;
+}
+
+@keyframes status-glow {
+    0% { box-shadow: 0 0 0 oklch(0.68 0.13 150 / 0); }
+    100% { box-shadow: 0 0 6px oklch(0.68 0.13 150 / 0.3); }
+}
+
+.illus-extension-popup .popup-quick-start {
+    font-size: 0.55rem;
+    color: var(--text-muted);
+    font-weight: 500;
+    line-height: 1.2;
+}
+
+
+/* ==========================================================================
+   Step 2 Illustration: Highly Realistic Extension Popup (Create Room View)
+   ========================================================================== */
+.illus-popup-card {
+    width: 220px;
+    background: oklch(0.20 0.025 140 / 0.85);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 16px;
+    padding: 0.8rem;
+    box-shadow: 0 18px 40px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    display: flex;
+    flex-direction: column;
+    gap: 0.55rem;
+    animation: popup-float 4s ease-in-out infinite;
+    animation-delay: -1s;
+}
+
+.illus-popup-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    padding-bottom: 8px;
+}
+
+.illus-popup-brand {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.82rem; /* Scaled up font */
+    font-weight: 800;
+    letter-spacing: -0.2px;
+}
+
+.illus-popup-version {
+    font-size: 0.58rem;
+    color: var(--text-muted);
+}
+
+.illus-popup-tabs {
+    display: flex;
+    gap: 4px;
+    background: oklch(0.12 0.015 135 / 0.4);
+    padding: 3px;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.03);
+}
+
+.illus-popup-tab {
+    flex: 1;
+    text-align: center;
+    font-size: 0.62rem; /* Scaled up font */
+    padding: 4px 0;
+    border-radius: 6px;
+    color: var(--text-muted);
+    font-weight: 600;
+}
+
+.illus-popup-tab.active {
+    background: var(--card);
+    color: var(--accent);
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+.illus-popup-body {
+    display: flex;
+    flex-direction: column;
+    gap: 0.55rem;
+    position: relative;
+}
+
+.illus-popup-btn {
+    background: linear-gradient(135deg, var(--accent-green), var(--accent-terracotta));
+    border-radius: 8px;
+    padding: 7px 9px;
+    color: var(--text-on-green);
+    font-weight: 700;
+    font-size: 0.68rem;
+    text-align: center;
+    box-shadow: 0 4px 12px oklch(0.68 0.13 150 / 0.3);
+    position: relative;
+    overflow: hidden;
+    cursor: default;
+    /* Static: the constant scale/shadow pulse pulled the eye away from the
+       copy while reading the steps (step 3 keeps the lively animation). */
+}
+
+/* Shine sweep removed — kept the element off-canvas so the button reads as a
+   calm static control rather than a repeatedly glinting one. */
+.illus-btn-shine {
+    display: none;
+}
+
+.illus-collapsed-details {
+    background: oklch(0.12 0.015 135 / 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+    padding: 6px 11px;
+    font-size: 0.54rem;
+    color: var(--text-muted);
+    font-weight: 700;
+    text-transform: uppercase;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    letter-spacing: 0.2px;
+}
+
+.details-arrow {
+    font-size: 0.48rem;
+    color: var(--text-muted);
+    opacity: 0.7;
+}
+
+/* Floating Success Badge */
+.illus-floating-success {
+    position: absolute;
+    /* Fully below the card so the toast never straddles its border */
+    bottom: -2.4rem;
+    left: 50%;
+    transform: translateX(-50%);
+    background: oklch(0.12 0.015 135 / 0.92);
+    border: 1px solid oklch(0.68 0.13 150 / 0.35);
+    border-radius: 20px;
+    padding: 3px 10px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    box-shadow: 0 6px 14px rgba(0, 0, 0, 0.45), 0 0 12px oklch(0.68 0.13 150 / 0.18);
+    /* Shown statically instead of fading in and out on a loop — the toast now
+       reads as part of the popup state rather than a flashing notification. */
+    white-space: nowrap;
+    z-index: 10;
+}
+
+.illus-floating-success .success-icon {
+    font-size: 0.65rem;
+}
+
+.illus-floating-success span[lang] {
+    font-size: 0.58rem;
+    color: oklch(0.68 0.13 150);
+    font-weight: 700;
+}
+
+
+/* ==========================================================================
+   Step 3 Illustration: Dual Screen Theater Sync Setup
+   ========================================================================= */
+.illus-sync-theater {
+    width: 95%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    gap: 0.6rem;
+}
+
+.illus-player-card {
+    width: 145px;
+    background: oklch(0.20 0.025 140 / 0.85);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 12px;
+    padding: 6px;
+    box-shadow: 0 12px 30px rgba(0,0,0,0.5);
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    position: relative;
+    z-index: 2;
+}
+
+.illus-player-card.player-a {
+    animation: popup-float 4s ease-in-out infinite;
+    animation-delay: -2s;
+}
+
+.illus-player-card.player-b {
+    animation: popup-float 4s ease-in-out infinite;
+    animation-delay: -3s;
+}
+
+.player-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.55rem;
+}
+
+.player-user {
+    font-weight: 700;
+    color: var(--text);
+}
+
+.player-badge {
+    font-size: 0.42rem;
+    font-weight: 800;
+    padding: 1px 3px;
+    border-radius: 3px;
+}
+
+.player-badge.active {
+    background: oklch(0.68 0.13 150 / 0.15);
+    color: oklch(0.68 0.13 150);
+    border: 1px solid oklch(0.68 0.13 150 / 0.25);
+}
+
+.player-video-canvas {
+    height: 70px;
+    border-radius: 8px;
+    /* Sky behind the film SVG — --demo-* flips day/night with the theme
+       (defined on .illus-sync-theater in hero.css) */
+    background: linear-gradient(160deg, var(--demo-sky-top) 0%, var(--demo-sky-mid) 52%, var(--demo-sky-bottom) 100%);
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid rgba(255, 255, 255, 0.02);
+}
+
+.player-video-overlay {
+    position: absolute;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: linear-gradient(to bottom, transparent, oklch(0.68 0.13 150 / 0.15), transparent);
+    background-size: 100% 200%;
+    animation: playerScrollScanline 3s linear infinite;
+}
+
+@keyframes playerScrollScanline {
+    0% { background-position: 0% 0%; }
+    100% { background-position: 0% 200%; }
+}
+
+.player-play-pulse {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: oklch(0.68 0.13 150 / 0.85);
+    color: var(--text-on-green);
+    font-size: 0.65rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 0 10px oklch(0.68 0.13 150 / 0.5);
+    z-index: 3;
+    animation: play-pulse 2s infinite alternate;
+}
+
+@keyframes play-pulse {
+    0% { transform: scale(1); box-shadow: 0 0 6px oklch(0.68 0.13 150 / 0.4); }
+    100% { transform: scale(1.15); box-shadow: 0 0 15px oklch(0.68 0.13 150 / 0.8); }
+}
+
+.player-controls {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 2px 0 2px;
+}
+
+.control-btn {
+    font-size: 0.58rem;
+    color: var(--accent);
+}
+
+.player-timeline {
+    flex-grow: 1;
+    height: 3px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 2px;
+    position: relative;
+}
+
+.timeline-fill {
+    position: absolute;
+    top: 0; left: 0;
+    height: 100%;
+    background: var(--accent);
+    border-radius: 2px;
+    width: 60%;
+    animation: theater-grow 6s infinite linear;
+}
+
+.timeline-knob {
+    position: absolute;
+    top: -2px;
+    left: 60%;
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: white;
+    box-shadow: 0 0 4px rgba(0,0,0,0.5);
+    transform: translateX(-50%);
+    animation: theater-knob-grow 6s infinite linear;
+}
+
+@keyframes theater-grow {
+    0% { width: 0%; }
+    100% { width: 100%; }
+}
+
+@keyframes theater-knob-grow {
+    0% { left: 0%; }
+    100% { left: 100%; }
+}
+
+.control-time {
+    font-size: 0.5rem;
+    color: var(--text-muted);
+    font-family: monospace;
+}
+
+/* Glowing Connection Sync Bridge */
+.illus-sync-bridge {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    position: relative;
+    z-index: 1;
+}
+
+.illus-sync-bridge .sync-line {
+    width: 100%;
+    height: 2px;
+    background: rgba(255,255,255,0.06);
+    position: relative;
+    overflow: hidden;
+}
+
+.illus-sync-bridge .sync-beam {
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 50px;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, var(--accent), var(--success), transparent);
+    animation: sync-flow 2.5s infinite linear;
+}
+
+@keyframes sync-flow {
+    0% { left: -100%; }
+    100% { left: 100%; }
+}
+
+.sync-status-badge {
+    background: oklch(0.68 0.13 150 / 0.12);
+    border: 1px solid oklch(0.68 0.13 150 / 0.25);
+    color: oklch(0.68 0.13 150);
+    font-size: 0.5rem;
+    font-weight: 800;
+    letter-spacing: 0.5px;
+    padding: 2px 6px;
+    border-radius: 6px;
+    white-space: nowrap;
+    animation: active-pulse-green 2s infinite alternate;
+}
+
+@keyframes active-pulse-green {
+    0% { box-shadow: 0 0 3px oklch(0.68 0.13 150 / 0.1); }
+    100% { box-shadow: 0 0 8px oklch(0.68 0.13 150 / 0.4); }
+}
+
+/* Getting Started uses real theme surfaces. Only the video canvases remain
+   dark in light mode, because they represent video content rather than UI. */
+html.theme-light .step-illustration-1,
+html.theme-light .step-illustration-2,
+html.theme-light .step-illustration-3 {
+    color: var(--text);
+    background:
+        radial-gradient(circle at 15% 10%, oklch(0.995 0.006 100), transparent 52%),
+        linear-gradient(145deg, oklch(0.965 0.014 105), oklch(0.925 0.025 115));
+    border-color: oklch(0.28 0.035 140 / 0.13);
+    box-shadow:
+        0 18px 38px oklch(0.20 0.025 140 / 0.12),
+        inset 0 1px 0 rgba(255, 255, 255, 0.9);
+}
+
+html.theme-light .step-illustration-1 .illus-popup-card,
+html.theme-light .step-illustration-2 .illus-popup-card,
+html.theme-light .step-illustration-3 .illus-player-card {
+    --bg: oklch(0.965 0.014 105) !important;
+    --card: #ffffff !important;
+    --accent: oklch(0.56 0.13 150) !important;
+    --accent-glow: oklch(0.56 0.13 150 / 0.20) !important;
+    --text: oklch(0.20 0.025 140) !important;
+    --text-muted: oklch(0.43 0.03 135) !important;
+    --success: oklch(0.56 0.13 150) !important;
+    --glass-border: oklch(0.28 0.035 140 / 0.10) !important;
+}
+
+html.theme-light .illus-popup-card,
+html.theme-light .illus-player-card {
+    background: rgba(255, 255, 255, 0.91);
+    border-color: oklch(0.28 0.035 140 / 0.14);
+    box-shadow:
+        0 14px 30px oklch(0.20 0.025 140 / 0.16),
+        inset 0 1px 0 #ffffff;
+}
+
+html.theme-light .illus-popup-header {
+    border-bottom-color: oklch(0.28 0.035 140 / 0.10);
+}
+
+html.theme-light .illus-popup-brand,
+html.theme-light .player-user {
+    color: var(--text);
+}
+
+html.theme-light .illus-popup-tabs,
+html.theme-light .illus-collapsed-details {
+    background: oklch(0.92 0.02 112 / 0.72);
+    border-color: oklch(0.28 0.035 140 / 0.10);
+}
+
+html.theme-light .illus-popup-tab.active {
+    color: oklch(0.36 0.105 150);
+    background: #ffffff;
+    border: 1px solid oklch(0.56 0.13 150 / 0.18);
+    box-shadow: 0 2px 7px oklch(0.20 0.025 140 / 0.10);
+}
+
+html.theme-light .popup-form-label,
+html.theme-light .illus-popup-version,
+html.theme-light .illus-popup-tab,
+html.theme-light .illus-collapsed-details,
+html.theme-light .details-arrow,
+html.theme-light .control-time {
+    color: var(--text-muted);
+}
+
+html.theme-light .popup-select-mock {
+    color: var(--text);
+    background: #ffffff;
+    border-color: oklch(0.28 0.035 140 / 0.16);
+    box-shadow: inset 0 1px 2px oklch(0.20 0.025 140 / 0.06);
+}
+
+html.theme-light .illus-floating-success {
+    color: var(--text);
+    background: rgba(255, 255, 255, 0.96);
+    border-color: oklch(0.56 0.13 150 / 0.30);
+    box-shadow:
+        0 7px 16px oklch(0.20 0.025 140 / 0.14),
+        0 0 12px oklch(0.56 0.13 150 / 0.10);
+}
+
+html.theme-light .player-header,
+html.theme-light .player-controls {
+    color: var(--text);
+}
+
+html.theme-light .player-video-canvas {
+    border-color: oklch(0.28 0.035 140 / 0.18);
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.04);
+}
+
+html.theme-light .player-timeline,
+html.theme-light .illus-sync-bridge .sync-line {
+    background: oklch(0.28 0.035 140 / 0.14);
+}
+
+html.theme-light .timeline-knob {
+    background: #ffffff;
+    border: 1px solid oklch(0.56 0.13 150 / 0.45);
+    box-shadow: 0 1px 4px oklch(0.20 0.025 140 / 0.22);
+}
+
+html.theme-light .sync-status-badge,
+html.theme-light .player-badge.active {
+    color: oklch(0.36 0.105 150);
+    background: oklch(0.60 0.12 150 / 0.12);
+    border-color: oklch(0.56 0.13 150 / 0.26);
+}
+
+/* --- Self Hosters Terminal --- */
+.terminal-container {
+    max-width: 850px;
+    margin: 3rem auto 0 auto;
+    background: oklch(0.20 0.025 140);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 20px 45px rgba(0,0,0,0.5);
+    text-align: left;
+}
+
+.terminal-header {
+    background: oklch(0.27 0.035 130);
+    padding: 0.85rem 1.25rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+
+.terminal-dots {
+    display: flex;
+    gap: 6px;
+}
+
+.terminal-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+}
+
+.terminal-dot.red { background: oklch(0.55 0.15 25); }
+.terminal-dot.yellow { background: oklch(0.68 0.14 45); }
+.terminal-dot.green { background: oklch(0.68 0.13 150); }
+
+.terminal-tabs {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.terminal-tab-btn {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    font-weight: 600;
+    font-size: 0.8rem;
+    padding: 0.35rem 0.75rem;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: color 0.2s, background-color 0.2s;
+}
+
+.terminal-tab-btn:hover {
+    color: var(--text);
+    background: rgba(255, 255, 255, 0.03);
+}
+
+.terminal-tab-btn.active {
+    color: var(--accent);
+    background: oklch(0.68 0.13 150 / 0.1);
+    border: 1px solid oklch(0.68 0.13 150 / 0.2);
+}
+
+.terminal-body {
+    position: relative;
+    padding: 1.5rem;
+}
+
+.terminal-pane {
+    display: none;
+    margin: 0;
+}
+
+.terminal-pane.active {
+    display: block;
+}
+
+.terminal-pane pre {
+    margin: 0;
+    overflow-x: auto;
+}
+
+.terminal-pane code {
+    font-family: Consolas, Monaco, "Andale Mono", "Ubuntu Mono", monospace;
+    font-size: 0.85rem;
+    line-height: 1.6;
+    color: oklch(0.88 0.015 90);
+}
+
+/* Syntax Highlighting */
+.t-comment { color: oklch(0.55 0.02 110); font-style: italic; }
+.t-key { color: oklch(0.72 0.12 45); }
+.t-val { color: oklch(0.75 0.10 150); }
+.t-str { color: oklch(0.80 0.12 155); }
+.t-num { color: oklch(0.75 0.12 50); }
+
+.terminal-copy-btn {
+    position: absolute;
+    top: 1rem;
+    right: 1.5rem;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    color: var(--text-muted);
+    padding: 0.35rem 0.75rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background-color 0.2s, color 0.2s, opacity 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+}
+
+.terminal-copy-btn:hover {
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--text);
+    border-color: rgba(255, 255, 255, 0.15);
+}
+
+.terminal-copy-btn:active {
+    transform: scale(0.97);
+}
+
+/* --- Footer --- */
+footer {
+    padding: 4rem 0;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+    text-align: center;
+    color: var(--text-muted);
+}
+
+html.theme-light footer {
+    border-top: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+footer a {
+    color: var(--text-muted);
+    text-decoration: none;
+    transition: color 0.2s ease;
+}
+
+footer a:hover {
+    color: var(--text);
+}
+
+.footer-ram {
+    font-size: 0.72rem;
+    margin-bottom: 0.8rem;
+    line-height: 1.5;
+    color: oklch(0.72 0.015 90);
+}
+
+html.theme-light .footer-ram {
+    color: var(--text-muted);
+}
+
+.footer-copyright {
+    font-size: 0.85rem;
+    margin-bottom: 1.5rem;
+    color: var(--text);
+}
+
+.footer-disclaimer {
+    font-size: 0.72rem;
+    margin-bottom: 0.8rem;
+    max-width: 650px;
+    margin-left: auto;
+    margin-right: auto;
+    line-height: 1.5;
+}
+
+.footer-links {
+    margin-top: 1.5rem;
+    font-size: 0.8rem;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+}
+
+.footer-mastodon-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.footer-support-btn {
+    color: #fff !important;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: #b94642;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-radius: 999px;
+    padding: 3px 9px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    line-height: 1;
+    transition: background-color 0.2s ease, transform 0.2s ease, border-color 0.2s ease;
+}
+
+.footer-support-btn:hover {
+    background: #d9534f;
+    border-color: rgba(255, 255, 255, 0.35);
+    transform: translateY(-1px);
+}
+
+.footer-support-btn:active {
+    transform: translateY(0);
+}
+
+
+/* --- Animations --- */
+[data-reveal] {
+    opacity: 0;
+    transform: translateY(30px);
+    transition: opacity 0.8s cubic-bezier(0.4, 0, 0.2, 1), transform 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+[data-reveal].revealed {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+html.theme-light .hero-demo-scene .demo-user-a,
+html.theme-light .hero-demo-scene .demo-user-b {
+    color: oklch(0.36 0.105 150);
+    background: oklch(0.60 0.12 150 / 0.13);
+}
+
+html.theme-light .hero-demo-scene .extension-mockup {
+    --bg: oklch(0.935 0.018 110) !important;
+    --card: oklch(0.995 0.006 100) !important;
+    --accent: oklch(0.56 0.13 150) !important;
+    --accent-glow: oklch(0.56 0.13 150 / 0.22) !important;
+    --text: oklch(0.21 0.03 140) !important;
+    --text-muted: oklch(0.43 0.03 135) !important;
+    --success: oklch(0.56 0.13 150) !important;
+    --error: oklch(0.57 0.17 25) !important;
+    --glass-border: oklch(0.28 0.035 140 / 0.10) !important;
+    background: oklch(0.935 0.018 110) !important;
+    border-color: oklch(0.28 0.035 140 / 0.12);
+    box-shadow:
+        0 20px 42px oklch(0.20 0.025 140 / 0.16),
+        0 0 26px oklch(0.82 0.10 85 / 0.12);
+}
+
+html.theme-light .hero-demo-scene .mock-tabs,
+html.theme-light .hero-demo-scene .mock-card,
+html.theme-light .hero-demo-scene .mock-input {
+    background: oklch(0.995 0.006 100);
+    border-color: oklch(0.28 0.035 140 / 0.14);
+    color: oklch(0.21 0.03 140);
+}
+
+html.theme-light .hero-demo-scene .mock-peer-item {
+    background: oklch(0.28 0.035 140 / 0.035);
+    border-color: oklch(0.28 0.035 140 / 0.09);
+}
+
+html.theme-light .hero-demo-scene .mock-joined-room,
+html.theme-light .hero-demo-scene .mock-status-pill {
+    background: oklch(0.56 0.13 150 / 0.10);
+    border-color: oklch(0.56 0.13 150 / 0.24);
+}
+
+html.theme-light .hero-demo-scene .mock-close-btn:hover {
+    color: oklch(0.21 0.03 140);
+    background: oklch(0.28 0.035 140 / 0.08);
+}
+
+/* A direct hash destination is content, not an entrance animation. Keep it
+   readable from the first paint even before app.js has initialized. */
+section:target [data-reveal],
+section:target[data-reveal] {
+    opacity: 1;
+    transform: translateY(0);
+}

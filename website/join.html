@@ -27,23 +27,86 @@
     <meta name="twitter:image" content="https://sync.koalastuff.net/assets/og-image.png">
 
     <!-- Mobile Browser Theme Styling -->
-    <meta name="theme-color" content="#0f172a">
+    <meta name="theme-color" content="#10190e">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 
     <script src="lang-init.min.js"></script>
 </head>
 <body>
-    <div class="bg-blobs">
-        <div class="blob blob-1"></div>
-        <div class="blob blob-2"></div>
-        <div class="blob blob-3"></div>
+    <div class="bg-nature" aria-hidden="true">
+        <div class="bg-dusk-tint"></div>
+        <div class="bg-depth-day">
+            <div class="bg-godrays">
+                <span class="godray godray-1"></span>
+                <span class="godray godray-2"></span>
+                <span class="godray godray-3"></span>
+            </div>
+            <div class="bg-canopy"></div>
+            <span class="canopy-arc canopy-arc-1"></span>
+            <span class="canopy-arc canopy-arc-2"></span>
+            <span class="canopy-arc canopy-arc-3"></span>
+            <span class="canopy-arc canopy-arc-4"></span>
+        </div>
+        <div id="bamboo-far">
+            <span class="bamboo-stalk far-1"></span>
+            <span class="bamboo-stalk far-2"></span>
+            <span class="bamboo-stalk far-3"></span>
+            <span class="bamboo-stalk far-4"></span>
+            <span class="bamboo-stalk far-5"></span>
+        </div>
+        <div id="bamboo-near">
+            <div class="bamboo-stalk near-1">
+                <i class="bamboo-node node-1"></i>
+                <i class="bamboo-node node-2"></i>
+                <i class="bamboo-node node-3"></i>
+                <i class="bamboo-leaf leaf-1"></i>
+                <i class="bamboo-leaf leaf-2"></i>
+            </div>
+            <div class="bamboo-stalk near-2">
+                <i class="bamboo-node node-1"></i>
+                <i class="bamboo-node node-2"></i>
+                <i class="bamboo-node node-3"></i>
+                <i class="bamboo-leaf leaf-1"></i>
+            </div>
+            <div class="bamboo-stalk near-3">
+                <i class="bamboo-node node-1"></i>
+                <i class="bamboo-node node-2"></i>
+                <i class="bamboo-node node-3"></i>
+                <i class="bamboo-leaf leaf-1"></i>
+            </div>
+        </div>
+        <span class="fall-leaf fall-leaf-1"><i></i></span>
+        <span class="fall-leaf fall-leaf-2"><i></i></span>
+        <span class="fall-leaf fall-leaf-3"><i></i></span>
+        <span class="fall-leaf fall-leaf-4"><i></i></span>
+        <span class="fall-leaf fall-leaf-5"><i></i></span>
+        <span class="fall-leaf fall-leaf-6"><i></i></span>
+        <span class="fall-leaf fall-leaf-7"><i></i></span>
+        <span class="fall-leaf fall-leaf-8"><i></i></span>
+        <span class="bg-grass bg-grass-1"></span>
+        <span class="bg-grass bg-grass-2"></span>
+        <span class="bg-grass bg-grass-3"></span>
+        <span class="bg-grass bg-grass-4"></span>
+        <div class="bg-depth-dusk">
+            <div class="bg-mist bg-mist-1"></div>
+            <div class="bg-mist bg-mist-2"></div>
+            <div class="bg-horizon"></div>
+            <span class="firefly-wrap fw-1"><span class="firefly"></span></span>
+            <span class="firefly-wrap fw-2"><span class="firefly"></span></span>
+            <span class="firefly-wrap fw-3"><span class="firefly"></span></span>
+            <span class="firefly-wrap fw-4"><span class="firefly"></span></span>
+            <span class="firefly-wrap fw-5"><span class="firefly"></span></span>
+            <span class="firefly-wrap fw-6"><span class="firefly"></span></span>
+        </div>
+        <div class="bg-light-sweep"></div>
+        <div class="bg-grain"></div>
     </div>
 
     <nav>
         <div class="container nav-content">
             <a href="./" class="logo-area" style="text-decoration: none;">
-                <img src="assets/NewLogoIcon.webp" alt="KoalaSync Logo" width="64" height="64">
+                <img src="assets/NewLogoIcon_128.webp" alt="KoalaSync Logo" width="64" height="64">
                 <span>KoalaSync</span>
             </a>
             <div class="nav-links" id="primary-nav" role="navigation" aria-label="Primary">
@@ -92,8 +155,8 @@
             <div class="join-status-visual">
                 <div class="status-ring active-pulse" id="status-ring"></div>
                 <div id="join-status-icon" style="z-index: 2; transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); display: flex; align-items: center; justify-content: center;">
-                    <img src="assets/KoalaSearching.webp" alt="A cute koala looking through a telescope searching for your extension" class="join-status-mascot searching-mascot join-status-pulse" lang="en">
-                    <img src="assets/KoalaSearching.webp" alt="Ein niedlicher Koala schaut durch ein Fernrohr und sucht nach deiner Erweiterung" class="join-status-mascot searching-mascot join-status-pulse" lang="de">
+                    <img src="assets/KoalaSearching-180.webp" srcset="assets/KoalaSearching-180.webp 180w, assets/KoalaSearching-360.webp 360w" sizes="175px" alt="A cute koala looking through a telescope searching for your extension" class="join-status-mascot searching-mascot join-status-pulse" lang="en">
+                    <img src="assets/KoalaSearching-180.webp" srcset="assets/KoalaSearching-180.webp 180w, assets/KoalaSearching-360.webp 360w" sizes="175px" alt="Ein niedlicher Koala schaut durch ein Fernrohr und sucht nach deiner Erweiterung" class="join-status-mascot searching-mascot join-status-pulse" lang="de">
                 </div>
             </div>
 
@@ -121,14 +184,14 @@
         <div class="container">
             <p>&copy; 2026 KoalaSync. <span lang="en">Open source under the MIT License.</span><span lang="de">Open Source unter der MIT-Lizenz.</span></p>
             <p style="font-size: 0.8rem; margin-top: 0.5rem;"><span lang="en">No relay logs. No tracking. Website access logs are deleted after 7 days.</span><span lang="de">Keine Relay-Logs. Kein Tracking. Website-Access-Logs werden nach 7 Tagen gelöscht.</span></p>
-            <p style="font-size: 0.72rem; margin-top: 1.2rem; color: var(--text-muted); opacity: 0.65; max-width: 650px; margin-left: auto; margin-right: auto; line-height: 1.5;"><span lang="en">KoalaSync is not affiliated with, endorsed by, or associated with Netflix, Disney+, Amazon, YouTube, Twitch, or any other streaming platform. All trademarks are property of their respective owners.</span><span lang="de">KoalaSync ist nicht mit Netflix, Disney+, Amazon, YouTube, Twitch oder anderen Streaming-Plattformen verbunden, wird von diesen nicht unterstützt oder steht in keiner Beziehung zu diesen. Alle Markenrechte liegen bei ihren jeweiligen Inhabern.</span></p>
+            <p class="footer-disclaimer" style="margin-top: 1.2rem;"><span lang="en">KoalaSync is not affiliated with, endorsed by, or associated with Netflix, Disney+, Amazon, YouTube, Twitch, or any other streaming platform. All trademarks are property of their respective owners.</span><span lang="de">KoalaSync ist nicht mit Netflix, Disney+, Amazon, YouTube, Twitch oder anderen Streaming-Plattformen verbunden, wird von diesen nicht unterstützt oder steht in keiner Beziehung zu diesen. Alle Markenrechte liegen bei ihren jeweiligen Inhabern.</span></p>
             <div style="margin-top: 1.5rem; font-size: 0.8rem; display: flex; justify-content: center; align-items: center; gap: 1.5rem; flex-wrap: wrap;">
                 <a href="imprint" lang="en" style="color: var(--text-muted); text-decoration: none;">Legal Notice</a>
                 <a href="de/impressum" lang="de" style="color: var(--text-muted); text-decoration: none;">Impressum</a>
                 <a href="privacy" lang="en" style="color: var(--text-muted); text-decoration: none;">Privacy Policy</a>
                 <a href="de/datenschutz" lang="de" style="color: var(--text-muted); text-decoration: none;">Datenschutz</a>
                 <a href="alternatives"><span lang="en">Guides & comparisons</span><span lang="de">Vergleiche & Anleitungen</span></a>
-                <a href="https://support.koalastuff.net" target="_blank" rel="noopener" title="Support KoalaSync" style="color: #fff; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; background: #c9302c; border: 1px solid rgba(255,255,255,0.18); border-radius: 999px; padding: 3px 9px; font-size: 0.72rem; font-weight: 700; line-height: 1;">
+                <a href="https://support.koalastuff.net" target="_blank" rel="noopener" title="Support KoalaSync" style="color: #fff; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; background: #b94642; border: 1px solid rgba(255,255,255,0.18); border-radius: 999px; padding: 3px 9px; font-size: 0.72rem; font-weight: 700; line-height: 1;">
                     <span aria-hidden="true">♥</span>
                     <span>Support KoalaSync</span>
                 </a>

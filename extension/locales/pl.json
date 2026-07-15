@@ -70,11 +70,11 @@
   "LABEL_REMOTE_CONTROL": "Zdalne sterowanie",
   "BTN_COPY_INVITE": "📋 Link do zaproszenia",
   "BTN_COPY_INVITE_TOOLTIP": "Kopiuj link zaproszenia",
-  "BTN_PLAY": "▶ Odtwórz",
+  "BTN_PLAY": "Odtwórz",
   "BTN_PLAY_TOOLTIP": "Wyślij polecenie odtwarzania do wszystkich",
-  "BTN_PAUSE": "⏸ Pauza",
+  "BTN_PAUSE": "Pauza",
   "BTN_PAUSE_TOOLTIP": "Wyślij polecenie pauzy do wszystkich",
-  "BTN_SYNC": "⚡ SYNC",
+  "BTN_SYNC": "Sync",
   "BTN_SYNC_TOOLTIP": "Wymuś synchronizację wszystkich użytkowników",
   "OPTION_JUMP_TO_OTHERS": "Skocz do innych",
   "OPTION_JUMP_TO_ME": "Skocz do mnie",
@@ -209,6 +209,7 @@
   "LABEL_AUDIO_PROCESSING_TOOLTIP": "Stosuje efekty dźwiękowe, takie jak kompresja, do odtwarzania wideo",
   "AUDIO_OPEN_SETTINGS": "Otwórz",
   "NEW_FEATURE_AUDIO": "Nowość: Przetwarzanie dźwięku — wypróbuj kompresor!",
+  "NEW_FEATURE_THEME": "Nowość: Motywy — przełącz na klasyczny wygląd lub minimalny grafit.",
   "AUDIO_BACK": "← Wstecz",
   "AUDIO_PAGE_TITLE": "Ustawienia dźwięku",
   "AUDIO_MASTER_TOGGLE": "Przetwarzanie dźwięku",
@@ -238,5 +239,9 @@
   "LABEL_SEND_TAB_TITLE": "Wysyłaj tytuł karty",
   "LABEL_SEND_TAB_TITLE_TOOLTIP": "Wysyła do pokoju tytuł wybranej karty przeglądarki.",
   "LABEL_MEDIA_TITLE_PRIVACY": "Tytuł multimediów",
-  "LABEL_MEDIA_TITLE_PRIVACY_TOOLTIP": "Wybierz, jak tytuły multimediów są wysyłane do pokoju."
+  "LABEL_MEDIA_TITLE_PRIVACY_TOOLTIP": "Wybierz, jak tytuły multimediów są wysyłane do pokoju.",
+  "LABEL_SETTINGS_GROUP_PROFILE": "Profil i Wygląd",
+  "LABEL_SETTINGS_GROUP_PROFILE_TOOLTIP": "Zmień swoją nazwę użytkownika, motyw i preferencje językowe.",
+  "LABEL_SETTINGS_GROUP_SYNC": "Odtwarzanie i Sync",
+  "LABEL_SETTINGS_GROUP_SYNC_TOOLTIP": "Dostosuj odtwarzanie, powiadomienia i preferencje audio."
 }

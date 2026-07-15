@@ -1,8 +1,9 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
     <meta charset="utf-8">
     <title>KoalaSync</title>
+    <script src="theme-init.js"></script>
     <style>
         @font-face {
             font-family: 'Twemoji Country Flags';
@@ -12,32 +13,253 @@
         }
 
         :root {
-            --bg: #0f172a;
-            --card: #1e293b;
-            --accent: #6366f1;
-            --accent-hover: #818cf8;
-            --text: #f8fafc;
-            --text-muted: #94a3b8;
-            --success: #22c55e;
-            --error: #ef4444;
+            /* KoalaSync nature system: forest neutrals, eucalyptus brand, warm supporting accents. */
+            --bg-base: oklch(0.23 0.028 155);
+            --surface: oklch(0.30 0.035 150);
+            --surface-deep: oklch(0.205 0.025 155);
+            --surface-alt: oklch(0.265 0.032 150);
+            --border-soft: oklch(0.88 0.025 145 / 0.09);
+            --border-strong: oklch(0.39 0.038 145);
+            --text-primary: oklch(0.96 0.01 90);
+            --text-secondary: oklch(0.78 0.02 90);
+            --accent-green: oklch(0.73 0.13 155);
+            --accent-green-hover: oklch(0.79 0.12 155);
+            --accent-terracotta: oklch(0.62 0.14 45);
+            --success-green: oklch(0.72 0.14 135);
+            --warning-amber: oklch(0.76 0.14 80);
+            --danger: oklch(0.55 0.15 25);
+            --text-on-green: oklch(0.14 0.02 90);
+            --text-on-warm: oklch(0.16 0.025 45);
+
+            --bg: var(--surface-deep);
+            --card: var(--surface);
+            --accent: var(--accent-green);
+            --accent-hover: var(--accent-green-hover);
+            --text: var(--text-primary);
+            --text-muted: var(--text-secondary);
+            --success: var(--success-green);
+            --warning: var(--warning-amber);
+            --error: var(--danger);
+            --status-success-text: oklch(0.84 0.12 140);
+            --status-warning-text: oklch(0.86 0.13 80);
+            --status-error-text: oklch(0.78 0.13 25);
+            --status-neutral-text: oklch(0.76 0.02 110);
             --radius: 12px;
-            --star: #fbbf24;
+            --star: var(--warning);
+            color-scheme: dark;
+        }
+
+        html.theme-light {
+            --bg-base: oklch(0.965 0.012 105);
+            --surface: oklch(0.995 0.006 100);
+            --surface-deep: oklch(0.935 0.018 110);
+            --surface-alt: oklch(0.91 0.022 115);
+            --border-soft: oklch(0.28 0.035 140 / 0.10);
+            --border-strong: oklch(0.73 0.035 125);
+            --text-primary: oklch(0.21 0.03 140);
+            --text-secondary: oklch(0.43 0.03 135);
+            --accent-green: oklch(0.52 0.13 155);
+            --accent-green-hover: oklch(0.45 0.12 155);
+            --accent-terracotta: oklch(0.64 0.14 45);
+            --success-green: oklch(0.48 0.14 135);
+            --warning-amber: oklch(0.58 0.14 80);
+            --danger: oklch(0.57 0.17 25);
+            --text-on-green: oklch(0.16 0.03 140);
+            --text-on-warm: oklch(0.18 0.03 45);
+            --status-success-text: oklch(0.39 0.13 140);
+            --status-warning-text: oklch(0.43 0.12 75);
+            --status-error-text: oklch(0.46 0.16 25);
+            --status-neutral-text: oklch(0.43 0.02 120);
+            color-scheme: light;
+        }
+
+        /* ============================================================
+           THEME: CYBER — the original indigo / slate look, kept for
+           people who prefer the pre-nature design. Cool navy neutrals
+           with an electric indigo brand accent and a violet companion.
+           ============================================================ */
+        html[data-palette="cyber"] {
+            --bg-base: oklch(0.215 0.042 265);
+            --surface: oklch(0.285 0.05 265);
+            --surface-deep: oklch(0.185 0.04 265);
+            --surface-alt: oklch(0.25 0.048 265);
+            --border-soft: oklch(0.9 0.03 265 / 0.10);
+            --border-strong: oklch(0.42 0.05 265);
+            --text-primary: oklch(0.97 0.012 265);
+            --text-secondary: oklch(0.74 0.03 265);
+            --accent-green: oklch(0.59 0.20 275);
+            --accent-green-hover: oklch(0.69 0.17 275);
+            --accent-terracotta: oklch(0.64 0.21 320);
+            --success-green: oklch(0.74 0.17 150);
+            --warning-amber: oklch(0.79 0.15 75);
+            --danger: oklch(0.63 0.20 25);
+            --text-on-green: oklch(0.99 0.006 275);
+            --text-on-warm: oklch(0.99 0.006 320);
+            --status-success-text: oklch(0.82 0.15 150);
+            --status-warning-text: oklch(0.85 0.14 78);
+            --status-error-text: oklch(0.78 0.16 25);
+            --status-neutral-text: oklch(0.74 0.03 265);
+            color-scheme: dark;
+        }
+
+        html[data-palette="cyber"].theme-light {
+            --bg-base: oklch(0.965 0.01 265);
+            --surface: oklch(0.995 0.005 265);
+            --surface-deep: oklch(0.945 0.014 265);
+            --surface-alt: oklch(0.915 0.02 265);
+            --border-soft: oklch(0.30 0.05 265 / 0.12);
+            --border-strong: oklch(0.79 0.03 265);
+            --text-primary: oklch(0.26 0.05 265);
+            --text-secondary: oklch(0.48 0.045 265);
+            --accent-green: oklch(0.53 0.21 275);
+            --accent-green-hover: oklch(0.46 0.20 275);
+            --accent-terracotta: oklch(0.55 0.23 320);
+            --success-green: oklch(0.52 0.16 150);
+            --warning-amber: oklch(0.62 0.15 72);
+            --danger: oklch(0.56 0.21 25);
+            --text-on-green: oklch(0.99 0.005 275);
+            --text-on-warm: oklch(0.99 0.005 320);
+            --status-success-text: oklch(0.45 0.15 150);
+            --status-warning-text: oklch(0.50 0.13 70);
+            --status-error-text: oklch(0.50 0.18 25);
+            --status-neutral-text: oklch(0.48 0.045 265);
+            color-scheme: light;
+        }
+
+        /* ============================================================
+           THEME: GRAPHITE — a quiet black-and-white minimal system.
+           Near-neutral cool greys, a monochrome accent (bright on dark,
+           ink on light); status hues are the only colour, kept muted so
+           they still read as success / warning / danger.
+           ============================================================ */
+        html[data-palette="graphite"] {
+            --bg-base: oklch(0.19 0.004 260);
+            --surface: oklch(0.255 0.005 260);
+            --surface-deep: oklch(0.165 0.004 260);
+            --surface-alt: oklch(0.225 0.005 260);
+            --border-soft: oklch(0.92 0.008 260 / 0.11);
+            --border-strong: oklch(0.42 0.006 260);
+            --text-primary: oklch(0.97 0.003 260);
+            --text-secondary: oklch(0.72 0.005 260);
+            --accent-green: oklch(0.93 0.006 260);
+            --accent-green-hover: oklch(0.99 0.003 260);
+            --accent-terracotta: oklch(0.80 0.008 260);
+            --success-green: oklch(0.74 0.10 155);
+            --warning-amber: oklch(0.80 0.10 80);
+            --danger: oklch(0.64 0.14 25);
+            --text-on-green: oklch(0.20 0.004 260);
+            --text-on-warm: oklch(0.20 0.004 260);
+            --status-success-text: oklch(0.81 0.09 152);
+            --status-warning-text: oklch(0.84 0.10 80);
+            --status-error-text: oklch(0.76 0.12 25);
+            --status-neutral-text: oklch(0.72 0.005 260);
+            color-scheme: dark;
+        }
+
+        html[data-palette="graphite"].theme-light {
+            --bg-base: oklch(0.955 0.002 260);
+            --surface: oklch(1 0 0);
+            --surface-deep: oklch(0.928 0.003 260);
+            --surface-alt: oklch(0.90 0.004 260);
+            --border-soft: oklch(0.20 0.006 260 / 0.13);
+            --border-strong: oklch(0.77 0.004 260);
+            --text-primary: oklch(0.22 0.005 260);
+            --text-secondary: oklch(0.46 0.006 260);
+            --accent-green: oklch(0.28 0.006 260);
+            --accent-green-hover: oklch(0.18 0.005 260);
+            --accent-terracotta: oklch(0.44 0.008 260);
+            --success-green: oklch(0.51 0.12 152);
+            --warning-amber: oklch(0.60 0.12 72);
+            --danger: oklch(0.55 0.17 25);
+            --text-on-green: oklch(0.98 0.002 260);
+            --text-on-warm: oklch(0.98 0.002 260);
+            --status-success-text: oklch(0.45 0.12 152);
+            --status-warning-text: oklch(0.49 0.11 70);
+            --status-error-text: oklch(0.49 0.16 25);
+            --status-neutral-text: oklch(0.46 0.006 260);
+            color-scheme: light;
         }
 
         body {
-            width: 320px;
+            width: 360px;
             margin: 0;
-            padding: 16px;
+            padding: 18px;
+            box-sizing: border-box;
             background: var(--bg);
             color: var(--text);
             font-family: 'Twemoji Country Flags', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
             font-size: 14px;
+            background-image:
+                radial-gradient(circle at 12% -8%, oklch(0.68 0.13 150 / 0.12), transparent 42%),
+                radial-gradient(circle at 105% 12%, oklch(0.62 0.14 45 / 0.08), transparent 34%);
+            transition: background-color 0.25s ease, color 0.25s ease;
+        }
+
+        html.theme-light body {
+            background-image:
+                radial-gradient(circle at 8% -5%, oklch(0.72 0.11 145 / 0.24), transparent 40%),
+                radial-gradient(circle at 105% 5%, oklch(0.82 0.12 65 / 0.2), transparent 38%);
+        }
+
+        /* Per-theme ambient glow: each palette carries its own signature
+           corner wash so the backdrop matches the accent, not eucalyptus. */
+        html[data-palette="cyber"] body {
+            background-image:
+                radial-gradient(circle at 12% -8%, oklch(0.64 0.19 275 / 0.16), transparent 42%),
+                radial-gradient(circle at 105% 12%, oklch(0.64 0.21 320 / 0.11), transparent 34%);
+        }
+        html[data-palette="cyber"].theme-light body {
+            background-image:
+                radial-gradient(circle at 8% -5%, oklch(0.60 0.20 275 / 0.16), transparent 40%),
+                radial-gradient(circle at 105% 5%, oklch(0.62 0.20 320 / 0.14), transparent 38%);
+        }
+        html[data-palette="graphite"] body {
+            background-image:
+                radial-gradient(circle at 12% -8%, oklch(0.93 0.006 260 / 0.05), transparent 44%);
+        }
+        html[data-palette="graphite"].theme-light body {
+            background-image:
+                radial-gradient(circle at 12% -8%, oklch(0.20 0.006 260 / 0.045), transparent 46%);
+        }
+
+        /* The Create Room button carries an inline eucalyptus glow; retint
+           its shadow per palette so the hero action stays on-theme. */
+        html[data-palette="cyber"] #createRoomBtn,
+        html[data-palette="cyber"] #syncTabCreateRoomBtn {
+            box-shadow: 0 4px 12px oklch(0.64 0.19 275 / 0.4) !important;
+        }
+        html[data-palette="graphite"] #createRoomBtn,
+        html[data-palette="graphite"] #syncTabCreateRoomBtn {
+            box-shadow: 0 4px 12px oklch(0.20 0.006 260 / 0.4) !important;
+        }
+
+        /* Cyber's brand ink is white (for the dark indigo accent), but its
+           success/warning fills are bright — so the few surfaces that print
+           text directly on those fills need dark ink to stay legible. */
+        html[data-palette="cyber"] .toast-success,
+        html[data-palette="cyber"] .toast-warning,
+        html[data-palette="cyber"] .copy-success {
+            color: oklch(0.22 0.03 265) !important;
+        }
+
+        /* Theme cross-fade: enabled only for the ~260ms around a user-initiated
+           theme/appearance switch (added by popup.js), so colours glide instead
+           of snapping — without slowing down normal hover/state transitions. */
+        html.theme-anim,
+        html.theme-anim * {
+            transition: background-color 0.24s ease, border-color 0.24s ease,
+                        color 0.24s ease, box-shadow 0.24s ease, fill 0.24s ease !important;
+        }
+        @media (prefers-reduced-motion: reduce) {
+            html.theme-anim,
+            html.theme-anim * { transition: none !important; }
         }
 
         .header-row {
             display: flex;
             align-items: center;
-            margin-bottom: 16px;
+            margin-bottom: 14px;
+            padding: 2px 2px 0;
         }
 
         h1 {
@@ -52,8 +274,8 @@
         }
 
         h1 img {
-            width: 48px;
-            height: 48px;
+            width: 42px;
+            height: 42px;
             object-fit: contain;
             border-radius: 4px;
         }
@@ -66,7 +288,7 @@
             font-size: 10px;
             color: var(--text-muted);
             text-decoration: none;
-            opacity: 0.5;
+            opacity: 0.72;
             transition: opacity 0.2s, color 0.2s;
         }
         .popup-version:hover {
@@ -86,7 +308,8 @@
             background: var(--card);
             padding: 4px;
             border-radius: var(--radius);
-            margin-bottom: 20px;
+            margin-bottom: 16px;
+            border: 1px solid var(--border-soft);
         }
 
         .tab-btn {
@@ -98,12 +321,15 @@
             cursor: pointer;
             font-weight: 600;
             border-radius: 8px;
-            transition: all 0.2s;
+            min-height: 36px;
+            transition: background-color 0.2s, color 0.2s, box-shadow 0.2s;
+            white-space: nowrap;
         }
 
         .tab-btn.active {
             background: var(--accent);
-            color: white;
+            color: var(--text-on-green);
+            box-shadow: 0 5px 14px oklch(0.38 0.10 150 / 0.22);
         }
 
         .tab-content {
@@ -127,42 +353,31 @@
 
         label {
             display: block;
-            font-size: 11px;
-            text-transform: uppercase;
+            font-size: 12px;
             color: var(--text-muted);
             margin-bottom: 4px;
-            font-weight: 700;
+            font-weight: 650;
+            letter-spacing: 0.01em;
         }
 
         input, select, option {
             width: 100%;
             box-sizing: border-box;
             background: var(--card);
-            border: 1px solid #334155;
-            color: white;
+            border: 1px solid var(--border-strong);
+            color: var(--text);
             padding: 10px;
             border-radius: 8px;
             outline: none;
             font-family: inherit;
+            min-height: 40px;
+            transition: border-color 0.2s, box-shadow 0.2s, background-color 0.2s;
         }
 
-        @supports (appearance: base-select) {
-            #langSelector,
-            #langSelector::picker(select) {
-                appearance: base-select;
-            }
-            #langSelector::picker(select) {
-                background-color: var(--bg);
-                border: 1px solid #334155;
-                border-radius: 8px;
-                padding: 4px;
-                font-family: 'Twemoji Country Flags', inherit;
-            }
-        }
-
-        input:focus {
+        input:focus,
+        select:focus {
             border-color: var(--accent);
-            box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
+            box-shadow: 0 0 0 3px color-mix(in oklch, var(--accent), transparent 82%);
         }
 
         button.primary {
@@ -170,11 +385,11 @@
             padding: 12px;
             background: var(--accent);
             border: none;
-            color: white;
+            color: var(--text-on-green);
             font-weight: 700;
             border-radius: 8px;
             cursor: pointer;
-            transition: all 0.2s;
+            transition: background-color 0.2s, box-shadow 0.2s, transform 0.2s;
             margin-top: 8px;
         }
 
@@ -186,30 +401,75 @@
         button.secondary {
             width: 100%;
             padding: 10px;
-            background: #334155;
+            background: var(--border-strong);
             border: none;
-            color: white;
+            color: var(--text);
             font-weight: 600;
             border-radius: 8px;
             cursor: pointer;
             margin-top: 8px;
         }
 
+        button.secondary:hover {
+            background: oklch(0.38 0.035 125);
+        }
+
+        details > summary:focus-visible {
+            outline: 2px solid var(--accent-hover) !important;
+            outline-offset: 3px;
+            border-radius: 4px;
+        }
+
+        button:focus-visible,
+        a:focus-visible,
+        input:focus-visible,
+        select:focus-visible {
+            outline: 2px solid var(--accent-hover);
+            outline-offset: 2px;
+        }
+
+        button:disabled {
+            cursor: not-allowed;
+            opacity: 0.48;
+            transform: none !important;
+        }
+
+        .copy-success {
+            background: var(--success) !important;
+            border-color: var(--success) !important;
+            color: var(--text-on-green) !important;
+            opacity: 1 !important;
+            transform: scale(0.95) !important;
+            transition: transform 0.15s ease-out !important;
+        }
+
         /* Info Cards */
         .info-card {
             background: var(--card);
             padding: 12px;
-            border-radius: 8px;
+            border-radius: 10px;
             margin-bottom: 12px;
-            border: 1px solid #334155;
+            border: 1px solid var(--border-strong);
+            box-shadow: 0 8px 22px rgba(0, 0, 0, 0.08);
         }
 
         .peer-item {
-            padding: 8px 0;
-            border-bottom: 1px solid #334155;
+            padding: 10px 0;
+            border-bottom: 1px solid var(--border-strong);
         }
 
         .peer-item:last-child { border: 0; }
+
+        /* Native, thin modern scrollbars (2026 standard compliant) */
+        .info-card,
+        #publicRooms,
+        #historyList,
+        #videoDebug,
+        #lastActionCard,
+        #logList {
+            scrollbar-width: thin;
+            scrollbar-color: var(--border-strong) transparent;
+        }
 
         .status-dot {
             width: 8px;
@@ -219,8 +479,58 @@
             margin-right: 6px;
         }
 
-        .status-online { background: var(--success); box-shadow: 0 0 8px var(--success); }
+        .status-online { 
+            background: var(--success); 
+            box-shadow: 0 0 8px var(--success); 
+            animation: pulseGreen 2s infinite ease-in-out;
+        }
         .status-offline { background: var(--error); }
+        .status-connecting {
+            background: var(--warning);
+            box-shadow: 0 0 8px color-mix(in oklch, var(--warning), transparent 30%);
+        }
+        .status-idle { background: var(--status-neutral-text); }
+
+        @keyframes pulseGreen {
+            0% { box-shadow: 0 0 0 0 color-mix(in oklch, var(--success), transparent 30%); }
+            70% { box-shadow: 0 0 0 6px color-mix(in oklch, var(--success), transparent 100%); }
+            100% { box-shadow: 0 0 0 0 color-mix(in oklch, var(--success), transparent 100%); }
+        }
+
+        /* Badge and Capsule styles for peers and state */
+        .badge {
+            display: inline-block;
+            padding: 2px 6px;
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            border-radius: 6px;
+            line-height: 1.2;
+            vertical-align: middle;
+            margin-left: 4px;
+        }
+        .badge-ready {
+            background: color-mix(in oklch, var(--success), transparent 85%);
+            color: var(--status-success-text);
+            border: 1px solid color-mix(in oklch, var(--success), transparent 70%);
+        }
+        .badge-loading {
+            background: color-mix(in oklch, var(--warning), transparent 85%);
+            color: var(--status-warning-text);
+            border: 1px solid color-mix(in oklch, var(--warning), transparent 70%);
+        }
+        .lobby-peer-item {
+            display: inline-flex;
+            align-items: center;
+            background: var(--bg-base);
+            border: 1px solid var(--border-soft);
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 11px;
+            margin-right: 6px;
+            margin-bottom: 6px;
+            color: var(--text-primary);
+        }
 
         /* Logs */
         #logList {
@@ -228,15 +538,48 @@
             overflow-y: auto;
             font-size: 10px;
             font-family: monospace;
-            background: #000;
+            background: var(--surface-deep);
             padding: 8px;
             border-radius: 8px;
-            color: #ccc;
+            color: var(--text-secondary);
         }
 
         .log-entry { margin-bottom: 4px; }
-        .log-error { color: var(--error); }
-        .log-success { color: var(--success); }
+        .log-error { color: var(--status-error-text); }
+        .log-success { color: var(--status-success-text); }
+
+        .conn-ping {
+            min-width: 48px;
+            min-height: 24px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 3px 7px;
+            border: 1px solid var(--border-soft);
+            border-radius: 999px;
+            background: var(--surface-deep);
+            color: var(--status-neutral-text);
+            font-family: ui-monospace, "SFMono-Regular", Consolas, monospace;
+            font-size: 10px;
+            font-weight: 700;
+            line-height: 1;
+        }
+        .conn-ping:empty { display: none; }
+        .conn-ping-good {
+            border-color: color-mix(in oklch, var(--success), transparent 70%);
+            background: color-mix(in oklch, var(--success), var(--surface-deep) 88%);
+            color: var(--status-success-text);
+        }
+        .conn-ping-warning {
+            border-color: color-mix(in oklch, var(--warning), transparent 62%);
+            background: color-mix(in oklch, var(--warning), var(--surface-deep) 86%);
+            color: var(--status-warning-text);
+        }
+        .conn-ping-bad {
+            border-color: color-mix(in oklch, var(--error), transparent 62%);
+            background: color-mix(in oklch, var(--error), var(--surface-deep) 87%);
+            color: var(--status-error-text);
+        }
 
         /* Invite Link */
         .invite-box {
@@ -271,10 +614,10 @@
             animation: toastSlideIn 0.3s ease-out, toastFadeOut 0.3s ease-in 2.7s forwards;
             box-shadow: 0 4px 12px rgba(0,0,0,0.3);
         }
-        .toast-success { background: var(--success); color: white; }
+        .toast-success { background: var(--success); color: var(--text-on-green); }
         .toast-error { background: var(--error); color: white; }
-        .toast-info { background: var(--accent); color: white; }
-        .toast-warning { background: #f59e0b; color: white; }
+        .toast-info { background: var(--accent); color: var(--text-on-green); }
+        .toast-warning { background: var(--warning); color: var(--text-on-warm); }
 
         @keyframes toastSlideIn {
             from { opacity: 0; transform: translateY(-20px); }
@@ -283,6 +626,76 @@
         @keyframes toastFadeOut {
             from { opacity: 1; }
             to { opacity: 0; transform: translateY(-10px); }
+        }
+
+        /* Eucalyptus confetti: tiny leaves bursting from the copy-invite
+           button (spawned by popup.js, mirrors the website's effect). The
+           outer span owns the flight path — fast burst that brakes at its
+           peak, then sinks — while the inner leaf rocks around its stem. */
+        .click-leaf {
+            position: fixed;
+            z-index: 3000;
+            margin: -5px 0 0 -4px;
+            pointer-events: none;
+            opacity: 0;
+            animation: leafBurst var(--leaf-dur, 1s) forwards;
+            will-change: transform, opacity;
+        }
+        .click-leaf i {
+            display: block;
+            width: 7px;
+            height: 10px;
+            border-radius: 0 70% 0 70%;
+            background: linear-gradient(135deg, oklch(0.68 0.13 150 / 0.95), oklch(0.5 0.1 145 / 0.85));
+            transform: rotate(var(--leaf-rot, 0deg));
+            animation: leafRock var(--flutter-dur, 0.55s) ease-in-out infinite alternate;
+        }
+        .click-leaf-sage i {
+            background: linear-gradient(135deg, oklch(0.75 0.09 140 / 0.9), oklch(0.58 0.08 145 / 0.8));
+        }
+        .click-leaf-amber i {
+            background: linear-gradient(135deg, oklch(0.68 0.14 55 / 0.95), oklch(0.55 0.13 40 / 0.85));
+        }
+        /* Non-eucalyptus themes retint the burst from their own accent pair so
+           the particles stay on-theme and, because those vars flip with
+           light/dark, remain visible against every background. */
+        html[data-palette="cyber"] .click-leaf i,
+        html[data-palette="graphite"] .click-leaf i {
+            background: linear-gradient(135deg, var(--accent), var(--accent-hover));
+        }
+        html[data-palette="cyber"] .click-leaf-sage i,
+        html[data-palette="graphite"] .click-leaf-sage i {
+            background: linear-gradient(135deg, var(--accent-hover), var(--accent));
+        }
+        html[data-palette="cyber"] .click-leaf-amber i {
+            background: linear-gradient(135deg, var(--accent-terracotta), var(--accent));
+        }
+        html[data-palette="graphite"] .click-leaf-amber i {
+            background: linear-gradient(135deg, var(--text-secondary), var(--accent));
+        }
+        @keyframes leafBurst {
+            0% {
+                opacity: 0;
+                transform: translate(0, 0) scale(var(--leaf-scale, 1));
+                animation-timing-function: cubic-bezier(0.16, 0.84, 0.44, 1);
+            }
+            10% { opacity: 1; }
+            45% {
+                opacity: 1;
+                transform: translate(var(--leaf-x, 0), var(--leaf-y, -14px)) scale(var(--leaf-scale, 1));
+                animation-timing-function: cubic-bezier(0.55, 0.06, 0.68, 0.19);
+            }
+            100% {
+                opacity: 0;
+                transform: translate(calc(var(--leaf-x, 0) * 1.4), calc(var(--leaf-y, -14px) + 30px)) scale(calc(var(--leaf-scale, 1) * 0.92));
+            }
+        }
+        @keyframes leafRock {
+            from { transform: rotate(calc(var(--leaf-rot, 0deg) - 24deg)); }
+            to { transform: rotate(calc(var(--leaf-rot, 0deg) + 24deg)); }
+        }
+        @media (prefers-reduced-motion: reduce) {
+            .click-leaf { display: none; }
         }
 
         @keyframes fadeSlideIn {
@@ -309,7 +722,7 @@
             position: absolute;
             cursor: pointer;
             top: 0; left: 0; right: 0; bottom: 0;
-            background-color: #334155;
+            background-color: var(--border-strong);
             transition: .3s;
             border-radius: 20px;
         }
@@ -320,7 +733,7 @@
             width: 14px;
             left: 3px;
             bottom: 3px;
-            background-color: #94a3b8;
+            background-color: var(--status-neutral-text);
             transition: .3s;
             border-radius: 50%;
         }
@@ -331,14 +744,497 @@
             transform: translateX(16px);
             background-color: white;
         }
+        .toggle-switch:has(input:focus-visible) .slider {
+            outline: 2px solid var(--accent-hover);
+            outline-offset: 3px;
+        }
         .popup-footer {
-            margin-top: 20px;
-            text-align: center;
-            border-top: 1px solid rgba(255,255,255,0.05);
-            padding-top: 10px;
+            margin-top: 16px;
+            padding: 11px 2px 2px;
+            border-top: 1px solid var(--border-soft);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+        }
+        .footer-review {
+            flex: none;
+            min-height: 30px;
+            display: inline-flex;
+            align-items: center;
+            padding: 4px 8px;
+            border: 1px solid color-mix(in oklch, var(--warning), transparent 68%);
+            border-radius: 7px;
+            background: color-mix(in oklch, var(--warning), transparent 91%);
+            color: var(--status-warning-text) !important;
+            font-size: 11px;
+            font-weight: 700;
+        }
+        .footer-links {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .footer-links a {
+            min-height: 30px;
+            display: inline-flex;
+            align-items: center;
+            padding: 4px 7px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+        .footer-links a:hover {
+            background: var(--surface-alt);
+        }
+
+        /* Unified interaction layer: the popup is a compact control surface,
+           so every actionable target gets the same tactile and keyboard cues. */
+        button,
+        select,
+        summary,
+        a {
+            -webkit-tap-highlight-color: transparent;
+        }
+        button:not(:disabled):active,
+        .tab-btn:not(:disabled):active {
+            transform: translateY(1px) scale(0.985);
+        }
+        details.form-group {
+            background: var(--card);
+            border: 1px solid var(--border-strong);
+            border-radius: var(--radius);
+            margin-bottom: 12px;
+            transition: border-color 0.2s, background-color 0.2s;
+            overflow: hidden;
+        }
+        details.form-group:hover {
+            border-color: var(--accent);
+        }
+        details.form-group > summary {
+            min-height: 38px;
+            padding: 10px 14px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            cursor: pointer;
+            font-weight: 700;
+            font-size: 13px;
+            color: var(--text-primary);
+            user-select: none;
+            list-style: none;
+        }
+        details.form-group > summary::-webkit-details-marker {
+            display: none;
+        }
+        details.form-group > summary::after {
+            content: "";
+            display: inline-block;
+            width: 6px;
+            height: 6px;
+            border-right: 2px solid var(--text-muted);
+            border-bottom: 2px solid var(--text-muted);
+            transform: rotate(-45deg);
+            transition: transform 0.2s ease;
+            margin-right: 4px;
+        }
+        details[open].form-group > summary::after {
+            transform: rotate(45deg);
+        }
+        details.form-group > .details-content {
+            padding: 4px 14px 14px 14px;
+            border-top: 1px solid var(--border-soft);
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        /* Settings are deliberately quieter than the control tabs: strong
+           grouping, neutral controls, and no decorative emoji iconography. */
+        #tab-settings {
+            display: none;
+        }
+        #tab-settings.active {
+            display: block;
+        }
+        #tab-settings details.form-group {
+            background: color-mix(in oklch, var(--card), var(--bg) 12%);
+            border-color: var(--border-soft);
+            box-shadow: 0 10px 24px oklch(0.08 0.02 140 / 0.16);
+        }
+        #tab-settings details.form-group:hover {
+            border-color: var(--border-strong);
+        }
+        #tab-settings details.form-group[open] {
+            border-color: color-mix(in oklch, var(--accent), var(--border-strong) 72%);
+        }
+        #tab-settings details.form-group > summary {
+            min-height: 44px;
+            padding: 0 14px;
+            font-size: 12px;
+            font-weight: 750;
+            letter-spacing: 0.025em;
+        }
+        #tab-settings details.form-group > .details-content {
+            gap: 0;
+            padding: 2px 14px 8px;
+        }
+        .settings-row {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) 154px;
+            align-items: center;
+            gap: 14px;
+            min-height: 54px;
+            border-bottom: 1px solid var(--border-soft);
+        }
+        .settings-row:last-child {
+            border-bottom: 0;
+        }
+        .settings-row > label:not(.toggle-switch) {
+            margin: 0;
+            color: var(--text);
+            font-size: 12px;
+            font-weight: 600;
+            line-height: 1.3;
+            letter-spacing: 0;
+            text-transform: none;
+        }
+
+        .transport-actions,
+        .sync-actions {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+        .sync-actions {
+            margin-bottom: 15px;
+            align-items: stretch;
+        }
+        .transport-actions .primary,
+        .sync-actions .primary {
+            flex: 1;
+            margin-top: 0;
+            border: 1px solid transparent;
+        }
+        #playBtn {
+            background: var(--accent);
+            color: var(--text-on-green);
+        }
+        #pauseBtn {
+            background: var(--surface-alt);
+            border-color: var(--border-strong);
+            color: var(--text);
+        }
+        #pauseBtn:hover {
+            background: color-mix(in oklch, var(--surface-alt), var(--text) 7%);
+        }
+        #forceSyncBtn {
+            background: transparent;
+            border-color: color-mix(in oklch, var(--accent), transparent 42%);
+            color: var(--accent-hover);
+        }
+        #forceSyncBtn:hover {
+            background: color-mix(in oklch, var(--accent), transparent 88%);
+        }
+        .action-icon::before {
+            content: "";
+            width: 13px;
+            height: 13px;
+            display: inline-block;
+            margin-right: 6px;
+            vertical-align: -2px;
+            background: currentColor;
+            mask-position: center;
+            mask-repeat: no-repeat;
+            mask-size: contain;
+        }
+        #playBtn::before {
+            mask-image: url("icons/play.svg");
+        }
+        #pauseBtn::before {
+            mask-image: url("icons/pause.svg");
+        }
+        #forceSyncBtn::before {
+            mask-image: url("icons/sync.svg");
+        }
+        .settings-control,
+        #tab-settings input[type="text"] {
+            width: 154px;
+            height: 40px;
+            min-height: 40px;
+            margin: 0;
+            border-radius: 9px;
+            border-color: var(--border-strong);
+            background-color: var(--surface-deep);
+            color: var(--text);
+            font-size: 12px;
+            font-weight: 600;
+            line-height: 38px;
+        }
+        #tab-settings input[type="text"] {
+            padding: 0 11px;
+        }
+        .settings-select {
+            position: relative;
+            width: 154px;
+        }
+        .settings-select::after {
+            content: "";
+            position: absolute;
+            top: 50%;
+            right: 12px;
+            width: 6px;
+            height: 6px;
+            border-right: 1.5px solid var(--text-muted);
+            border-bottom: 1.5px solid var(--text-muted);
+            transform: translateY(-68%) rotate(45deg);
+            pointer-events: none;
+        }
+        .settings-select select {
+            appearance: none;
+            display: block;
+            padding: 0 32px 0 11px;
+            cursor: pointer;
+            text-align: left;
+            text-align-last: left;
+        }
+        .theme-picker {
+            position: relative;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            width: 154px;
+            padding: 3px;
+            border: 1px solid var(--border-strong);
+            border-radius: 10px;
+            background: var(--surface-deep);
+        }
+        .theme-picker select {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            margin: -1px;
+            padding: 0;
+            overflow: hidden;
+            clip: rect(0 0 0 0);
+            white-space: nowrap;
+            border: 0;
+        }
+        .theme-choice {
+            min-width: 0;
+            min-height: 32px;
+            margin: 0;
+            padding: 0 4px;
+            border: 0;
+            border-radius: 7px;
+            background: transparent;
+            color: var(--text-muted);
+            font-family: inherit;
+            font-size: 10px;
+            font-weight: 700;
+            line-height: 1;
+            cursor: pointer;
+            transition: background-color 0.18s ease, color 0.18s ease, box-shadow 0.18s ease;
+        }
+        .theme-choice:hover {
+            color: var(--text);
+        }
+        .theme-choice.active {
+            background: var(--surface-alt);
+            color: var(--text);
+            box-shadow: 0 1px 5px oklch(0.08 0.02 150 / 0.32), inset 0 0 0 1px var(--border-soft);
+        }
+
+        /* Theme (colour palette) picker: a full-width row of swatch cards so
+           each curated scheme previews its own colours before selection. */
+        .palette-row {
+            display: block;
+            padding: 12px 0 4px;
+            border-bottom: 1px solid var(--border-soft);
+        }
+        .palette-row > label {
+            margin: 0 0 9px;
+            color: var(--text);
+            font-size: 12px;
+            font-weight: 600;
+            letter-spacing: 0;
+            text-transform: none;
+        }
+        .palette-picker {
+            position: relative;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+        }
+        .palette-picker select {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            margin: -1px;
+            padding: 0;
+            overflow: hidden;
+            clip: rect(0 0 0 0);
+            white-space: nowrap;
+            border: 0;
+        }
+        .palette-choice {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            min-height: 62px;
+            margin: 0;
+            padding: 10px 4px 9px;
+            border: 1px solid var(--border-strong);
+            border-radius: 10px;
+            background: var(--surface-deep);
+            color: var(--text-muted);
+            font-family: inherit;
+            font-size: 11px;
+            font-weight: 700;
+            line-height: 1;
+            cursor: pointer;
+            transition: border-color 0.18s ease, background-color 0.18s ease, color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease;
+        }
+        .palette-choice:hover {
+            color: var(--text);
+            border-color: var(--accent);
+            transform: translateY(-1px);
+        }
+        .palette-choice.active {
+            color: var(--text);
+            border-color: var(--accent);
+            background: color-mix(in oklch, var(--accent) 10%, var(--surface-deep));
+            box-shadow: 0 0 0 1px var(--accent), 0 5px 14px oklch(0.08 0.02 260 / 0.28);
+        }
+        .palette-swatch {
+            display: inline-flex;
+            padding: 3px;
+            border-radius: 999px;
+            background: var(--surface-alt);
+            box-shadow: inset 0 0 0 1px var(--border-soft);
+        }
+        .palette-swatch i {
+            width: 13px;
+            height: 13px;
+            border-radius: 50%;
+            display: block;
+            box-shadow: inset 0 0 0 1px oklch(0 0 0 / 0.22);
+        }
+        .palette-swatch i + i {
+            margin-left: -5px;
+        }
+        .palette-labeltext {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 2px;
+        }
+        .palette-name {
+            font-size: 11px;
+            font-weight: 700;
+            line-height: 1.1;
+        }
+        .palette-desc {
+            font-size: 9px;
+            font-weight: 600;
+            line-height: 1.1;
+            letter-spacing: 0.01em;
+            color: var(--text-muted);
+            opacity: 0.85;
+        }
+        .palette-choice.active .palette-desc {
+            color: var(--accent);
+            opacity: 1;
+        }
+        .tab-btn[data-tab="tab-dev"],
+        #devToolsTabBtn {
+            color: color-mix(in oklch, var(--text-muted), transparent 18%);
+            font-size: 11px;
+        }
+        .tab-btn[data-tab="tab-dev"].active,
+        #devToolsTabBtn.active {
+            color: var(--text-on-green);
+        }
+        .settings-row .toggle-switch {
+            justify-self: end;
+            margin: 0 2px 0 0;
+        }
+        .settings-action {
+            justify-self: end;
+            min-width: 76px;
+            min-height: 34px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0 12px;
+            border: 1px solid color-mix(in oklch, var(--accent), transparent 62%);
+            border-radius: 9px;
+            background: color-mix(in oklch, var(--accent), transparent 90%);
+            color: var(--accent);
+            font-size: 11px;
+            font-weight: 750;
+            text-decoration: none;
+        }
+        .settings-action:hover {
+            background: color-mix(in oklch, var(--accent), transparent 84%);
+        }
+        .settings-tools {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            padding: 12px 0 8px;
+        }
+        .settings-tools button.secondary {
+            min-height: 38px;
+            margin: 0;
+            padding: 8px;
+            font-size: 11px;
+        }
+        .settings-note {
+            margin: 0;
             color: var(--text-muted);
             font-size: 10px;
-            opacity: 0.6;
+            line-height: 1.45;
+            text-align: left;
+        }
+        .settings-issue-link {
+            margin: 8px 0 2px;
+            padding-top: 9px;
+            border-top: 1px solid var(--border-soft);
+            font-size: 10px;
+            text-align: left;
+        }
+        .settings-issue-link a {
+            color: var(--text-muted);
+            text-decoration: none;
+        }
+        .settings-issue-link a:hover {
+            color: var(--accent);
+        }
+        #section-join > .info-card,
+        #section-active > .info-card,
+        #tab-sync .info-card {
+            position: relative;
+            overflow: hidden;
+        }
+        #section-active > .info-card:first-child::before {
+            content: "";
+            position: absolute;
+            inset: 0 auto 0 0;
+            width: 3px;
+            background: var(--accent);
+        }
+        #playBtn,
+        #pauseBtn,
+        #forceSyncBtn {
+            min-height: 42px;
+        }
+        #leaveBtn {
+            background: transparent;
+            border: 1px solid color-mix(in oklch, var(--error), transparent 35%);
+        }
+        #leaveBtn:hover {
+            background: color-mix(in oklch, var(--error), transparent 88%);
         }
         .popup-footer a {
             color: var(--text-muted);
@@ -348,6 +1244,45 @@
         .popup-footer a:hover {
             color: var(--accent);
             opacity: 1;
+        }
+
+        /* Light theme polish: preserve the same depth hierarchy without
+           carrying dark-only inline colors into form controls and cards. */
+        html.theme-light .tabs,
+        html.theme-light .info-card,
+        html.theme-light details.form-group,
+        html.theme-light .form-group {
+            box-shadow: 0 8px 24px oklch(0.22 0.035 140 / 0.07);
+        }
+        html.theme-light input,
+        html.theme-light select,
+        html.theme-light option {
+            color: var(--text) !important;
+            background-color: var(--surface) !important;
+        }
+        html.theme-light button.secondary {
+            background: var(--surface-alt);
+            color: var(--text);
+            border: 1px solid var(--border-strong);
+        }
+        html.theme-light button.secondary:hover {
+            background: oklch(0.86 0.035 125);
+        }
+        html.theme-light .mock-card,
+        html.theme-light .peer-item {
+            border-color: var(--border-strong);
+        }
+        html.theme-light .slider:before {
+            background-color: oklch(0.62 0.025 125);
+        }
+        html.theme-light input:checked + .slider:before {
+            background-color: white;
+        }
+        html.theme-light .popup-footer {
+            border-top-color: var(--border-soft);
+        }
+        html.theme-light .tab-btn.active {
+            color: var(--text-on-green);
         }
         .feature-hint {
             display: inline-block;
@@ -365,8 +1300,8 @@
             50% { opacity: 1; transform: scale(1.3); }
         }
         @keyframes spotlightPulse {
-            0%, 100% { box-shadow: 0 0 0 9999px rgba(15, 23, 42, 0.65), 0 0 0 0px var(--accent); }
-            50% { box-shadow: 0 0 0 9999px rgba(15, 23, 42, 0.65), 0 0 0 6px var(--accent); }
+            0%, 100% { box-shadow: 0 0 0 9999px rgba(16, 25, 14, 0.65), 0 0 0 0px var(--accent); }
+            50% { box-shadow: 0 0 0 9999px rgba(16, 25, 14, 0.65), 0 0 0 6px var(--accent); }
         }
         @keyframes floatHint {
             0%, 100% { transform: translateY(0); }
@@ -376,6 +1311,7 @@
 </head>
 <body>
     <div id="toast-container"></div>
+    <main>
     <div class="header-row">
                     <h1 data-i18n="APP_TITLE"><img src="icons/icon128.png" alt="KoalaSync Logo">KoalaSync</h1>
                     <a href="https://github.com/Shik3i/KoalaSync" target="_blank" class="popup-version">
@@ -399,12 +1335,12 @@
 
         <!-- JOIN SECTION: Visible when not in a room -->
         <div id="section-join">
-            <button id="createRoomBtn" class="primary" style="margin-bottom: 16px; padding: 14px; font-size: 15px; background: linear-gradient(135deg, #6366f1, #a855f7); box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);" data-i18n="BTN_CREATE_ROOM">+ Create New Room</button>
-            <details style="margin-bottom: 12px; background: var(--card); border: 1px solid #334155; border-radius: 8px; padding: 8px;">
-                <summary style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; cursor: pointer; outline: none;" data-i18n="MANUAL_CONNECT_HEADER">Manual Connect / Advanced</summary>
-                <div style="margin-top: 12px;">
+            <button id="createRoomBtn" class="primary" style="margin-bottom: 16px; padding: 14px; font-size: 15px; box-shadow: 0 4px 12px oklch(0.40 0.10 155 / 0.4);" data-i18n="BTN_CREATE_ROOM">+ Create New Room</button>
+            <details class="form-group" name="settings-accordion">
+                <summary data-i18n="MANUAL_CONNECT_HEADER">Manual Connect / Advanced</summary>
+                <div class="details-content">
             <!-- Server selection — its own concern, kept visually separate from the room fields. -->
-            <div style="background: var(--bg); border: 1px solid #334155; border-radius: 8px; padding: 10px; margin-bottom: 14px;">
+            <div style="background: var(--bg); border: 1px solid var(--border-strong); border-radius: 8px; padding: 10px; margin-bottom: 14px;">
                 <div class="form-group" style="margin-bottom:0;">
                     <label title="Select which KoalaSync server to use" data-i18n="LABEL_SERVER">Server</label>
                     <div style="display:flex; gap:4px; margin-bottom:0;">
@@ -416,11 +1352,11 @@
             </div>
             <!-- Room credentials — distinct group below the server picker. -->
             <div class="form-group">
-                <label title="The unique identifier for your sync room" data-i18n="LABEL_ROOM_ID" data-i18n-title="LABEL_ROOM_ID_TOOLTIP">Room ID</label>
+                <label for="roomId" title="The unique identifier for your sync room" data-i18n="LABEL_ROOM_ID" data-i18n-title="LABEL_ROOM_ID_TOOLTIP">Room ID</label>
                 <input type="text" id="roomId" data-i18n-placeholder="PLACEHOLDER_ROOM_ID" data-i18n-title="PLACEHOLDER_ROOM_ID_TOOLTIP" placeholder="Enter Room ID" title="The unique ID of the room you want to join">
             </div>
             <div class="form-group">
-                <label title="Optional password to restrict room access" data-i18n="LABEL_PASSWORD" data-i18n-title="LABEL_PASSWORD_TOOLTIP">Password (Optional)</label>
+                <label for="password" title="Optional password to restrict room access" data-i18n="LABEL_PASSWORD" data-i18n-title="LABEL_PASSWORD_TOOLTIP">Password (Optional)</label>
                 <input type="password" id="password" data-i18n-placeholder="PLACEHOLDER_PASSWORD" data-i18n-title="PLACEHOLDER_PASSWORD_TOOLTIP" placeholder="Room Password (optional)" title="Password for the room (leave empty if none)">
             </div>
             <div id="roomError" style="display:none; color:var(--error); font-size:11px; margin-bottom:8px; text-align:center;"></div>
@@ -451,23 +1387,23 @@
                 <label title="Share this link with friends so they can join" data-i18n="LABEL_INVITE_LINK" data-i18n-title="LABEL_INVITE_LINK_TOOLTIP">Invite Link</label>
                 <div class="invite-box">
                     <input type="text" id="inviteLink" readonly>
-                    <button id="copyInvite" class="secondary">📋</button>
+                    <button id="copyInvite" class="secondary" title="Copy invite link" aria-label="Copy invite link">📋</button>
                 </div>
             </div>
 
             <div id="hostControlCard" class="info-card" style="margin-bottom: 20px; display:none;">
                 <div style="display:flex; justify-content:space-between; align-items:center;">
                     <label style="margin:0;" title="Restrict who can control playback in this room" data-i18n="LABEL_HOST_CONTROL" data-i18n-title="LABEL_HOST_CONTROL_TOOLTIP">Host Control</label>
-                    <span id="hostRoleBadge" style="font-size:10px; font-weight:700; text-transform:uppercase; padding:2px 8px; border-radius:8px; background:var(--accent); color:#fff;"></span>
+                    <span id="hostRoleBadge" style="font-size:10px; font-weight:700; text-transform:uppercase; padding:2px 8px; border-radius:8px; background:var(--accent); color:var(--text-on-green);"></span>
                 </div>
                 <div id="hostControlToggleRow" style="display:none; align-items:center; justify-content:space-between; gap:12px; margin-top:12px;">
-                    <span style="font-size:12px; color:var(--text); line-height:1.3;" data-i18n="LABEL_HOST_ONLY_TOGGLE">Only I can control playback</span>
+                    <label for="hostControlToggle" style="font-size:12px; color:var(--text); line-height:1.3; margin:0; text-transform:none; font-weight:400;" data-i18n="LABEL_HOST_ONLY_TOGGLE">Only I can control playback</label>
                     <label class="toggle-switch" style="flex:none;">
                         <input type="checkbox" id="hostControlToggle">
                         <span class="slider"></span>
                     </label>
                 </div>
-                <div id="hostControlCohostHint" style="display:none; margin-top:10px; padding-top:10px; border-top:1px solid #334155; font-size:11px; color:var(--text-muted); line-height:1.4;" data-i18n="NOTICE_COHOST_HINT">Tip: grant control to individual viewers in the participant list below.</div>
+                <div id="hostControlCohostHint" style="display:none; margin-top:10px; padding-top:10px; border-top:1px solid var(--border-strong); font-size:11px; color:var(--text-muted); line-height:1.4;" data-i18n="NOTICE_COHOST_HINT">Tip: grant control to individual viewers in the participant list below.</div>
                 <div id="hostControlGuestNote" style="display:none; margin-top:10px; font-size:12px; color:var(--text-muted);" data-i18n="NOTICE_HOST_CONTROLS">The host controls playback for everyone.</div>
             </div>
 
@@ -487,12 +1423,12 @@
         <!-- SYNC ACTIVE: Visible when in a room -->
         <div id="sync-active">
         <div class="form-group" style="position: relative;">
-            <label title="Choose the browser tab containing the video to sync" data-i18n="LABEL_SELECT_VIDEO" data-i18n-title="LABEL_SELECT_VIDEO_TOOLTIP">Select Video</label>
+            <label for="targetTab" title="Choose the browser tab containing the video to sync" data-i18n="LABEL_SELECT_VIDEO" data-i18n-title="LABEL_SELECT_VIDEO_TOOLTIP">Select Video</label>
             <select id="targetTab">
                 <option value="" data-i18n="OPTION_SELECT_TAB">-- Select a Tab --</option>
             </select>
             <!-- Hint Tooltip -->
-            <div id="targetTabHint" style="display: none; position: absolute; top: -25px; right: 0; background: var(--accent); color: white; padding: 4px 8px; border-radius: 6px; font-size: 11px; font-weight: bold; pointer-events: none; animation: floatHint 2s ease-in-out infinite; box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4); z-index: 10;" data-i18n="HINT_SELECT_VIDEO">
+            <div id="targetTabHint" style="display: none; position: absolute; top: -25px; right: 0; background: var(--accent); color: var(--text-on-green); padding: 4px 8px; border-radius: 6px; font-size: 11px; font-weight: bold; pointer-events: none; animation: floatHint 2s ease-in-out infinite; box-shadow: 0 4px 12px color-mix(in oklch, var(--accent), transparent 60%); z-index: 10;" data-i18n="HINT_SELECT_VIDEO">
                 Select your video here!
                 <div style="position: absolute; bottom: -4px; right: 20px; width: 8px; height: 8px; background: var(--accent); transform: rotate(45deg);"></div>
             </div>
@@ -500,16 +1436,16 @@
         
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
             <label style="margin: 0;" data-i18n="LABEL_REMOTE_CONTROL">Remote Control</label>
-            <button id="syncTabCopyInvite" title="Copy Invite Link" style="background:transparent; border: 1px solid #334155; border-radius: 6px; padding: 4px 8px; font-size: 11px; cursor:pointer; opacity:0.8; transition: opacity 0.2s; color: var(--text-muted); display: flex; align-items: center; gap: 4px; white-space: nowrap;" data-i18n="BTN_COPY_INVITE" data-i18n-title="BTN_COPY_INVITE_TOOLTIP">📋 Invite Link</button>
+            <button id="syncTabCopyInvite" title="Copy Invite Link" style="background:transparent; border: 1px solid var(--border-strong); border-radius: 6px; padding: 4px 8px; font-size: 11px; cursor:pointer; opacity:0.8; transition: opacity 0.2s; color: var(--text-muted); display: flex; align-items: center; gap: 4px; white-space: nowrap;" data-i18n="BTN_COPY_INVITE" data-i18n-title="BTN_COPY_INVITE_TOOLTIP">📋 Invite Link</button>
         </div>
-        <div style="display: flex; gap: 8px; margin-bottom: 12px;">
-            <button id="playBtn" class="primary" style="flex:1; background: var(--success);" title="Send a Play command to everyone" data-i18n="BTN_PLAY" data-i18n-title="BTN_PLAY_TOOLTIP">▶ Play</button>
-            <button id="pauseBtn" class="primary" style="flex:1; background: var(--error);" title="Send a Pause command to everyone" data-i18n="BTN_PAUSE" data-i18n-title="BTN_PAUSE_TOOLTIP">⏸ Pause</button>
+        <div class="transport-actions">
+            <button id="playBtn" class="primary action-icon" title="Send a Play command to everyone" data-i18n="BTN_PLAY" data-i18n-title="BTN_PLAY_TOOLTIP">Play</button>
+            <button id="pauseBtn" class="primary action-icon" title="Send a Pause command to everyone" data-i18n="BTN_PAUSE" data-i18n-title="BTN_PAUSE_TOOLTIP">Pause</button>
         </div>
 
-        <div style="display: flex; gap: 8px; margin-bottom: 15px; align-items: stretch;">
-            <button id="forceSyncBtn" class="primary" style="background: linear-gradient(135deg, #6366f1, #a855f7); flex: 1;" title="Force all users to sync up" data-i18n="BTN_SYNC" data-i18n-title="BTN_SYNC_TOOLTIP">⚡ SYNC</button>
-            <select id="forceSyncMode" style="flex: 1; background: var(--card); border: 1px solid #334155; color: white; padding: 10px 8px; border-radius: 8px; font-size: 11px; font-family: inherit; cursor: pointer; align-self: stretch;" title="Choose sync target" data-i18n-title="OPTION_JUMP_MODE_TOOLTIP">
+        <div class="sync-actions">
+            <button id="forceSyncBtn" class="primary action-icon" title="Force all users to sync up" data-i18n="BTN_SYNC" data-i18n-title="BTN_SYNC_TOOLTIP">Sync</button>
+            <select id="forceSyncMode" style="flex: 1; background: var(--card); border: 1px solid var(--border-strong); color: var(--text); padding: 10px 8px; border-radius: 8px; font-size: 11px; font-family: inherit; cursor: pointer; align-self: stretch;" title="Choose sync target" data-i18n-title="OPTION_JUMP_MODE_TOOLTIP">
                 <option value="jump-to-others" data-i18n="OPTION_JUMP_TO_OTHERS">Jump to Others</option>
                 <option value="jump-to-me" data-i18n="OPTION_JUMP_TO_ME">Jump to Me</option>
             </select>
@@ -540,112 +1476,172 @@
             <div style="font-size: 32px; margin-bottom: 12px;">🔒</div>
             <h3 style="margin: 0 0 8px 0; color: var(--accent); font-size: 15px;" data-i18n="LOBBY_CONNECT_FIRST">Connect to a room first</h3>
             <p style="color: var(--text-muted); font-size: 12px; margin-bottom: 20px;" data-i18n="LOBBY_CONNECT_FIRST_DESC">You need to join a room via an invite link or create a new one to sync videos.</p>
-            <button id="syncTabCreateRoomBtn" class="primary" style="padding: 12px; font-size: 14px; background: linear-gradient(135deg, #6366f1, #a855f7); box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);" title="Create a new random room and join it" data-i18n="BTN_CREATE_ROOM_ALT" data-i18n-title="BTN_CREATE_ROOM_ALT_TOOLTIP">Create New Room</button>
+            <button id="syncTabCreateRoomBtn" class="primary" style="padding: 12px; font-size: 14px; box-shadow: 0 4px 12px oklch(0.40 0.10 155 / 0.4);" title="Create a new random room and join it" data-i18n="BTN_CREATE_ROOM_ALT" data-i18n-title="BTN_CREATE_ROOM_ALT_TOOLTIP">Create New Room</button>
         </div>
     </div>
     
     <!-- Settings Tab -->
     <div id="tab-settings" class="tab-content">
-        <div class="form-group" style="display: flex; align-items: center; justify-content: space-between; background: var(--card); padding: 10px; border-radius: 8px; margin-bottom: 12px; border: 1px solid #334155;">
-            <label style="margin-bottom: 0;" title="Username helps others identify you." data-i18n="LABEL_USERNAME" data-i18n-title="LABEL_USERNAME_TOOLTIP">Your Username</label>
-            <input type="text" id="username" data-i18n-placeholder="PLACEHOLDER_USERNAME" placeholder="Anonymous Koala" maxlength="20" style="width: 150px;">
-        </div>
-
-        <details class="form-group" style="background: var(--card); padding: 10px; border-radius: 8px; margin-bottom: 12px; border: 1px solid #334155;">
-            <summary style="cursor: pointer; font-size: 12px; font-weight: 700; color: var(--text);" title="Choose which titles are sent to the room." data-i18n="LABEL_PRIVACY_SETTINGS" data-i18n-title="LABEL_PRIVACY_SETTINGS_TOOLTIP">Privacy Settings</summary>
-            <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 10px;">
-                <label style="margin-bottom: 0; cursor: help;" title="Send the selected browser tab title to the room." data-i18n="LABEL_SEND_TAB_TITLE" data-i18n-title="LABEL_SEND_TAB_TITLE_TOOLTIP">Send tab title</label>
-                <label class="toggle-switch">
-                    <input type="checkbox" id="sendTabTitle" checked>
-                    <span class="slider"></span>
-                </label>
-            </div>
-            <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 10px;">
-                <label style="margin-bottom: 0; cursor: help;" title="Choose how media titles are sent to the room." data-i18n="LABEL_MEDIA_TITLE_PRIVACY" data-i18n-title="LABEL_MEDIA_TITLE_PRIVACY_TOOLTIP">Media title</label>
-                <select id="mediaTitlePrivacyMode" style="width: 165px; background: var(--bg); border: 1px solid #334155; color: white; padding: 6px 10px; border-radius: 8px; font-size: 12px; cursor: pointer; outline: none; font-family: inherit;">
-                    <option value="full" data-i18n="OPTION_TITLE_PRIVACY_FULL">Send full title</option>
-                    <option value="episode" data-i18n="OPTION_TITLE_PRIVACY_EPISODE">Send episode ID</option>
-                    <option value="hidden" data-i18n="OPTION_TITLE_PRIVACY_HIDDEN">Do not send</option>
-                </select>
+        <details class="form-group" name="settings-accordion" open>
+            <summary title="Change your username, theme, and language." data-i18n="LABEL_SETTINGS_GROUP_PROFILE" data-i18n-title="LABEL_SETTINGS_GROUP_PROFILE_TOOLTIP">Profile &amp; Appearance</summary>
+            <div class="details-content">
+                <div class="settings-row">
+                    <label for="username" title="Username helps others identify you." data-i18n="LABEL_USERNAME" data-i18n-title="LABEL_USERNAME_TOOLTIP">Your Username</label>
+                    <input type="text" id="username" data-i18n-placeholder="PLACEHOLDER_USERNAME" placeholder="Anonymous Koala" maxlength="20">
+                </div>
+                <div class="settings-row">
+                    <label id="themeLabel" for="themeSelector" title="Follow the system theme or choose a fixed appearance">Appearance</label>
+                    <div class="theme-picker" role="group" aria-labelledby="themeLabel">
+                        <select id="themeSelector" aria-label="Appearance" tabindex="-1">
+                            <option id="themeOptionSystem" value="system">System</option>
+                            <option id="themeOptionDark" value="dark">Dark</option>
+                            <option id="themeOptionLight" value="light">Light</option>
+                        </select>
+                        <button id="themeChoiceSystem" class="theme-choice" type="button" data-theme-value="system">System</button>
+                        <button id="themeChoiceDark" class="theme-choice" type="button" data-theme-value="dark">Dark</button>
+                        <button id="themeChoiceLight" class="theme-choice" type="button" data-theme-value="light">Light</button>
+                    </div>
+                </div>
+                <div class="palette-row">
+                    <label id="paletteLabel" for="paletteSelector" title="Pick a curated colour scheme for the extension">Theme</label>
+                    <div class="palette-picker" role="group" aria-labelledby="paletteLabel">
+                        <select id="paletteSelector" aria-label="Theme" tabindex="-1">
+                            <option value="eucalyptus">Eucalyptus</option>
+                            <option value="cyber">Cyber</option>
+                            <option value="graphite">Graphite</option>
+                        </select>
+                        <button id="paletteChoiceEucalyptus" class="palette-choice" type="button" data-palette-value="eucalyptus">
+                            <span class="palette-swatch" aria-hidden="true">
+                                <i style="background: oklch(0.73 0.13 155)"></i>
+                                <i style="background: oklch(0.62 0.14 45)"></i>
+                                <i style="background: oklch(0.30 0.035 150)"></i>
+                            </span>
+                            <span class="palette-labeltext">
+                                <span class="palette-name">Eucalyptus</span>
+                                <span class="palette-desc">Nature</span>
+                            </span>
+                        </button>
+                        <button id="paletteChoiceCyber" class="palette-choice" type="button" data-palette-value="cyber">
+                            <span class="palette-swatch" aria-hidden="true">
+                                <i style="background: oklch(0.64 0.19 275)"></i>
+                                <i style="background: oklch(0.64 0.21 320)"></i>
+                                <i style="background: oklch(0.185 0.04 265)"></i>
+                            </span>
+                            <span class="palette-labeltext">
+                                <span class="palette-name">Cyber</span>
+                                <span class="palette-desc">Classic</span>
+                            </span>
+                        </button>
+                        <button id="paletteChoiceGraphite" class="palette-choice" type="button" data-palette-value="graphite">
+                            <span class="palette-swatch" aria-hidden="true">
+                                <i style="background: oklch(0.95 0.004 260)"></i>
+                                <i style="background: oklch(0.55 0.006 260)"></i>
+                                <i style="background: oklch(0.20 0.004 260)"></i>
+                            </span>
+                            <span class="palette-labeltext">
+                                <span class="palette-name">Graphite</span>
+                                <span class="palette-desc">Minimal</span>
+                            </span>
+                        </button>
+                    </div>
+                </div>
+                <div class="settings-row">
+                    <label for="langSelector" data-i18n="LABEL_LANGUAGE" data-i18n-title="LABEL_LANGUAGE_TOOLTIP" title="Choose your preferred extension language">App Language</label>
+                    <span class="settings-select">
+                        <select id="langSelector" class="settings-control">
+                            <option value="en">🇬🇧 English</option>
+                            <option value="de">🇩🇪 Deutsch</option>
+                            <option value="fr">🇫🇷 Français</option>
+                            <option value="es">🇪🇸 Español</option>
+                            <option value="pt-BR">🇧🇷 Português (Brasil)</option>
+                            <option value="ru">🇷🇺 Русский</option>
+                            <option value="it">🇮🇹 Italiano</option>
+                            <option value="pl">🇵🇱 Polski</option>
+                            <option value="tr">🇹🇷 Türkçe</option>
+                            <option value="nl">🇳🇱 Nederlands</option>
+                            <option value="ja">🇯🇵 日本語</option>
+                            <option value="ko">🇰🇷 한국어</option>
+                            <option value="zh">🇨🇳 中文</option>
+                            <option value="uk">🇺🇦 Українська</option>
+                            <option value="pt">🇵🇹 Português (Portugal)</option>
+                        </select>
+                    </span>
+                </div>
             </div>
         </details>
 
-        <div class="form-group" style="display: flex; align-items: center; justify-content: space-between; background: var(--card); padding: 10px; border-radius: 8px; margin-bottom: 12px; border: 1px solid #334155;">
-            <label style="margin-bottom: 0; cursor: help;" title="Filters out non-video tabs and unrelated domains to keep the list clean" data-i18n="LABEL_HIDE_CLUTTER" data-i18n-title="LABEL_HIDE_CLUTTER_TOOLTIP">Hide Clutter Tabs</label>
-            <label class="toggle-switch">
-                <input type="checkbox" id="filterNoise" checked>
-                <span class="slider"></span>
-            </label>
-        </div>
-
-        <div class="form-group" style="display: flex; align-items: center; justify-content: space-between; background: var(--card); padding: 10px; border-radius: 8px; margin-bottom: 12px; border: 1px solid #334155;">
-            <label style="margin-bottom: 0; cursor: help;" title="Pauses automatically and waits for all peers when an episode changes, then sync-starts together." data-i18n="LABEL_AUTO_SYNC_NEXT" data-i18n-title="LABEL_AUTO_SYNC_NEXT_TOOLTIP">Auto-Sync Next Episode</label>
-            <label class="toggle-switch">
-                <input type="checkbox" id="autoSyncNextEpisode">
-                <span class="slider"></span>
-            </label>
-        </div>
-
-        <div class="form-group" style="display: flex; align-items: center; justify-content: space-between; background: var(--card); padding: 10px; border-radius: 8px; margin-bottom: 12px; border: 1px solid #334155;">
-            <label style="margin-bottom: 0; cursor: help;" title="Automatically copies the invite link to your clipboard when creating a new room." data-i18n="LABEL_AUTO_COPY_INVITE" data-i18n-title="LABEL_AUTO_COPY_INVITE_TOOLTIP">Auto-Copy Invite Link</label>
-            <label class="toggle-switch">
-                <input type="checkbox" id="autoCopyInvite" checked>
-                <span class="slider"></span>
-            </label>
-        </div>
-
-        <div class="form-group" style="display: flex; align-items: center; justify-content: space-between; background: var(--card); padding: 10px; border-radius: 8px; margin-bottom: 12px; border: 1px solid #334155;">
-            <label style="margin-bottom: 0; cursor: help;" title="Shows native system notifications when someone joins/leaves or plays/pauses." data-i18n="LABEL_NOTIFICATIONS" data-i18n-title="LABEL_NOTIFICATIONS_TOOLTIP">Browser Notifications</label>
-            <label class="toggle-switch">
-                <input type="checkbox" id="browserNotifications">
-                <span class="slider"></span>
-            </label>
-        </div>
-
-        <div class="form-group" style="display: flex; align-items: center; justify-content: space-between; background: var(--card); padding: 10px 12px; border-radius: 8px; margin-bottom: 12px; border: 1px solid #334155;">
-            <div style="display: flex; align-items: center; gap: 8px;">
-                <label id="audioProcessingLabel" style="margin-bottom: 0; cursor: help; white-space: nowrap; font-size: 13px;" data-i18n="LABEL_AUDIO_PROCESSING" data-i18n-title="LABEL_AUDIO_PROCESSING_TOOLTIP">Audio Processing</label>
+        <details class="form-group" name="settings-accordion">
+            <summary title="Choose which titles are sent to the room." data-i18n="LABEL_PRIVACY_SETTINGS" data-i18n-title="LABEL_PRIVACY_SETTINGS_TOOLTIP">Privacy</summary>
+            <div class="details-content">
+                <div class="settings-row">
+                    <label for="sendTabTitle" title="Send the selected browser tab title to the room." data-i18n="LABEL_SEND_TAB_TITLE" data-i18n-title="LABEL_SEND_TAB_TITLE_TOOLTIP">Send tab title</label>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="sendTabTitle" checked>
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                <div class="settings-row">
+                    <label for="mediaTitlePrivacyMode" title="Choose how media titles are sent to the room." data-i18n="LABEL_MEDIA_TITLE_PRIVACY" data-i18n-title="LABEL_MEDIA_TITLE_PRIVACY_TOOLTIP">Media title</label>
+                    <span class="settings-select">
+                        <select id="mediaTitlePrivacyMode" class="settings-control">
+                            <option value="full" data-i18n="OPTION_TITLE_PRIVACY_FULL">Send full title</option>
+                            <option value="episode" data-i18n="OPTION_TITLE_PRIVACY_EPISODE">Send episode ID</option>
+                            <option value="hidden" data-i18n="OPTION_TITLE_PRIVACY_HIDDEN">Do not send</option>
+                        </select>
+                    </span>
+                </div>
             </div>
-            <a id="audioSettingsLink" href="#" style="font-size: 11px; color: var(--accent); text-decoration: none; white-space: nowrap; background: rgba(99,102,241,0.12); padding: 5px 12px; border-radius: 6px; font-weight: 600; transition: background 0.2s;" data-i18n="AUDIO_OPEN_SETTINGS">Open</a>
-        </div>
+        </details>
 
-        <div class="form-group" style="display: flex; align-items: center; justify-content: space-between; background: var(--card); padding: 10px; border-radius: 8px; margin-bottom: 12px; border: 1px solid #334155;">
-            <label style="margin-bottom: 0;" data-i18n="LABEL_LANGUAGE" data-i18n-title="LABEL_LANGUAGE_TOOLTIP" title="Choose your preferred extension language">App Language</label>
-            <select id="langSelector" style="width: 165px; background: var(--bg); border: 1px solid #334155; color: white; padding: 6px 10px; border-radius: 8px; font-size: 13px; cursor: pointer; outline: none; font-family: inherit;">
-                <option value="en">🇬🇧 English</option>
-                <option value="de">🇩🇪 Deutsch</option>
-                <option value="fr">🇫🇷 Français</option>
-                <option value="es">🇪🇸 Español</option>
-                <option value="pt-BR">🇧🇷 Português (Brasil)</option>
-                <option value="ru">🇷🇺 Русский</option>
-                <option value="it">🇮🇹 Italiano</option>
-                <option value="pl">🇵🇱 Polski</option>
-                <option value="tr">🇹🇷 Türkçe</option>
-                <option value="nl">🇳🇱 Nederlands</option>
-                <option value="ja">🇯🇵 日本語</option>
-                <option value="ko">🇰🇷 한국어</option>
-                <option value="zh">🇨🇳 中文</option>
-                <option value="uk">🇺🇦 Українська</option>
-                <option value="pt">🇵🇹 Português (Portugal)</option>
-            </select>
-        </div>
+        <details class="form-group" name="settings-accordion">
+            <summary title="Customize playback, notifications, and audio preferences." data-i18n="LABEL_SETTINGS_GROUP_SYNC" data-i18n-title="LABEL_SETTINGS_GROUP_SYNC_TOOLTIP">Playback &amp; Sync</summary>
+            <div class="details-content">
+                <div class="settings-row">
+                    <label for="autoSyncNextEpisode" title="Pauses automatically and waits for all peers when an episode changes, then sync-starts together." data-i18n="LABEL_AUTO_SYNC_NEXT" data-i18n-title="LABEL_AUTO_SYNC_NEXT_TOOLTIP">Auto-Sync Next Episode</label>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="autoSyncNextEpisode">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                <div class="settings-row">
+                    <label for="filterNoise" title="Filters out non-video tabs and unrelated domains to keep the list clean" data-i18n="LABEL_HIDE_CLUTTER" data-i18n-title="LABEL_HIDE_CLUTTER_TOOLTIP">Hide Clutter Tabs</label>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="filterNoise" checked>
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                <div class="settings-row">
+                    <label for="autoCopyInvite" title="Automatically copies the invite link to your clipboard when creating a new room." data-i18n="LABEL_AUTO_COPY_INVITE" data-i18n-title="LABEL_AUTO_COPY_INVITE_TOOLTIP">Auto-Copy Invite Link</label>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="autoCopyInvite" checked>
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                <div class="settings-row">
+                    <label for="browserNotifications" title="Shows native system notifications when someone joins/leaves or plays/pauses." data-i18n="LABEL_NOTIFICATIONS" data-i18n-title="LABEL_NOTIFICATIONS_TOOLTIP">Browser Notifications</label>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="browserNotifications">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                <div class="settings-row">
+                    <label id="audioProcessingLabel" data-i18n="LABEL_AUDIO_PROCESSING" data-i18n-title="LABEL_AUDIO_PROCESSING_TOOLTIP">Audio Processing</label>
+                    <a id="audioSettingsLink" class="settings-action" href="#" data-i18n="AUDIO_OPEN_SETTINGS">Open</a>
+                </div>
+            </div>
+        </details>
 
-        <div style="margin-top: 15px; padding: 8px; border-top: 1px solid var(--card);">
-            <label title="Tools for fixing connection issues" data-i18n="LABEL_TROUBLESHOOTING" data-i18n-title="LABEL_TROUBLESHOOTING_TOOLTIP">Troubleshooting</label>
-            <button id="restartTourBtn" class="secondary" style="width: 100%; font-size: 11px;" title="Restart the onboarding tutorial" data-i18n="BTN_RESTART_TOUR" data-i18n-title="BTN_RESTART_TOUR_TOOLTIP">Restart Tutorial</button>
-            <button id="regenId" class="secondary" style="width: 100%; font-size: 11px; margin-top: 8px;" title="Regenerate your internal ID and reconnect" data-i18n="BTN_REGEN_ID" data-i18n-title="BTN_REGEN_ID_TOOLTIP">Regenerate Peer ID</button>
-            <p style="font-size: 9px; color: var(--text-muted); margin-top: 5px; text-align: center;" data-i18n="REGEN_ID_DESC">Use this if you see "Duplicate Identity" errors.</p>
-            <p style="font-size: 9px; text-align: center; margin-top: 6px;"><a href="https://github.com/Shik3i/KoalaSync/issues" target="_blank" style="color: var(--accent); text-decoration: none;" data-i18n="REGEN_ID_OTHER_ISSUE">Other issue? Open a GitHub Issue</a></p>
-        </div>
-
-        <div class="popup-footer">
-            <div style="font-size: 9px; color: var(--text-muted); opacity: 0.6; margin-bottom: 6px; line-height: 1.3;" data-i18n="FOOTER_SUPPORT_PROMPT">Enjoying KoalaSync? Leave a review!</div>
-            <a id="settingsReviewLink" href="#" target="_blank" data-i18n="FOOTER_REVIEW">★ Rate us</a>
-            <span> · </span>
-            <a id="settingsSupportLink" href="#" target="_blank" data-i18n="FOOTER_SUPPORT">Support KoalaSync</a>
-            <span> · </span>
-            <span id="settingsVersion">v0.0.0</span>
-        </div>
+        <details class="form-group" name="settings-accordion">
+            <summary title="Tools for fixing connection issues." data-i18n="LABEL_TROUBLESHOOTING" data-i18n-title="LABEL_TROUBLESHOOTING_TOOLTIP">Troubleshooting</summary>
+            <div class="details-content">
+                <div class="settings-tools">
+                    <button id="restartTourBtn" class="secondary" title="Restart the onboarding tutorial" data-i18n="BTN_RESTART_TOUR" data-i18n-title="BTN_RESTART_TOUR_TOOLTIP">Restart Tutorial</button>
+                    <button id="regenId" class="secondary" title="Regenerate your internal ID and reconnect" data-i18n="BTN_REGEN_ID" data-i18n-title="BTN_REGEN_ID_TOOLTIP">Regenerate Peer ID</button>
+                </div>
+                <p class="settings-note" data-i18n="REGEN_ID_DESC">Use this if you see "Duplicate Identity" errors.</p>
+                <p class="settings-issue-link"><a href="https://github.com/Shik3i/KoalaSync/issues" target="_blank" data-i18n="REGEN_ID_OTHER_ISSUE">Other issue? Open a GitHub Issue</a></p>
+            </div>
+        </details>
     </div>
 
     <!-- Dev Tab -->
@@ -657,7 +1653,7 @@
                 <span id="connText">Disconnected</span>
                 <span id="connInfo" data-i18n-title="STATUS_IDLE_TOOLTIP" title="KoalaSync is ready. Join or create a room to connect and start syncing." style="display:none; cursor:help; flex:none; width:15px; height:15px; line-height:14px; text-align:center; border-radius:50%; border:1px solid var(--text-muted); color:var(--text-muted); font-size:10px; font-weight:700; font-style:normal;">i</span>
             </span>
-            <span id="connPing" style="font-size:11px; font-family:monospace; font-weight:600; opacity:0.8;"></span>
+            <span id="connPing" class="conn-ping"></span>
             <button id="retryBtn" class="secondary" style="display:none; width: auto; padding: 4px 8px; font-size: 10px; margin: 0;" title="Attempt to reconnect to the server" data-i18n="BTN_RETRY" data-i18n-title="BTN_RETRY_TOOLTIP">RETRY</button>
             <button id="copyLogs" class="btn secondary" style="width: auto; padding: 4px 10px; font-size: 11px; margin: 0;" title="Copy logs to clipboard for sharing" data-i18n="BTN_COPY_LOGS" data-i18n-title="BTN_COPY_LOGS_TOOLTIP">Copy Logs</button>
         </div>
@@ -679,18 +1675,6 @@
             <button id="clearLogs" style="background:transparent; border:none; color:var(--accent); font-size:10px; cursor:pointer;" title="Clear log output" data-i18n="BTN_CLEAR" data-i18n-title="BTN_CLEAR_TOOLTIP">CLEAR</button>
         </div>
         <div id="logList"></div>
-        
-        <div class="popup-footer">
-            <a href="https://github.com/Shik3i/KoalaSync" target="_blank" style="color: var(--text-muted); text-decoration: none; font-size: 10px; opacity: 0.6; display: block;" data-i18n="LABEL_GITHUB">GitHub Repository</a>
-            <div style="margin-top: 4px;">
-                <div style="font-size: 9px; color: var(--text-muted); opacity: 0.6; margin-bottom: 6px; line-height: 1.3;" data-i18n="FOOTER_SUPPORT_PROMPT">Enjoying KoalaSync? Leave a review!</div>
-                <a id="devReviewLink" href="#" target="_blank" data-i18n="FOOTER_REVIEW">★ Rate us</a>
-                <span> · </span>
-                <a id="devSupportLink" href="#" target="_blank" data-i18n="FOOTER_SUPPORT">Support KoalaSync</a>
-                <span> · </span>
-                <span id="appVersion">v0.0.0</span>
-            </div>
-        </div>
     </div>
 
     <div id="tab-devtools" class="tab-content">
@@ -705,15 +1689,24 @@
         </div>
     </div>
 
+    <div class="popup-footer">
+        <nav class="footer-links" aria-label="KoalaSync links">
+            <a href="https://github.com/Shik3i/KoalaSync" target="_blank" data-i18n="LABEL_GITHUB">GitHub</a>
+            <a id="settingsSupportLink" href="#" target="_blank" data-i18n="FOOTER_SUPPORT">Support</a>
+        </nav>
+        <a id="settingsReviewLink" class="footer-review" href="#" target="_blank" data-i18n="FOOTER_REVIEW">★ Rate us</a>
+    </div>
+    </main>
+
     <script src="popup.js" type="module"></script>
 
     <!-- Onboarding Overlay -->
     <div id="onboarding-overlay" style="display:none; position:fixed; inset:0; background:transparent; z-index:1000; pointer-events:auto;">
         <!-- Spotlight element -->
-        <div id="onboarding-spotlight" style="position:fixed; pointer-events:none; border:2px solid var(--accent); box-shadow:0 0 0 9999px rgba(15, 23, 42, 0.65); border-radius:8px; transition:all 0.3s cubic-bezier(0.4, 0, 0.2, 1); display:none; opacity:0; z-index:1001; animation: spotlightPulse 2s infinite ease-in-out;"></div>
+        <div id="onboarding-spotlight" style="position:fixed; pointer-events:none; border:2px solid var(--accent); box-shadow:0 0 0 9999px rgba(16, 25, 14, 0.65); border-radius:8px; transition:all 0.3s cubic-bezier(0.4, 0, 0.2, 1); display:none; opacity:0; z-index:1001; animation: spotlightPulse 2s infinite ease-in-out;"></div>
         
         <!-- Onboarding Card -->
-        <div id="onboarding-card" style="position:fixed; background:var(--card); padding:16px 20px; border-radius:12px; width:280px; box-shadow:0 8px 32px rgba(0,0,0,0.5); z-index:1002; transition:all 0.3s cubic-bezier(0.4, 0, 0.2, 1); box-sizing:border-box; border:1px solid #334155; opacity:0; transform: scale(0.9); display:none;">
+        <div id="onboarding-card" style="position:fixed; background:var(--card); padding:16px 20px; border-radius:12px; width:280px; box-shadow:0 8px 32px rgba(0,0,0,0.5); z-index:1002; transition:all 0.3s cubic-bezier(0.4, 0, 0.2, 1); box-sizing:border-box; border:1px solid var(--border-strong); opacity:0; transform: scale(0.9); display:none;">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
                 <span id="onboarding-icon" style="font-size:24px;">👋</span>
                 <span id="onboarding-step-indicator" style="font-size:10px; font-weight:700; color:var(--accent); text-transform:uppercase; letter-spacing:0.5px;">Step 1 of 5</span>
@@ -722,7 +1715,7 @@
             <p id="onboarding-text" style="color:var(--text-muted); font-size:12px; margin:0 0 16px; line-height:1.4; text-align:left;">Let's get you started.</p>
             
             <!-- Progress Bar -->
-            <div id="onboarding-progress-container" style="height:4px; background:#334155; border-radius:2px; margin-bottom:16px; overflow:hidden;">
+            <div id="onboarding-progress-container" style="height:4px; background: var(--border-strong); border-radius:2px; margin-bottom:16px; overflow:hidden;">
                 <div id="onboarding-progress-bar" style="height:100%; width:20%; background:var(--accent); transition:width 0.3s ease;"></div>
             </div>
             

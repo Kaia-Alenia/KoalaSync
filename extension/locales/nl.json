@@ -70,11 +70,11 @@
   "LABEL_REMOTE_CONTROL": "Afstandsbediening",
   "BTN_COPY_INVITE": "📋 Uitnodigingslink",
   "BTN_COPY_INVITE_TOOLTIP": "Uitnodigingslink kopiëren",
-  "BTN_PLAY": "▶ Afspelen",
+  "BTN_PLAY": "Afspelen",
   "BTN_PLAY_TOOLTIP": "Stuur een afspeelopdracht naar iedereen",
-  "BTN_PAUSE": "⏸ Pauzeren",
+  "BTN_PAUSE": "Pauzeren",
   "BTN_PAUSE_TOOLTIP": "Stuur een pauzeeropdracht naar iedereen",
-  "BTN_SYNC": "⚡ SYNC",
+  "BTN_SYNC": "Sync",
   "BTN_SYNC_TOOLTIP": "Dwing alle gebruikers om te synchroniseren",
   "OPTION_JUMP_TO_OTHERS": "Spring naar anderen",
   "OPTION_JUMP_TO_ME": "Spring naar mij",
@@ -209,6 +209,7 @@
   "LABEL_AUDIO_PROCESSING_TOOLTIP": "Past audio-effecten zoals compressie toe op video-afspelen",
   "AUDIO_OPEN_SETTINGS": "Openen",
   "NEW_FEATURE_AUDIO": "Nieuw: Audioverwerking — probeer de compressor!",
+  "NEW_FEATURE_THEME": "Nieuw: Thema's — schakel naar de klassieke look of minimaal grafiet.",
   "AUDIO_BACK": "← Terug",
   "AUDIO_PAGE_TITLE": "Audio-instellingen",
   "AUDIO_MASTER_TOGGLE": "Audioverwerking",
@@ -238,5 +239,9 @@
   "LABEL_SEND_TAB_TITLE": "Tabtitel verzenden",
   "LABEL_SEND_TAB_TITLE_TOOLTIP": "Stuurt de titel van het geselecteerde browsertabblad naar de kamer.",
   "LABEL_MEDIA_TITLE_PRIVACY": "Mediatitel",
-  "LABEL_MEDIA_TITLE_PRIVACY_TOOLTIP": "Kies hoe mediatitels naar de kamer worden gestuurd."
+  "LABEL_MEDIA_TITLE_PRIVACY_TOOLTIP": "Kies hoe mediatitels naar de kamer worden gestuurd.",
+  "LABEL_SETTINGS_GROUP_PROFILE": "Profiel & Weergave",
+  "LABEL_SETTINGS_GROUP_PROFILE_TOOLTIP": "Wijzig uw gebruikersnaam, thema en taalvoorkeuren.",
+  "LABEL_SETTINGS_GROUP_SYNC": "Afspelen & Sync",
+  "LABEL_SETTINGS_GROUP_SYNC_TOOLTIP": "Pas afspelen, meldingen en audiovoorkeuren aan."
 }

@@ -1,6 +1,6 @@
 KoalaSync: Private Watch Parties for Emby, Jellyfin, Plex, Netflix & YouTube
 
-Tired of counting down "3, 2, 1, Play" over voice chat? KoalaSync keeps you and your friends perfectly in sync. Whether you are streaming from your own self-hosted media server like Emby, Jellyfin or Plex, or watching on a major platform like Netflix, Prime Video or YouTube — KoalaSync is designed for smooth, browser-based watch parties.
+Tired of counting down "3, 2, 1, Play" over voice chat? KoalaSync keeps you and your friends perfectly in sync. Whether you are streaming from your own self-hosted media server like Emby, Jellyfin or Plex, or watching on a major platform like Netflix, Prime Video or YouTube, KoalaSync is designed for smooth, browser-based watch parties.
 
 
 ✨ CORE FEATURES
@@ -12,7 +12,7 @@ No account required. No tracking. Just create a room, invite your friends, and s
 • Smart Binge-Watching: When a new episode loads, KoalaSync automatically pauses the lobby until everyone is ready. No spoilers, no one left behind.
 • Smart Audio Compressor: Tired of quiet dialogue and suddenly loud action scenes? Balance whispering, explosions, and music with a single click while you watch.
 • One-Click Invites: Send a smart invite link to your friends. When they open it, KoalaSync automatically configures the room so they can join instantly.
-• 13 Languages: Enjoy a native experience with a fully translated user interface.
+• 15 Languages: Enjoy a native experience in English, German, French, Spanish, Brazilian and European Portuguese, Russian, Italian, Polish, Turkish, Dutch, Japanese, Korean, Simplified Chinese, and Ukrainian.
 
 
 
@@ -33,14 +33,14 @@ KoalaSync is built for private watch parties without unnecessary data collection
 3. Share the invite link with your friends.
 4. Open your favorite streaming site or media server.
 5. Select the active video tab.
-6. Press play — everyone stays perfectly in sync.
+6. Press play. Everyone stays perfectly in sync.
 
 
 
 ⚙️ UNDER THE HOOD
 KoalaSync is lightweight, transparent, and built with privacy in mind.
 
-• On-Demand Relay: Playback state is synchronized through a custom WebSocket-based relay server. No persistent connection — the relay is only active while you're in a room. No background traffic, no idle connections.
+• On-Demand Relay: Playback state is synchronized through a custom WebSocket-based relay server. There is no permanent background connection. The relay connection is maintained only while you're in a room and closes when you leave or automatically after two hours without a selected-video heartbeat.
 • No Media Streaming: KoalaSync does not stream, proxy, upload, download, or redistribute any video content. Everyone watches from their own browser on the original website.
 • Temporary Room State Only: The relay server only coordinates room state such as play, pause, seek position, active target, nickname, and readiness status.
 • Docker Self-Hosting: The relay server can be self-hosted with Docker if you prefer to run your own private instance.

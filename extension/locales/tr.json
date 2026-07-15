@@ -70,11 +70,11 @@
   "LABEL_REMOTE_CONTROL": "Uzaktan Kumanda",
   "BTN_COPY_INVITE": "📋 Davet Linki",
   "BTN_COPY_INVITE_TOOLTIP": "Davet Linkini Kopyala",
-  "BTN_PLAY": "▶ Oynat",
+  "BTN_PLAY": "Oynat",
   "BTN_PLAY_TOOLTIP": "Herkese Oynat komutu gönder",
-  "BTN_PAUSE": "⏸ Duraklat",
+  "BTN_PAUSE": "Duraklat",
   "BTN_PAUSE_TOOLTIP": "Herkese Duraklat komutu gönder",
-  "BTN_SYNC": "⚡ SYNC",
+  "BTN_SYNC": "Sync",
   "BTN_SYNC_TOOLTIP": "Tüm kullanıcıları senkronize etmeye zorla",
   "OPTION_JUMP_TO_OTHERS": "Diğerlerine Atla",
   "OPTION_JUMP_TO_ME": "Bana Atla",
@@ -209,6 +209,7 @@
   "LABEL_AUDIO_PROCESSING_TOOLTIP": "Video oynatımına sıkıştırma gibi ses efektleri uygular",
   "AUDIO_OPEN_SETTINGS": "Aç",
   "NEW_FEATURE_AUDIO": "Yeni: Ses işleme — kompresörü deneyin!",
+  "NEW_FEATURE_THEME": "Yeni: Temalar — klasik görünüme veya minimal grafite geçin.",
   "AUDIO_BACK": "← Geri",
   "AUDIO_PAGE_TITLE": "Ses ayarları",
   "AUDIO_MASTER_TOGGLE": "Ses işleme",
@@ -238,5 +239,9 @@
   "LABEL_SEND_TAB_TITLE": "Sekme başlığını gönder",
   "LABEL_SEND_TAB_TITLE_TOOLTIP": "Seçili tarayıcı sekmesinin başlığını odaya gönderir.",
   "LABEL_MEDIA_TITLE_PRIVACY": "Medya başlığı",
-  "LABEL_MEDIA_TITLE_PRIVACY_TOOLTIP": "Medya başlıklarının odaya nasıl gönderileceğini seçin."
+  "LABEL_MEDIA_TITLE_PRIVACY_TOOLTIP": "Medya başlıklarının odaya nasıl gönderileceğini seçin.",
+  "LABEL_SETTINGS_GROUP_PROFILE": "Profil ve Görünüm",
+  "LABEL_SETTINGS_GROUP_PROFILE_TOOLTIP": "Kullanıcı adınızı, temanızı ve dil tercihlerinizi değiştirin.",
+  "LABEL_SETTINGS_GROUP_SYNC": "Oynatma ve Eşitleme",
+  "LABEL_SETTINGS_GROUP_SYNC_TOOLTIP": "Oynatma, bildirim ve ses tercihlerini özelleştirin."
 }

@@ -43,6 +43,7 @@ extension/shared/
 
 # Auto-generated website build output
 website/www/
+website/.avif-cache.json
 
 # Temporary scratch files
 scratch/

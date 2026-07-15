@@ -70,11 +70,11 @@
   "LABEL_REMOTE_CONTROL": "Fernsteuerung",
   "BTN_COPY_INVITE": "📋 Einladungslink",
   "BTN_COPY_INVITE_TOOLTIP": "Einladungslink kopieren",
-  "BTN_PLAY": "▶ Abspielen",
+  "BTN_PLAY": "Abspielen",
   "BTN_PLAY_TOOLTIP": "Sende einen Play-Befehl an alle",
-  "BTN_PAUSE": "⏸ Pause",
+  "BTN_PAUSE": "Pause",
   "BTN_PAUSE_TOOLTIP": "Sende einen Pause-Befehl an alle",
-  "BTN_SYNC": "⚡ SYNC",
+  "BTN_SYNC": "Sync",
   "BTN_SYNC_TOOLTIP": "Erzwinge die Synchronisation aller Teilnehmer",
   "OPTION_JUMP_TO_OTHERS": "Zu anderen springen",
   "OPTION_JUMP_TO_ME": "Zu mir springen",
@@ -209,6 +209,7 @@
   "LABEL_AUDIO_PROCESSING_TOOLTIP": "Wendet Audioeffekte wie Kompression auf die Videowiedergabe an",
   "AUDIO_OPEN_SETTINGS": "Öffnen",
   "NEW_FEATURE_AUDIO": "Neu: Audio-Verarbeitung — probiere den Kompressor aus!",
+  "NEW_FEATURE_THEME": "Neu: Themes — wechsle zum klassischen Look oder minimalem Graphit.",
   "AUDIO_BACK": "← Zurück",
   "AUDIO_PAGE_TITLE": "Audio-Einstellungen",
   "AUDIO_MASTER_TOGGLE": "Audio-Verarbeitung",
@@ -238,5 +239,9 @@
   "LABEL_SEND_TAB_TITLE": "Tab-Titel senden",
   "LABEL_SEND_TAB_TITLE_TOOLTIP": "Sendet den Titel des ausgewählten Browser-Tabs an den Raum.",
   "LABEL_MEDIA_TITLE_PRIVACY": "Medientitel",
-  "LABEL_MEDIA_TITLE_PRIVACY_TOOLTIP": "Lege fest, wie Medientitel an den Raum gesendet werden."
+  "LABEL_MEDIA_TITLE_PRIVACY_TOOLTIP": "Lege fest, wie Medientitel an den Raum gesendet werden.",
+  "LABEL_SETTINGS_GROUP_PROFILE": "Profil & Aussehen",
+  "LABEL_SETTINGS_GROUP_PROFILE_TOOLTIP": "Ändere deinen Benutzernamen, dein Design und deine Spracheinstellungen.",
+  "LABEL_SETTINGS_GROUP_SYNC": "Wiedergabe & Sync",
+  "LABEL_SETTINGS_GROUP_SYNC_TOOLTIP": "Passe Wiedergabe-, Benachrichtigungs- und Audioeinstellungen an."
 }
