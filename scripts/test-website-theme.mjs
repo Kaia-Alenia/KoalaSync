@@ -63,7 +63,16 @@ for (const section of requiredLlmsSections) {
 if (/\bWebRTC\b|\bport 54000\b|peer-to-peer by design/i.test(llmsText)) {
   throw new Error('llms.txt must describe the current WebSocket relay architecture without obsolete WebRTC or port claims');
 }
-if (!llmsText.includes('wss://syncserver.koalastuff.net') || !llmsText.includes('internally on port 3000')) {
+const documentedRelayUrls = [...llmsText.matchAll(/`(wss:\/\/[^`\s]+)`/g)].map(([, value]) => new URL(value));
+const hasCanonicalPublicRelay = documentedRelayUrls.some((url) => (
+  url.protocol === 'wss:' &&
+  url.hostname === 'syncserver.koalastuff.net' &&
+  url.port === '' &&
+  url.pathname === '/' &&
+  url.search === '' &&
+  url.hash === ''
+));
+if (!hasCanonicalPublicRelay || !llmsText.includes('internally on port 3000')) {
   throw new Error('llms.txt must distinguish the public TLS relay URL from the internal self-hosting port');
 }
 
