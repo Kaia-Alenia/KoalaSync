@@ -11,6 +11,19 @@ the event names defined in `shared/constants.js`.
   object payload.
 - The relay caps incoming Socket.IO message size at 4 KB.
 
+## Invite fragments
+
+Current invitations use named URL-fragment fields:
+
+```text
+#j2:r=<roomId>&p=<password>&k=<base64url-chat-secret>[&u=<relayUrl>]
+```
+
+The fragment is parsed by the website and forwarded to the extension as structured
+fields. `k` is client-only and must never appear in a relay payload. Legacy
+`#join:<roomId>:<password>[:1:<relayUrl>]` fragments remain valid but provide no chat
+secret.
+
 ## Connection Handshake
 
 The Socket.IO handshake must include:

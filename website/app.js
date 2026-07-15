@@ -449,15 +449,11 @@ document.addEventListener('DOMContentLoaded', () => {
         setTimeout(() => {
             const isInstalled = document.documentElement.dataset.koalasyncInstalled === 'true';
             
-            if (window.location.hash.startsWith('#join:')) {
-                const parts = window.location.hash.split(':');
-                if (parts.length >= 3) {
-                    const roomId = parts[1];
-                    const password = parts[2];
-                    const serverFlag = parts[3] || '0';
-                    const serverUrl = parts[4] ? decodeURIComponent(parts[4]) : '';
+            const invite = globalThis.KoalaSyncInviteLinks?.parseInviteHash(window.location.hash);
+            if (invite) {
+                const { roomId, password, chatKey, useCustomServer, serverUrl } = invite;
                     
-                    if (isJoinPage) {
+                if (isJoinPage) {
                         const displayRoom = document.getElementById('display-room-id');
                         const actions = document.getElementById('join-actions');
                         if (displayRoom) displayRoom.textContent = roomId;
@@ -519,14 +515,15 @@ document.addEventListener('DOMContentLoaded', () => {
                                         detail: { 
                                             roomId, 
                                             password,
-                                            useCustomServer: serverFlag === '1',
-                                            serverUrl: serverUrl
+                                            chatKey,
+                                            useCustomServer,
+                                            serverUrl
                                         }
                                     }));
                                 }, 500);
                             }
                         }
-                    } else {
+                } else {
                         // Fallback banner for index.html
                         if (!document.getElementById('koala-banner')) {
                             const banner = document.createElement('div');
@@ -556,22 +553,22 @@ document.addEventListener('DOMContentLoaded', () => {
                         }
                     }
 
-                    // Global listener for Join Button
-                    document.addEventListener('click', (e) => {
-                        if (e.target && e.target.id === 'webJoinBtn') {
-                            e.target.textContent = 'JOINING...';
-                            e.target.disabled = true;
-                            window.dispatchEvent(new CustomEvent('KOALASYNC_JOIN_REQUEST', {
-                                detail: { 
-                                    roomId, 
-                                    password,
-                                    useCustomServer: serverFlag === '1',
-                                    serverUrl: serverUrl
-                                }
-                            }));
-                        }
-                    });
-                }
+                // Global listener for Join Button
+                document.addEventListener('click', (e) => {
+                    if (e.target && e.target.id === 'webJoinBtn') {
+                        e.target.textContent = 'JOINING...';
+                        e.target.disabled = true;
+                        window.dispatchEvent(new CustomEvent('KOALASYNC_JOIN_REQUEST', {
+                            detail: {
+                                roomId,
+                                password,
+                                chatKey,
+                                useCustomServer,
+                                serverUrl
+                            }
+                        }));
+                    }
+                });
             }
         }, 600); // 600ms delay to ensure bridge.js has set the dataset
     };

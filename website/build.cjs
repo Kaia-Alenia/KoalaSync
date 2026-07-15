@@ -284,6 +284,12 @@ async function compile() {
     const appName = `app.${appHash}.min.js`;
     const appSRI = sha384(appMin);
 
+    const inviteLinksRaw = fs.readFileSync(path.join(websiteDir, '..', 'shared', 'invite-links.js'), 'utf8');
+    const inviteLinksMin = await minifyJS(inviteLinksRaw);
+    const inviteLinksHash = sha8(inviteLinksMin);
+    const inviteLinksName = `invite-links.${inviteLinksHash}.min.js`;
+    const inviteLinksSRI = sha384(inviteLinksMin);
+
     const langRaw = fs.readFileSync(path.join(websiteDir, 'lang-init.js'), 'utf8');
     const langMin = await minifyJS(langRaw);
     const langHash = sha8(langMin);
@@ -298,6 +304,7 @@ async function compile() {
         console.log(`  Landing ${bundle.key}: ${bundle.name} (${(bundle.min.length/1024).toFixed(1)} KB)`);
     }
     console.log(`  App: ${appName} (${(appMin.length/1024).toFixed(1)} KB, -${appPct}%)`);
+    console.log(`  Invite links: ${inviteLinksName} (${(inviteLinksMin.length/1024).toFixed(1)} KB)`);
     console.log(`  Lang: ${langName} (${(langMin.length/1024).toFixed(1)} KB, -${langPct}%)`);
 
     // ── 2. Clean stale minified output ──
@@ -314,6 +321,7 @@ async function compile() {
         fs.writeFileSync(path.join(wwwDir, bundle.name), bundle.min);
     }
     fs.writeFileSync(path.join(wwwDir, appName), appMin);
+    fs.writeFileSync(path.join(wwwDir, inviteLinksName), inviteLinksMin);
     fs.writeFileSync(path.join(wwwDir, langName), langMin);
 
     // ── 3. Compile HTML templates ──
@@ -651,6 +659,9 @@ async function compile() {
         }
         html = html.replace(/(<script\b[^>]*?\bsrc=")((?:\.\.\/)*\/?)app\.min\.js"/g, (m, before, prefix) => {
             return `${before}${prefix}${appName}" integrity="${appSRI}" crossorigin="anonymous"`;
+        });
+        html = html.replace(/(<script\b[^>]*?\bsrc=")((?:\.\.\/)*\/?)invite-links\.min\.js"/g, (m, before, prefix) => {
+            return `${before}${prefix}${inviteLinksName}" integrity="${inviteLinksSRI}" crossorigin="anonymous"`;
         });
         html = html.replace(/(<script\b[^>]*?\bsrc=")((?:\.\.\/)*\/?)lang-init\.min\.js"/g, (m, before, prefix) => {
             return `${before}${prefix}${langName}" integrity="${langSRI}" crossorigin="anonymous"`;
