@@ -14,6 +14,8 @@
   "TWITTER_DESCRIPTION": "Crie uma watch party na Netflix, Emby, Jellyfin, YouTube, Twitch e quase qualquer vídeo HTML5. Open source, privado e sem conta.",
   "NAV_FEATURES": "Recursos",
   "NAV_HOW_IT_WORKS": "Como Funciona",
+  "SUPPORT_BANNER_TEXT": "O KoalaSync não consegue acessar o site do vídeo?",
+  "SUPPORT_BANNER_CTA": "Corrigir acesso ao site",
   "HERO_TITLE": "Transforme qualquer vídeo em uma <span class='hero-highlight'>watch party</span>.",
   "HERO_SUBTITLE": "Sua sessão de cinema à distância, sem atrasos. Sem conta, sem rastreamento, sem anúncios. Compartilhe um link e deem play juntos.",
   "HERO_MASCOT_ALT": "Um coala fofo olhando para os botões de download",

@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en" class="lang-en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KoalaSync Cannot Access Your Video Site? Fix Website Access</title>
+    <meta name="description" content="Restore KoalaSync website access in Chrome, Edge, Brave, Opera, or Firefox when a video tab cannot be linked or controlled.">
+    <meta name="robots" content="index, follow">
+    <link rel="preload" href="style.min.css" as="style">
+    <link rel="stylesheet" href="style.min.css">
+    <link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32x32.png">
+    <link rel="canonical" href="https://sync.koalastuff.net/site-access-help.html">
+    <link rel="alternate" hreflang="en" href="https://sync.koalastuff.net/site-access-help.html">
+    <link rel="alternate" hreflang="x-default" href="https://sync.koalastuff.net/site-access-help.html">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://sync.koalastuff.net/site-access-help.html">
+    <meta property="og:title" content="Fix KoalaSync website access">
+    <meta property="og:description" content="Quick browser-specific steps for reconnecting KoalaSync to a video tab.">
+    <meta property="og:image" content="https://sync.koalastuff.net/assets/og-image.png">
+    <meta name="theme-color" content="#10190e">
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "TechArticle",
+      "headline": "Fix KoalaSync website access",
+      "description": "Restore KoalaSync access when a browser blocks the extension on a video website.",
+      "inLanguage": "en",
+      "url": "https://sync.koalastuff.net/site-access-help.html",
+      "isPartOf": {
+        "@type": "WebSite",
+        "name": "KoalaSync",
+        "url": "https://sync.koalastuff.net/"
+      }
+    }
+    </script>
+    <script src="lang-init.min.js"></script>
+</head>
+<body class="support-page">
+    <div class="scroll-progress-bar"></div>
+    <a class="skip-link" href="#main-content">Skip to troubleshooting</a>
+
+    <nav>
+        <div class="container nav-content">
+            <a class="logo-area" href="./" aria-label="KoalaSync home">
+                <img class="nav-logo-img" src="assets/NewLogoIcon_128.webp" srcset="assets/NewLogoIcon_64.webp 64w, assets/NewLogoIcon_128.webp 128w, assets/NewLogoIcon.webp 256w" sizes="64px" alt="KoalaSync logo" width="64" height="64">
+                <span>KoalaSync</span>
+            </a>
+            <div class="nav-links" id="primary-nav" role="navigation" aria-label="Primary">
+                <a href="./">Home</a>
+                <a href="https://github.com/Shik3i/KoalaSync" target="_blank" rel="noopener">GitHub</a>
+            </div>
+            <div class="nav-right">
+                <button class="theme-toggle" id="theme-toggle" type="button" aria-label="Toggle light or dark theme" title="Toggle light or dark theme">
+                    <svg class="theme-icon-sun" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+                    <svg class="theme-icon-moon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18" aria-hidden="true"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>
+                </button>
+                <button class="hamburger" aria-label="Toggle navigation menu" aria-expanded="false" aria-controls="primary-nav">
+                    <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <main id="main-content" class="support-content">
+        <header class="support-hero">
+            <span class="support-status">Website access troubleshooting</span>
+            <h1>Connected, but the video tab does nothing?</h1>
+            <p class="support-lead">Your browser may be withholding KoalaSync’s access to that website. The room connection can still look healthy while KoalaSync cannot read or control the player.</p>
+        </header>
+
+        <section class="support-card" aria-labelledby="quick-fix-title">
+            <span class="support-eyebrow">Start here</span>
+            <h2 id="quick-fix-title">Use the built-in one-click fix</h2>
+            <ol class="support-steps">
+                <li>Open the video website and then open the KoalaSync popup.</li>
+                <li>Select the video tab. If access is blocked, KoalaSync shows an access notice instead of silently pretending the tab is connected.</li>
+                <li>Select <strong>Allow access</strong> and approve the browser prompt. KoalaSync retries the tab automatically.</li>
+                <li>If the prompt does not appear, use the manual browser steps below and reload the video page once.</li>
+            </ol>
+        </section>
+
+        <div class="support-callout" role="note">
+            <span class="support-callout-icon" aria-hidden="true">i</span>
+            <div>
+                <strong>This is not a new KoalaSync permission.</strong>
+                <p>Modern browsers let users, profiles, and administrators withhold extension access per website. Chrome’s newer extension menu makes that existing control much more visible. KoalaSync now detects the blocked state and asks for access only after you select a video tab.</p>
+            </div>
+        </div>
+
+        <div class="support-grid">
+            <section class="support-card" aria-labelledby="chromium-title">
+                <span class="support-eyebrow">Chrome, Edge, Brave, Opera</span>
+                <h2 id="chromium-title">Allow KoalaSync on the current site</h2>
+                <ol>
+                    <li>Keep the affected video tab open.</li>
+                    <li>Open the browser’s extensions menu near the address bar.</li>
+                    <li>Under <strong>Access requested</strong>, select KoalaSync and allow access.</li>
+                    <li>If needed, open KoalaSync’s extension details and change site access to <strong>On this site</strong> or <strong>On all sites</strong>.</li>
+                    <li>Reload the video tab and select it again in KoalaSync.</li>
+                </ol>
+                <p><a class="support-link" href="https://support.google.com/chrome/answer/2664769?hl=en" target="_blank" rel="noopener">Google’s official site-access instructions</a></p>
+            </section>
+
+            <section class="support-card" aria-labelledby="firefox-title">
+                <span class="support-eyebrow">Firefox</span>
+                <h2 id="firefox-title">Check extension permissions</h2>
+                <ol>
+                    <li>Open <strong>Add-ons and themes</strong>, then select <strong>Extensions</strong>.</li>
+                    <li>Open KoalaSync and select <strong>Permissions</strong> or <strong>Permissions and data</strong>.</li>
+                    <li>Allow the requested website access.</li>
+                    <li>Return to the video site, reload it, and select the tab again.</li>
+                </ol>
+                <p><a class="support-link" href="https://support.mozilla.org/en-US/kb/manage-optional-permissions-extensions" target="_blank" rel="noopener">Mozilla’s official extension-permissions instructions</a></p>
+            </section>
+        </div>
+
+        <section class="support-card" aria-labelledby="why-title">
+            <span class="support-eyebrow">Why access is needed</span>
+            <h2 id="why-title">KoalaSync must reach the player you selected</h2>
+            <p>KoalaSync injects a local content script into the selected tab so it can find the HTML5 player, read its playback position, and apply play, pause, and seek actions. The video and audio stream never leave your browser. Only synchronization state is sent through the relay.</p>
+            <p>Access is requested for the website origin shown in the popup. Browser-internal pages such as <strong>chrome://</strong>, <strong>edge://</strong>, and <strong>about:</strong> cannot be controlled. Local files may also require the separate <strong>Allow access to file URLs</strong> switch in the extension details.</p>
+        </section>
+
+        <section class="support-card" aria-labelledby="still-title">
+            <span class="support-eyebrow">Still not working?</span>
+            <h2 id="still-title">Run these checks in order</h2>
+            <ul>
+                <li>Update KoalaSync in both browsers. Friends using different releases should update before testing again.</li>
+                <li>Reload the video page after granting access. An already-open page may still have the old blocked state.</li>
+                <li>Open KoalaSync and reselect the exact tab containing the player.</li>
+                <li>Confirm the debug report says <strong>Video Found</strong>. A page without a standard player may need site-specific support.</li>
+                <li>Temporarily test without another extension that also modifies the player.</li>
+                <li>If it still fails, collect a debug report from each participant before leaving the room.</li>
+            </ul>
+        </section>
+
+        <section class="support-card support-separate-issue" aria-labelledby="peers-title">
+            <span class="support-eyebrow">Separate issue</span>
+            <h2 id="peers-title">“Peers (1)” only shows yourself</h2>
+            <p>Website access does <strong>not</strong> control the relay participant list. If both people see the same room name but each report lists only themselves, the relay has not placed both connections into the same live room state.</p>
+            <ul>
+                <li>Open the same invite link again and verify the room name, password, and server URL match.</li>
+                <li>Update both extensions, leave the room, and reconnect once.</li>
+                <li>When self-hosting, use a single relay process unless room state is shared between instances; KoalaSync’s default relay state lives in process memory.</li>
+                <li>If the problem remains, save both debug reports and the relay logs from the same timestamp.</li>
+            </ul>
+        </section>
+
+        <div class="support-actions">
+            <a class="btn btn-primary" href="./">Back to KoalaSync</a>
+            <a class="btn btn-secondary" href="https://github.com/Shik3i/KoalaSync/issues" target="_blank" rel="noopener">Report a reproducible issue</a>
+        </div>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p class="footer-ram">Rooms are ephemeral and stored in RAM.</p>
+            <p class="footer-copyright">&copy; 2026 KoalaSync. Open source under the MIT License.</p>
+            <div class="footer-links">
+                <a href="imprint.html">Legal notice</a>
+                <a href="privacy.html">Privacy</a>
+                <a href="https://github.com/Shik3i/KoalaSync" target="_blank" rel="noopener">GitHub</a>
+            </div>
+        </div>
+    </footer>
+
+    <script src="app.min.js"></script>
+</body>
+</html>

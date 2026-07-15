@@ -148,6 +148,8 @@
   "ERR_IDENTITY_NOT_LOADED": "Identidade ainda não carregada. Aguarde um momento.",
   "ERR_NO_PEERS_TIME": "Nenhum participante com hora conhecida. Mude para 'Trazer para a minha posição'.",
   "ERR_NO_VIDEO_TAB": "Não foi possível aceder ao separador do vídeo.",
+  "SITE_ACCESS_REQUIRED": "O seu navegador está a bloquear o KoalaSync em {host}. Clique em «Permitir acesso» abaixo. Se não aparecer uma caixa de diálogo, permita o KoalaSync neste site nas permissões da extensão ou do site.",
+  "BTN_RETRY_ACCESS": "Permitir acesso",
   "ERR_SELECT_VIDEO": "Selecione primeiro um vídeo!",
   "TOAST_INVITE_COPIED": "Link de convite copiado!",
   "TOAST_COPY_FAILED": "Falha ao copiar para a área de transferência",

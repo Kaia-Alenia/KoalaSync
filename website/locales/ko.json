@@ -14,6 +14,8 @@
   "TWITTER_DESCRIPTION": "Netflix, Emby, Jellyfin, YouTube, Twitch 및 거의 모든 HTML5 영상에서 워치 파티를 열어보세요. 오픈소스, 개인정보 보호 중심, 계정 불필요.",
   "NAV_FEATURES": "특징",
   "NAV_HOW_IT_WORKS": "작동 방식",
+  "SUPPORT_BANNER_TEXT": "KoalaSync가 동영상 사이트에 액세스할 수 없나요?",
+  "SUPPORT_BANNER_CTA": "사이트 액세스 복구",
   "HERO_TITLE": "어떤 영상이든 <span class='hero-highlight'>워치 파티</span>로.",
   "HERO_SUBTITLE": "지연 없는 원격 영화의 밤. 계정 없음, 추적 없음, 광고 없음. 링크만 공유하고 함께 재생하세요.",
   "HERO_MASCOT_ALT": "다운로드 버튼을 내려다보고 서 있는 귀여운 코알라",

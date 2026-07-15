@@ -148,6 +148,8 @@
   "ERR_IDENTITY_NOT_LOADED": "Tożsamość nie została jeszcze załadowana. Odczekaj chwilę i spróbuj ponownie.",
   "ERR_NO_PEERS_TIME": "Brak innych uczestników ze znanym czasem. Przełącz na 'Skocz do mnie'.",
   "ERR_NO_VIDEO_TAB": "Nie można połączyć się z kartą wideo.",
+  "SITE_ACCESS_REQUIRED": "Przeglądarka blokuje KoalaSync na {host}. Kliknij poniżej „Zezwól na dostęp”. Jeśli nie pojawi się okno, zezwól KoalaSync na tej stronie w uprawnieniach rozszerzenia lub witryny.",
+  "BTN_RETRY_ACCESS": "Zezwól na dostęp",
   "ERR_SELECT_VIDEO": "Najpierw wybierz wideo!",
   "TOAST_INVITE_COPIED": "Link zaproszenia skopiowany!",
   "TOAST_COPY_FAILED": "Nie udało się skopiować do schowka",

@@ -148,6 +148,8 @@
   "ERR_IDENTITY_NOT_LOADED": "Identità non ancora caricata. Attendi un momento.",
   "ERR_NO_PEERS_TIME": "Nessun altro partecipante con posizione nota. Passa a 'Portali alla mia posizione'.",
   "ERR_NO_VIDEO_TAB": "Impossibile connettersi alla scheda del video.",
+  "SITE_ACCESS_REQUIRED": "Il browser sta bloccando KoalaSync su {host}. Fai clic su «Consenti accesso». Se non appare alcuna finestra, consenti KoalaSync su questo sito nelle autorizzazioni dell’estensione o del sito.",
+  "BTN_RETRY_ACCESS": "Consenti accesso",
   "ERR_SELECT_VIDEO": "Seleziona prima un video!",
   "TOAST_INVITE_COPIED": "Link di invito copiato!",
   "TOAST_COPY_FAILED": "Impossibile copiare negli appunti",

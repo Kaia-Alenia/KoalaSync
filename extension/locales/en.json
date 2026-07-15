@@ -148,6 +148,8 @@
   "ERR_IDENTITY_NOT_LOADED": "Identity not yet loaded. Wait a moment and try again.",
   "ERR_NO_PEERS_TIME": "No other peers with a known time. Switch to 'Jump to Me'.",
   "ERR_NO_VIDEO_TAB": "Could not connect to video tab.",
+  "SITE_ACCESS_REQUIRED": "Your browser is blocking KoalaSync on {host}. Click \"Allow access\" below. If no dialog appears, allow KoalaSync on this site in your extension or site permissions.",
+  "BTN_RETRY_ACCESS": "Allow access",
   "ERR_SELECT_VIDEO": "Please select a video first!",
   "TOAST_INVITE_COPIED": "Invite link copied!",
   "TOAST_COPY_FAILED": "Failed to copy to clipboard",

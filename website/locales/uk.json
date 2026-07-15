@@ -14,6 +14,8 @@
   "TWITTER_DESCRIPTION": "Запускайте watch party у Netflix, Emby, Jellyfin, YouTube, Twitch і майже будь-якому HTML5-відео. Open source, приватно й без акаунта.",
   "NAV_FEATURES": "особливості",
   "NAV_HOW_IT_WORKS": "Як це працює",
+  "SUPPORT_BANNER_TEXT": "KoalaSync не має доступу до сайту з відео?",
+  "SUPPORT_BANNER_CTA": "Виправити доступ до сайту",
   "HERO_TITLE": "Перетвори будь-яке відео на <span class='hero-highlight'>watch party</span>.",
   "HERO_SUBTITLE": "Ваш кіновечір на відстані, без затримок. Без акаунта, без стеження, без реклами. Просто поділіться посиланням і натисніть play разом.",
   "HERO_MASCOT_ALT": "Мила коала стоїть і дивиться вниз на кнопки завантаження",

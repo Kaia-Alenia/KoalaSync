@@ -148,6 +148,8 @@
   "ERR_IDENTITY_NOT_LOADED": "身份尚未加载。稍等片刻，然后重试。",
   "ERR_NO_PEERS_TIME": "没有其他已知时间的同行。切换到“跳到我这里”。",
   "ERR_NO_VIDEO_TAB": "无法连接到视频选项卡。",
+  "SITE_ACCESS_REQUIRED": "浏览器正在阻止 KoalaSync 访问 {host}。请点击下方的“允许访问”。如果未显示对话框，请在扩展程序或网站权限中允许 KoalaSync 访问此网站。",
+  "BTN_RETRY_ACCESS": "允许访问",
   "ERR_SELECT_VIDEO": "请先选择视频！",
   "TOAST_INVITE_COPIED": "邀请链接已复制！",
   "TOAST_COPY_FAILED": "无法复制到剪贴板",

@@ -148,6 +148,8 @@
   "ERR_IDENTITY_NOT_LOADED": "Identiteit nog niet geladen. Wacht een moment en probeer het opnieuw.",
   "ERR_NO_PEERS_TIME": "Geen andere deelnemers met een bekende tijd. Schakel over naar 'Spring naar mij'.",
   "ERR_NO_VIDEO_TAB": "Kon geen verbinding maken met videotabblad.",
+  "SITE_ACCESS_REQUIRED": "Je browser blokkeert KoalaSync op {host}. Klik hieronder op ‘Toegang toestaan’. Als er geen dialoog verschijnt, sta KoalaSync voor deze site toe via de extensie- of siterechten.",
+  "BTN_RETRY_ACCESS": "Toegang toestaan",
   "ERR_SELECT_VIDEO": "Selecteer eerst een video!",
   "TOAST_INVITE_COPIED": "Uitnodigingslink gekopieerd!",
   "TOAST_COPY_FAILED": "Kopiëren naar klembord mislukt",

@@ -14,6 +14,8 @@
   "TWITTER_DESCRIPTION": "在 Netflix、Emby、Jellyfin、YouTube、Twitch 和几乎任意 HTML5 视频上发起一起看派对。开源、重视隐私、无需账号。",
   "NAV_FEATURES": "特征",
   "NAV_HOW_IT_WORKS": "它是如何运作的",
+  "SUPPORT_BANNER_TEXT": "KoalaSync 无法访问视频网站？",
+  "SUPPORT_BANNER_CTA": "修复网站访问权限",
   "HERO_TITLE": "把任意视频变成<span class='hero-highlight'>一起看派对</span>。",
   "HERO_SUBTITLE": "远程电影之夜，毫无延迟。无需账号、无跟踪、无广告。分享链接，一起播放。",
   "HERO_MASCOT_ALT": "一只可爱的考拉站着，低头看着下载按钮",

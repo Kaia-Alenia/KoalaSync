@@ -148,6 +148,8 @@
   "ERR_IDENTITY_NOT_LOADED": "Identidad no cargada aún. Espera un momento e inténtalo de nuevo.",
   "ERR_NO_PEERS_TIME": "No hay otros participantes con posición conocida. Cambia a 'Traerlos a mi posición'.",
   "ERR_NO_VIDEO_TAB": "No se pudo conectar a la pestaña de video.",
+  "SITE_ACCESS_REQUIRED": "Tu navegador está bloqueando KoalaSync en {host}. Haz clic en «Permitir acceso». Si no aparece ningún diálogo, permite KoalaSync en este sitio desde los permisos de extensiones o del sitio.",
+  "BTN_RETRY_ACCESS": "Permitir acceso",
   "ERR_SELECT_VIDEO": "¡Selecciona un video primero!",
   "TOAST_INVITE_COPIED": "¡Enlace de invitación copiado!",
   "TOAST_COPY_FAILED": "Error al copiar al portapapeles",

@@ -10,6 +10,9 @@ const elements = {
     contents: document.querySelectorAll('.tab-content'),
     copyInvite: document.getElementById('copyInvite'),
     targetTab: document.getElementById('targetTab'),
+    siteAccessNotice: document.getElementById('siteAccessNotice'),
+    siteAccessMessage: document.getElementById('siteAccessMessage'),
+    siteAccessRetry: document.getElementById('siteAccessRetry'),
     forceSyncBtn: document.getElementById('forceSyncBtn'),
     forceSyncMode: document.getElementById('forceSyncMode'),
     peerList: document.getElementById('peerList'),
@@ -387,7 +390,7 @@ async function init() {
     // Initial Status Check (status shows via GET_STATUS below)
 
     // Initial Status Check
-    chrome.runtime.sendMessage({ type: 'GET_STATUS' }, async (res) => {
+    chrome.runtime.sendMessage({ type: 'GET_STATUS', retryPendingTarget: true }, async (res) => {
         if (chrome.runtime.lastError) {
             console.warn('[Popup] Background not responding:', chrome.runtime.lastError.message);
             await populateTabs();
@@ -410,13 +413,20 @@ async function init() {
                 applyConnectionStatus('connecting');
             }
             
-            // Populate Tabs using the background's targetTabId
-            await populateTabs(res.peers, res.targetTabId);
+            if (res.pendingTargetTabId) {
+                showSiteAccessNotice(res.pendingTargetHost, res.pendingTargetOriginPattern);
+            } else {
+                hideSiteAccessNotice();
+            }
+
+            // Keep a denied selection visible while Chrome waits for the user
+            // to grant access; it becomes active automatically after approval.
+            await populateTabs(res.peers, res.targetTabId || res.pendingTargetTabId);
 
             // Render lobby status if active
             if (res.episodeLobby) updateLobbyUI(res.episodeLobby, res.peers);
 
-            if (res.status === 'connected' && !res.targetTabId && localData.roomId) {
+            if (res.status === 'connected' && !res.targetTabId && !res.pendingTargetTabId && localData.roomId) {
                 const syncTabBtn = document.querySelector('.tab-btn[data-tab="tab-sync"]');
                 if (syncTabBtn) syncTabBtn.click();
                 showSelectVideoHint();
@@ -463,6 +473,9 @@ function toggleUIState(inRoom) {
 // --- Host Control Mode UI ---
 // True when we're a guest in a host-only room → remote-control buttons are locked.
 let hcmGuestLocked = false;
+let siteAccessBlocked = false;
+let siteAccessHost = null;
+let siteAccessOriginPattern = null;
 
 // Co-Host state mirrored for the peer-list renderer (promote/demote + role badges).
 let hcmAmOwner = false;
@@ -524,12 +537,15 @@ function updateHostControlUI(state) {
 }
 
 function setRemoteControlsLocked(locked) {
+    const effectiveLocked = locked || siteAccessBlocked;
     [elements.playBtn, elements.pauseBtn, elements.forceSyncBtn].forEach(btn => {
         if (!btn) return;
-        btn.disabled = locked;
-        btn.style.opacity = locked ? '0.5' : '';
-        btn.style.cursor = locked ? 'not-allowed' : '';
-        btn.title = locked ? (getMessage('NOTICE_HOST_CONTROLS') || 'The host controls playback for everyone.') : '';
+        btn.disabled = effectiveLocked;
+        btn.style.opacity = effectiveLocked ? '0.5' : '';
+        btn.style.cursor = effectiveLocked ? 'not-allowed' : '';
+        btn.title = siteAccessBlocked
+            ? (elements.siteAccessMessage?.textContent || getMessage('ERR_NO_VIDEO_TAB'))
+            : (locked ? (getMessage('NOTICE_HOST_CONTROLS') || 'The host controls playback for everyone.') : '');
     });
     // Always restore the default labels. The action handlers leave the text in a
     // transitional state ("Playing..." / "Pausing...") and the 2.5s safety reset
@@ -538,6 +554,64 @@ function setRemoteControlsLocked(locked) {
     // and on unlock (L-1).
     if (elements.playBtn) elements.playBtn.textContent = getMessage('BTN_PLAY') || 'Play';
     if (elements.pauseBtn) elements.pauseBtn.textContent = getMessage('BTN_PAUSE') || 'Pause';
+}
+
+function showSiteAccessNotice(host, originPattern = null) {
+    siteAccessBlocked = true;
+    siteAccessHost = host || siteAccessHost || 'website';
+    siteAccessOriginPattern = originPattern || siteAccessOriginPattern;
+    if (elements.siteAccessMessage) {
+        elements.siteAccessMessage.textContent = getMessage('SITE_ACCESS_REQUIRED', {
+            host: siteAccessHost
+        });
+    }
+    if (elements.siteAccessNotice) elements.siteAccessNotice.style.display = 'block';
+    setRemoteControlsLocked(hcmGuestLocked);
+}
+
+function hideSiteAccessNotice() {
+    siteAccessBlocked = false;
+    siteAccessHost = null;
+    siteAccessOriginPattern = null;
+    if (elements.siteAccessNotice) elements.siteAccessNotice.style.display = 'none';
+    setRemoteControlsLocked(hcmGuestLocked);
+}
+
+function handleTargetTabResponse(response) {
+    if (response?.status === 'host_permission_required') {
+        showSiteAccessNotice(response.host, response.originPattern);
+        return false;
+    }
+    if (response?.status === 'ok') {
+        hideSiteAccessNotice();
+        return true;
+    }
+    if (response?.status === 'superseded') return false;
+    showToast(response?.message || getMessage('ERR_NO_VIDEO_TAB'), 'error', 5000);
+    return false;
+}
+
+async function requestSiteAccess(originPattern) {
+    if (!originPattern || typeof chrome.permissions?.request !== 'function') return null;
+    try {
+        return await chrome.permissions.request({ origins: [originPattern] });
+    } catch (error) {
+        console.warn('[Popup] Host permission request failed:', error.message);
+        return false;
+    }
+}
+
+function selectTargetTab(tabId, tabTitle) {
+    return new Promise(resolve => {
+        chrome.runtime.sendMessage({ type: 'SET_TARGET_TAB', tabId, tabTitle }, response => {
+            if (chrome.runtime.lastError) {
+                showToast(chrome.runtime.lastError.message || getMessage('ERR_NO_VIDEO_TAB'), 'error', 5000);
+                resolve(false);
+                return;
+            }
+            resolve(handleTargetTabResponse(response));
+        });
+    });
 }
 
 if (elements.hostControlToggle) {
@@ -998,7 +1072,7 @@ async function populateTabs(providedPeers = null, providedTargetTabId = null) {
             if (populateTabsToken !== token) return;
             currentTargetTabId = null;
         } else {
-            currentTargetTabId = status?.targetTabId;
+            currentTargetTabId = status?.targetTabId || status?.pendingTargetTabId;
         }
     }
  
@@ -1118,7 +1192,7 @@ async function populateTabs(providedPeers = null, providedTargetTabId = null) {
         if (matchOpt && elements.targetTab.options.length > 1) {
             elements.targetTab.value = matchOpt.value;
             const tabTitle = matchOpt.dataset.originalTitle || null;
-            chrome.runtime.sendMessage({ type: 'SET_TARGET_TAB', tabId: parseInt(matchOpt.value), tabTitle });
+            selectTargetTab(parseInt(matchOpt.value), tabTitle);
         }
     }
 }
@@ -1471,7 +1545,12 @@ if (elements.langSelector) {
                 const data = await chrome.storage.local.get(['roomId', 'password', 'useCustomServer', 'serverUrl']);
                 updateUI(data.roomId, data.password, data.useCustomServer, data.serverUrl);
                 
-                await populateTabs(res.peers, res.targetTabId);
+                if (res.pendingTargetTabId) {
+                    showSiteAccessNotice(res.pendingTargetHost, res.pendingTargetOriginPattern);
+                } else {
+                    hideSiteAccessNotice();
+                }
+                await populateTabs(res.peers, res.targetTabId || res.pendingTargetTabId);
                 if (res.episodeLobby) updateLobbyUI(res.episodeLobby, res.peers);
             } else {
                 applyConnectionStatus('disconnected');
@@ -1749,18 +1828,34 @@ elements.retryBtn.addEventListener('click', () => {
     chrome.runtime.sendMessage({ type: 'RETRY_CONNECT' });
 });
 
-elements.targetTab.addEventListener('change', () => {
+elements.targetTab.addEventListener('change', async () => {
     const hint = document.getElementById('targetTabHint');
     if (hint) hint.style.display = 'none';
 
     const val = elements.targetTab.value;
     const tabId = val ? parseInt(val) : null;
     const tabTitle = elements.targetTab.options[elements.targetTab.selectedIndex]?.dataset.originalTitle || null;
-    chrome.runtime.sendMessage({ type: 'SET_TARGET_TAB', tabId, tabTitle });
+    await selectTargetTab(tabId, tabTitle);
 });
 
+if (elements.siteAccessRetry) {
+    elements.siteAccessRetry.addEventListener('click', async () => {
+        const val = elements.targetTab.value;
+        const tabId = val ? parseInt(val) : null;
+        const tabTitle = elements.targetTab.options[elements.targetTab.selectedIndex]?.dataset.originalTitle || null;
+        if (!tabId) {
+            showToast(getMessage('ERR_SELECT_VIDEO'), 'warning');
+            return;
+        }
+        elements.siteAccessRetry.disabled = true;
+        await requestSiteAccess(siteAccessOriginPattern);
+        await selectTargetTab(tabId, tabTitle);
+        elements.siteAccessRetry.disabled = false;
+    });
+}
+
 elements.forceSyncBtn.addEventListener('click', async () => {
-    if (hcmGuestLocked) return; // guest in host-only room — backstop (M-2/L-3)
+    if (hcmGuestLocked || siteAccessBlocked) return; // host/site-access backstop
     if (elements.forceSyncBtn.disabled) return;
     
     const originalText = elements.forceSyncBtn.textContent;
@@ -1806,7 +1901,7 @@ elements.forceSyncBtn.addEventListener('click', async () => {
         // Don't unlock a button that's locked because we became a guest mid-flight —
         // hcmGuestLocked is the source of truth for the lock state, and the next
         // CONTROL_MODE update restores the correct label.
-        if (!forceSyncDone && !hcmGuestLocked) {
+        if (!forceSyncDone && !hcmGuestLocked && !siteAccessBlocked) {
             elements.forceSyncBtn.disabled = false;
             elements.forceSyncBtn.textContent = originalText;
         }
@@ -1818,7 +1913,7 @@ elements.forceSyncBtn.addEventListener('click', async () => {
         if (forceSyncResetTimer) { clearTimeout(forceSyncResetTimer); forceSyncResetTimer = null; }
         showError(getMessage('ERR_NO_VIDEO_TAB'));
         forceSyncDone = true;
-        elements.forceSyncBtn.disabled = false;
+        if (!hcmGuestLocked && !siteAccessBlocked) elements.forceSyncBtn.disabled = false;
         elements.forceSyncBtn.textContent = originalText;
     };
 
@@ -1857,6 +1952,9 @@ elements.forceSyncBtn.addEventListener('click', async () => {
             if (chrome.runtime.lastError || !response) {
                 chrome.runtime.sendMessage({ type: 'INJECT_CONTENT_SCRIPT', tabId }, (injectResponse) => {
                     if (chrome.runtime.lastError || !injectResponse || injectResponse.status !== 'ok') {
+                        if (injectResponse?.status === 'host_permission_required') {
+                            showSiteAccessNotice(injectResponse.host, injectResponse.originPattern);
+                        }
                         failForceSyncTime();
                         return;
                     }
@@ -1872,7 +1970,7 @@ elements.forceSyncBtn.addEventListener('click', async () => {
 });
 
 elements.playBtn.addEventListener('click', () => {
-    if (hcmGuestLocked) return; // guest in host-only room — backstop
+    if (hcmGuestLocked || siteAccessBlocked) return; // host/site-access backstop
     if (!elements.targetTab.value) {
         showToast(getMessage('ERR_SELECT_VIDEO'), 'warning');
         return;
@@ -1886,12 +1984,12 @@ elements.playBtn.addEventListener('click', () => {
     }, (response) => {
         if (response && response.status === 'ok_solo') {
             elements.playBtn.textContent = getMessage('BTN_PLAY');
-            elements.playBtn.disabled = false;
+            if (!hcmGuestLocked && !siteAccessBlocked) elements.playBtn.disabled = false;
         }
     });
     // Safety reset: restore button after 2.5s in case no peers respond
     setTimeout(() => {
-        if (elements.playBtn.disabled && !hcmGuestLocked) {
+        if (elements.playBtn.disabled && !hcmGuestLocked && !siteAccessBlocked) {
             elements.playBtn.textContent = getMessage('BTN_PLAY');
             elements.playBtn.disabled = false;
         }
@@ -1899,7 +1997,7 @@ elements.playBtn.addEventListener('click', () => {
 });
 
 elements.pauseBtn.addEventListener('click', () => {
-    if (hcmGuestLocked) return; // guest in host-only room — backstop
+    if (hcmGuestLocked || siteAccessBlocked) return; // host/site-access backstop
     if (!elements.targetTab.value) {
         showToast(getMessage('ERR_SELECT_VIDEO'), 'warning');
         return;
@@ -1913,12 +2011,12 @@ elements.pauseBtn.addEventListener('click', () => {
     }, (response) => {
         if (response && response.status === 'ok_solo') {
             elements.pauseBtn.textContent = getMessage('BTN_PAUSE');
-            elements.pauseBtn.disabled = false;
+            if (!hcmGuestLocked && !siteAccessBlocked) elements.pauseBtn.disabled = false;
         }
     });
     // Safety reset: restore button after 2.5s in case no peers respond
     setTimeout(() => {
-        if (elements.pauseBtn.disabled && !hcmGuestLocked) {
+        if (elements.pauseBtn.disabled && !hcmGuestLocked && !siteAccessBlocked) {
             elements.pauseBtn.textContent = getMessage('BTN_PAUSE');
             elements.pauseBtn.disabled = false;
         }
@@ -2083,7 +2181,7 @@ chrome.runtime.onMessage.addListener((msg) => {
                     if (state.acks && state.acks.length >= peerCount) {
                         btn.textContent = getMessage('BTN_STATE_SYNCED');
                         setTimeout(() => {
-                            btn.disabled = false;
+                            if (!hcmGuestLocked && !siteAccessBlocked) btn.disabled = false;
                             btn.textContent = state.action === 'play' ? getMessage('BTN_PLAY') : getMessage('BTN_PAUSE');
                         }, 2000);
                     }
@@ -2098,7 +2196,7 @@ chrome.runtime.onMessage.addListener((msg) => {
                 forceSyncResetTimer = null;
             }
             if (elements.forceSyncBtn) {
-                elements.forceSyncBtn.disabled = false;
+                if (!hcmGuestLocked && !siteAccessBlocked) elements.forceSyncBtn.disabled = false;
                 elements.forceSyncBtn.textContent = getMessage('BTN_STATE_SYNCED');
                 setTimeout(() => {
                     elements.forceSyncBtn.textContent = getMessage('BTN_SYNC');
@@ -2150,6 +2248,9 @@ chrome.runtime.onMessage.addListener((msg) => {
                 }
             });
         }
+    } else if (msg.type === 'TARGET_TAB_READY') {
+        hideSiteAccessNotice();
+        populateTabs(null, msg.tabId);
     } else if (msg.type === 'PING_UPDATE') {
         updatePingDisplay(msg.ping);
     } else if (msg.type === 'HISTORY_UPDATE') {

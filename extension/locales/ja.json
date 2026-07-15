@@ -148,6 +148,8 @@
   "ERR_IDENTITY_NOT_LOADED": "IDがまだロードされていません。しばらく待ってから再試行してください。",
   "ERR_NO_PEERS_TIME": "既知の時間を持つ他のメンバーがいません。「自分に合わせる」に切り替えてください。",
   "ERR_NO_VIDEO_TAB": "ビデオタブに接続できませんでした。",
+  "SITE_ACCESS_REQUIRED": "ブラウザーが {host} で KoalaSync をブロックしています。下の「アクセスを許可」をクリックしてください。ダイアログが表示されない場合は、拡張機能またはサイトの権限でこのサイトの KoalaSync を許可してください。",
+  "BTN_RETRY_ACCESS": "アクセスを許可",
   "ERR_SELECT_VIDEO": "最初にビデオを選択してください！",
   "TOAST_INVITE_COPIED": "招待リンクをコピーしました！",
   "TOAST_COPY_FAILED": "クリップボードへのコピーに失敗しました",

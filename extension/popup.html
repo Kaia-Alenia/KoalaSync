@@ -453,6 +453,24 @@
             box-shadow: 0 8px 22px rgba(0, 0, 0, 0.08);
         }
 
+        .site-access-notice {
+            display: none;
+            margin-top: 8px;
+            margin-bottom: 0;
+            border-left: 4px solid var(--warning);
+            background: color-mix(in oklch, var(--warning), var(--card) 90%);
+            color: var(--text);
+            font-size: 11px;
+            line-height: 1.45;
+        }
+
+        .site-access-notice button {
+            width: auto;
+            margin-top: 8px;
+            padding: 6px 10px;
+            font-size: 11px;
+        }
+
         .peer-item {
             padding: 10px 0;
             border-bottom: 1px solid var(--border-strong);
@@ -1431,6 +1449,10 @@
             <div id="targetTabHint" style="display: none; position: absolute; top: -25px; right: 0; background: var(--accent); color: var(--text-on-green); padding: 4px 8px; border-radius: 6px; font-size: 11px; font-weight: bold; pointer-events: none; animation: floatHint 2s ease-in-out infinite; box-shadow: 0 4px 12px color-mix(in oklch, var(--accent), transparent 60%); z-index: 10;" data-i18n="HINT_SELECT_VIDEO">
                 Select your video here!
                 <div style="position: absolute; bottom: -4px; right: 20px; width: 8px; height: 8px; background: var(--accent); transform: rotate(45deg);"></div>
+            </div>
+            <div id="siteAccessNotice" class="info-card site-access-notice" role="alert" aria-live="polite">
+                <div id="siteAccessMessage"></div>
+                <button id="siteAccessRetry" class="secondary" data-i18n="BTN_RETRY_ACCESS">Try again</button>
             </div>
         </div>
         
