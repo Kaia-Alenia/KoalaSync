@@ -1,6 +1,6 @@
 KoalaSync: Private Watch Parties for Emby, Jellyfin, Plex, Netflix & YouTube
 
-Tired of counting down "3, 2, 1, Play" over voice chat? KoalaSync keeps you and your friends perfectly in sync. Whether you are streaming from your own self-hosted media server like Emby, Jellyfin or Plex, or watching on a major platform like Netflix, Prime Video or YouTube — KoalaSync is designed for smooth, browser-based watch parties.
+Tired of counting down "3, 2, 1, Play" over voice chat? KoalaSync keeps you and your friends perfectly in sync. Whether you are streaming from your own self-hosted media server like Emby, Jellyfin or Plex, or watching on a major platform like Netflix, Prime Video or YouTube, KoalaSync is designed for smooth, browser-based watch parties.
 
 
 ✨ CORE FEATURES
@@ -33,14 +33,14 @@ KoalaSync is built for private watch parties without unnecessary data collection
 3. Share the invite link with your friends.
 4. Open your favorite streaming site or media server.
 5. Select the active video tab.
-6. Press play — everyone stays perfectly in sync.
+6. Press play. Everyone stays perfectly in sync.
 
 
 
 ⚙️ UNDER THE HOOD
 KoalaSync is lightweight, transparent, and built with privacy in mind.
 
-• On-Demand Relay: Playback state is synchronized through a custom WebSocket-based relay server. There is no permanent background connection — the relay connection is maintained only while you're in a room and closes when you leave or automatically after two hours without a selected-video heartbeat.
+• On-Demand Relay: Playback state is synchronized through a custom WebSocket-based relay server. There is no permanent background connection. The relay connection is maintained only while you're in a room and closes when you leave or automatically after two hours without a selected-video heartbeat.
 • No Media Streaming: KoalaSync does not stream, proxy, upload, download, or redistribute any video content. Everyone watches from their own browser on the original website.
 • Temporary Room State Only: The relay server only coordinates room state such as play, pause, seek position, active target, nickname, and readiness status.
 • Docker Self-Hosting: The relay server can be self-hosted with Docker if you prefer to run your own private instance.
