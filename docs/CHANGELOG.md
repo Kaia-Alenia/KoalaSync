@@ -4,7 +4,7 @@ All notable changes to the KoalaSync browser extension, relay server, website, a
 
 ---
 
-## [v2.6.0] — Unreleased
+## [v2.6.0] — 2026-07-15
 
 ### Added
 - **Website: Expanded comparison guides** — Added fully localized comparison pages for Kosmi, Scener, and TwoSeven, plus improved existing alternatives pages and navigation.
