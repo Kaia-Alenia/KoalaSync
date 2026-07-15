@@ -93,12 +93,19 @@
 }
 
 .site-access-banner {
-    position: relative;
+    position: fixed;
+    top: 89px;
+    left: 0;
+    width: 100%;
     z-index: 900;
-    margin-top: 96px;
     border-block: 1px solid color-mix(in oklch, var(--accent) 42%, transparent);
     background: color-mix(in oklch, var(--accent) 16%, var(--bg));
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.16);
+    transition: top 0.3s ease;
+}
+
+nav.nav-scrolled + .site-access-banner {
+    top: 59px;
 }
 
 .site-access-banner-inner {
@@ -143,7 +150,11 @@
 
 @media (max-width: 768px) {
     .site-access-banner {
-        margin-top: 76px;
+        top: 73px;
+    }
+
+    nav.nav-scrolled + .site-access-banner {
+        top: 59px;
     }
 
     .site-access-banner-inner {
