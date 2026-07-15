@@ -67,6 +67,28 @@ if (!llmsText.includes('wss://syncserver.koalastuff.net') || !llmsText.includes(
   throw new Error('llms.txt must distinguish the public TLS relay URL from the internal self-hosting port');
 }
 
+const selfHostingStart = template.indexOf('<div id="pane-docker"');
+const selfHostingEnd = template.indexOf('</section>', selfHostingStart);
+if (selfHostingStart === -1 || selfHostingEnd === -1) {
+  throw new Error('Could not locate the self-hosting examples in website/template.html');
+}
+const selfHostingExamples = template.slice(selfHostingStart, selfHostingEnd);
+const requiredSelfHostingValues = [
+  'SERVER_SALT:',
+  'REPLACE_WITH_OPENSSL_RAND_BASE64_32_OUTPUT',
+  'ADMIN_METRICS_TOKEN:',
+  'DEBUG_LOGGING:',
+  '127.0.0.1:3000:3000'
+];
+for (const value of requiredSelfHostingValues) {
+  if (!selfHostingExamples.includes(value)) {
+    throw new Error(`Website self-hosting compose example is missing ${value}`);
+  }
+}
+if ((selfHostingExamples.match(/localhost:3000/g) || []).length !== 2 || selfHostingExamples.includes('KoalaSync:3000')) {
+  throw new Error('Both Caddy examples must match the compose loopback port binding');
+}
+
 const landingStylesheet = landingStylesheets[0][0];
 if (!/href="\{\{ASSET_PATH\}\}landing\.min\.css"/.test(landingStylesheet)) {
   throw new Error('Landing stylesheet must use the landing.min.css build placeholder');
@@ -145,6 +167,7 @@ if (!/animation:\s*none\s*!important/.test(reducedMotionRule)) {
 console.log('Extension mockup theme-sensitive text uses theme-aware colors');
 console.log('Landing CSS is render-blocking, single-request, and cascade-stable');
 console.log('Landing head discovers a complete and architecture-accurate llms.txt');
+console.log('Website self-hosting examples include production secrets and consistent networking');
 console.log('Foreground film birds use complete, always-on wing and glide animations');
 console.log('All Getting Started mockups define explicit light-theme surfaces');
 console.log('Getting Started step numbers stay readable in light mode');

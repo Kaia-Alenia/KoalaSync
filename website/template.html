@@ -1374,14 +1374,21 @@
   <span class="t-key">koala-sync:</span>
     <span class="t-key">image:</span> <span class="t-str">ghcr.io/shik3i/koalasync:latest</span>
     <span class="t-key">container_name:</span> <span class="t-str">KoalaSync</span>
-    <span class="t-key">restart:</span> <span class="t-str">always</span>
-    <span class="t-comment"># Access internally by proxying to container port 3000</span>
+    <span class="t-key">restart:</span> <span class="t-str">unless-stopped</span>
     <span class="t-key">environment:</span>
-      <span class="t-key">-</span> <span class="t-str">TZ=Europe/Berlin</span>
-      <span class="t-key">-</span> <span class="t-str">PORT=3000</span>
-      <span class="t-key">-</span> <span class="t-str">MIN_VERSION=1.0.0</span>
-      <span class="t-key">-</span> <span class="t-str">MAX_ROOMS=100</span>
-      <span class="t-key">-</span> <span class="t-str">MAX_PEERS_PER_ROOM=50</span>
+      <span class="t-key">TZ:</span> <span class="t-str">Europe/Berlin</span>
+      <span class="t-key">PORT:</span> <span class="t-val">3000</span>
+      <span class="t-key">MIN_VERSION:</span> <span class="t-str">1.0.0</span>
+      <span class="t-key">MAX_ROOMS:</span> <span class="t-val">100</span>
+      <span class="t-key">MAX_PEERS_PER_ROOM:</span> <span class="t-val">25</span>
+      <span class="t-comment"># Required: replace before starting</span>
+      <span class="t-key">SERVER_SALT:</span> <span class="t-str">"REPLACE_WITH_OPENSSL_RAND_BASE64_32_OUTPUT"</span>
+      <span class="t-comment"># Optional: leave empty or replace with a 32+ character token</span>
+      <span class="t-key">ADMIN_METRICS_TOKEN:</span> <span class="t-str">""</span>
+      <span class="t-key">DEBUG_LOGGING:</span> <span class="t-str">"0"</span>
+    <span class="t-comment"># Host Caddy reaches the relay only through this loopback binding</span>
+    <span class="t-key">ports:</span>
+      <span class="t-key">-</span> <span class="t-str">"127.0.0.1:3000:3000"</span>
     <span class="t-key">pids_limit:</span> <span class="t-val">2048</span></code></pre>
                         <div style="margin-top: 1rem; font-size: 0.75rem; text-align: right; padding-right: 0.5rem;">
                             <a href="https://github.com/Shik3i/KoalaSync/pkgs/container/koalasync" target="_blank" rel="noopener" style="color: var(--accent); text-decoration: none; display: inline-flex; align-items: center; gap: 6px; font-weight: 600; transition: opacity 0.2s; opacity: 0.85;">
@@ -1449,7 +1456,7 @@
 <span class="t-key">syncserver.koalastuff.net</span> {
     <span class="t-key">import</span> <span class="t-val">security_headers</span>
     <span class="t-key">encode</span> <span class="t-val">zstd gzip</span>
-    <span class="t-key">reverse_proxy</span> <span class="t-val">KoalaSync:3000</span>
+    <span class="t-key">reverse_proxy</span> <span class="t-val">localhost:3000</span>
 }</code></pre>
                     </div>
                 </div>
