@@ -118,10 +118,10 @@
         </div>
 
         <section class="support-card" aria-labelledby="why-title">
-            <span class="support-eyebrow">Why access is needed</span>
-            <h2 id="why-title">KoalaSync must reach the player you selected</h2>
-            <p>KoalaSync injects a local content script into the selected tab so it can find the HTML5 player, read its playback position, and apply play, pause, and seek actions. The video and audio stream never leave your browser. Only synchronization state is sent through the relay.</p>
-            <p>Access is requested for the website origin shown in the popup. Browser-internal pages such as <strong>chrome://</strong>, <strong>edge://</strong>, and <strong>about:</strong> cannot be controlled. Local files may also require the separate <strong>Allow access to file URLs</strong> switch in the extension details.</p>
+            <span class="support-eyebrow">Why this suddenly happened</span>
+            <h2 id="why-title">Your browser started withholding website access</h2>
+            <p>Chrome is gradually rolling out new per-site controls for extensions. The rollout can reach individual browsers or profiles without a KoalaSync update, so KoalaSync may appear to stop working from one day to the next while another browser still works normally.</p>
+            <p>The room connection can remain online, but the browser blocks KoalaSync from reaching the video player. Granting KoalaSync access to the affected video website and reloading that tab restores playback synchronization.</p>
         </section>
 
         <section class="support-card" aria-labelledby="still-title">
