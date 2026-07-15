@@ -8,7 +8,7 @@ This directory contains the static KoalaSync website. It is both the public mark
 - `build.cjs` compiles the static site into `website/www/`.
 - `website/www/` is generated output. Do not edit files there directly.
 - `join.html` handles room-invite links and communicates with the extension through `bridge.js`.
-- `llms.txt` gives crawlers and AI tools a compact project overview.
+- `llms.txt` gives AI tools a detailed product profile and is linked from every localized landing-page `<head>`.
 - `alternatives/` contains comparison pages for users evaluating KoalaSync against other watch-party approaches.
 
 ## Core Roles
@@ -36,7 +36,7 @@ The website is 100% static HTML, CSS, and JavaScript.
 - **Strangler CSS architecture**: `styles/*.css` supplies page-specific production bundles; `style.legacy.css` is the byte-identical, unloaded reference monolith. The landing bundle preserves the legacy cascade while excluding Join- and Alternatives-only rules. Structural CSS is not activated after paint because that causes layout shifts.
 - **Zero backend**: The compiled site can be hosted by any static file server.
 - **Zero external assets**: Fonts, icons, scripts, and images must remain self-hosted.
-- **Generated SEO/runtime files**: `version.json`, sitemap, robots, clean URLs, localized pages, and minified assets are copied or generated into `www/`.
+- **Generated SEO/runtime files**: `version.json`, `robots.txt`, `llms.txt`, clean URLs, localized pages, and minified assets are copied into `www/`; `sitemap.xml` is generated there from the current route set.
 
 ## Local Development & Compilation
 
@@ -55,8 +55,9 @@ Then open:
 Focused verification:
 ```bash
 node scripts/test-website-locales.mjs
-node --check website/www/app.min.js
-node --check website/www/lang-init.min.js
+node scripts/test-website-theme.mjs
+node --check website/app.js
+node --check website/lang-init.js
 ```
 
 Full verification:
@@ -106,4 +107,4 @@ sync.koalastuff.net {
 - Do not add external CDNs, fonts, analytics, or third-party scripts.
 - Keep invite credentials in the URL hash, not query parameters.
 - Keep locale files synchronized with `website/build.cjs` and `scripts/test-website-locales.mjs`.
-- Commit source changes and regenerated `www/` output together when website output changes.
+- `website/www/` is gitignored build output. Commit the source changes only; rebuild `www/` locally or in CI for verification and deployment.

@@ -21,7 +21,7 @@ KoalaSync is a specialized tool for **synchronized video playback** across multi
 - `extension/`: Browser Extension (Chrome & Firefox, Manifest V3). Contains background service worker, content scripts, and popup UI.
 - `server/`: Node.js Relay Server using Socket.IO (WebSocket-only).
 - `website/`: **Landing Page** & Invitation Bridge (Marketing, Tutorials, and Downloads).
-  - **`build.cjs`**: Zero-dependency static site compiler. Translates `template.html` + `locales/*.json` → `www/`. Also minifies CSS/JS automatically.
+  - **`build.cjs`**: Static site compiler using the repository's build dependencies. Translates `template.html` + `locales/*.json` → `www/`, generates the sitemap, and minifies HTML/CSS/JS.
   - **`www/` is auto-generated**: Never edit files in `www/` directly. Always edit source files (`template.html`, `style.css`, `styles/*.css`, `app.js`, `lang-init.js`, `locales/*.json`) and run `node website/build.cjs` to regenerate. `style.css` is the development manifest; `style.legacy.css` is an unloaded, byte-identical migration reference. Production creates page-specific and render-priority CSS bundles from `styles/*.css`; CSS/JS are output as `.min.*` files and stale generated assets are removed on each build.
 - `shared/`: **Single Source of Truth** for protocol constants, event names, blacklist data, and generated usernames.
 - `scripts/`: Development utilities (e.g., `build-extension.cjs`).
@@ -64,14 +64,8 @@ The popup UI follows a strict design system. Do not modify these variables or th
 - **Font**: System font stack. **MANDATORY**: No external CDNs or Google Fonts to ensure 100% privacy.
 - **Popup Width**: Fixed at `320px`.
 - **Tab Structure**: Must maintain the visible **Room**, **Sync**, **Settings**, and **Status** tabs. The hidden **Dev** tab is available only for developer diagnostics.
-- **CSS Variables**:
-  | Variable | Value | Purpose |
-  | :--- | :--- | :--- |
-  | `--bg` | `#0f172a` | Main background |
-  | `--card` | `#1e293b` | Form and info cards |
-  | `--accent` | `#6366f1` | Primary actions and branding |
-  | `--success` | `#22c55e` | Success states / Online dot |
-  | `--error` | `#ef4444` | Errors / Offline dot |
+- **Appearance modes**: Preserve `system`, `light`, and `dark` behavior and the Eucalyptus, Cyber, and Graphite palettes.
+- **CSS variables**: Use the semantic tokens defined in `popup.html` (`--bg`, `--card`, `--accent`, `--text`, `--text-muted`, `--success`, `--warning`, and `--error`). Do not hard-code the retired indigo/slate palette or bypass palette-specific token overrides.
 
 ## 7. Non-Negotiables (Core Logic)
 The following features are critical and must not be removed or fundamentally altered:
@@ -151,9 +145,9 @@ Before starting any task, committing, or pushing, you **MUST** run `git pull --r
 ### Making Website Changes
 1. Edit source files in `website/` (`template.html`, `style.css`, `styles/*.css`, `app.js`, `lang-init.js`, or `locales/*.json`).
 2. Run the compiler: `node website/build.cjs`. This generates the multilingual pages in `www/` and minifies CSS/JS.
-3. Verify the output: `node --check website/www/app.min.js && node --check website/www/lang-init.min.js`.
+3. Verify the sources and generated contract: `node --check website/app.js`, `node --check website/lang-init.js`, `node scripts/test-website-locales.mjs`, and `node scripts/test-website-theme.mjs`.
 4. Test locally: `npx serve website/www` or `python3 -m http.server 8080 -d website/www`.
-5. Commit both source changes and the updated `www/` output.
+5. Commit the source changes only. `website/www/` is generated and gitignored.
 
 ### Testing Locally
 1. Run the build script: `node scripts/build-extension.cjs`.

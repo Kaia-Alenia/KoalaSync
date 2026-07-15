@@ -16,7 +16,7 @@ Ready-to-paste copy for product listings, launch pages, directory submissions, a
 
 ## 2. Three-Sentence Overview
 
-> KoalaSync is a lightweight browser extension that keeps you and your friends perfectly in sync on YouTube, Netflix, Twitch, Prime Video, Jellyfin, Emby, and almost any other site with an HTML5 video player — press play once and everyone stays together. It's built privacy-first: no accounts, no telemetry, and the official relay server runs entirely in volatile RAM with zero persistence, so nothing about your sessions is ever stored. Open source under the MIT license and fully self-hostable with a single Docker command, KoalaSync is a transparent watch-party tool that works everywhere and respects your data sovereignty.
+> KoalaSync is a lightweight browser extension that keeps you and your friends perfectly in sync on YouTube, Netflix, Twitch, Prime Video, Jellyfin, Emby, and almost any other site with an HTML5 video player — press play once and everyone stays together. It's built privacy-first: no accounts, no telemetry, and the official relay server runs entirely in volatile RAM with zero persistence, so nothing about your sessions is ever stored. Open source under the MIT license and fully self-hostable with a small Docker Compose setup and a unique server salt, KoalaSync is a transparent watch-party tool that works everywhere and respects your data sovereignty.
 
 ---
 
@@ -38,7 +38,7 @@ Most watch-party tools fall into one of two traps: they only work on a short all
 
 ### Built for people who actually want to read the code
 
-KoalaSync is MIT-licensed open source, built by a solo developer. Audit it, fork it, change it. The extension is dependency-free with a direct Socket.IO wire implementation — no opaque libraries, no framework bloat, no surprise third-party SDKs. Want full sovereignty? Self-host your own relay with a single Docker command and keep all watch-party coordination traffic inside your own infrastructure. The official public relay is there when you don't care, self-hosting is there when you do.
+KoalaSync is MIT-licensed open source, built by a solo developer. Audit it, fork it, change it. The extension is dependency-free with a direct Socket.IO wire implementation — no opaque libraries, no framework bloat, no surprise third-party SDKs. Want full sovereignty? Self-host your own relay with Docker Compose, set a unique `SERVER_SALT`, and keep all watch-party coordination traffic inside your own infrastructure. The official public relay is there when you don't care, self-hosting is there when you do.
 
 ### Little touches you'll notice
 

@@ -18,8 +18,9 @@ KoalaSync is a **privacy-preserving watch-party sync tool**, not a security prod
 
 - **Rooms are ephemeral.** They exist for a few hours and are auto-reaped. There are no
   accounts, no persistent storage, no money, and no sensitive content on the relay.
-- **The relay is a dumb, stateless message bus.** It forwards play/pause/seek between
-  peers who *chose* to watch together and joined via an invite link shared out-of-band.
+- **The relay is a zero-persistence, in-memory message bus.** It temporarily holds room
+  and peer state while forwarding play/pause/seek between peers who *chose* to watch
+  together and joined via an invite link shared out-of-band.
 - **Participants are invited.** Anyone in a room was let in. The social contract is
   "we're watching a video together," not "mutually distrusting parties."
 
