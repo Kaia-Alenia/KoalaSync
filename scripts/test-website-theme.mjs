@@ -17,6 +17,7 @@ const germanImprintPage = fs.readFileSync(path.join(repoRoot, 'website', 'impres
 const alternativesIndex = fs.readFileSync(path.join(repoRoot, 'website', 'alternatives', 'index.html'), 'utf8');
 const alternativesCss = fs.readFileSync(path.join(repoRoot, 'website', 'styles', 'alternatives.css'), 'utf8');
 const llmsText = fs.readFileSync(path.join(repoRoot, 'website', 'llms.txt'), 'utf8');
+const websiteVersion = JSON.parse(fs.readFileSync(path.join(repoRoot, 'website', 'version.json'), 'utf8')).version;
 const mockupStart = template.indexOf('<div class="extension-mockup">');
 const mockupEnd = template.indexOf('<div class="demo-invite-fly"', mockupStart);
 
@@ -62,6 +63,9 @@ for (const section of requiredLlmsSections) {
 }
 if (/\bWebRTC\b|\bport 54000\b|peer-to-peer by design/i.test(llmsText)) {
   throw new Error('llms.txt must describe the current WebSocket relay architecture without obsolete WebRTC or port claims');
+}
+if (!llmsText.includes(`Current website release: ${websiteVersion}`)) {
+  throw new Error(`llms.txt release must match website/version.json (${websiteVersion})`);
 }
 const documentedRelayUrls = [...llmsText.matchAll(/`(wss:\/\/[^`\s]+)`/g)].map(([, value]) => new URL(value));
 const hasCanonicalPublicRelay = documentedRelayUrls.some((url) => (
