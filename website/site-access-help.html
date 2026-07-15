@@ -63,51 +63,50 @@
 
     <main id="main-content" class="support-content">
         <header class="support-hero">
-            <span class="support-status">Website access troubleshooting</span>
-            <h1>Connected, but the video tab does nothing?</h1>
-            <p class="support-lead">Your browser may be withholding KoalaSync’s access to that website. The room connection can still look healthy while KoalaSync cannot read or control the player.</p>
+            <span class="support-status">KoalaSync cannot see your video</span>
+            <h1>KoalaSync opens, but your video does nothing?</h1>
+            <p class="support-lead">Chrome may have switched off KoalaSync for that video website. You can still look connected to a room, but KoalaSync cannot see or control the video until you allow access again.</p>
         </header>
 
         <section class="support-card" aria-labelledby="quick-fix-title">
-            <span class="support-eyebrow">Immediate workaround — no extension update required</span>
-            <h2 id="quick-fix-title">Allow KoalaSync in your browser now</h2>
+            <span class="support-eyebrow">Fix it now — no update required</span>
+            <h2 id="quick-fix-title">Turn KoalaSync back on for the video website</h2>
             <ol class="support-steps">
-                <li>Keep the affected video website open.</li>
-                <li>Open the browser’s extensions menu next to the address bar.</li>
-                <li>If KoalaSync appears under <strong>Access requested</strong>, select KoalaSync to grant access.</li>
-                <li>If that section is missing, open KoalaSync’s menu or extension details and set website access to <strong>On this site</strong> or <strong>On all sites</strong>.</li>
-                <li>Reload the video page once, open KoalaSync, and select the video tab again.</li>
+                <li>Leave the video website open.</li>
+                <li>Look at the top-right of the browser, next to the long box that shows the website address. Click the <strong>Extensions</strong> button (usually a puzzle-piece icon). If you cannot see it, open the three-dot menu first and choose <strong>Extensions</strong>.</li>
+                <li>Look for <strong>Access requested</strong>. Click <strong>KoalaSync</strong> underneath it to allow access.</li>
+                <li>If you do not see <strong>Access requested</strong>, find KoalaSync in the same menu, open its three-dot menu, choose <strong>This can read and change site data</strong>, then choose <strong>On this site</strong>. You can also choose <strong>On all sites</strong> if you want KoalaSync to work automatically on every supported website.</li>
+                <li>Return to the video and click the browser’s reload button (the circular arrow).</li>
+                <li>Open KoalaSync and select the video tab again.</li>
             </ol>
-            <p>This manual workaround works even while KoalaSync 2.6.2 is still waiting for approval or rollout in your browser’s extension store.</p>
+            <p>You do not need to wait for a KoalaSync update. These steps work immediately.</p>
         </section>
 
         <div class="support-callout" role="note">
             <span class="support-callout-icon" aria-hidden="true">i</span>
             <div>
-                <strong>This is not a new KoalaSync permission.</strong>
-                <p>Chrome lets users, profiles, and administrators withhold extension access per website. Its newer extension menu makes that existing control much more visible. KoalaSync 2.6.2 detects the blocked state and adds a guided recovery action after the store update reaches you; the manual steps above work immediately on older KoalaSync releases.</p>
+                <strong>KoalaSync did not add a new kind of permission.</strong>
+                <p>Chrome changed how it handles an extension’s existing access to websites. This change can switch KoalaSync off for a website even though KoalaSync itself was not updated. Allowing KoalaSync on the video website turns it back on.</p>
             </div>
         </div>
 
         <section class="support-card" aria-labelledby="chromium-title">
             <span class="support-eyebrow">Chrome, Edge, Brave, Opera, Vivaldi</span>
-            <h2 id="chromium-title">Allow KoalaSync on the current site</h2>
+            <h2 id="chromium-title">Where to click</h2>
             <ol>
-                <li>Keep the affected video tab open.</li>
-                <li>Open the browser’s extensions menu near the address bar.</li>
-                <li>Under <strong>Access requested</strong>, select KoalaSync and allow access.</li>
-                <li>In browsers with the older menu, right-click KoalaSync and choose <strong>This can read and change site data</strong>, then allow the current site.</li>
-                <li>If needed, open KoalaSync’s extension details and change site access to <strong>On this site</strong> or <strong>On all sites</strong>.</li>
-                <li>Reload the video tab and select it again in KoalaSync.</li>
+                <li>Keep the video tab open so the browser knows which website you want to allow.</li>
+                <li>Open the <strong>Extensions</strong> menu at the top-right of the browser.</li>
+                <li>Under <strong>Access requested</strong>, click <strong>KoalaSync</strong>.</li>
+                <li>If your browser shows the older menu, open KoalaSync’s three-dot menu and choose <strong>This can read and change site data</strong> → <strong>On this site</strong>.</li>
+                <li>Reload the video page, open KoalaSync, and select that tab again.</li>
             </ol>
-            <p><a class="support-link" href="https://developer.chrome.com/docs/extensions/reference/api/permissions#method-addHostAccessRequest" target="_blank" rel="noopener">Chrome’s official host-access-request reference</a></p>
         </section>
 
         <section class="support-card" aria-labelledby="why-title">
             <span class="support-eyebrow">Why this suddenly happened</span>
-            <h2 id="why-title">Your browser started withholding website access</h2>
-            <p>Chrome is gradually rolling out new per-site controls for extensions. The rollout can reach individual browsers or profiles without a KoalaSync update, so KoalaSync may appear to stop working from one day to the next while another browser still works normally.</p>
-            <p>The room connection can remain online, but the browser blocks KoalaSync from reaching the video player. Granting KoalaSync access to the affected video website and reloading that tab restores playback synchronization.</p>
+            <h2 id="why-title">Chrome changed this without a KoalaSync update</h2>
+            <p>Chrome is gradually giving people a new extensions menu. It can arrive on one computer today and on another computer later. That is why KoalaSync can suddenly stop working in one browser while it still works in another.</p>
+            <p>Your room can still show as connected because the room connection and access to the video are two separate things. KoalaSync cannot control the video until Chrome allows it on that website again.</p>
         </section>
 
         <section class="support-card" aria-labelledby="still-title">
