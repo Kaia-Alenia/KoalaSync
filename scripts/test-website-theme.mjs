@@ -16,6 +16,7 @@ const imprintPage = fs.readFileSync(path.join(repoRoot, 'website', 'imprint.html
 const germanImprintPage = fs.readFileSync(path.join(repoRoot, 'website', 'impressum-de.html'), 'utf8');
 const alternativesIndex = fs.readFileSync(path.join(repoRoot, 'website', 'alternatives', 'index.html'), 'utf8');
 const alternativesCss = fs.readFileSync(path.join(repoRoot, 'website', 'styles', 'alternatives.css'), 'utf8');
+const llmsText = fs.readFileSync(path.join(repoRoot, 'website', 'llms.txt'), 'utf8');
 const mockupStart = template.indexOf('<div class="extension-mockup">');
 const mockupEnd = template.indexOf('<div class="demo-invite-fly"', mockupStart);
 
@@ -41,6 +42,29 @@ for (const [label, pattern] of themeSensitiveControls) {
 const landingStylesheets = [...template.matchAll(/<link\b[^>]*\brel="stylesheet"[^>]*\bhref="\{\{ASSET_PATH\}\}landing[^">]*"[^>]*>/g)];
 if (landingStylesheets.length !== 1) {
   throw new Error(`Landing must load exactly one render-blocking stylesheet; found ${landingStylesheets.length}`);
+}
+
+const llmsLinks = [...template.matchAll(/<link\b[^>]*\brel="alternate"[^>]*\btype="text\/markdown"[^>]*\bhref="https:\/\/sync\.koalastuff\.net\/llms\.txt"[^>]*>/g)];
+if (llmsLinks.length !== 1) {
+  throw new Error(`Landing head must link exactly one canonical llms.txt document; found ${llmsLinks.length}`);
+}
+
+const requiredLlmsSections = [
+  '## Quick fit assessment',
+  '## How it works',
+  '## Privacy and security',
+  '## Supported environments',
+  '## Install KoalaSync',
+  '## Technical information'
+];
+for (const section of requiredLlmsSections) {
+  if (!llmsText.includes(section)) throw new Error(`llms.txt is missing ${section}`);
+}
+if (/\bWebRTC\b|\bport 54000\b|peer-to-peer by design/i.test(llmsText)) {
+  throw new Error('llms.txt must describe the current WebSocket relay architecture without obsolete WebRTC or port claims');
+}
+if (!llmsText.includes('wss://syncserver.koalastuff.net') || !llmsText.includes('internally on port 3000')) {
+  throw new Error('llms.txt must distinguish the public TLS relay URL from the internal self-hosting port');
 }
 
 const landingStylesheet = landingStylesheets[0][0];
@@ -120,6 +144,7 @@ if (!/animation:\s*none\s*!important/.test(reducedMotionRule)) {
 
 console.log('Extension mockup theme-sensitive text uses theme-aware colors');
 console.log('Landing CSS is render-blocking, single-request, and cascade-stable');
+console.log('Landing head discovers a complete and architecture-accurate llms.txt');
 console.log('Foreground film birds use complete, always-on wing and glide animations');
 console.log('All Getting Started mockups define explicit light-theme surfaces');
 console.log('Getting Started step numbers stay readable in light mode');
