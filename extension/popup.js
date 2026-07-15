@@ -3,7 +3,14 @@ import { BLACKLIST_DOMAINS } from './shared/blacklist.js';
 import { getAvatarForName, generateUsername, USERNAME_ADJECTIVES, USERNAME_NOUNS } from './shared/names.js';
 import { loadLocale, translateDOM, getMessage, getSystemLanguage } from './i18n.js';
 import { TITLE_PRIVACY_MODES, normalizeSendTabTitle, normalizeTabTitle } from './title-privacy.js';
+import './shared/invite-links.js';
 
+let pendingInviteRoomId = '';
+let pendingInviteChatKey = '';
+
+function normalizeChatKey(value) {
+    return typeof value === 'string' && /^[A-Za-z0-9_-]{21}[AQgw]$/.test(value) ? value : '';
+}
 
 const elements = {
     tabs: document.querySelectorAll('.tabs .tab-btn'),
@@ -324,7 +331,7 @@ function setRoomRefreshCooldown() {
 async function init() {
     // Local-only by design — settings and room credentials never come from
     // storage.sync (only onboardingComplete + dismissedHints live there).
-    const localData = await chrome.storage.local.get(['serverUrl', 'useCustomServer', 'roomId', 'password', 'username', 'filterNoise', 'autoSyncNextEpisode', 'sendTabTitle', 'mediaTitlePrivacyMode', 'titlePrivacyMode', 'forceSyncMode', 'browserNotifications', 'autoCopyInvite', 'locale', 'audioSettings', 'activeTab', 'themeMode', 'themePalette']);
+    const localData = await chrome.storage.local.get(['serverUrl', 'useCustomServer', 'roomId', 'password', 'chatKey', 'username', 'filterNoise', 'autoSyncNextEpisode', 'sendTabTitle', 'mediaTitlePrivacyMode', 'titlePrivacyMode', 'forceSyncMode', 'browserNotifications', 'autoCopyInvite', 'locale', 'audioSettings', 'activeTab', 'themeMode', 'themePalette']);
 
     let activeLang = localData.locale;
     if (!activeLang) {
@@ -380,7 +387,7 @@ async function init() {
     }
 
     toggleUIState(!!localData.roomId);
-    updateUI(localData.roomId, localData.password, localData.useCustomServer, localData.serverUrl);
+    updateUI(localData.roomId, localData.password, localData.useCustomServer, localData.serverUrl, localData.chatKey);
     refreshLogs();
     refreshHistory();
 
@@ -552,15 +559,20 @@ if (elements.hostControlToggle) {
     });
 }
 
-function updateUI(roomId, password, useCustomServer = false, serverUrl = '') {
+function updateUI(roomId, password, useCustomServer = false, serverUrl = '', chatKey = '') {
     const inRoom = !!roomId;
     toggleUIState(inRoom);
     if (inRoom) {
-        let invite = `${OFFICIAL_LANDING_PAGE_URL}/join.html#join:${roomId}:${password}`;
-        if (useCustomServer) {
-            const encodedUrl = encodeURIComponent(serverUrl || '');
-            invite += `:1:${encodedUrl}`;
-        }
+        const validChatKey = normalizeChatKey(chatKey);
+        let invite = validChatKey
+            ? `${OFFICIAL_LANDING_PAGE_URL}/join.html${globalThis.KoalaSyncInviteLinks.buildJ2Hash({
+                roomId,
+                password,
+                chatKey: validChatKey,
+                serverUrl: useCustomServer ? serverUrl : ''
+            })}`
+            : `${OFFICIAL_LANDING_PAGE_URL}/join.html#join:${roomId}:${password}`;
+        if (!validChatKey && useCustomServer) invite += `:1:${encodeURIComponent(serverUrl || '')}`;
         elements.inviteLink.value = invite;
         
         if (window.justCreatedRoom) {
@@ -1289,41 +1301,21 @@ function updateRoomList(rooms) {
 function checkInviteLink() {
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
         const tab = tabs[0];
-        if (tab && tab.url && tab.url.startsWith(OFFICIAL_LANDING_PAGE_URL + '/') && tab.url.includes('#join:')) {
+        if (tab && tab.url && tab.url.startsWith(OFFICIAL_LANDING_PAGE_URL + '/')) {
             try {
-                const rawHash = tab.url.split('#join:')[1];
-                if (!rawHash) return;
-                const parts = rawHash.split(':');
-                if (parts.length >= 2) {
-                    const roomId = parts.shift();
-                    let useCustomServer = false;
-                    let serverUrl = '';
+                const invite = globalThis.KoalaSyncInviteLinks.parseInviteHash(new URL(tab.url).hash);
+                if (!invite) return;
+                elements.roomId.value = invite.roomId;
+                elements.password.value = invite.password;
+                pendingInviteRoomId = invite.roomId;
+                pendingInviteChatKey = normalizeChatKey(invite.chatKey);
 
-                    const last = parts[parts.length - 1];
-                    const secondToLast = parts[parts.length - 2];
-                    const decodedLast = decodeURIComponent(last || '');
-                    const isCustom = secondToLast === '1' && (decodedLast.startsWith('ws://') || decodedLast.startsWith('wss://'));
-                    const isOfficial = secondToLast === '0' && last === '';
+                elements.serverUrl.value = invite.serverUrl;
+                setServerMode(invite.useCustomServer);
+                chrome.storage.local.set({ serverUrl: invite.serverUrl, useCustomServer: invite.useCustomServer });
 
-                    if (parts.length >= 3 && (isCustom || isOfficial)) {
-                        serverUrl = decodeURIComponent(parts.pop());
-                        useCustomServer = parts.pop() === '1';
-                    }
-
-                    const password = parts.join(':');
-
-                    elements.roomId.value = roomId;
-                    elements.password.value = password;
-                    
-                    if (serverUrl || useCustomServer) {
-                        elements.serverUrl.value = serverUrl;
-                        setServerMode(useCustomServer);
-                        chrome.storage.local.set({ serverUrl, useCustomServer });
-                    }
-
-                    elements.joinBtn.style.boxShadow = '0 0 15px var(--accent)';
-                    setTimeout(() => elements.joinBtn.style.boxShadow = '', 2000);
-                }
+                elements.joinBtn.style.boxShadow = '0 0 15px var(--accent)';
+                setTimeout(() => elements.joinBtn.style.boxShadow = '', 2000);
             } catch (_e) {
                 // Malformed invite link, ignore
             }
@@ -1468,15 +1460,15 @@ if (elements.langSelector) {
                 lastKnownPeers = res.peers || [];
                 if (res.lastActionState) updateLastActionUI(res.lastActionState, res.peers);
                 
-                const data = await chrome.storage.local.get(['roomId', 'password', 'useCustomServer', 'serverUrl']);
-                updateUI(data.roomId, data.password, data.useCustomServer, data.serverUrl);
+                const data = await chrome.storage.local.get(['roomId', 'password', 'chatKey', 'useCustomServer', 'serverUrl']);
+                updateUI(data.roomId, data.password, data.useCustomServer, data.serverUrl, data.chatKey);
                 
                 await populateTabs(res.peers, res.targetTabId);
                 if (res.episodeLobby) updateLobbyUI(res.episodeLobby, res.peers);
             } else {
                 applyConnectionStatus('disconnected');
-                const data = await chrome.storage.local.get(['roomId', 'password', 'useCustomServer', 'serverUrl']);
-                updateUI(data.roomId, data.password, data.useCustomServer, data.serverUrl);
+                const data = await chrome.storage.local.get(['roomId', 'password', 'chatKey', 'useCustomServer', 'serverUrl']);
+                updateUI(data.roomId, data.password, data.useCustomServer, data.serverUrl, data.chatKey);
                 await populateTabs();
             }
         });
@@ -1605,6 +1597,10 @@ function showError(msg) {
 // --- Action Handlers ---
 elements.roomId.addEventListener('input', () => {
     elements.roomId.value = elements.roomId.value.replace(/[^a-zA-Z0-9\-]/g, '');
+    if (pendingInviteRoomId && elements.roomId.value !== pendingInviteRoomId) {
+        pendingInviteRoomId = '';
+        pendingInviteChatKey = '';
+    }
 });
 
 elements.joinBtn.addEventListener('click', async () => {
@@ -1676,17 +1672,24 @@ elements.joinBtn.addEventListener('click', async () => {
         self.crypto.getRandomValues(array);
         password = Array.from(array, byte => chars[byte % chars.length]).join('');
         elements.password.value = password;
-        window.justCreatedRoom = true;
     }
+    let chatKey = roomId === pendingInviteRoomId ? pendingInviteChatKey : '';
+    if (isCreating) {
+        const created = await new Promise(resolve => chrome.runtime.sendMessage({ type: 'CREATE_CHAT_KEY' }, resolve));
+        chatKey = normalizeChatKey(created?.chatKey);
+    }
+    if (isCreating) window.justCreatedRoom = true;
+    pendingInviteRoomId = '';
+    pendingInviteChatKey = '';
 
-    await chrome.storage.local.set({ serverUrl, roomId, password, useCustomServer: useCustom });
+    await chrome.storage.local.set({ serverUrl, roomId, password, chatKey, useCustomServer: useCustom });
     elements.roomId.value = roomId;
 
     // Tell background to connect
     chrome.runtime.sendMessage({ type: 'CONNECT' });
     
     // UI Feedback: Immediately switch state for better responsiveness
-    updateUI(roomId, password, useCustom, serverUrl);
+    updateUI(roomId, password, useCustom, serverUrl, chatKey);
 });
 
 elements.leaveBtn.addEventListener('click', async () => {
@@ -1694,7 +1697,7 @@ elements.leaveBtn.addEventListener('click', async () => {
     isProcessingConnection = true;
     clearConnectionErrorTimer();
     chrome.runtime.sendMessage({ type: 'LEAVE_ROOM' });
-    await chrome.storage.local.set({ roomId: '', password: '' });
+    await chrome.storage.local.set({ roomId: '', password: '', chatKey: '' });
     elements.roomId.value = '';
     elements.password.value = '';
     lastKnownPeers = [];
@@ -2167,15 +2170,15 @@ chrome.runtime.onMessage.addListener((msg) => {
 
         if (msg.success) {
             // Final confirmation of join from background
-            chrome.storage.local.get(['roomId', 'password', 'useCustomServer', 'serverUrl'], (data) => {
-                updateUI(data.roomId, data.password, data.useCustomServer, data.serverUrl);
+            chrome.storage.local.get(['roomId', 'password', 'chatKey', 'useCustomServer', 'serverUrl'], (data) => {
+                updateUI(data.roomId, data.password, data.useCustomServer, data.serverUrl, data.chatKey);
                 const syncTabBtn = document.querySelector('.tab-btn[data-tab="tab-sync"]');
                 if (syncTabBtn) syncTabBtn.click();
                 showSelectVideoHint();
             });
         } else {
             // Join failed: reset UI state
-            chrome.storage.local.set({ roomId: '', password: '' });
+            chrome.storage.local.set({ roomId: '', password: '', chatKey: '' });
             elements.roomId.value = '';
             elements.password.value = '';
             updateUI(null, null);

@@ -4,6 +4,8 @@ import { loadLocale, getMessage, getSystemLanguage } from './i18n.js';
 import { sameEpisode, extractEpisodeId } from './episode-utils.js';
 import { applyTitlePrivacyToPayload, sanitizeSharedTitle, sanitizeTabTitle, normalizeSendTabTitle, normalizeTitlePrivacyMode } from './title-privacy.js';
 import { initTabManager } from './modules/tab-manager.js';
+import { clearChatKeyCache, decryptChatMessage, encryptChatMessage, generateChatSecret, validateChatSecret } from './chat-crypto.js';
+import { buildChatRelayPayload, encodeSocketEvent } from './chat-wire.js';
 import './page-api-seek-overrides.js';
 
 // --- Uninstall URL Initialization ---
@@ -79,6 +81,7 @@ let hostPeerId = null;                     // peerId of the room host (creator /
 // Features the connected relay advertises in ROOM_DATA. Empty against an older
 // relay (no capabilities field) → host-control UI/behavior stays unavailable.
 let serverCapabilities = [];
+let chatSecretGuard = '';
 function serverSupports(cap) { return Array.isArray(serverCapabilities) && serverCapabilities.includes(cap); }
 // Local peer's desync state (content.js reports it via HCM_DESYNC_STATE). Relayed
 // in heartbeats so the host's popup UI can show "Solo" instead of silently
@@ -364,7 +367,7 @@ async function getSettings() {
     // (username) must NEVER come from storage.sync — syncing them across devices
     // both leaks them and resurrects dead rooms on reinstall (a fresh install
     // has empty local storage but sync survives in the user's Google account).
-    const data = await chrome.storage.local.get(['serverUrl', 'useCustomServer', 'roomId', 'password', 'username', 'sendTabTitle', 'mediaTitlePrivacyMode', 'titlePrivacyMode']);
+    const data = await chrome.storage.local.get(['serverUrl', 'useCustomServer', 'roomId', 'password', 'chatKey', 'username', 'sendTabTitle', 'mediaTitlePrivacyMode', 'titlePrivacyMode']);
     let username = data.username;
     if (!username) {
         username = generateUsername();
@@ -372,11 +375,14 @@ async function getSettings() {
     }
     const legacyTitlePrivacyMode = normalizeTitlePrivacyMode(data.titlePrivacyMode);
     const mediaTitlePrivacyMode = normalizeTitlePrivacyMode(data.mediaTitlePrivacyMode || legacyTitlePrivacyMode);
+    const chatKey = validateChatSecret(data.chatKey);
+    chatSecretGuard = chatKey;
     return {
         serverUrl: data.serverUrl || '',
         useCustomServer: data.useCustomServer || false,
         roomId: data.roomId || '',
         password: data.password || '',
+        chatKey,
         username,
         sendTabTitle: normalizeSendTabTitle(data.sendTabTitle, legacyTitlePrivacyMode),
         mediaTitlePrivacyMode
@@ -412,7 +418,7 @@ function emitEpisodeLobbyForCurrentPrivacy() {
 // removes legacy keys that older versions wrote to sync (and that would
 // otherwise be redistributed across devices and resurrected on reinstall).
 const LEGACY_SYNC_KEYS = [
-    'serverUrl', 'useCustomServer', 'roomId', 'password', 'username',
+    'serverUrl', 'useCustomServer', 'roomId', 'password', 'chatKey', 'username',
     'filterNoise', 'autoSyncNextEpisode', 'forceSyncMode',
     'browserNotifications', 'autoCopyInvite', 'locale', 'audioSettings',
     'titlePrivacyMode', 'sendTabTitle', 'mediaTitlePrivacyMode'
@@ -558,7 +564,9 @@ async function leaveRoomAfterIdleGrace(reason) {
         episodeLobby: null,
         hcmDesynced: false
     }).catch(() => {});
-    await chrome.storage.local.set({ roomId: '', password: '' }).catch(() => {});
+    chatSecretGuard = '';
+    clearChatKeyCache();
+    await chrome.storage.local.set({ roomId: '', password: '', chatKey: '' }).catch(() => {});
     addLog(reason, 'info');
     chrome.runtime.sendMessage({ type: 'PEER_UPDATE', peers: [] }).catch(() => {});
     updateBadgeStatus();
@@ -686,7 +694,7 @@ async function connect() {
                 try {
                     const payload = JSON.parse(msg.substring(2));
                     try {
-                        handleServerEvent(payload[0], payload[1]);
+                        await handleServerEvent(payload[0], payload[1]);
                     } catch (handlerErr) {
                         addLog(`Handler error for ${payload[0]}: ${handlerErr.message}`, 'error');
                     }
@@ -880,10 +888,14 @@ function scheduleReconnect() {
 
 function emit(event, data) {
     if (socket && socket.readyState === WebSocket.OPEN && isNamespaceJoined) {
-        const msg = `42${JSON.stringify([event, data])}`;
         try {
+            const msg = encodeSocketEvent(event, data, chatSecretGuard);
             socket.send(msg);
         } catch (e) {
+            if (e.message === 'Refusing to send chat secret to relay') {
+                addLog(e.message, 'error');
+                return;
+            }
             // The socket can close between the readyState check and send()
             // (race with a server-side disconnect). Re-queue so the event is
             // retried on the next successful (re)connect instead of being lost.
@@ -892,6 +904,17 @@ function emit(event, data) {
         }
     } else {
         queueEvent(event, data);
+    }
+}
+
+function emitLive(event, data) {
+    if (!socket || socket.readyState !== WebSocket.OPEN || !isNamespaceJoined) return false;
+    try {
+        socket.send(encodeSocketEvent(event, data, chatSecretGuard));
+        return true;
+    } catch (e) {
+        addLog(e.message === 'Refusing to send chat secret to relay' ? e.message : `Live send failed for ${event}: ${e.message}`, 'error');
+        return false;
     }
 }
 
@@ -1000,7 +1023,7 @@ function stopPing() {
 }
 
 // --- Event Handlers ---
-function handleServerEvent(event, data) {
+async function handleServerEvent(event, data) {
     if (!data) {
         addLog(`Ignored server event ${event} due to empty payload`, 'warn');
         return;
@@ -1103,6 +1126,38 @@ function handleServerEvent(event, data) {
         case EVENTS.ROOM_LIST:
             chrome.runtime.sendMessage({ type: 'ROOM_LIST', rooms: data.rooms }).catch(() => {});
             break;
+        case EVENTS.CHAT_MESSAGE: {
+            if (!currentRoom || !serverSupports(CAPABILITIES.CHAT) || !currentTabId) break;
+            const settings = await getSettings();
+            if (!settings.chatKey) break;
+            try {
+                const text = await decryptChatMessage({
+                    ciphertext: data.ciphertext,
+                    roomId: currentRoom.roomId,
+                    senderId: data.senderId,
+                    secret: settings.chatKey
+                });
+                const senderPeer = currentRoom.peers?.find(candidate =>
+                    (typeof candidate === 'object' ? candidate.peerId : candidate) === data.senderId
+                );
+                const tabId = Number(currentTabId);
+                if (Number.isInteger(tabId)) {
+                    chrome.tabs.sendMessage(tabId, {
+                        type: 'CHAT_MESSAGE',
+                        message: {
+                            id: data.id,
+                            senderId: data.senderId,
+                            username: typeof senderPeer === 'object' ? senderPeer.username : null,
+                            timestamp: data.timestamp,
+                            text
+                        }
+                    }).catch(() => {});
+                }
+            } catch (_) {
+                addLog('Discarded chat message that failed authentication', 'warn');
+            }
+            break;
+        }
         case EVENTS.ERROR:
             isConnecting = false;
             // If we get a server error before successfully joining a room,
@@ -1851,6 +1906,7 @@ function leaveOldRoomIfSwitching(newRoomId) {
         hostPeerId = null;
         controllers = [];
         serverCapabilities = [];
+        clearChatKeyCache();
         hcmDesynced = false;
         // Notify content.js/popup so they drop any guest-side HCM state from the
         // previous room (badge/dialog/desync) — H-2/H-3.
@@ -1973,8 +2029,43 @@ async function handleAsyncMessage(message, sender, sendResponse) {
             amHost: amHost(),
             amController: amController(),
             hostControlSupported: serverSupports(CAPABILITIES.HOST_CONTROL),
-            coHostSupported: serverSupports(CAPABILITIES.CO_HOST)
+            coHostSupported: serverSupports(CAPABILITIES.CO_HOST),
+            chatSupported: serverSupports(CAPABILITIES.CHAT),
+            hasChatKey: !!(await getSettings()).chatKey
         });
+    } else if (message.type === 'CHAT_SEND') {
+        const senderTabId = sender.tab?.id;
+        if (!currentRoom || !currentTabId || senderTabId !== Number(currentTabId)) {
+            sendResponse({ status: 'invalid_tab' });
+            return;
+        }
+        if (!serverSupports(CAPABILITIES.CHAT)) {
+            sendResponse({ status: 'unsupported' });
+            return;
+        }
+        const settings = await getSettings();
+        if (!settings.chatKey) {
+            sendResponse({ status: 'missing_key' });
+            return;
+        }
+        try {
+            const ciphertext = await encryptChatMessage({
+                text: message.text,
+                roomId: currentRoom.roomId,
+                senderId: peerId,
+                secret: settings.chatKey
+            });
+            const sent = emitLive(EVENTS.CHAT_MESSAGE, buildChatRelayPayload(ciphertext));
+            sendResponse({ status: sent ? 'ok' : 'disconnected' });
+        } catch (err) {
+            sendResponse({ status: err instanceof RangeError ? 'too_long' : 'invalid_message' });
+        }
+    } else if (message.type === 'CREATE_CHAT_KEY') {
+        const chatKey = generateChatSecret();
+        chatSecretGuard = chatKey;
+        clearChatKeyCache();
+        await chrome.storage.local.set({ chatKey });
+        sendResponse({ status: 'ok', chatKey });
     } else if (message.type === 'SET_CONTROL_MODE') {
         // Popup (host) toggles the room control mode. Server validates host authority
         // and broadcasts CONTROL_MODE back, which updates our local state + UI.
@@ -2087,7 +2178,9 @@ async function handleAsyncMessage(message, sender, sendResponse) {
             expectedAcksCount: 0,
             hcmDesynced: false
         });
-        chrome.storage.local.set({ roomId: '', password: '' }).catch(() => {});
+        chatSecretGuard = '';
+        clearChatKeyCache();
+        chrome.storage.local.set({ roomId: '', password: '', chatKey: '' }).catch(() => {});
         addLog('Left Room', 'info');
         chrome.runtime.sendMessage({ type: 'PEER_UPDATE', peers: [] }).catch(() => {});
         forceDisconnect();
@@ -2103,8 +2196,9 @@ async function handleAsyncMessage(message, sender, sendResponse) {
         emit(EVENTS.GET_ROOMS, {});
         sendResponse({ status: 'ok' });
     } else if (message.type === 'WEB_JOIN_REQUEST') {
-        const { roomId: rawRoomId, password, useCustomServer, serverUrl } = message;
+        const { roomId: rawRoomId, password, chatKey: rawChatKey, useCustomServer, serverUrl } = message;
         const roomId = typeof rawRoomId === 'string' ? rawRoomId.replace(/[^a-zA-Z0-9\-]/g, '') : '';
+        const chatKey = validateChatSecret(rawChatKey);
         if (!roomId) {
             const errMsg = { type: 'JOIN_STATUS', success: false, message: 'Invalid room ID' };
             chrome.runtime.sendMessage(errMsg).catch(() => {});
@@ -2118,9 +2212,12 @@ async function handleAsyncMessage(message, sender, sendResponse) {
         chrome.storage.local.set({ 
             roomId, 
             password,
+            chatKey,
             useCustomServer: !!useCustomServer,
             serverUrl: serverUrl || ''
         }, async () => {
+            chatSecretGuard = chatKey;
+            clearChatKeyCache();
             const settings = await getSettings();
             const desiredUrl = resolveServerUrl(settings);
 
