@@ -1,6 +1,10 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import {
     checkLeaveRoomRate,
+    checkChatMessageRate,
+    CHAT_MESSAGE_RATE_LIMIT,
+    CHAT_MESSAGE_RATE_WINDOW_MS,
+    chatMessageCounts,
     LEAVE_ROOM_RATE_LIMIT,
     LEAVE_ROOM_RATE_WINDOW_MS,
     rateLimitDenied,
@@ -96,6 +100,32 @@ describe('LEAVE_ROOM Rate Limiter', () => {
 
         clearRateLimitMaps();
         expect(leaveRoomCounts.size).toBe(0);
+    });
+});
+
+describe('CHAT_MESSAGE Rate Limiter', () => {
+    const socketId = 'chat-socket';
+
+    beforeEach(() => {
+        clearRateLimitMaps();
+        rateLimitDenied.chatMessages = 0;
+    });
+
+    afterEach(() => clearRateLimitMaps());
+
+    it('allows ten messages per ten-second window and blocks the next', () => {
+        for (let i = 0; i < CHAT_MESSAGE_RATE_LIMIT; i++) {
+            expect(checkChatMessageRate(socketId)).toBe(true);
+        }
+        expect(checkChatMessageRate(socketId)).toBe(false);
+        expect(rateLimitDenied.chatMessages).toBe(1);
+    });
+
+    it('resets after the window expires', () => {
+        for (let i = 0; i <= CHAT_MESSAGE_RATE_LIMIT; i++) checkChatMessageRate(socketId);
+        const entry = chatMessageCounts.get(socketId);
+        entry.resetTime = Date.now() - CHAT_MESSAGE_RATE_WINDOW_MS - 1;
+        expect(checkChatMessageRate(socketId)).toBe(true);
     });
 });
 

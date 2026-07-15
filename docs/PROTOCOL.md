@@ -82,12 +82,46 @@ Payload:
   "hostPeerId": "string or null",
   "controlMode": "everyone | host-only",
   "controllers": ["peerId"],
-  "capabilities": ["host-control", "co-host"]
+  "capabilities": ["host-control", "co-host", "chat"]
 }
 ```
 
 `room_data` is sent to the joining socket. It is not the general broadcast used
 for every later room update.
+
+## Ephemeral encrypted chat
+
+Relays advertise chat support with `"chat"` in `room_data.capabilities`. Clients
+must not infer support from another field.
+
+### `chat_message`
+
+Client to relay:
+
+```json
+{ "ciphertext": "<unpadded-base64url>" }
+```
+
+`ciphertext` contains a 12-byte AES-GCM IV followed by ciphertext and the 16-byte
+authentication tag. The relay validates only canonical base64url and byte bounds.
+It cannot inspect plaintext.
+
+Relay to every current room peer, including the sender:
+
+```json
+{
+  "id": "<server-generated UUID>",
+  "senderId": "<server-stamped peer ID>",
+  "timestamp": 1710000000000,
+  "ciphertext": "<unpadded-base64url>"
+}
+```
+
+Client-provided `id`, `senderId`, `timestamp`, or plaintext fields are discarded.
+The relay keeps no message collection and `room_data` contains no chat history.
+Messages are limited to 10 per socket per 10 seconds in addition to the global event
+budget. There are no typing, read-receipt, history, or chat-specific peer-management
+events.
 
 ## Room Leave
 
@@ -378,5 +412,6 @@ If sender and target are still in the same room, the relay emits:
 
 - `host-control`
 - `co-host`
+- `chat`
 
 Clients should treat a missing or unknown capabilities list as unsupported.

@@ -5,6 +5,7 @@ import { Server } from 'socket.io';
 import crypto from 'crypto';
 import dotenv from 'dotenv';
 import { EVENTS, OFFICIAL_SERVER_TOKEN, PROTOCOL_VERSION, CONTROL_MODES, CAPABILITIES } from '../shared/constants.js';
+import { createChatEnvelope } from './chat.js';
 import {
     buildHealthPayload,
     checkCooldown,
@@ -19,6 +20,7 @@ import {
     connectionCounts,
     failedAuthAttempts,
     eventCounts,
+    chatMessageCounts,
     healthCounts,
     adminMetricsAuthCounts,
     roomListCooldowns,
@@ -28,6 +30,7 @@ import {
     recordAuthFailure,
     checkConnectionRate,
     checkEventRate,
+    checkChatMessageRate,
     checkHealthRate,
     checkAdminMetricsAuthRate,
     checkLeaveRoomRate,
@@ -171,7 +174,7 @@ const HOST_ONLY_GATED_EVENTS = new Set([
 // Features this relay supports, advertised to clients in ROOM_DATA so they can
 // enable matching UI/behavior only when the server actually backs it. Append a
 // flag here when a new server-gated feature ships (e.g. co-host promotion).
-const SERVER_CAPABILITIES = [CAPABILITIES.HOST_CONTROL, CAPABILITIES.CO_HOST];
+const SERVER_CAPABILITIES = [CAPABILITIES.HOST_CONTROL, CAPABILITIES.CO_HOST, CAPABILITIES.CHAT];
 
 // M-4: minimum interval between CONTROL_MODE changes per room. Stops a rapidly
 // toggling host from thrashing every guest's UI (locked/unlocked/locked...) and
@@ -844,8 +847,31 @@ io.on('connection', (socket) => {
         }
     });
 
+    socket.on(EVENTS.CHAT_MESSAGE, (data) => {
+        try {
+            if (!checkEventRate(socket.id) || !checkChatMessageRate(socket.id)) {
+                log('SECURITY', `Encrypted chat rate limit exceeded for socket: ${socket.id}`);
+                socket.disconnect(true);
+                return;
+            }
+
+            const mapping = socketToRoom.get(socket.id);
+            if (!mapping) return;
+            const room = rooms.get(mapping.roomId);
+            if (!room) return;
+
+            const envelope = createChatEnvelope(data, mapping.peerId);
+            if (!envelope) return;
+            room.lastActivity = Date.now();
+            io.to(mapping.roomId).emit(EVENTS.CHAT_MESSAGE, envelope);
+        } catch (err) {
+            log('ERROR', `CHAT_MESSAGE handler error: ${err.message}`);
+        }
+    });
+
     socket.on('disconnect', () => {
         eventCounts.delete(socket.id);
+        chatMessageCounts.delete(socket.id);
         roomListCooldowns.delete(socket.id);
         leaveRoomCounts.delete(socket.id);
         const mapping = socketToRoom.get(socket.id);

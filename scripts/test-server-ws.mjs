@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { Buffer } from 'node:buffer';
 import http from 'node:http';
 import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
@@ -70,6 +71,38 @@ try {
     assert.equal(capEv, 'room_data');
     assert.ok(Array.isArray(capData.capabilities) && capData.capabilities.includes('host-control'),
         'ROOM_DATA advertises the host-control capability');
+    assert.ok(capData.capabilities.includes('chat'), 'ROOM_DATA advertises the chat capability');
+    assert.equal(capData.chatHistory, undefined, 'ROOM_DATA never contains chat history');
+    close();
+    resetConnectionRate();
+
+    // --- Encrypted chat is a live-only canonical relay ---
+    const chatRoom = 'chat-'+Date.now();
+    const chat1 = await c(), chat2 = await c();
+    await j(chat1, chatRoom, 'alice'); await j(chat2, chatRoom, 'bob');
+    chat1._m.length = chat2._m.length = 0;
+    const ciphertext = Buffer.alloc(64, 7).toString('base64url');
+    s(chat1, 'chat_message', {
+        ciphertext,
+        id: 'spoofed-id', senderId: 'mallory', timestamp: 1, text: 'plaintext'
+    });
+    const [chat1Event, chat1Data] = await a(chat1);
+    const [chat2Event, chat2Data] = await a(chat2);
+    assert.equal(chat1Event, 'chat_message', 'sender receives canonical chat envelope');
+    assert.equal(chat2Event, 'chat_message', 'peer receives canonical chat envelope');
+    assert.deepEqual(chat2Data, chat1Data, 'all peers receive the same canonical envelope');
+    assert.equal(chat1Data.senderId, 'alice', 'relay stamps senderId');
+    assert.equal(chat1Data.ciphertext, ciphertext, 'relay preserves ciphertext');
+    assert.equal(chat1Data.text, undefined, 'relay drops plaintext fields');
+    assert.notEqual(chat1Data.id, 'spoofed-id', 'relay replaces client IDs');
+    assert.ok(Number.isFinite(chat1Data.timestamp) && chat1Data.timestamp > 1, 'relay stamps timestamp');
+
+    const late = await c();
+    s(late, 'join_room', { roomId: chatRoom, peerId: 'late', protocolVersion: '1.0.0' });
+    const [lateEvent, lateRoomData] = await a(late);
+    assert.equal(lateEvent, 'room_data');
+    assert.equal(lateRoomData.chatHistory, undefined, 'late joiner gets no chat backlog');
+    assert.equal(late._m.some(raw => raw.includes('chat_message')), false, 'late joiner receives no old message');
     close();
     resetConnectionRate();
 
