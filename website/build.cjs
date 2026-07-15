@@ -539,7 +539,7 @@ async function compile() {
     }
 
     // ── 5.5 Generate dynamic sitemap ──
-    generateSitemap(wwwDir, websiteDir);
+    generateSitemap(wwwDir);
 
     // Auto-copy Google verification files and IndexNow/txt key files from website source to www root
     const websiteFiles = fs.readdirSync(websiteDir);
@@ -684,7 +684,7 @@ async function compile() {
     console.log('KoalaSync build finished successfully! Output: website/www/');
 }
 
-function generateSitemap(wwwDir, websiteDir) {
+function generateSitemap(wwwDir) {
     const languages = [
       { code: 'en', prefix: '', hreflang: 'en' },
       { code: 'de', prefix: 'de/', hreflang: 'de' },
@@ -774,7 +774,6 @@ function generateSitemap(wwwDir, websiteDir) {
 
     xml += `\n</urlset>\n`;
 
-    fs.writeFileSync(path.join(websiteDir, 'sitemap.xml'), xml.trim() + '\n', 'utf8');
     fs.writeFileSync(path.join(wwwDir, 'sitemap.xml'), xml.trim() + '\n', 'utf8');
     console.log('  ✓ Dynamically generated sitemap.xml with current date');
 }
