@@ -15,7 +15,6 @@ All notable changes to the KoalaSync browser extension, relay server, and releas
 ### Fixed
 - **Extension: Episode Lobby reliability** — Prevented the lobby from remaining stuck in a loading state and stopped episode transitions from triggering on non-episodic media.
 - **Extension: Tab-title normalization** — Notification counters such as `(14)`, `[7]`, and `(99+)` are removed reliably without stripping legitimate large numeric titles.
-- **Extension: Theme contrast and controls** — Fixed language highlighting and several control-label and tooltip inconsistencies.
 
 ---
 
