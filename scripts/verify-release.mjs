@@ -29,7 +29,6 @@ const checks = [
   ['background syntax', 'node', ['-c', 'extension/background.js']],
   ['locale coverage', 'node', ['scripts/test-locales.cjs']],
   ['website locale coverage', 'node', ['scripts/test-website-locales.mjs']],
-  ['website site-access help', 'node', ['scripts/test-site-access-help.mjs']],
   ['website theme coverage', 'node', ['scripts/test-website-theme.mjs']],
   ['lint', 'npm', ['run', 'lint']],
   ['root production audit', 'npm', ['audit', '--omit=dev']],

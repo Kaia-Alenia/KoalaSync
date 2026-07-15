@@ -3,6 +3,7 @@ import { BLACKLIST_DOMAINS } from './shared/blacklist.js';
 import { getAvatarForName, generateUsername, USERNAME_ADJECTIVES, USERNAME_NOUNS } from './shared/names.js';
 import { loadLocale, translateDOM, getMessage, getSystemLanguage } from './i18n.js';
 import { TITLE_PRIVACY_MODES, normalizeSendTabTitle, normalizeTabTitle } from './title-privacy.js';
+import { requestOriginPermission } from './host-access.js';
 
 
 const elements = {
@@ -589,16 +590,6 @@ function handleTargetTabResponse(response) {
     if (response?.status === 'superseded') return false;
     showToast(response?.message || getMessage('ERR_NO_VIDEO_TAB'), 'error', 5000);
     return false;
-}
-
-async function requestSiteAccess(originPattern) {
-    if (!originPattern || typeof chrome.permissions?.request !== 'function') return null;
-    try {
-        return await chrome.permissions.request({ origins: [originPattern] });
-    } catch (error) {
-        console.warn('[Popup] Host permission request failed:', error.message);
-        return false;
-    }
 }
 
 function selectTargetTab(tabId, tabTitle) {
@@ -1847,10 +1838,21 @@ if (elements.siteAccessRetry) {
             showToast(getMessage('ERR_SELECT_VIDEO'), 'warning');
             return;
         }
+        const requestedOriginPattern = siteAccessOriginPattern;
         elements.siteAccessRetry.disabled = true;
-        await requestSiteAccess(siteAccessOriginPattern);
-        await selectTargetTab(tabId, tabTitle);
-        elements.siteAccessRetry.disabled = false;
+        elements.targetTab.disabled = true;
+        try {
+            await requestOriginPermission(chrome, requestedOriginPattern);
+            const selectedTabId = parseInt(elements.targetTab.value);
+            // permissions.onAdded may already have completed activation, or a
+            // newer selection may have replaced this request while it was open.
+            if (!siteAccessBlocked || selectedTabId !== tabId
+                || siteAccessOriginPattern !== requestedOriginPattern) return;
+            await selectTargetTab(tabId, tabTitle);
+        } finally {
+            elements.siteAccessRetry.disabled = false;
+            elements.targetTab.disabled = false;
+        }
     });
 }
 
@@ -2251,6 +2253,12 @@ chrome.runtime.onMessage.addListener((msg) => {
     } else if (msg.type === 'TARGET_TAB_READY') {
         hideSiteAccessNotice();
         populateTabs(null, msg.tabId);
+    } else if (msg.type === 'TARGET_TAB_ACCESS_REQUIRED') {
+        showSiteAccessNotice(msg.host, msg.originPattern);
+        populateTabs(null, msg.tabId);
+    } else if (msg.type === 'TARGET_TAB_CLEARED') {
+        hideSiteAccessNotice();
+        populateTabs();
     } else if (msg.type === 'PING_UPDATE') {
         updatePingDisplay(msg.ping);
     } else if (msg.type === 'HISTORY_UPDATE') {

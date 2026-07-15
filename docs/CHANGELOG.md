@@ -4,6 +4,18 @@ All notable changes to the KoalaSync browser extension and relay server.
 
 ---
 
+## [v2.6.2] — 2026-07-15
+
+### Added
+- **Website: Site-access recovery guide** — Added an English help page and a localized banner across every landing-page language.
+
+### Fixed
+- **Extension: Withheld website access recovery** — Detects browser-withheld host access, shows a localized allow-access action, requests only the selected website origin, and resumes the selected tab after access is granted.
+- **Extension: Target-tab reliability** — Hardened permission recovery against rapid tab changes, navigation, closed tabs, service-worker restoration, and stale pending state.
+- **Browser compatibility** — Uses Chrome's toolbar access request only when available, with a direct user-gesture permission fallback for Firefox and older Chromium browsers.
+
+---
+
 ## [v2.6.1] — 2026-07-15
 
 ### Fixed

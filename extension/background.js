@@ -4,7 +4,7 @@ import { loadLocale, getMessage, getSystemLanguage } from './i18n.js';
 import { sameEpisode, extractEpisodeId } from './episode-utils.js';
 import { applyTitlePrivacyToPayload, sanitizeSharedTitle, sanitizeTabTitle, normalizeSendTabTitle, normalizeTitlePrivacyMode } from './title-privacy.js';
 import { initTabManager } from './modules/tab-manager.js';
-import { HOST_ACCESS_REQUIRED_STATUS, normalizeTabId, inspectTabHostAccess, addTabHostAccessRequest, removeTabHostAccessRequest } from './host-access.js';
+import { HOST_ACCESS_REQUIRED_STATUS, normalizeTabId, inspectTabHostAccess, isHostAccessError, addTabHostAccessRequest, removeTabHostAccessRequest } from './host-access.js';
 import './page-api-seek-overrides.js';
 
 // --- Uninstall URL Initialization ---
@@ -170,8 +170,12 @@ function ensureState() {
             ], (data) => {
                 clearTimeout(storageTimeout);
                 if (data.expectedAcksCount !== undefined) expectedAcksCount = data.expectedAcksCount;
-                if (data.currentTabId !== undefined) currentTabId = data.currentTabId;
-                if (data.currentTabTitle !== undefined) currentTabTitle = data.currentTabTitle;
+                if (data.currentTabId !== undefined) currentTabId = normalizeTabId(data.currentTabId);
+                if (data.currentTabTitle !== undefined) {
+                    currentTabTitle = currentTabId !== null && typeof data.currentTabTitle === 'string'
+                        ? data.currentTabTitle
+                        : null;
+                }
                 // Merge data from storage with any early-arriving state
                 // New entries (added during boot) must stay at the top (index 0)
                 if (data.logs) logs = [...logs, ...data.logs].slice(0, 200);
@@ -1770,6 +1774,9 @@ function injectionFailureResponse(error) {
 }
 
 async function injectContentScript(tabId, { requestHostAccess = true } = {}) {
+    const normalizedTabId = normalizeTabId(tabId);
+    if (normalizedTabId === null) throw new Error('Invalid tab ID');
+    tabId = normalizedTabId;
     let needsPageApiSeek = false;
     let pageApiSeekReady = false;
     let access = null;
@@ -1817,9 +1824,18 @@ async function injectContentScript(tabId, { requestHostAccess = true } = {}) {
         // A temporary activeTab grant is intentionally allowed to win: even if
         // permissions.contains() reports false, a successful injection above is
         // valid. Only convert an actual injection failure into a host-access UX.
-        if (access?.originPattern && access.granted === false) {
+        try {
+            // The tab may have crossed origins between the initial permission
+            // check and executeScript(). Always report/request the current URL.
+            access = await inspectTabHostAccess(chrome, tabId);
+        } catch (_inspectionError) {
+            access = null;
+        }
+        const accessIsMissing = access?.granted === false
+            || (access?.granted === null && isHostAccessError(error));
+        if (access?.originPattern && accessIsMissing) {
             const requestAdded = requestHostAccess
-                ? await addTabHostAccessRequest(chrome, tabId)
+                ? await addTabHostAccessRequest(chrome, tabId, access.originPattern)
                 : false;
             throw createHostAccessRequiredError(access, requestAdded, error);
         }
@@ -1827,31 +1843,61 @@ async function injectContentScript(tabId, { requestHostAccess = true } = {}) {
     }
 }
 
+let pendingTargetMutation = Promise.resolve();
+
+function mutatePendingTarget(operation) {
+    const result = pendingTargetMutation.catch(() => {}).then(operation);
+    pendingTargetMutation = result.catch(() => {});
+    return result;
+}
+
 async function rememberPendingTarget(tabId, tabTitle, error) {
-    const previous = await chrome.storage.session.get('pendingTargetTabId');
-    const previousTabId = normalizeTabId(previous.pendingTargetTabId);
-    if (previousTabId !== null && previousTabId !== tabId) {
-        await removeTabHostAccessRequest(chrome, previousTabId);
-    }
-    await chrome.storage.session.set({
-        pendingTargetTabId: tabId,
-        pendingTargetTabTitle: tabTitle || null,
-        pendingTargetHost: error?.host || null,
-        pendingTargetOriginPattern: error?.originPattern || null
+    return mutatePendingTarget(async () => {
+        const previous = await chrome.storage.session.get([
+            'pendingTargetTabId',
+            'pendingTargetOriginPattern'
+        ]);
+        const previousTabId = normalizeTabId(previous.pendingTargetTabId);
+        const nextOriginPattern = error?.originPattern || null;
+        if (previousTabId !== null && (
+            previousTabId !== tabId
+            || previous.pendingTargetOriginPattern !== nextOriginPattern
+        )) {
+            await removeTabHostAccessRequest(
+                chrome,
+                previousTabId,
+                previous.pendingTargetOriginPattern || null
+            );
+        }
+        await chrome.storage.session.set({
+            pendingTargetTabId: tabId,
+            pendingTargetTabTitle: typeof tabTitle === 'string' ? tabTitle : null,
+            pendingTargetHost: error?.host || null,
+            pendingTargetOriginPattern: nextOriginPattern
+        });
     });
 }
 
 async function clearPendingTarget() {
-    const pending = await chrome.storage.session.get('pendingTargetTabId');
-    const pendingTabId = normalizeTabId(pending.pendingTargetTabId);
-    if (pendingTabId !== null) {
-        await removeTabHostAccessRequest(chrome, pendingTabId);
-    }
-    await chrome.storage.session.set({
-        pendingTargetTabId: null,
-        pendingTargetTabTitle: null,
-        pendingTargetHost: null,
-        pendingTargetOriginPattern: null
+    return mutatePendingTarget(async () => {
+        const pending = await chrome.storage.session.get([
+            'pendingTargetTabId',
+            'pendingTargetOriginPattern'
+        ]);
+        const pendingTabId = normalizeTabId(pending.pendingTargetTabId);
+        if (pendingTabId !== null) {
+            await removeTabHostAccessRequest(
+                chrome,
+                pendingTabId,
+                pending.pendingTargetOriginPattern || null
+            );
+        }
+        await chrome.storage.session.set({
+            pendingTargetTabId: null,
+            pendingTargetTabTitle: null,
+            pendingTargetHost: null,
+            pendingTargetOriginPattern: null
+        });
     });
 }
 
@@ -1862,7 +1908,7 @@ async function activateTargetTab(tabId, tabTitle, { requestHostAccess = true } =
     }
 
     const activationGeneration = ++targetActivationGeneration;
-    const previousTabId = currentTabId;
+    const previousTabId = normalizeTabId(currentTabId);
 
     try {
         await injectContentScript(selectedTabId, { requestHostAccess });
@@ -1872,6 +1918,7 @@ async function activateTargetTab(tabId, tabTitle, { requestHostAccess = true } =
         }
         currentTabId = null;
         currentTabTitle = null;
+        lastContentHeartbeatAt = null;
         if (currentRoom) roomIdleSince = Date.now();
         if (previousTabId) {
             resetAudioProcessingInTab(previousTabId);
@@ -1882,10 +1929,17 @@ async function activateTargetTab(tabId, tabTitle, { requestHostAccess = true } =
             roomIdleSince,
             lastContentHeartbeatAt: null
         });
+        if (activationGeneration !== targetActivationGeneration) {
+            return { status: 'superseded' };
+        }
         updateBadgeStatus();
 
         if (error?.code === HOST_ACCESS_REQUIRED_STATUS) {
             await rememberPendingTarget(selectedTabId, tabTitle, error);
+            chrome.runtime.sendMessage({
+                type: 'TARGET_TAB_ACCESS_REQUIRED',
+                ...injectionFailureResponse(error)
+            }).catch(() => {});
         } else {
             await clearPendingTarget();
         }
@@ -1897,15 +1951,23 @@ async function activateTargetTab(tabId, tabTitle, { requestHostAccess = true } =
         return { status: 'superseded' };
     }
 
+    await applyAudioSettingsToTab(selectedTabId);
+    if (activationGeneration !== targetActivationGeneration) {
+        if (currentTabId !== selectedTabId) resetAudioProcessingInTab(selectedTabId);
+        return { status: 'superseded' };
+    }
+    await clearPendingTarget();
+    if (activationGeneration !== targetActivationGeneration) {
+        if (currentTabId !== selectedTabId) resetAudioProcessingInTab(selectedTabId);
+        return { status: 'superseded' };
+    }
     currentTabId = selectedTabId;
-    currentTabTitle = tabTitle || null;
+    currentTabTitle = typeof tabTitle === 'string' ? tabTitle : null;
     lastContentHeartbeatAt = null;
     if (currentRoom) roomIdleSince = Date.now();
     if (previousTabId && previousTabId !== selectedTabId) {
         resetAudioProcessingInTab(previousTabId);
     }
-    await applyAudioSettingsToTab(selectedTabId);
-    await clearPendingTarget();
     await chrome.storage.session.set({
         currentTabId,
         currentTabTitle,
@@ -1950,6 +2012,36 @@ if (chrome.permissions?.onAdded?.addListener) {
     });
 }
 
+if (chrome.tabs?.onRemoved?.addListener) {
+    chrome.tabs.onRemoved.addListener((removedTabId) => {
+        ensureState().then(async () => {
+            const tabId = normalizeTabId(removedTabId);
+            if (tabId === null) return;
+            const pending = await chrome.storage.session.get('pendingTargetTabId');
+            const isCurrent = normalizeTabId(currentTabId) === tabId;
+            const isPending = normalizeTabId(pending.pendingTargetTabId) === tabId;
+            if (!isCurrent && !isPending) return;
+
+            targetActivationGeneration++;
+            if (isCurrent) {
+                currentTabId = null;
+                currentTabTitle = null;
+                lastContentHeartbeatAt = null;
+                if (currentRoom) roomIdleSince = Date.now();
+            }
+            if (isPending) await clearPendingTarget();
+            await chrome.storage.session.set({
+                currentTabId,
+                currentTabTitle,
+                roomIdleSince,
+                lastContentHeartbeatAt
+            });
+            updateBadgeStatus();
+            chrome.runtime.sendMessage({ type: 'TARGET_TAB_CLEARED', tabId }).catch(() => {});
+        }).catch(error => addLog(`Closed target-tab cleanup failed: ${error.message}`, 'warn'));
+    });
+}
+
 function _routeToContentInternal(tabId, action, payload, actionTimestamp, commandSenderId, retries) {
     chrome.tabs.sendMessage(tabId, { 
         type: 'SERVER_COMMAND',
@@ -1964,7 +2056,8 @@ function _routeToContentInternal(tabId, action, payload, actionTimestamp, comman
             return;
         }
         if (err.message.includes('Receiving end does not exist') || err.message.includes('Extension context invalidated')) {
-            injectContentScript(tabId).then(() => {
+            activateTargetTab(tabId, currentTabTitle).then(response => {
+                if (response?.status !== 'ok') return;
                 setTimeout(() => _routeToContentInternal(tabId, action, payload, actionTimestamp, commandSenderId, retries + 1), 500);
             }).catch(_err => {
                 addLog(`Auto-reinject failed for tab ${tabId}`, 'warn');
@@ -2618,8 +2711,8 @@ async function handleAsyncMessage(message, sender, sendResponse) {
             return true;
         }
 
-        injectContentScript(tabId).then(() => {
-            sendResponse({ status: 'ok' });
+        activateTargetTab(tabId, currentTabTitle).then(response => {
+            sendResponse(response);
         }).catch(err => {
             addLog(`Failed to inject into tab: ${err.message}`, 'warn');
             sendResponse(injectionFailureResponse(err));
