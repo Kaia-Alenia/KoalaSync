@@ -37,6 +37,9 @@ describe('chat overlay contract', () => {
 
     it('supports all layout and theme combinations with bounded message DOM', () => {
         expect(overlaySource).toContain("['left', 'right', 'detached']");
+        expect(overlaySource).toContain('!layout.detachedInitialized');
+        expect(overlaySource).toContain('const rect = panel.getBoundingClientRect()');
+        expect(overlaySource).not.toContain('contentRect');
         expect(overlaySource).toContain("#app[data-palette=\"cyber\"][data-theme=\"light\"]");
         expect(overlaySource).toContain("#app[data-palette=\"graphite\"][data-theme=\"light\"]");
         expect(overlaySource).toContain('const MAX_MESSAGES = 200');

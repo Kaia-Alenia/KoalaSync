@@ -16,7 +16,7 @@
     let destroyed = false;
     let saveTimer = null;
     let applyingLayout = false;
-    let layout = { mode: 'right', x: 24, y: 72, width: DEFAULT_WIDTH, height: DEFAULT_HEIGHT };
+    let layout = { mode: 'right', x: 24, y: 72, width: DEFAULT_WIDTH, height: DEFAULT_HEIGHT, detachedInitialized: false };
     let themeMode = 'system';
     let themePalette = 'eucalyptus';
 
@@ -265,9 +265,10 @@
 
     function setMode(mode) {
         if (!['left', 'right', 'detached'].includes(mode)) return;
-        if (mode === 'detached' && layout.mode !== 'detached') {
+        if (mode === 'detached' && !layout.detachedInitialized) {
             layout.x = Math.max(8, Math.round((window.innerWidth - DEFAULT_WIDTH) / 2));
             layout.y = Math.max(8, Math.round((window.innerHeight - DEFAULT_HEIGHT) / 2));
+            layout.detachedInitialized = true;
         }
         layout.mode = mode;
         applyLayout();
@@ -388,9 +389,9 @@
         saveLayout();
     });
 
-    const resizeObserver = new globalThis.ResizeObserver(entries => {
+    const resizeObserver = new globalThis.ResizeObserver(() => {
         if (applyingLayout || layout.mode !== 'detached') return;
-        const rect = entries[0]?.contentRect;
+        const rect = panel.getBoundingClientRect();
         if (!opened || !rect?.width || !rect.height) return;
         layout.width = rect.width;
         layout.height = rect.height;
@@ -456,6 +457,8 @@
     chrome.runtime.onMessage.addListener(handleRuntime);
     chrome.storage.local.get([storageKey, 'themeMode', 'themePalette'], data => {
         if (data[storageKey] && typeof data[storageKey] === 'object') layout = { ...layout, ...data[storageKey] };
+        if (!['left', 'right', 'detached'].includes(layout.mode)) layout.mode = 'right';
+        if (layout.mode === 'detached') layout.detachedInitialized = true;
         themeMode = data.themeMode || 'system';
         themePalette = data.themePalette || 'eucalyptus';
         applyTheme();
