@@ -1146,12 +1146,12 @@
             color: var(--accent);
             opacity: 1;
         }
-        .tab-btn[data-tab="tab-dev"],
+        /* Only the opt-in Dev tab is de-emphasized. tab-dev is the user-facing
+           "Status" tab and must match the other tabs. */
         #devToolsTabBtn {
             color: color-mix(in oklch, var(--text-muted), transparent 18%);
             font-size: 11px;
         }
-        .tab-btn[data-tab="tab-dev"].active,
         #devToolsTabBtn.active {
             color: var(--text-on-green);
         }
