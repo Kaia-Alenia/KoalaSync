@@ -4,9 +4,10 @@ const IV_BYTES = 12;
 const MIN_ENCRYPTED_BYTES = 29;
 const MAX_ENCRYPTED_BYTES = 2028;
 
-let cachedKey = null;
+let cachedKeyPromise = null;
 let cachedRoomId = '';
 let cachedSecret = '';
+let cacheGeneration = 0;
 
 function bytesToBase64Url(bytes) {
     let binary = '';
@@ -50,7 +51,8 @@ export function normalizeOutgoingChatText(value) {
 }
 
 export function clearChatKeyCache() {
-    cachedKey = null;
+    cacheGeneration++;
+    cachedKeyPromise = null;
     cachedRoomId = '';
     cachedSecret = '';
 }
@@ -58,21 +60,30 @@ export function clearChatKeyCache() {
 export async function deriveChatKey(roomId, secret, cryptoImpl = globalThis.crypto) {
     const validSecret = validateChatSecret(secret);
     if (!roomId || !validSecret) throw new TypeError('Valid roomId and chat secret are required');
-    if (cachedKey && cachedRoomId === roomId && cachedSecret === validSecret) return cachedKey;
+    if (cachedKeyPromise && cachedRoomId === roomId && cachedSecret === validSecret) return cachedKeyPromise;
 
     const encoder = new globalThis.TextEncoder();
-    const material = await cryptoImpl.subtle.importKey(
-        'raw', base64UrlToBytes(validSecret), { name: 'HKDF' }, false, ['deriveKey']
-    );
-    cachedKey = await cryptoImpl.subtle.deriveKey({
-        name: 'HKDF',
-        hash: 'SHA-256',
-        salt: encoder.encode(roomId),
-        info: encoder.encode(CHAT_INFO)
-    }, material, { name: 'AES-GCM', length: 256 }, false, ['encrypt', 'decrypt']);
+    const generation = cacheGeneration;
+    const keyPromise = (async () => {
+        const material = await cryptoImpl.subtle.importKey(
+            'raw', base64UrlToBytes(validSecret), { name: 'HKDF' }, false, ['deriveKey']
+        );
+        return cryptoImpl.subtle.deriveKey({
+            name: 'HKDF',
+            hash: 'SHA-256',
+            salt: encoder.encode(roomId),
+            info: encoder.encode(CHAT_INFO)
+        }, material, { name: 'AES-GCM', length: 256 }, false, ['encrypt', 'decrypt']);
+    })();
+    cachedKeyPromise = keyPromise;
     cachedRoomId = roomId;
     cachedSecret = validSecret;
-    return cachedKey;
+    try {
+        return await keyPromise;
+    } catch (error) {
+        if (generation === cacheGeneration && cachedKeyPromise === keyPromise) clearChatKeyCache();
+        throw error;
+    }
 }
 
 export async function encryptChatMessage({ text, roomId, senderId, secret }, cryptoImpl = globalThis.crypto) {
@@ -106,7 +117,6 @@ export async function decryptChatMessage({ ciphertext, roomId, senderId, secret 
         iv: bytes.slice(0, IV_BYTES),
         additionalData: encoder.encode(`${roomId}|${senderId}`)
     }, key, bytes.slice(IV_BYTES));
-    const text = new globalThis.TextDecoder().decode(plaintext);
-    if (!text || countCodePoints(text) > 500) throw new RangeError('Decrypted chat message exceeds client limits');
-    return text;
+    const text = new globalThis.TextDecoder('utf-8', { fatal: true }).decode(plaintext);
+    return normalizeOutgoingChatText(text);
 }

@@ -5,6 +5,7 @@ import { describe, expect, it } from 'vitest';
 const extensionDir = path.dirname(new URL(import.meta.url).pathname);
 const overlaySource = fs.readFileSync(path.join(extensionDir, 'chat-overlay.js'), 'utf8');
 const backgroundSource = fs.readFileSync(path.join(extensionDir, 'background.js'), 'utf8');
+const popupSource = fs.readFileSync(path.join(extensionDir, 'popup.js'), 'utf8');
 const localeDir = path.join(extensionDir, 'locales');
 const chatKeys = [
     'CHAT_TITLE',
@@ -44,6 +45,33 @@ describe('chat overlay contract', () => {
         expect(overlaySource).toContain("#app[data-palette=\"graphite\"][data-theme=\"light\"]");
         expect(overlaySource).toContain('const MAX_MESSAGES = 200');
         expect(overlaySource).toContain('while (messages.querySelectorAll(\'.message\').length > MAX_MESSAGES)');
+        expect(overlaySource).toContain('Math.max(1, window.innerWidth)');
+        expect(overlaySource).toContain('min(${MIN_WIDTH}px, calc(100vw - 16px))');
+    });
+
+    it('guards async refresh/send work and clears all composer state on room reset', () => {
+        expect(overlaySource).toContain('generation !== refreshGeneration');
+        expect(overlaySource).toContain('if (sending || !context?.enabled) return');
+        expect(overlaySource).toContain('textarea.value === submittedValue');
+        expect(overlaySource).toMatch(/CHAT_RESET[\s\S]*resetComposer\(\)/);
+        expect(overlaySource).toContain('setTimeout(() => finish(null), timeoutMs)');
+        expect(backgroundSource).toContain('chatReceiveQueue = chatReceiveQueue.catch(() => {}).then');
+        expect(backgroundSource).toContain("status: 'rate_limited'");
+    });
+
+    it('keeps unavailable chat controls discoverable to assistive technology', () => {
+        expect(overlaySource).toContain("launcher.setAttribute('aria-disabled'");
+        expect(overlaySource).not.toContain('launcher.disabled =');
+        expect(overlaySource).toContain("launcher.setAttribute('aria-describedby', launcherHint.id)");
+        expect(overlaySource).toContain("textarea.setAttribute('aria-describedby', 'chat-composer-count chat-composer-status')");
+        expect(overlaySource).toContain("status.setAttribute('role', 'status')");
+    });
+
+    it('creates a chat key for both generated-room entry points', () => {
+        expect(popupSource).toContain('let pendingRoomCreation = false');
+        expect(popupSource).toContain('const isCreating = pendingRoomCreation || !roomIdInput');
+        expect(popupSource).toMatch(/function handleCreateRoom\(\)[\s\S]*pendingRoomCreation = true[\s\S]*elements\.joinBtn\.click\(\)/);
+        expect(popupSource).toContain("type: 'CREATE_CHAT_KEY'");
     });
 
     it('contains every chat string in all 15 extension locales', () => {

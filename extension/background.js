@@ -6,6 +6,7 @@ import { applyTitlePrivacyToPayload, sanitizeSharedTitle, sanitizeTabTitle, norm
 import { initTabManager } from './modules/tab-manager.js';
 import { clearChatKeyCache, decryptChatMessage, encryptChatMessage, generateChatSecret, validateChatSecret } from './chat-crypto.js';
 import { buildChatRelayPayload, encodeSocketEvent } from './chat-wire.js';
+import { createChatSendLimiter, createLatestTaskQueue, normalizeRoomId } from './chat-session.js';
 import './page-api-seek-overrides.js';
 
 // --- Uninstall URL Initialization ---
@@ -82,7 +83,26 @@ let hostPeerId = null;                     // peerId of the room host (creator /
 // relay (no capabilities field) → host-control UI/behavior stays unavailable.
 let serverCapabilities = [];
 let chatSecretGuard = '';
+let chatSessionGeneration = 0;
+let chatReceiveQueue = Promise.resolve();
+const chatSendLimiter = createChatSendLimiter();
+const webJoinCoordinator = createLatestTaskQueue();
 function serverSupports(cap) { return Array.isArray(serverCapabilities) && serverCapabilities.includes(cap); }
+
+function invalidateChatSession() {
+    chatSessionGeneration++;
+    chatReceiveQueue = Promise.resolve();
+    chatSendLimiter.reset();
+    clearChatKeyCache();
+}
+
+async function clearFailedJoinCredentials() {
+    webJoinCoordinator.invalidate();
+    connectIntent = false;
+    chatSecretGuard = '';
+    invalidateChatSession();
+    await chrome.storage.local.set({ roomId: '', password: '', chatKey: '' }).catch(() => {});
+}
 // Local peer's desync state (content.js reports it via HCM_DESYNC_STATE). Relayed
 // in heartbeats so the host's popup UI can show "Solo" instead of silently
 // appearing un-ACK'd.
@@ -377,10 +397,12 @@ async function getSettings() {
     const mediaTitlePrivacyMode = normalizeTitlePrivacyMode(data.mediaTitlePrivacyMode || legacyTitlePrivacyMode);
     const chatKey = validateChatSecret(data.chatKey);
     chatSecretGuard = chatKey;
+    const roomId = normalizeRoomId(data.roomId);
+    if (data.roomId && data.roomId !== roomId) chrome.storage.local.set({ roomId }).catch(() => {});
     return {
         serverUrl: data.serverUrl || '',
         useCustomServer: data.useCustomServer || false,
-        roomId: data.roomId || '',
+        roomId,
         password: data.password || '',
         chatKey,
         username,
@@ -474,6 +496,7 @@ function forceDisconnect() {
     currentServerUrl = null;
     isConnecting = false;
     isNamespaceJoined = false;
+    invalidateChatSession();
     isForceSyncInitiator = false;
     expectedAcksCount = 0;
     roomIdleSince = null;
@@ -567,7 +590,7 @@ async function leaveRoomAfterIdleGrace(reason) {
         hcmDesynced: false
     }).catch(() => {});
     chatSecretGuard = '';
-    clearChatKeyCache();
+    invalidateChatSession();
     await chrome.storage.local.set({ roomId: '', password: '', chatKey: '' }).catch(() => {});
     addLog(reason, 'info');
     chrome.runtime.sendMessage({ type: 'PEER_UPDATE', peers: [] }).catch(() => {});
@@ -709,6 +732,7 @@ async function connect() {
         socket.onclose = () => {
             isConnecting = false;
             isNamespaceJoined = false;
+            invalidateChatSession();
             stopPing();
             if (flushTimer) { clearTimeout(flushTimer); flushTimer = null; }
             
@@ -790,6 +814,7 @@ function broadcastConnectionStatus(status) {
         status = 'idle';
     }
     chrome.runtime.sendMessage({ type: 'CONNECTION_STATUS', status }).catch(() => {});
+    if (currentTabId) chrome.tabs.sendMessage(Number(currentTabId), { type: 'CONNECTION_STATUS', status }).catch(() => {});
     updateBadgeStatus();
 }
 
@@ -1045,6 +1070,7 @@ async function handleServerEvent(event, data) {
     }
     switch (event) {
         case EVENTS.ROOM_DATA:
+            if (currentRoom?.roomId !== data.roomId) invalidateChatSession();
             currentRoom = data;
             // Host Control Mode: adopt room role/mode on (re)join.
             controlMode = data.controlMode || CONTROL_MODES.EVERYONE;
@@ -1131,42 +1157,54 @@ async function handleServerEvent(event, data) {
             break;
         case EVENTS.CHAT_MESSAGE: {
             if (!currentRoom || !serverSupports(CAPABILITIES.CHAT) || !currentTabId) break;
-            const settings = await getSettings();
-            if (!settings.chatKey) break;
-            try {
-                const text = await decryptChatMessage({
-                    ciphertext: data.ciphertext,
-                    roomId: currentRoom.roomId,
-                    senderId: data.senderId,
-                    secret: settings.chatKey
-                });
-                const senderPeer = currentRoom.peers?.find(candidate =>
-                    (typeof candidate === 'object' ? candidate.peerId : candidate) === data.senderId
-                );
-                const tabId = Number(currentTabId);
-                if (Number.isInteger(tabId)) {
-                    chrome.tabs.sendMessage(tabId, {
-                        type: 'CHAT_MESSAGE',
-                        message: {
-                            id: data.id,
-                            senderId: data.senderId,
-                            username: typeof senderPeer === 'object' ? senderPeer.username : null,
-                            timestamp: data.timestamp,
-                            text
-                        }
-                    }).catch(() => {});
+            const generation = chatSessionGeneration;
+            const roomId = currentRoom.roomId;
+            const tabId = Number(currentTabId);
+            const received = { ...data };
+            const isCurrentSession = () => generation === chatSessionGeneration &&
+                currentRoom?.roomId === roomId && Number(currentTabId) === tabId;
+            chatReceiveQueue = chatReceiveQueue.catch(() => {}).then(async () => {
+                if (!isCurrentSession()) return;
+                const settings = await getSettings();
+                if (!settings.chatKey || settings.roomId !== roomId || !isCurrentSession()) return;
+                const chatKey = settings.chatKey;
+                try {
+                    const text = await decryptChatMessage({
+                        ciphertext: received.ciphertext,
+                        roomId,
+                        senderId: received.senderId,
+                        secret: chatKey
+                    });
+                    if (!isCurrentSession() || chatSecretGuard !== chatKey) return;
+                    const senderPeer = currentRoom.peers?.find(candidate =>
+                        (typeof candidate === 'object' ? candidate.peerId : candidate) === received.senderId
+                    );
+                    if (Number.isInteger(tabId)) {
+                        chrome.tabs.sendMessage(tabId, {
+                            type: 'CHAT_MESSAGE',
+                            message: {
+                                id: received.id,
+                                senderId: received.senderId,
+                                username: typeof senderPeer === 'object' ? senderPeer.username : null,
+                                timestamp: received.timestamp,
+                                text
+                            }
+                        }).catch(() => {});
+                    }
+                } catch (_) {
+                    if (isCurrentSession()) addLog('Discarded chat message that failed authentication', 'warn');
                 }
-            } catch (_) {
-                addLog('Discarded chat message that failed authentication', 'warn');
-            }
+            });
+            await chatReceiveQueue;
             break;
         }
         case EVENTS.ERROR:
             isConnecting = false;
             // If we get a server error before successfully joining a room,
-            // clear connectIntent to prevent an infinite reconnect loop.
-            if (!currentRoom) {
-                connectIntent = false;
+            // clear persisted credentials as well, otherwise service-worker
+            // restart would immediately retry the rejected room.
+            if (!currentRoom && connectIntent) {
+                await clearFailedJoinCredentials();
                 if (reconnectTimer) { clearTimeout(reconnectTimer); reconnectTimer = null; }
                 reconnectAttempts = 0;
                 reconnectFailed = false;
@@ -1910,7 +1948,7 @@ function leaveOldRoomIfSwitching(newRoomId) {
         hostPeerId = null;
         controllers = [];
         serverCapabilities = [];
-        clearChatKeyCache();
+        invalidateChatSession();
         hcmDesynced = false;
         // Notify content.js/popup so they drop any guest-side HCM state from the
         // previous room (badge/dialog/desync) — H-2/H-3.
@@ -1952,8 +1990,18 @@ async function applyAudioSettingsToTab(tabId) {
 
 // --- Extension Message Listeners ---
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-    handleAsyncMessage(message, sender, sendResponse);
+    handleAsyncMessage(message, sender, sendResponse).catch(error => {
+        addLog(`Message handler failed for ${message?.type || 'unknown'}: ${error.message}`, 'error');
+        try { sendResponse({ status: 'error' }); } catch (_) { /* channel already closed */ }
+    });
     return true; // Keep channel open for async responses
+});
+
+chrome.storage.onChanged.addListener((changes, area) => {
+    if (area !== 'local' || (!changes.roomId && !changes.chatKey)) return;
+    if (changes.chatKey) chatSecretGuard = validateChatSecret(changes.chatKey.newValue);
+    invalidateChatSession();
+    if (currentTabId) chrome.tabs.sendMessage(Number(currentTabId), { type: 'CHAT_CONTEXT_UPDATE' }).catch(() => {});
 });
 
 async function handleAsyncMessage(message, sender, sendResponse) {
@@ -1961,12 +2009,14 @@ async function handleAsyncMessage(message, sender, sendResponse) {
     await ensureState();
 
     if (message.type === 'CONNECT') {
+        webJoinCoordinator.invalidate();
         const settings = await getSettings();
         connectIntent = !!settings.roomId;
         const desiredUrl = resolveServerUrl(settings);
 
         if (settings.roomId && currentRoom && currentRoom.roomId === settings.roomId && socket && socket.readyState === WebSocket.OPEN && isNamespaceJoined && desiredUrl === currentServerUrl) {
             broadcastConnectionStatus('connected');
+            if (currentTabId) chrome.tabs.sendMessage(Number(currentTabId), { type: 'CHAT_CONTEXT_UPDATE' }).catch(() => {});
             const tabs = await new Promise(resolve => chrome.tabs.query({}, resolve));
             for (const tab of tabs) {
                 chrome.tabs.sendMessage(tab.id, { type: 'JOIN_STATUS', success: true, message: 'Already in room' }).catch(() => {});
@@ -2053,6 +2103,7 @@ async function handleAsyncMessage(message, sender, sendResponse) {
         sendResponse({
             supported: serverSupports(CAPABILITIES.CHAT),
             hasKey: !!settings.chatKey,
+            connected: !!(socket && socket.readyState === WebSocket.OPEN && isNamespaceJoined),
             peerId,
             roomId: currentRoom.roomId,
             strings: {
@@ -2082,18 +2133,39 @@ async function handleAsyncMessage(message, sender, sendResponse) {
             sendResponse({ status: 'unsupported' });
             return;
         }
+        if (!socket || socket.readyState !== WebSocket.OPEN || !isNamespaceJoined) {
+            sendResponse({ status: 'disconnected' });
+            return;
+        }
+        const generation = chatSessionGeneration;
+        const roomId = currentRoom.roomId;
+        const tabId = Number(currentTabId);
+        const socketSnapshot = socket;
+        const isCurrentSession = () => generation === chatSessionGeneration &&
+            currentRoom?.roomId === roomId && Number(currentTabId) === tabId &&
+            socket === socketSnapshot && socketSnapshot.readyState === WebSocket.OPEN && isNamespaceJoined;
         const settings = await getSettings();
-        if (!settings.chatKey) {
-            sendResponse({ status: 'missing_key' });
+        if (!settings.chatKey || settings.roomId !== roomId || !isCurrentSession()) {
+            sendResponse({ status: settings.chatKey ? 'session_changed' : 'missing_key' });
+            return;
+        }
+        const chatKey = settings.chatKey;
+        const rateLimit = chatSendLimiter.take();
+        if (!rateLimit.allowed) {
+            sendResponse({ status: 'rate_limited', retryAfterMs: rateLimit.retryAfterMs });
             return;
         }
         try {
             const ciphertext = await encryptChatMessage({
                 text: message.text,
-                roomId: currentRoom.roomId,
+                roomId,
                 senderId: peerId,
-                secret: settings.chatKey
+                secret: chatKey
             });
+            if (!isCurrentSession() || chatSecretGuard !== chatKey) {
+                sendResponse({ status: 'session_changed' });
+                return;
+            }
             const sent = emitLive(EVENTS.CHAT_MESSAGE, buildChatRelayPayload(ciphertext));
             sendResponse({ status: sent ? 'ok' : 'disconnected' });
         } catch (err) {
@@ -2102,7 +2174,7 @@ async function handleAsyncMessage(message, sender, sendResponse) {
     } else if (message.type === 'CREATE_CHAT_KEY') {
         const chatKey = generateChatSecret();
         chatSecretGuard = chatKey;
-        clearChatKeyCache();
+        invalidateChatSession();
         await chrome.storage.local.set({ chatKey });
         sendResponse({ status: 'ok', chatKey });
     } else if (message.type === 'SET_CONTROL_MODE') {
@@ -2174,6 +2246,7 @@ async function handleAsyncMessage(message, sender, sendResponse) {
         if (storageInitialized) chrome.storage.session.set({ hcmDesynced });
         sendResponse({ status: 'ok' });
     } else if (message.type === 'LEAVE_ROOM') {
+        webJoinCoordinator.invalidate();
         connectIntent = false;
         reconnectFailed = false;
         reconnectAttempts = 0;
@@ -2219,7 +2292,7 @@ async function handleAsyncMessage(message, sender, sendResponse) {
             hcmDesynced: false
         });
         chatSecretGuard = '';
-        clearChatKeyCache();
+        invalidateChatSession();
         chrome.storage.local.set({ roomId: '', password: '', chatKey: '' }).catch(() => {});
         addLog('Left Room', 'info');
         chrome.runtime.sendMessage({ type: 'PEER_UPDATE', peers: [] }).catch(() => {});
@@ -2237,7 +2310,7 @@ async function handleAsyncMessage(message, sender, sendResponse) {
         sendResponse({ status: 'ok' });
     } else if (message.type === 'WEB_JOIN_REQUEST') {
         const { roomId: rawRoomId, password, chatKey: rawChatKey, useCustomServer, serverUrl } = message;
-        const roomId = typeof rawRoomId === 'string' ? rawRoomId.replace(/[^a-zA-Z0-9\-]/g, '') : '';
+        const roomId = normalizeRoomId(rawRoomId);
         const chatKey = validateChatSecret(rawChatKey);
         if (!roomId) {
             const errMsg = { type: 'JOIN_STATUS', success: false, message: 'Invalid room ID' };
@@ -2248,53 +2321,77 @@ async function handleAsyncMessage(message, sender, sendResponse) {
             sendResponse({ status: 'invalid_room_id' });
             return;
         }
-        connectIntent = true;
-        chrome.storage.local.set({ 
-            roomId, 
-            password,
-            chatKey,
-            useCustomServer: !!useCustomServer,
-            serverUrl: serverUrl || ''
-        }, async () => {
-            chatSecretGuard = chatKey;
-            clearChatKeyCache();
-            const settings = await getSettings();
-            const desiredUrl = resolveServerUrl(settings);
-
-            if (roomId && currentRoom && currentRoom.roomId === roomId && socket && socket.readyState === WebSocket.OPEN && isNamespaceJoined && desiredUrl === currentServerUrl) {
-                broadcastConnectionStatus('connected');
-                if (currentTabId) chrome.tabs.sendMessage(Number(currentTabId), { type: 'CHAT_CONTEXT_UPDATE' }).catch(() => {});
-                const tabs = await new Promise(resolve => chrome.tabs.query({}, resolve));
-                for (const tab of tabs) {
-                    chrome.tabs.sendMessage(tab.id, { type: 'JOIN_STATUS', success: true, message: 'Already in room' }).catch(() => {});
-                }
-                sendResponse({ status: 'already_joined' });
-                return;
+        await webJoinCoordinator.run(async isCurrentJoin => {
+            if (!isCurrentJoin()) {
+                sendResponse({ status: 'superseded' });
+                return { status: 'superseded' };
             }
-
-            reconnectFailed = false;
-            reconnectStartTime = null;
-            reconnectAttempts = 0;
-            chrome.storage.session.set({ reconnectFailed: false, reconnectAttempts: 0, reconnectStartTime: null });
-            broadcastConnectionStatus('connecting');
-            leaveOldRoomIfSwitching(roomId);
-
-            if (desiredUrl !== currentServerUrl || !socket || socket.readyState !== WebSocket.OPEN || !isNamespaceJoined) {
-                if (desiredUrl !== currentServerUrl) forceDisconnect();
-                connect();
-            } else if (roomId) {
-                const sharedTitles = getSharedTitleFields(settings);
-                emit(EVENTS.JOIN_ROOM, { 
-                    roomId, 
-                    password,
-                    peerId,
-                    username: settings.username,
-                    tabTitle: sharedTitles.tabTitle,
-                    protocolVersion: PROTOCOL_VERSION
+            try {
+                connectIntent = true;
+                await chrome.storage.local.set({
+                    roomId,
+                    password: typeof password === 'string' ? password : '',
+                    chatKey,
+                    useCustomServer: !!useCustomServer,
+                    serverUrl: typeof serverUrl === 'string' ? serverUrl : ''
                 });
+                if (!isCurrentJoin()) {
+                    sendResponse({ status: 'superseded' });
+                    return { status: 'superseded' };
+                }
+                chatSecretGuard = chatKey;
+                invalidateChatSession();
+                const settings = await getSettings();
+                if (!isCurrentJoin()) {
+                    sendResponse({ status: 'superseded' });
+                    return { status: 'superseded' };
+                }
+                const desiredUrl = resolveServerUrl(settings);
+
+                if (roomId && currentRoom && currentRoom.roomId === roomId && socket && socket.readyState === WebSocket.OPEN && isNamespaceJoined && desiredUrl === currentServerUrl) {
+                    broadcastConnectionStatus('connected');
+                    if (currentTabId) chrome.tabs.sendMessage(Number(currentTabId), { type: 'CHAT_CONTEXT_UPDATE' }).catch(() => {});
+                    const tabs = await new Promise(resolve => chrome.tabs.query({}, resolve));
+                    if (!isCurrentJoin()) {
+                        sendResponse({ status: 'superseded' });
+                        return { status: 'superseded' };
+                    }
+                    for (const tab of tabs) {
+                        chrome.tabs.sendMessage(tab.id, { type: 'JOIN_STATUS', success: true, message: 'Already in room' }).catch(() => {});
+                    }
+                    sendResponse({ status: 'already_joined' });
+                    return { status: 'already_joined' };
+                }
+
+                reconnectFailed = false;
+                reconnectStartTime = null;
+                reconnectAttempts = 0;
+                chrome.storage.session.set({ reconnectFailed: false, reconnectAttempts: 0, reconnectStartTime: null });
+                broadcastConnectionStatus('connecting');
+                leaveOldRoomIfSwitching(roomId);
+
+                if (desiredUrl !== currentServerUrl || !socket || socket.readyState !== WebSocket.OPEN || !isNamespaceJoined) {
+                    if (desiredUrl !== currentServerUrl) forceDisconnect();
+                    connect();
+                } else if (roomId) {
+                    const sharedTitles = getSharedTitleFields(settings);
+                    emit(EVENTS.JOIN_ROOM, {
+                        roomId,
+                        password,
+                        peerId,
+                        username: settings.username,
+                        tabTitle: sharedTitles.tabTitle,
+                        protocolVersion: PROTOCOL_VERSION
+                    });
+                }
+                addLog(`Joining room via link: ${roomId}`, 'info');
+                sendResponse({ status: 'ok' });
+                return { status: 'ok' };
+            } catch (_) {
+                if (isCurrentJoin()) await clearFailedJoinCredentials();
+                sendResponse({ status: 'storage_error' });
+                return { status: 'storage_error' };
             }
-            addLog(`Joining room via link: ${roomId}`, 'info');
-            sendResponse({ status: 'ok' });
         });
     } else if (message.type === 'REGENERATE_ID') {
         // Match getPeerId()'s 16-hex-char generation — see comment there.

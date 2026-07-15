@@ -3,10 +3,12 @@ import { BLACKLIST_DOMAINS } from './shared/blacklist.js';
 import { getAvatarForName, generateUsername, USERNAME_ADJECTIVES, USERNAME_NOUNS } from './shared/names.js';
 import { loadLocale, translateDOM, getMessage, getSystemLanguage } from './i18n.js';
 import { TITLE_PRIVACY_MODES, normalizeSendTabTitle, normalizeTabTitle } from './title-privacy.js';
+import { normalizeRoomId } from './chat-session.js';
 import './shared/invite-links.js';
 
 let pendingInviteRoomId = '';
 let pendingInviteChatKey = '';
+let pendingRoomCreation = false;
 
 function normalizeChatKey(value) {
     return typeof value === 'string' && /^[A-Za-z0-9_-]{21}[AQgw]$/.test(value) ? value : '';
@@ -356,7 +358,7 @@ async function init() {
     }
     
     elements.serverUrl.value = localData.serverUrl || '';
-    elements.roomId.value = localData.roomId || '';
+    elements.roomId.value = normalizeRoomId(localData.roomId);
     elements.password.value = localData.password || '';
     elements.username.value = username;
     syncDevToolsVisibility();
@@ -1305,9 +1307,9 @@ function checkInviteLink() {
             try {
                 const invite = globalThis.KoalaSyncInviteLinks.parseInviteHash(new URL(tab.url).hash);
                 if (!invite) return;
-                elements.roomId.value = invite.roomId;
+                elements.roomId.value = normalizeRoomId(invite.roomId);
                 elements.password.value = invite.password;
-                pendingInviteRoomId = invite.roomId;
+                pendingInviteRoomId = elements.roomId.value;
                 pendingInviteChatKey = normalizeChatKey(invite.chatKey);
 
                 elements.serverUrl.value = invite.serverUrl;
@@ -1596,7 +1598,8 @@ function showError(msg) {
 
 // --- Action Handlers ---
 elements.roomId.addEventListener('input', () => {
-    elements.roomId.value = elements.roomId.value.replace(/[^a-zA-Z0-9\-]/g, '');
+    elements.roomId.value = normalizeRoomId(elements.roomId.value);
+    pendingRoomCreation = false;
     if (pendingInviteRoomId && elements.roomId.value !== pendingInviteRoomId) {
         pendingInviteRoomId = '';
         pendingInviteChatKey = '';
@@ -1611,8 +1614,8 @@ elements.joinBtn.addEventListener('click', async () => {
         isProcessingConnection = false;
         return;
     }
-    const roomIdInput = elements.roomId.value.trim();
-    const isCreating = !roomIdInput;
+    const roomIdInput = normalizeRoomId(elements.roomId.value);
+    const isCreating = pendingRoomCreation || !roomIdInput;
     
     elements.joinBtn.disabled = true;
     elements.joinBtn.textContent = isCreating ? getMessage('BTN_STATE_CREATING') : getMessage('BTN_STATE_JOINING');
@@ -1677,10 +1680,20 @@ elements.joinBtn.addEventListener('click', async () => {
     if (isCreating) {
         const created = await new Promise(resolve => chrome.runtime.sendMessage({ type: 'CREATE_CHAT_KEY' }, resolve));
         chatKey = normalizeChatKey(created?.chatKey);
+        if (!chatKey) {
+            pendingRoomCreation = false;
+            elements.joinBtn.disabled = false;
+            elements.joinBtn.textContent = getMessage('BTN_JOIN_ROOM');
+            if (joinBtnTimeout) { clearTimeout(joinBtnTimeout); joinBtnTimeout = null; }
+            isProcessingConnection = false;
+            showError(getMessage('CHAT_SEND_FAILED'));
+            return;
+        }
     }
     if (isCreating) window.justCreatedRoom = true;
     pendingInviteRoomId = '';
     pendingInviteChatKey = '';
+    pendingRoomCreation = false;
 
     await chrome.storage.local.set({ serverUrl, roomId, password, chatKey, useCustomServer: useCustom });
     elements.roomId.value = roomId;
@@ -1723,6 +1736,7 @@ function handleCreateRoom() {
     const password = secureGenerateId();
     elements.roomId.value = roomId;
     elements.password.value = password;
+    pendingRoomCreation = true;
     window.justCreatedRoom = true;
     
     // Auto-connect

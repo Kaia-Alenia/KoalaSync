@@ -16,6 +16,9 @@
     let destroyed = false;
     let saveTimer = null;
     let applyingLayout = false;
+    let refreshGeneration = 0;
+    let sendGeneration = 0;
+    let sending = false;
     let layout = { mode: 'right', x: 24, y: 72, width: DEFAULT_WIDTH, height: DEFAULT_HEIGHT, detachedInitialized: false };
     let themeMode = 'system';
     let themePalette = 'eucalyptus';
@@ -85,11 +88,11 @@
             border-radius: 16px; background: var(--card); color: var(--text); cursor: pointer;
             pointer-events: auto; box-shadow: 0 10px 28px rgb(0 0 0 / .32); font-size: 22px;
         }
-        .launcher:hover:not(:disabled) { border-color: var(--accent); transform: translateY(-1px); }
-        .launcher:disabled { cursor: not-allowed; opacity: .58; }
+        .launcher:hover:not([aria-disabled="true"]) { border-color: var(--accent); transform: translateY(-1px); }
+        .launcher[aria-disabled="true"] { cursor: not-allowed; opacity: .58; }
         .panel {
             position: fixed; display: none; flex-direction: column; overflow: hidden;
-            min-width: ${MIN_WIDTH}px; min-height: ${MIN_HEIGHT}px; max-width: calc(100vw - 16px);
+            min-width: min(${MIN_WIDTH}px, calc(100vw - 16px)); min-height: min(${MIN_HEIGHT}px, calc(100vh - 16px)); max-width: calc(100vw - 16px);
             max-height: calc(100vh - 16px); pointer-events: auto; color: var(--text);
             background: var(--card); border: 1px solid var(--border-strong); border-radius: 18px;
             box-shadow: 0 18px 55px rgb(0 0 0 / .38); transform: translateZ(0);
@@ -120,6 +123,7 @@
         .send { border: 0; border-radius: 10px; padding: 8px 13px; background: var(--accent); color: var(--text-on-green); font-weight: 750; cursor: pointer; }
         .send:hover:not(:disabled) { background: var(--accent-hover); }
         .send:disabled { opacity: .55; cursor: wait; }
+        .visually-hidden { position: absolute !important; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
         @media (max-width: 520px) { .panel { max-width: calc(100vw - 12px); } }
         @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
     `;
@@ -135,6 +139,8 @@
     app.id = 'app';
     const launcher = element('button', 'launcher', '💬');
     launcher.type = 'button';
+    const launcherHint = element('span', 'visually-hidden');
+    launcherHint.id = 'chat-launcher-hint';
     const panel = element('section', 'panel');
     panel.setAttribute('role', 'dialog');
     const header = element('header', 'header');
@@ -155,28 +161,43 @@
     const empty = element('div', 'empty');
     messages.append(empty);
     const composer = element('form', 'composer');
+    const textareaLabel = element('label', 'visually-hidden');
+    textareaLabel.htmlFor = 'chat-composer-input';
     const textarea = element('textarea');
+    textarea.id = 'chat-composer-input';
+    textarea.setAttribute('aria-describedby', 'chat-composer-count chat-composer-status');
     const composerRow = element('div', 'composer-row');
     const count = element('span', 'count', '0/500');
+    count.id = 'chat-composer-count';
     const sendButton = element('button', 'send');
     sendButton.type = 'submit';
     composerRow.append(count, sendButton);
     const status = element('div', 'status');
-    composer.append(textarea, composerRow, status);
+    status.id = 'chat-composer-status';
+    status.setAttribute('role', 'status');
+    composer.append(textareaLabel, textarea, composerRow, status);
     panel.append(header, messages, composer);
-    app.append(launcher, panel);
+    app.append(launcherHint, launcher, panel);
     shadow.append(style, app);
     document.documentElement.append(host);
 
-    function messageRuntime(payload) {
+    function messageRuntime(payload, timeoutMs = 5000) {
         return new Promise(resolve => {
+            let settled = false;
+            const finish = response => {
+                if (settled) return;
+                settled = true;
+                clearTimeout(timeout);
+                resolve(response || null);
+            };
+            const timeout = setTimeout(() => finish(null), timeoutMs);
             try {
                 chrome.runtime.sendMessage(payload, response => {
-                    if (chrome.runtime.lastError) resolve(null);
-                    else resolve(response || null);
+                    if (chrome.runtime.lastError) finish(null);
+                    else finish(response);
                 });
             } catch (_) {
-                resolve(null);
+                finish(null);
             }
         });
     }
@@ -190,9 +211,16 @@
         title.textContent = text.title || '';
         subtitle.textContent = text.liveOnly || '';
         launcher.setAttribute('aria-label', text.open || '');
-        launcher.title = context?.supported && !context?.hasKey ? (text.missingKey || '') : (text.open || '');
+        const unavailableHint = context?.supported && !context?.hasKey
+            ? (text.missingKey || '')
+            : context?.supported && !context?.connected ? (text.sendFailed || '') : '';
+        launcher.title = unavailableHint || text.open || '';
+        launcherHint.textContent = unavailableHint;
+        if (unavailableHint) launcher.setAttribute('aria-describedby', launcherHint.id);
+        else launcher.removeAttribute('aria-describedby');
         panel.setAttribute('aria-label', text.title || '');
         textarea.placeholder = text.placeholder || '';
+        textareaLabel.textContent = text.placeholder || text.title || '';
         sendButton.textContent = text.send || '';
         empty.textContent = text.empty || '';
         leftButton.title = text.dockLeft || '';
@@ -212,15 +240,19 @@
     }
 
     function viewportBounds() {
-        return { width: Math.max(320, window.innerWidth), height: Math.max(360, window.innerHeight) };
+        return { width: Math.max(1, window.innerWidth), height: Math.max(1, window.innerHeight) };
     }
 
     function clampDetached() {
         const viewport = viewportBounds();
-        layout.width = Math.min(Math.max(Number(layout.width) || DEFAULT_WIDTH, MIN_WIDTH), Math.min(600, viewport.width - 16));
-        layout.height = Math.min(Math.max(Number(layout.height) || DEFAULT_HEIGHT, MIN_HEIGHT), viewport.height - 16);
-        layout.x = Math.min(Math.max(Number(layout.x) || 8, 8), Math.max(8, viewport.width - layout.width - 8));
-        layout.y = Math.min(Math.max(Number(layout.y) || 8, 8), Math.max(8, viewport.height - layout.height - 8));
+        const maxWidth = Math.max(1, Math.min(600, viewport.width - 16));
+        const maxHeight = Math.max(1, viewport.height - 16);
+        const horizontalInset = Math.min(8, Math.max(0, Math.floor((viewport.width - 1) / 2)));
+        const verticalInset = Math.min(8, Math.max(0, Math.floor((viewport.height - 1) / 2)));
+        layout.width = Math.min(Math.max(Number(layout.width) || DEFAULT_WIDTH, Math.min(MIN_WIDTH, maxWidth)), maxWidth);
+        layout.height = Math.min(Math.max(Number(layout.height) || DEFAULT_HEIGHT, Math.min(MIN_HEIGHT, maxHeight)), maxHeight);
+        layout.x = Math.min(Math.max(Number(layout.x) || horizontalInset, horizontalInset), Math.max(horizontalInset, viewport.width - layout.width - horizontalInset));
+        layout.y = Math.min(Math.max(Number(layout.y) || verticalInset, verticalInset), Math.max(verticalInset, viewport.height - layout.height - verticalInset));
     }
 
     function saveLayout() {
@@ -252,13 +284,16 @@
             launcher.style.right = 'auto';
             launcher.style.top = `${layout.y}px`;
         } else {
-            panel.style.top = '64px';
-            panel.style.width = `${DEFAULT_WIDTH}px`;
-            panel.style.height = 'min(560px, calc(100vh - 80px))';
-            panel.style[layout.mode] = '16px';
-            launcher.style.top = 'calc(50vh - 24px)';
-            launcher.style.left = layout.mode === 'left' ? '16px' : 'auto';
-            launcher.style.right = layout.mode === 'right' ? '16px' : 'auto';
+            const viewport = viewportBounds();
+            const gutter = Math.min(16, Math.max(0, Math.floor((viewport.width - 1) / 2)));
+            const panelTop = viewport.height < MIN_HEIGHT + 80 ? Math.min(8, Math.max(0, viewport.height - 1)) : 64;
+            panel.style.top = `${panelTop}px`;
+            panel.style.width = `${Math.max(1, Math.min(DEFAULT_WIDTH, viewport.width - gutter * 2))}px`;
+            panel.style.height = `${Math.max(1, Math.min(560, viewport.height - panelTop - Math.min(16, Math.max(0, viewport.height - panelTop - 1))))}px`;
+            panel.style[layout.mode] = `${gutter}px`;
+            launcher.style.top = `${Math.max(0, Math.min(viewport.height - 48, viewport.height / 2 - 24))}px`;
+            launcher.style.left = layout.mode === 'left' ? `${gutter}px` : 'auto';
+            launcher.style.right = layout.mode === 'right' ? `${gutter}px` : 'auto';
         }
         globalThis.queueMicrotask(() => { applyingLayout = false; });
     }
@@ -290,18 +325,22 @@
         context = next || null;
         const supported = !!context?.supported;
         const hasKey = !!context?.hasKey;
-        context = context ? { ...context, enabled: supported && hasKey } : null;
+        const connected = !!context?.connected;
+        context = context ? { ...context, enabled: supported && hasKey && connected } : null;
         if (previousRoomId && previousRoomId !== context?.roomId) clearMessages();
         host.style.display = supported ? '' : 'none';
-        launcher.disabled = !hasKey;
-        if (!supported || !hasKey) setOpened(false);
+        launcher.setAttribute('aria-disabled', String(!context?.enabled));
+        if (!context?.enabled) setOpened(false);
         applyStrings();
         applyLayout();
     }
 
     async function refresh() {
         if (destroyed) return;
-        applyContext(await messageRuntime({ type: 'GET_CHAT_CONTEXT' }));
+        const generation = ++refreshGeneration;
+        const next = await messageRuntime({ type: 'GET_CHAT_CONTEXT' });
+        if (destroyed || generation !== refreshGeneration) return;
+        applyContext(next);
     }
 
     function appendMessage(message) {
@@ -332,6 +371,16 @@
         messages.replaceChildren(empty);
     }
 
+    function resetComposer() {
+        sendGeneration++;
+        sending = false;
+        textarea.value = '';
+        count.textContent = '0/500';
+        count.style.color = '';
+        status.textContent = '';
+        sendButton.disabled = false;
+    }
+
     launcher.addEventListener('click', () => setOpened(true));
     closeButton.addEventListener('click', () => setOpened(false));
     leftButton.addEventListener('click', () => setMode('left'));
@@ -347,24 +396,32 @@
     textarea.addEventListener('keydown', event => {
         if (event.key === 'Enter' && !event.shiftKey) {
             event.preventDefault();
-            composer.requestSubmit();
+            if (!sending) composer.requestSubmit();
         }
     });
     composer.addEventListener('submit', async event => {
         event.preventDefault();
+        if (sending || !context?.enabled) return;
+        const submittedValue = textarea.value;
         const text = textarea.value.trim();
         if (!text) return;
         if ([...text].length > 500) {
             status.textContent = strings().tooLong || '';
             return;
         }
+        const generation = ++sendGeneration;
+        sending = true;
         sendButton.disabled = true;
         status.textContent = '';
         const response = await messageRuntime({ type: 'CHAT_SEND', text });
+        if (destroyed || generation !== sendGeneration) return;
+        sending = false;
         sendButton.disabled = false;
         if (response?.status === 'ok') {
-            textarea.value = '';
-            count.textContent = '0/500';
+            if (textarea.value === submittedValue) {
+                textarea.value = '';
+                count.textContent = '0/500';
+            }
         } else {
             status.textContent = response?.status === 'too_long' ? (strings().tooLong || '') : (strings().sendFailed || '');
         }
@@ -428,9 +485,10 @@
 
     function handleRuntime(message) {
         if (message?.type === 'CHAT_MESSAGE') appendMessage(message.message);
-        if (message?.type === 'CHAT_CONTEXT_UPDATE') refresh();
+        if (message?.type === 'CHAT_CONTEXT_UPDATE' || message?.type === 'CONNECTION_STATUS') refresh();
         if (message?.type === 'CHAT_RESET') {
             clearMessages();
+            resetComposer();
             refresh();
         }
         if (message?.type === 'CHAT_DESTROY') destroy();
@@ -439,6 +497,8 @@
     function destroy() {
         if (destroyed) return;
         destroyed = true;
+        refreshGeneration++;
+        sendGeneration++;
         if (saveTimer) clearTimeout(saveTimer);
         resizeObserver.disconnect();
         document.removeEventListener('fullscreenchange', moveIntoFullscreen);
