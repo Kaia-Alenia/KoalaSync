@@ -1,3 +1,5 @@
+import noUnsanitized from "eslint-plugin-no-unsanitized";
+
 export default [
   {
     ignores: ["coverage/**", "dist/**", "node_modules/**", "scratch/**", "website/www/**"]
@@ -45,7 +47,14 @@ export default [
         process: "readonly",
       }
     },
+    plugins: {
+      "no-unsanitized": noUnsanitized
+    },
     rules: {
+      // Mirrors the AMO validator's "Unsafe assignment to innerHTML" check, so a
+      // rejection at upload time surfaces here instead.
+      "no-unsanitized/property": "error",
+      "no-unsanitized/method": "error",
       "no-undef": "error",
       "no-unused-vars": ["error", { "argsIgnorePattern": "^_", "varsIgnorePattern": "^_", "caughtErrorsIgnorePattern": "^_" }],
       "no-unreachable": "error",

@@ -599,6 +599,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
                 const isDE = document.documentElement.classList.contains('lang-de');
                 title.textContent = isDE ? 'Erfolgreich!' : 'Success!';
+                // eslint-disable-next-line no-unsanitized/property -- both branches are hardcoded literals, no dynamic input
                 desc.innerHTML = isDE
                     ? 'Verbunden! <br><span style="color:var(--accent); font-weight:bold;">Wähle jetzt einen Video-Tab in der Erweiterung aus.</span>'
                     : 'Connected! <br><span style="color:var(--accent); font-weight:bold;">Now select a video tab in the extension.</span>';
@@ -616,6 +617,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 setTimeout(updateCountdown, 1000);
                 
                 const closeLabel = isDE ? 'TAB JETZT SCHLIESSEN' : 'CLOSE TAB NOW';
+                // eslint-disable-next-line no-unsanitized/property -- closeLabel is a hardcoded literal, no dynamic input
                 actions.innerHTML = `
                     <div class="join-card-actions">
                         <button class="btn btn-success" onclick="window.close()">${closeLabel}</button>
@@ -634,6 +636,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 title.textContent = isDE ? 'Fehler' : 'Error';
                 desc.textContent = isDE ? `Beitritt fehlgeschlagen: ${message}` : `Join failed: ${message}`;
                 const retryLabel = isDE ? 'ERNEUT VERSUCHEN' : 'TRY AGAIN';
+                // eslint-disable-next-line no-unsanitized/property -- retryLabel is a hardcoded literal, no dynamic input
                 actions.innerHTML = `
                     <div class="join-card-actions">
                         <button class="btn btn-primary" onclick="location.reload()">${retryLabel}</button>
@@ -1366,10 +1369,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 const isDE = document.documentElement.classList.contains('lang-de');
                 const originalHTML = copyBtn.innerHTML;
                 
+                // eslint-disable-next-line no-unsanitized/property -- both branches are hardcoded literals, no dynamic input
                 copyBtn.innerHTML = isDE ? '✅ Kopiert!' : '✅ Copied!';
                 copyBtn.disabled = true;
-                
+
                 setTimeout(() => {
+                    // eslint-disable-next-line no-unsanitized/property -- restores markup captured from this same button above
                     copyBtn.innerHTML = originalHTML;
                     copyBtn.disabled = false;
                 }, 2000);

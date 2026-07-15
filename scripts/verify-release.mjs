@@ -33,6 +33,10 @@ const checks = [
   ['root production audit', 'npm', ['audit', '--omit=dev']],
   ['server production audit', 'npm', ['audit', '--omit=dev'], { cwd: path.join(repoRoot, 'server') }],
   ['extension build', 'npm', ['run', 'build:extension']],
+  // Must run after the build: validates the exact artifact uploaded to AMO.
+  // --warnings-as-errors is required: addons-linter exits 0 on warnings, and AMO
+  // rejects on them, so without it this check would pass a rejectable build.
+  ['AMO validation (firefox)', 'npx', ['addons-linter', '--warnings-as-errors', 'dist/koalasync-firefox.zip']],
   ['website build', 'node', ['website/build.cjs']]
 ];
 

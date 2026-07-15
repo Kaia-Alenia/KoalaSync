@@ -4,6 +4,16 @@ All notable changes to the KoalaSync browser extension and relay server.
 
 ---
 
+## [v2.6.1] — 2026-07-15
+
+### Fixed
+- **Extension: Episode Lobby peer list** — Peer names in the lobby are now rendered as text instead of markup. A peer could previously put HTML in their username and have it rendered in everyone else's popup, which allowed loading remote images (leaking viewer IP addresses) and spoofing the readiness badges. Scripts were already blocked by the extension's content security policy.
+
+### Changed
+- **Release checks: AMO validation** — `npm run verify` now runs Mozilla's `addons-linter` against the built Firefox artifact with `--warnings-as-errors`, and ESLint enforces `no-unsanitized`, so upload-blocking issues surface locally instead of at submission time.
+
+---
+
 ## [v2.6.0] — 2026-07-15
 
 ### Added

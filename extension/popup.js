@@ -2603,9 +2603,10 @@ function updateLobbyUI(lobby, peers) {
     elements.episodeLobbyCard.style.display = 'block';
     elements.lobbyTitle.textContent = getMessage('LOBBY_WAITING_FOR', { title: lobby.expectedTitle });
 
-    // Build peer readiness list
+    // Build peer readiness list. Peer usernames are remote-controlled input, so
+    // every node is built with the DOM API and filled via textContent.
     const readySet = new Set(lobby.readyPeers || []);
-    const peerHtmls = [];
+    const peerItems = [];
 
     if (peers && peers.length > 0) {
         peers.forEach(p => {
@@ -2616,12 +2617,26 @@ function updateLobbyUI(lobby, peers) {
             const icon = isReady ? '✅' : '⏳';
             const label = isReady ? getMessage('LABEL_LOBBY_PEER_READY') : getMessage('LABEL_LOBBY_PEER_LOADING');
             const badgeClass = isReady ? 'badge-ready' : 'badge-loading';
-            peerHtmls.push(`<span class="lobby-peer-item">${icon} ${avatar} ${pName} <span class="badge ${badgeClass}">${label}</span></span>`);
+
+            const item = document.createElement('span');
+            item.className = 'lobby-peer-item';
+            item.appendChild(document.createTextNode(`${icon} ${avatar} ${pName} `));
+
+            const badge = document.createElement('span');
+            badge.className = `badge ${badgeClass}`;
+            badge.textContent = label;
+            item.appendChild(badge);
+
+            peerItems.push(item);
         });
     }
 
-    if (peerHtmls.length > 0 && elements.lobbyPeerStatus) {
-        elements.lobbyPeerStatus.innerHTML = peerHtmls.join(' ');
+    if (peerItems.length > 0 && elements.lobbyPeerStatus) {
+        elements.lobbyPeerStatus.textContent = '';
+        peerItems.forEach((item, index) => {
+            if (index > 0) elements.lobbyPeerStatus.appendChild(document.createTextNode(' '));
+            elements.lobbyPeerStatus.appendChild(item);
+        });
     } else if (elements.lobbyPeerStatus) {
         elements.lobbyPeerStatus.textContent = getMessage('LOBBY_WAITING_PEERS');
     }
