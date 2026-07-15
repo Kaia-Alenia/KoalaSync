@@ -4,6 +4,13 @@ All notable changes to the KoalaSync browser extension and relay server.
 
 ---
 
+## [v2.6.3] — 2026-07-15
+
+### Fixed
+- **Extension: Host-access recovery races** — Prevents stale permission grants, reinjection retries, closed tabs, and rapid target changes from reactivating or clearing the wrong video tab.
+- **Extension: Cross-browser host patterns** — Uses Firefox-compatible match patterns for local servers while preserving exact Chromium port scopes.
+- **Extension: Force-sync target integrity** — Keeps sampled playback time and acknowledgements bound to the selected tab during recovery and target changes.
+
 ## [v2.6.2] — 2026-07-15
 
 ### Added
