@@ -31,6 +31,16 @@
     font-size: 0.95rem;
 }
 
+.legal-inline-link {
+    color: var(--accent);
+    text-decoration: underline;
+    text-underline-offset: 0.15em;
+}
+
+.legal-inline-label {
+    color: var(--text-muted);
+}
+
 /* Reset global section padding for legal sections specifically */
 .legal-card section {
     padding: 0 !important;
@@ -173,4 +183,3 @@
         gap: 0.4rem;
     }
 }
-

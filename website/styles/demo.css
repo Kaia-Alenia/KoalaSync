@@ -1162,6 +1162,14 @@ html.theme-light .hero-demo-scene .demo-video::after {
     animation: scrollFore 3s linear infinite !important;
 }
 
+@media (prefers-reduced-motion: reduce) {
+    .step-illustration-3 .film-mtn-scroll,
+    .step-illustration-3 .film-mid-scroll,
+    .step-illustration-3 .film-fore-scroll {
+        animation: none !important;
+    }
+}
+
 @keyframes scrollBack {
     0% { transform: translateX(0); }
     100% { transform: translateX(-160px); }

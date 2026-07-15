@@ -8,6 +8,14 @@
     border-color: rgba(255, 255, 255, 0.22) !important;
     box-shadow: 0 12px 24px -10px rgba(0, 0, 0, 0.4);
 }
+html.theme-light .guide-card {
+    background-color: var(--card-surface) !important;
+    border-color: var(--card-border) !important;
+}
+html.theme-light .guide-card:hover {
+    background-color: var(--card) !important;
+    border-color: oklch(0.52 0.12 150 / 0.35) !important;
+}
 .guide-card .btn-primary {
     transition: background-color 0.2s ease, transform 0.1s ease;
 }
@@ -20,4 +28,3 @@
         gap: 1.25rem !important;
     }
 }
-
