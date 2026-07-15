@@ -92,8 +92,14 @@
 }
 
 .support-card h2 {
-    margin-bottom: 0.8rem;
+    margin: 0 0 0.8rem;
     font-size: clamp(1.35rem, 3vw, 1.75rem);
+}
+
+.support-card > .support-eyebrow {
+    display: flex;
+    width: fit-content;
+    margin: 0 0 1rem;
 }
 
 .support-card h3 {
