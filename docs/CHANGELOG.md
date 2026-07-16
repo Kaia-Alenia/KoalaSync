@@ -4,6 +4,15 @@ All notable changes to the KoalaSync browser extension and relay server.
 
 ---
 
+## [v2.6.4] — 2026-07-16
+
+### Changed
+- **Extension: Localized store metadata** — Renamed the public extension title to `Watch Party - KoalaSync` and added natural, store-ready descriptions for all 15 supported locales while preserving regional language variants.
+- **Extension: Locale-based manifest metadata** — The extension name and description now resolve through Chrome/Firefox `_locales` messages instead of being hardcoded in the manifest.
+
+### Fixed
+- **Build: Extension metadata validation** — Extension builds now fail clearly for invalid locale JSON, missing metadata, an incorrect extension title, or store titles and descriptions that exceed their character limits.
+
 ## [v2.6.3] — 2026-07-15
 
 ### Fixed
