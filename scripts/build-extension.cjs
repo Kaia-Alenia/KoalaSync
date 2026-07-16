@@ -6,6 +6,59 @@ const rootDir = path.join(__dirname, '..');
 const extDir = path.join(rootDir, 'extension');
 const distDir = path.join(rootDir, 'dist');
 const baseManifestPath = path.join(extDir, 'manifest.base.json');
+const localesDir = path.join(extDir, '_locales');
+const requiredAppName = 'Watch Party - KoalaSync';
+const maxAppNameLength = 75;
+const maxAppDescLength = 132;
+
+function countUnicodeCharacters(value) {
+  return Array.from(value).length;
+}
+
+function validateExtensionMetadata() {
+  const localeDirectories = fs.readdirSync(localesDir, { withFileTypes: true })
+    .filter((entry) => entry.isDirectory())
+    .map((entry) => entry.name)
+    .sort();
+
+  for (const locale of localeDirectories) {
+    const messagesPath = path.join(localesDir, locale, 'messages.json');
+    let messages;
+
+    try {
+      messages = JSON.parse(fs.readFileSync(messagesPath, 'utf8'));
+    } catch (error) {
+      throw new Error(`CRITICAL: Invalid locale JSON at _locales/${locale}/messages.json: ${error.message}`);
+    }
+
+    if (!messages || typeof messages !== 'object' || Array.isArray(messages)) {
+      throw new Error(`CRITICAL: _locales/${locale}/messages.json must contain a JSON object`);
+    }
+
+    for (const key of ['appName', 'appDesc']) {
+      if (!messages[key] || typeof messages[key].message !== 'string' || messages[key].message.trim().length === 0) {
+        throw new Error(`CRITICAL: _locales/${locale}/messages.json is missing a valid ${key}.message`);
+      }
+    }
+
+    const appNameLength = countUnicodeCharacters(messages.appName.message);
+    const appDescLength = countUnicodeCharacters(messages.appDesc.message);
+
+    if (appNameLength > maxAppNameLength) {
+      throw new Error(`CRITICAL: _locales/${locale}/messages.json appName.message is ${appNameLength} characters; maximum is ${maxAppNameLength}`);
+    }
+    if (messages.appName.message !== requiredAppName) {
+      throw new Error(`CRITICAL: _locales/${locale}/messages.json appName.message must exactly equal "${requiredAppName}"`);
+    }
+    if (appDescLength > maxAppDescLength) {
+      throw new Error(`CRITICAL: _locales/${locale}/messages.json appDesc.message is ${appDescLength} characters; maximum is ${maxAppDescLength}`);
+    }
+  }
+
+  console.log(`✓ Validated localized extension metadata for ${localeDirectories.length} locales`);
+}
+
+validateExtensionMetadata();
 
 // Ensure dist directory exists
 if (fs.existsSync(distDir)) {
