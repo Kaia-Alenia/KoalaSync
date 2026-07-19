@@ -5,6 +5,7 @@
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
+const { execFileSync } = require('child_process');
 const sharp = require('sharp');
 const esbuild = require('esbuild');
 const htmlnano = require('htmlnano');
@@ -549,7 +550,7 @@ async function compile() {
     }
 
     // ── 5.5 Generate dynamic sitemap ──
-    generateSitemap(wwwDir);
+    generateSitemap(websiteDir, wwwDir);
 
     // Auto-copy Google verification files and IndexNow/txt key files from website source to www root
     const websiteFiles = fs.readdirSync(websiteDir);
@@ -697,7 +698,7 @@ async function compile() {
     console.log('KoalaSync build finished successfully! Output: website/www/');
 }
 
-function generateSitemap(wwwDir) {
+function generateSitemap(websiteDir, wwwDir) {
     const languages = [
       { code: 'en', prefix: '', hreflang: 'en' },
       { code: 'de', prefix: 'de/', hreflang: 'de' },
@@ -716,6 +717,33 @@ function generateSitemap(wwwDir) {
       { code: 'pt', prefix: 'pt/', hreflang: 'pt' }
     ];
 
+    const repoRoot = path.resolve(websiteDir, '..');
+    const lastModifiedCache = new Map();
+
+    function getLastModified(sourceFiles) {
+      const cacheKey = sourceFiles.slice().sort().join('\0');
+      if (lastModifiedCache.has(cacheKey)) return lastModifiedCache.get(cacheKey);
+      let date = null;
+      try {
+        const output = execFileSync(
+          'git',
+          ['log', '-1', '--format=%cs', '--', ...sourceFiles],
+          { cwd: repoRoot, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }
+        ).trim();
+        if (/^\d{4}-\d{2}-\d{2}$/.test(output)) date = output;
+      } catch (_) {
+        // Source archives and minimal deployment environments may not contain
+        // Git metadata. Omitting lastmod is more accurate than inventing a date.
+      }
+      lastModifiedCache.set(cacheKey, date);
+      return date;
+    }
+
+    function lastmod(sourceFiles, indent = '    ') {
+      const date = getLastModified(sourceFiles);
+      return date ? `\n${indent}<lastmod>${date}</lastmod>` : '';
+    }
+
     let xml = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
         xmlns:xhtml="http://www.w3.org/1999/xhtml">`;
@@ -723,37 +751,38 @@ function generateSitemap(wwwDir) {
     // Static legal pages
     xml += `
   <url>
-    <loc>https://sync.koalastuff.net/imprint</loc>
+    <loc>https://sync.koalastuff.net/imprint</loc>${lastmod(['website/imprint.html'])}
     <changefreq>monthly</changefreq>
     <priority>0.3</priority>
   </url>
   <url>
-    <loc>https://sync.koalastuff.net/privacy</loc>
+    <loc>https://sync.koalastuff.net/privacy</loc>${lastmod(['website/privacy.html'])}
     <changefreq>monthly</changefreq>
     <priority>0.3</priority>
   </url>
   <url>
-    <loc>https://sync.koalastuff.net/site-access-help.html</loc>
+    <loc>https://sync.koalastuff.net/site-access-help.html</loc>${lastmod(['website/site-access-help.html'])}
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://sync.koalastuff.net/de/impressum</loc>
+    <loc>https://sync.koalastuff.net/de/impressum</loc>${lastmod(['website/impressum-de.html'])}
     <changefreq>monthly</changefreq>
     <priority>0.3</priority>
   </url>
   <url>
-    <loc>https://sync.koalastuff.net/de/datenschutz</loc>
+    <loc>https://sync.koalastuff.net/de/datenschutz</loc>${lastmod(['website/datenschutz-de.html'])}
     <changefreq>monthly</changefreq>
     <priority>0.3</priority>
   </url>`;
 
-    function addPage(relativePath, changefreq, priority) {
+    function addPage(relativePath, changefreq, priority, templateSource) {
       for (const lang of languages) {
         const loc = `https://sync.koalastuff.net/${lang.prefix}${relativePath}`;
+        const sourceFiles = [templateSource, `website/locales/${lang.code}.json`];
         xml += `
   <url>
-    <loc>${loc}</loc>
+    <loc>${loc}</loc>${lastmod(sourceFiles)}
     <changefreq>${changefreq}</changefreq>
     <priority>${priority}</priority>`;
         for (const alt of languages) {
@@ -768,24 +797,25 @@ function generateSitemap(wwwDir) {
       }
     }
 
-    addPage('', 'weekly', '1.0');
-    addPage('alternatives', 'weekly', '0.7');
+    addPage('', 'weekly', '1.0', 'website/template.html');
+    addPage('alternatives', 'weekly', '0.7', 'website/alternatives/index.html');
 
     const subpages = [
-      'alternatives/teleparty',
-      'alternatives/screen-sharing',
-      'alternatives/watch2gether',
-      'alternatives/scener',
-      'alternatives/kosmi',
-      'alternatives/twoseven'
+      ['alternatives/teleparty', 'website/alternatives/teleparty.html'],
+      ['alternatives/screen-sharing', 'website/alternatives/screen-sharing.html'],
+      ['alternatives/watch2gether', 'website/alternatives/watch2gether.html'],
+      ['alternatives/scener', 'website/alternatives/scener.html'],
+      ['alternatives/kosmi', 'website/alternatives/kosmi.html'],
+      ['alternatives/twoseven', 'website/alternatives/twoseven.html']
     ];
-    for (const sub of subpages) {
-      addPage(sub, 'weekly', '0.7');
+    for (const [sub, templateSource] of subpages) {
+      addPage(sub, 'weekly', '0.7', templateSource);
     }
 
     xml += `\n</urlset>\n`;
 
     fs.writeFileSync(path.join(wwwDir, 'sitemap.xml'), xml.trim() + '\n', 'utf8');
-    console.log('  ✓ Dynamically generated sitemap.xml without synthetic modification dates');
+    const datedEntries = (xml.match(/<lastmod>/g) || []).length;
+    console.log(`  ✓ Dynamically generated sitemap.xml with ${datedEntries} Git-derived modification dates`);
 }
 compile().catch(err => { console.error('Build failed:', err); process.exit(1); });
