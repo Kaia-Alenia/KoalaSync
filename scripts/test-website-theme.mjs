@@ -12,6 +12,8 @@ const demoCss = fs.readFileSync(path.join(repoRoot, 'website', 'styles', 'demo.c
 const landingPrimaryCss = fs.readFileSync(path.join(repoRoot, 'website', 'styles', 'landing-primary.css'), 'utf8');
 const legalCss = fs.readFileSync(path.join(repoRoot, 'website', 'styles', 'legal.css'), 'utf8');
 const joinPage = fs.readFileSync(path.join(repoRoot, 'website', 'join.html'), 'utf8');
+const siteAccessHelpPage = fs.readFileSync(path.join(repoRoot, 'website', 'site-access-help.html'), 'utf8');
+const websiteBuild = fs.readFileSync(path.join(repoRoot, 'website', 'build.cjs'), 'utf8');
 const imprintPage = fs.readFileSync(path.join(repoRoot, 'website', 'imprint.html'), 'utf8');
 const germanImprintPage = fs.readFileSync(path.join(repoRoot, 'website', 'impressum-de.html'), 'utf8');
 const alternativesIndex = fs.readFileSync(path.join(repoRoot, 'website', 'alternatives', 'index.html'), 'utf8');
@@ -66,6 +68,23 @@ if (/\bWebRTC\b|\bport 54000\b|peer-to-peer by design/i.test(llmsText)) {
 }
 if (!llmsText.includes(`Current website release: ${websiteVersion}`)) {
   throw new Error(`llms.txt release must match website/version.json (${websiteVersion})`);
+}
+const requiredSupportSocialMetadata = [
+  'name="twitter:card" content="summary_large_image"',
+  'name="twitter:title"',
+  'name="twitter:description"',
+  'name="twitter:image"',
+  '"datePublished"',
+  '"dateModified"',
+  '"mainEntityOfPage"'
+];
+for (const metadata of requiredSupportSocialMetadata) {
+  if (!siteAccessHelpPage.includes(metadata)) {
+    throw new Error(`site-access-help.html is missing SEO metadata: ${metadata}`);
+  }
+}
+if (/<lastmod>/.test(websiteBuild) || /const today = new Date\(\)/.test(websiteBuild)) {
+  throw new Error('Sitemap must not claim synthetic modification dates for every URL');
 }
 const documentedRelayUrls = [...llmsText.matchAll(/`(wss:\/\/[^`\s]+)`/g)].map(([, value]) => new URL(value));
 const hasCanonicalPublicRelay = documentedRelayUrls.some((url) => (
@@ -180,6 +199,7 @@ if (!/animation:\s*none\s*!important/.test(reducedMotionRule)) {
 console.log('Extension mockup theme-sensitive text uses theme-aware colors');
 console.log('Landing CSS is render-blocking, single-request, and cascade-stable');
 console.log('Landing head discovers a complete and architecture-accurate llms.txt');
+console.log('Support-page social metadata and sitemap dates remain truthful');
 console.log('Website self-hosting examples include production secrets and consistent networking');
 console.log('Foreground film birds use complete, always-on wing and glide animations');
 console.log('All Getting Started mockups define explicit light-theme surfaces');

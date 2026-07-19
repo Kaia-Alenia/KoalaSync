@@ -716,8 +716,6 @@ function generateSitemap(wwwDir) {
       { code: 'pt', prefix: 'pt/', hreflang: 'pt' }
     ];
 
-    const today = new Date().toISOString().split('T')[0];
-
     let xml = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
         xmlns:xhtml="http://www.w3.org/1999/xhtml">`;
@@ -726,31 +724,26 @@ function generateSitemap(wwwDir) {
     xml += `
   <url>
     <loc>https://sync.koalastuff.net/imprint</loc>
-    <lastmod>${today}</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.3</priority>
   </url>
   <url>
     <loc>https://sync.koalastuff.net/privacy</loc>
-    <lastmod>${today}</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.3</priority>
   </url>
   <url>
     <loc>https://sync.koalastuff.net/site-access-help.html</loc>
-    <lastmod>${today}</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://sync.koalastuff.net/de/impressum</loc>
-    <lastmod>${today}</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.3</priority>
   </url>
   <url>
     <loc>https://sync.koalastuff.net/de/datenschutz</loc>
-    <lastmod>${today}</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.3</priority>
   </url>`;
@@ -761,7 +754,6 @@ function generateSitemap(wwwDir) {
         xml += `
   <url>
     <loc>${loc}</loc>
-    <lastmod>${today}</lastmod>
     <changefreq>${changefreq}</changefreq>
     <priority>${priority}</priority>`;
         for (const alt of languages) {
@@ -794,6 +786,6 @@ function generateSitemap(wwwDir) {
     xml += `\n</urlset>\n`;
 
     fs.writeFileSync(path.join(wwwDir, 'sitemap.xml'), xml.trim() + '\n', 'utf8');
-    console.log('  ✓ Dynamically generated sitemap.xml with current date');
+    console.log('  ✓ Dynamically generated sitemap.xml without synthetic modification dates');
 }
 compile().catch(err => { console.error('Build failed:', err); process.exit(1); });
