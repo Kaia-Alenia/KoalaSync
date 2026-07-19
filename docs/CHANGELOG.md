@@ -4,6 +4,34 @@ All notable changes to the KoalaSync browser extension and relay server.
 
 ---
 
+## [v2.6.4] — 2026-07-16
+
+### Changed
+- **Extension: Localized store metadata** — Renamed the public extension title to `Watch Party - KoalaSync` and added natural, store-ready descriptions for all 15 supported locales while preserving regional language variants.
+- **Extension: Locale-based manifest metadata** — The extension name and description now resolve through Chrome/Firefox `_locales` messages instead of being hardcoded in the manifest.
+
+### Fixed
+- **Build: Extension metadata validation** — Extension builds now fail clearly for invalid locale JSON, missing metadata, an incorrect extension title, or store titles and descriptions that exceed their character limits.
+
+## [v2.6.3] — 2026-07-15
+
+### Fixed
+- **Extension: Host-access recovery races** — Prevents stale permission grants, reinjection retries, closed tabs, and rapid target changes from reactivating or clearing the wrong video tab.
+- **Extension: Cross-browser host patterns** — Uses Firefox-compatible match patterns for local servers while preserving exact Chromium port scopes.
+- **Extension: Force-sync target integrity** — Keeps sampled playback time and acknowledgements bound to the selected tab during recovery and target changes.
+
+## [v2.6.2] — 2026-07-15
+
+### Added
+- **Website: Site-access recovery guide** — Added an English help page and a localized banner across every landing-page language.
+
+### Fixed
+- **Extension: Withheld website access recovery** — Detects browser-withheld host access, shows a localized allow-access action, requests only the selected website origin, and resumes the selected tab after access is granted.
+- **Extension: Target-tab reliability** — Hardened permission recovery against rapid tab changes, navigation, closed tabs, service-worker restoration, and stale pending state.
+- **Browser compatibility** — Uses Chrome's toolbar access request only when available, with a direct user-gesture permission fallback for Firefox and older Chromium browsers.
+
+---
+
 ## [v2.6.1] — 2026-07-15
 
 ### Fixed

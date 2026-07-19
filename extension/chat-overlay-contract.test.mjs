@@ -1,8 +1,9 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 
-const extensionDir = path.dirname(new URL(import.meta.url).pathname);
+const extensionDir = path.dirname(fileURLToPath(import.meta.url));
 const overlaySource = fs.readFileSync(path.join(extensionDir, 'chat-overlay.js'), 'utf8');
 const backgroundSource = fs.readFileSync(path.join(extensionDir, 'background.js'), 'utf8');
 const popupSource = fs.readFileSync(path.join(extensionDir, 'popup.js'), 'utf8');

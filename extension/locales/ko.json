@@ -148,6 +148,8 @@
   "ERR_IDENTITY_NOT_LOADED": "ID가 아직 로드되지 않았습니다. 잠시 후 다시 시도해 주세요.",
   "ERR_NO_PEERS_TIME": "시간을 알고 있는 다른 피어가 없습니다. '나에게 이동'으로 전환하세요.",
   "ERR_NO_VIDEO_TAB": "비디오 탭에 연결할 수 없습니다.",
+  "SITE_ACCESS_REQUIRED": "브라우저가 {host}에서 KoalaSync를 차단하고 있습니다. 아래의 ‘액세스 허용’을 클릭하세요. 대화상자가 표시되지 않으면 확장 프로그램 또는 사이트 권한에서 이 사이트의 KoalaSync를 허용하세요.",
+  "BTN_RETRY_ACCESS": "액세스 허용",
   "ERR_SELECT_VIDEO": "먼저 비디오를 선택하세요!",
   "TOAST_INVITE_COPIED": "초대 링크가 복사되었습니다!",
   "TOAST_COPY_FAILED": "클립보드 복사에 실패했습니다",

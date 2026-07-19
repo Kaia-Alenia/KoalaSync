@@ -235,6 +235,7 @@ async function compile() {
         'styles/hero.css',
         'styles/landing-primary.css',
         'styles/legal.css',
+        'styles/support.css',
         'styles/landing-controls.css',
         'styles/join-spinner.css',
         'styles/landing-sections.css',
@@ -522,6 +523,7 @@ async function compile() {
         { src: 'join.html', dest: 'join.html' },
         { src: 'imprint.html', dest: 'imprint.html' },
         { src: 'privacy.html', dest: 'privacy.html' },
+        { src: 'site-access-help.html', dest: 'site-access-help.html' },
         { src: 'impressum-de.html', dest: 'de/impressum.html' },
         { src: 'datenschutz-de.html', dest: 'de/datenschutz.html' },
         { src: 'impressum.html', dest: 'impressum.html' },
@@ -733,6 +735,12 @@ function generateSitemap(wwwDir) {
     <lastmod>${today}</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.3</priority>
+  </url>
+  <url>
+    <loc>https://sync.koalastuff.net/site-access-help.html</loc>
+    <lastmod>${today}</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
   </url>
   <url>
     <loc>https://sync.koalastuff.net/de/impressum</loc>

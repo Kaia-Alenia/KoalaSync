@@ -148,6 +148,8 @@
   "ERR_IDENTITY_NOT_LOADED": "Kimlik henüz yüklenmedi. Biraz bekleyin ve tekrar deneyin.",
   "ERR_NO_PEERS_TIME": "Bilinen bir zamanı olan başka bağlantı yok. 'Bana Atla' seçeneğine geçin.",
   "ERR_NO_VIDEO_TAB": "Video sekmesine bağlanılamadı.",
+  "SITE_ACCESS_REQUIRED": "Tarayıcınız {host} üzerinde KoalaSync'i engelliyor. Aşağıdaki “Erişime izin ver” düğmesine tıklayın. İletişim kutusu görünmezse uzantı veya site izinlerinden bu site için KoalaSync'e izin verin.",
+  "BTN_RETRY_ACCESS": "Erişime izin ver",
   "ERR_SELECT_VIDEO": "Lütfen önce bir video seçin!",
   "TOAST_INVITE_COPIED": "Davet bağlantısı kopyalandı!",
   "TOAST_COPY_FAILED": "Panoya kopyalanamadı",

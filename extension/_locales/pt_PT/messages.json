@@ -1,8 +1,8 @@
 {
   "appName": {
-    "message": "KoalaSync"
+    "message": "Watch Party - KoalaSync"
   },
   "appDesc": {
-    "message": "Veja vídeos em conjunto com os seus amigos em sincronia perfeita. Compatível com Netflix, YouTube, Twitch, Prime Video, Disney+ e qualquer leitor HTML5."
+    "message": "Crie sessões privadas e veja vídeos sincronizados com amigos no YouTube, Netflix, Jellyfin, Emby e em quase qualquer site HTML5."
   }
 }

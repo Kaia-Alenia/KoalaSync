@@ -7,6 +7,7 @@ import { initTabManager } from './modules/tab-manager.js';
 import { clearChatKeyCache, decryptChatMessage, encryptChatMessage, generateChatSecret, validateChatSecret } from './chat-crypto.js';
 import { buildChatRelayPayload, encodeSocketEvent } from './chat-wire.js';
 import { createChatSendLimiter, createLatestTaskQueue, normalizeRoomId } from './chat-session.js';
+import { HOST_ACCESS_REQUIRED_STATUS, normalizeTabId, inspectTabHostAccess, isHostAccessError, addTabHostAccessRequest, removeTabHostAccessRequest } from './host-access.js';
 import './page-api-seek-overrides.js';
 
 // --- Uninstall URL Initialization ---
@@ -64,6 +65,8 @@ let peerId = null; // initialized via getPeerId()
 let currentRoom = null;
 let currentTabId = null;
 let currentTabTitle = null; // New: for Smart Matching
+let targetActivationGeneration = 0;
+let activeTargetActivation = null;
 let logs = [];
 let history = []; // New: for Action History
 let storageInitialized = false;
@@ -191,8 +194,12 @@ function ensureState() {
             ], (data) => {
                 clearTimeout(storageTimeout);
                 if (data.expectedAcksCount !== undefined) expectedAcksCount = data.expectedAcksCount;
-                if (data.currentTabId !== undefined) currentTabId = data.currentTabId;
-                if (data.currentTabTitle !== undefined) currentTabTitle = data.currentTabTitle;
+                if (data.currentTabId !== undefined) currentTabId = normalizeTabId(data.currentTabId);
+                if (data.currentTabTitle !== undefined) {
+                    currentTabTitle = currentTabId !== null && typeof data.currentTabTitle === 'string'
+                        ? data.currentTabTitle
+                        : null;
+                }
                 // Merge data from storage with any early-arriving state
                 // New entries (added during boot) must stay at the top (index 0)
                 if (data.logs) logs = [...logs, ...data.logs].slice(0, 200);
@@ -545,7 +552,28 @@ function markRoomPotentiallyIdle() {
     }
 }
 
-function clearTargetTabForIdle() {
+function invalidateTargetActivations() {
+    targetActivationGeneration++;
+    activeTargetActivation = null;
+    return targetActivationGeneration;
+}
+
+function isCurrentTargetIdentity(tabId, generation) {
+    return normalizeTabId(currentTabId) === normalizeTabId(tabId)
+        && targetActivationGeneration === generation;
+}
+
+function clearTargetTabForIdle(expectedTabId = null, expectedGeneration = null) {
+    if (expectedTabId !== null && normalizeTabId(currentTabId) !== normalizeTabId(expectedTabId)) {
+        return false;
+    }
+    if (expectedGeneration !== null && targetActivationGeneration !== expectedGeneration) {
+        return false;
+    }
+
+    completeForceSyncBeforeTargetChange(null);
+    invalidateTargetActivations();
+    clearPendingTarget().catch(() => {});
     if (currentTabId) chrome.tabs.sendMessage(Number(currentTabId), { type: 'CHAT_DESTROY' }).catch(() => {});
     currentTabId = null;
     currentTabTitle = null;
@@ -553,8 +581,14 @@ function clearTargetTabForIdle() {
     if (currentRoom) {
         roomIdleSince = Date.now();
     }
-    chrome.storage.session.set({ currentTabId, currentTabTitle, roomIdleSince, lastContentHeartbeatAt }).catch(() => {});
+    chrome.storage.session.set({
+        currentTabId,
+        currentTabTitle,
+        roomIdleSince,
+        lastContentHeartbeatAt
+    }).catch(() => {});
     updateBadgeStatus();
+    return true;
 }
 
 async function leaveRoomAfterIdleGrace(reason) {
@@ -563,6 +597,7 @@ async function leaveRoomAfterIdleGrace(reason) {
     reconnectFailed = false;
     reconnectAttempts = 0;
     chrome.storage.session.set({ reconnectFailed: false, reconnectAttempts: 0, reconnectStartTime: null });
+    completeForceSyncBeforeTargetChange(null);
     emit(EVENTS.LEAVE_ROOM, { peerId });
     forceDisconnect();
     currentRoom = null;
@@ -575,11 +610,13 @@ async function leaveRoomAfterIdleGrace(reason) {
     // any stale guest-side HCM state (dialog/badge/desync) — H-2.
     broadcastControlMode();
     if (currentTabId) chrome.tabs.sendMessage(Number(currentTabId), { type: 'CHAT_DESTROY' }).catch(() => {});
+    invalidateTargetActivations();
     currentTabId = null;
     currentTabTitle = null;
     roomIdleSince = null;
     lastContentHeartbeatAt = null;
     clearEpisodeLobbyState();
+    await clearPendingTarget();
     await chrome.storage.session.set({
         currentRoom: null,
         currentTabId: null,
@@ -1536,6 +1573,16 @@ function executeForceSync() {
     addLog('Force Sync Executed', 'success');
 }
 
+function completeForceSyncBeforeTargetChange(nextTabId) {
+    if (!isForceSyncInitiator) return;
+    const selectedTabId = normalizeTabId(currentTabId);
+    const normalizedNextTabId = normalizeTabId(nextTabId);
+    if (selectedTabId !== null && selectedTabId === normalizedNextTabId) return;
+
+    addLog('Finishing Force Sync before target change', 'info');
+    executeForceSync();
+}
+
 // --- Episode Auto-Sync Lobby Functions ---
 function persistEpisodeLobby() {
     if (storageInitialized) chrome.storage.session.set({ episodeLobby });
@@ -1683,13 +1730,14 @@ function updateLastAction(action, senderId, timestamp = Date.now()) {
 async function routeToContent(action, payload) {
     if (!currentTabId) return;
 
-    const tabId = parseInt(currentTabId);
-    if (isNaN(tabId)) return;
+    const tabId = normalizeTabId(currentTabId);
+    if (tabId === null) return;
+    const targetGeneration = targetActivationGeneration;
 
     const actionTimestamp = payload?.actionTimestamp || Date.now();
     const commandSenderId = payload?.senderId || null;
 
-    _routeToContentInternal(tabId, action, payload, actionTimestamp, commandSenderId, 0);
+    _routeToContentInternal(tabId, action, payload, actionTimestamp, commandSenderId, 0, targetGeneration);
 }
 
 function getTabVideoState(tabId) {
@@ -1704,12 +1752,21 @@ function getTabVideoState(tabId) {
     });
 }
 
-async function getReadyTabVideoState(tabId) {
+async function getReadyTabVideoState(tabId, expectedGeneration = targetActivationGeneration) {
     let state = await getTabVideoState(tabId);
     if (!state || state.error) {
-        await injectContentScript(tabId);
+        const activation = await reactivateCurrentTarget(tabId, { expectedGeneration });
+        if (activation?.status !== 'ok') {
+            return { error: 'Target tab changed before content script recovery completed' };
+        }
         await new Promise(resolve => setTimeout(resolve, 250));
+        if (!isCurrentTargetIdentity(tabId, activation.generation)) {
+            return { error: 'Target tab changed before video state could be read' };
+        }
         state = await getTabVideoState(tabId);
+        if (!isCurrentTargetIdentity(tabId, activation.generation)) {
+            return { error: 'Target tab changed while video state was being read' };
+        }
     }
     return state;
 }
@@ -1830,51 +1887,533 @@ function setPageApiSeekEnabled(enabled) {
     window.KOALA_PAGE_API_SEEK_ENABLED = enabled === true;
 }
 
-async function injectContentScript(tabId) {
+function createHostAccessRequiredError(access, requestAdded, cause) {
+    const error = new Error(`Host access required for ${access.host || 'this website'}`);
+    error.code = HOST_ACCESS_REQUIRED_STATUS;
+    error.tabId = access.tab?.id || null;
+    error.host = access.host || null;
+    error.originPattern = access.originPattern || null;
+    error.requestAdded = requestAdded === true;
+    error.cause = cause;
+    return error;
+}
+
+function injectionFailureResponse(error) {
+    if (error?.code === HOST_ACCESS_REQUIRED_STATUS) {
+        return {
+            status: HOST_ACCESS_REQUIRED_STATUS,
+            tabId: error.tabId,
+            host: error.host,
+            originPattern: error.originPattern,
+            requestAdded: error.requestAdded === true
+        };
+    }
+    return { status: 'error', message: error?.message || 'Script injection failed' };
+}
+
+async function injectContentScript(tabId, { requestHostAccess = true } = {}) {
+    const normalizedTabId = normalizeTabId(tabId);
+    if (normalizedTabId === null) throw new Error('Invalid tab ID');
+    tabId = normalizedTabId;
     let needsPageApiSeek = false;
     let pageApiSeekReady = false;
+    let access = null;
     try {
-        const tab = await chrome.tabs.get(tabId);
-        const url = tab?.url || '';
+        access = await inspectTabHostAccess(chrome, tabId);
+        const url = access.url || '';
         needsPageApiSeek = shouldUsePageApiSeek(url);
     } catch (_e) {
         // Fall through to the generic content script injection.
     }
 
-    if (needsPageApiSeek) {
-        try {
-            await chrome.scripting.executeScript({
-                target: { tabId },
-                world: 'MAIN',
-                files: ['page-api-seek-overrides.js']
-            });
-            await chrome.scripting.executeScript({
-                target: { tabId },
-                world: 'MAIN',
-                func: installPageApiSeekBridge
-            });
-            pageApiSeekReady = true;
-        } catch (err) {
-            addLog(`Page API seek bridge injection failed: ${err.message}`, 'warn');
+    try {
+        if (needsPageApiSeek) {
+            try {
+                await chrome.scripting.executeScript({
+                    target: { tabId },
+                    world: 'MAIN',
+                    files: ['page-api-seek-overrides.js']
+                });
+                await chrome.scripting.executeScript({
+                    target: { tabId },
+                    world: 'MAIN',
+                    func: installPageApiSeekBridge
+                });
+                pageApiSeekReady = true;
+            } catch (err) {
+                addLog(`Page API seek bridge injection failed: ${err.message}`, 'warn');
+            }
         }
-    }
 
-    await chrome.scripting.executeScript({
-        target: { tabId },
-        files: ['page-api-seek-overrides.js']
-    });
-    await chrome.scripting.executeScript({
-        target: { tabId },
-        func: setPageApiSeekEnabled,
-        args: [pageApiSeekReady]
-    });
-    return chrome.scripting.executeScript({
-        target: { tabId },
-        files: ['chat-format.js', 'chat-overlay.js', 'content.js']
+        await chrome.scripting.executeScript({
+            target: { tabId },
+            files: ['page-api-seek-overrides.js']
+        });
+        await chrome.scripting.executeScript({
+            target: { tabId },
+            func: setPageApiSeekEnabled,
+            args: [pageApiSeekReady]
+        });
+        return await chrome.scripting.executeScript({
+            target: { tabId },
+            files: ['chat-format.js', 'chat-overlay.js', 'content.js']
+        });
+    } catch (error) {
+        // A temporary activeTab grant is intentionally allowed to win: even if
+        // permissions.contains() reports false, a successful injection above is
+        // valid. Only convert an actual injection failure into a host-access UX.
+        try {
+            // The tab may have crossed origins between the initial permission
+            // check and executeScript(). Always report/request the current URL.
+            access = await inspectTabHostAccess(chrome, tabId);
+        } catch (_inspectionError) {
+            access = null;
+        }
+        const accessIsMissing = access?.granted === false
+            || (access?.granted === null && isHostAccessError(error));
+        if (access?.originPattern && accessIsMissing) {
+            const requestAdded = requestHostAccess
+                ? await addTabHostAccessRequest(chrome, tabId, access.originPattern)
+                : false;
+            throw createHostAccessRequiredError(access, requestAdded, error);
+        }
+        throw error;
+    }
+}
+
+let pendingTargetMutation = Promise.resolve();
+
+const PENDING_TARGET_KEYS = [
+    'pendingTargetTabId',
+    'pendingTargetTabTitle',
+    'pendingTargetHost',
+    'pendingTargetOriginPattern',
+    'pendingTargetRequestId'
+];
+
+function createPendingTargetRequestId() {
+    return globalThis.crypto?.randomUUID?.()
+        || `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+}
+
+function emptyPendingTargetState() {
+    return {
+        pendingTargetTabId: null,
+        pendingTargetTabTitle: null,
+        pendingTargetHost: null,
+        pendingTargetOriginPattern: null,
+        pendingTargetRequestId: null
+    };
+}
+
+function mutatePendingTarget(operation) {
+    const result = pendingTargetMutation.catch(() => {}).then(operation);
+    pendingTargetMutation = result.catch(() => {});
+    return result;
+}
+
+async function readPendingTarget() {
+    return mutatePendingTarget(async () => {
+        const stored = await chrome.storage.session.get(PENDING_TARGET_KEYS);
+        const tabId = normalizeTabId(stored.pendingTargetTabId);
+        const originPattern = typeof stored.pendingTargetOriginPattern === 'string'
+            && stored.pendingTargetOriginPattern.length > 0
+            ? stored.pendingTargetOriginPattern
+            : null;
+
+        if (tabId === null || originPattern === null) {
+            if (Object.values(stored).some(value => value !== null && value !== undefined)) {
+                if (tabId !== null) {
+                    await removeTabHostAccessRequest(chrome, tabId, originPattern);
+                }
+                await chrome.storage.session.set(emptyPendingTargetState());
+            }
+            return null;
+        }
+
+        const requestId = typeof stored.pendingTargetRequestId === 'string'
+            && stored.pendingTargetRequestId.length > 0
+            ? stored.pendingTargetRequestId
+            : createPendingTargetRequestId();
+        if (stored.pendingTargetRequestId !== requestId) {
+            await chrome.storage.session.set({ pendingTargetRequestId: requestId });
+        }
+
+        return {
+            tabId,
+            tabTitle: typeof stored.pendingTargetTabTitle === 'string'
+                ? stored.pendingTargetTabTitle
+                : null,
+            host: typeof stored.pendingTargetHost === 'string'
+                ? stored.pendingTargetHost
+                : null,
+            originPattern,
+            requestId
+        };
     });
 }
 
-function _routeToContentInternal(tabId, action, payload, actionTimestamp, commandSenderId, retries) {
+async function rememberPendingTarget(tabId, tabTitle, error, expectedGeneration) {
+    return mutatePendingTarget(async () => {
+        if (targetActivationGeneration !== expectedGeneration) return null;
+        const previous = await chrome.storage.session.get(PENDING_TARGET_KEYS);
+        const previousTabId = normalizeTabId(previous.pendingTargetTabId);
+        const nextOriginPattern = error?.originPattern || null;
+        if (previousTabId !== null && (
+            previousTabId !== tabId
+            || previous.pendingTargetOriginPattern !== nextOriginPattern
+        )) {
+            await removeTabHostAccessRequest(
+                chrome,
+                previousTabId,
+                previous.pendingTargetOriginPattern || null
+            );
+        }
+        if (targetActivationGeneration !== expectedGeneration) return null;
+        const requestId = previousTabId === tabId
+            && previous.pendingTargetOriginPattern === nextOriginPattern
+            && typeof previous.pendingTargetRequestId === 'string'
+            && previous.pendingTargetRequestId.length > 0
+            ? previous.pendingTargetRequestId
+            : createPendingTargetRequestId();
+        await chrome.storage.session.set({
+            pendingTargetTabId: tabId,
+            pendingTargetTabTitle: typeof tabTitle === 'string' ? tabTitle : null,
+            pendingTargetHost: error?.host || null,
+            pendingTargetOriginPattern: nextOriginPattern,
+            pendingTargetRequestId: requestId
+        });
+        if (targetActivationGeneration !== expectedGeneration) {
+            const current = await chrome.storage.session.get(PENDING_TARGET_KEYS);
+            if (current.pendingTargetRequestId === requestId) {
+                await removeTabHostAccessRequest(chrome, tabId, nextOriginPattern);
+                await chrome.storage.session.set(emptyPendingTargetState());
+            }
+            return null;
+        }
+        return {
+            tabId,
+            tabTitle: typeof tabTitle === 'string' ? tabTitle : null,
+            host: error?.host || null,
+            originPattern: nextOriginPattern,
+            requestId
+        };
+    });
+}
+
+async function clearPendingTarget({ expectedRequestId = null, expectedTabId = null } = {}) {
+    return mutatePendingTarget(async () => {
+        const pending = await chrome.storage.session.get(PENDING_TARGET_KEYS);
+        const pendingTabId = normalizeTabId(pending.pendingTargetTabId);
+        if (expectedRequestId !== null && pending.pendingTargetRequestId !== expectedRequestId) {
+            return false;
+        }
+        if (expectedTabId !== null && pendingTabId !== normalizeTabId(expectedTabId)) {
+            return false;
+        }
+        if (pendingTabId !== null) {
+            await removeTabHostAccessRequest(
+                chrome,
+                pendingTabId,
+                pending.pendingTargetOriginPattern || null
+            );
+        }
+        await chrome.storage.session.set(emptyPendingTargetState());
+        return true;
+    });
+}
+
+async function activateTargetTab(tabId, tabTitle, {
+    requestHostAccess = true,
+    expectedGeneration = null,
+    expectedCurrentTabId = null
+} = {}) {
+    const selectedTabId = normalizeTabId(tabId);
+    if (selectedTabId === null) {
+        return { status: 'invalid_tab' };
+    }
+    if (expectedGeneration !== null && targetActivationGeneration !== expectedGeneration) {
+        return { status: 'superseded' };
+    }
+    if (expectedCurrentTabId !== null
+        && normalizeTabId(currentTabId) !== normalizeTabId(expectedCurrentTabId)) {
+        return { status: 'superseded' };
+    }
+
+    completeForceSyncBeforeTargetChange(selectedTabId);
+    const activationGeneration = ++targetActivationGeneration;
+    activeTargetActivation = { generation: activationGeneration, tabId: selectedTabId };
+    const previousTabId = normalizeTabId(currentTabId);
+
+    try {
+        try {
+            await injectContentScript(selectedTabId, { requestHostAccess });
+        } catch (error) {
+            if (activationGeneration !== targetActivationGeneration) {
+                if (error?.code === HOST_ACCESS_REQUIRED_STATUS
+                    && error.requestAdded === true
+                    && activeTargetActivation?.tabId !== selectedTabId) {
+                    await removeTabHostAccessRequest(
+                        chrome,
+                        selectedTabId,
+                        error.originPattern || null
+                    );
+                }
+                return { status: 'superseded' };
+            }
+            currentTabId = null;
+            currentTabTitle = null;
+            lastContentHeartbeatAt = null;
+            if (currentRoom) roomIdleSince = Date.now();
+            if (previousTabId) {
+                resetAudioProcessingInTab(previousTabId);
+                chrome.tabs.sendMessage(previousTabId, { type: 'CHAT_DESTROY' }).catch(() => {});
+            }
+            await chrome.storage.session.set({
+                currentTabId: null,
+                currentTabTitle: null,
+                roomIdleSince,
+                lastContentHeartbeatAt: null
+            });
+            if (activationGeneration !== targetActivationGeneration) {
+                return { status: 'superseded' };
+            }
+            updateBadgeStatus();
+
+            if (error?.code === HOST_ACCESS_REQUIRED_STATUS) {
+                const pending = await rememberPendingTarget(
+                    selectedTabId,
+                    tabTitle,
+                    error,
+                    activationGeneration
+                );
+                if (!pending || activationGeneration !== targetActivationGeneration) {
+                    return { status: 'superseded' };
+                }
+                chrome.runtime.sendMessage({
+                    type: 'TARGET_TAB_ACCESS_REQUIRED',
+                    requestId: pending.requestId,
+                    ...injectionFailureResponse(error)
+                }).catch(() => {});
+            } else {
+                await clearPendingTarget();
+                if (activationGeneration !== targetActivationGeneration) {
+                    return { status: 'superseded' };
+                }
+            }
+            throw error;
+        }
+
+        if (activationGeneration !== targetActivationGeneration) {
+            if (currentTabId !== selectedTabId) resetAudioProcessingInTab(selectedTabId);
+            return { status: 'superseded' };
+        }
+
+        await applyAudioSettingsToTab(selectedTabId);
+        if (activationGeneration !== targetActivationGeneration) {
+            if (currentTabId !== selectedTabId) resetAudioProcessingInTab(selectedTabId);
+            return { status: 'superseded' };
+        }
+        await removeTabHostAccessRequest(chrome, selectedTabId);
+        if (activationGeneration !== targetActivationGeneration) {
+            if (currentTabId !== selectedTabId) resetAudioProcessingInTab(selectedTabId);
+            return { status: 'superseded' };
+        }
+        await clearPendingTarget();
+        if (activationGeneration !== targetActivationGeneration) {
+            if (currentTabId !== selectedTabId) resetAudioProcessingInTab(selectedTabId);
+            return { status: 'superseded' };
+        }
+        currentTabId = selectedTabId;
+        currentTabTitle = typeof tabTitle === 'string' ? tabTitle : null;
+        lastContentHeartbeatAt = null;
+        if (currentRoom) roomIdleSince = Date.now();
+        if (previousTabId && previousTabId !== selectedTabId) {
+            resetAudioProcessingInTab(previousTabId);
+            chrome.tabs.sendMessage(previousTabId, { type: 'CHAT_DESTROY' }).catch(() => {});
+        }
+        await chrome.storage.session.set({
+            currentTabId,
+            currentTabTitle,
+            roomIdleSince,
+            lastContentHeartbeatAt
+        });
+        if (activationGeneration !== targetActivationGeneration) {
+            return { status: 'superseded' };
+        }
+        updateBadgeStatus();
+        return { status: 'ok', tabId: selectedTabId, generation: activationGeneration };
+    } finally {
+        if (activeTargetActivation?.generation === activationGeneration) {
+            activeTargetActivation = null;
+        }
+    }
+}
+
+async function reactivateCurrentTarget(tabId, { expectedGeneration = targetActivationGeneration } = {}) {
+    const selectedTabId = normalizeTabId(tabId);
+    if (selectedTabId === null || !isCurrentTargetIdentity(selectedTabId, expectedGeneration)) {
+        return { status: 'superseded' };
+    }
+    if (activeTargetActivation && activeTargetActivation.tabId !== selectedTabId) {
+        return { status: 'superseded' };
+    }
+    return activateTargetTab(selectedTabId, currentTabTitle, {
+        expectedGeneration,
+        expectedCurrentTabId: selectedTabId
+    });
+}
+
+async function retryPendingTarget({ expectedRequestId = null, requireGrantedAccess = false } = {}) {
+    let pending = await readPendingTarget();
+    if (!pending || (expectedRequestId !== null && pending.requestId !== expectedRequestId)) {
+        return null;
+    }
+    if (activeTargetActivation && activeTargetActivation.tabId !== pending.tabId) {
+        return { status: 'superseded' };
+    }
+
+    if (requireGrantedAccess) {
+        let access;
+        try {
+            access = await inspectTabHostAccess(chrome, pending.tabId);
+        } catch {
+            await clearPendingTarget({
+                expectedRequestId: pending.requestId,
+                expectedTabId: pending.tabId
+            });
+            return { status: 'invalid_tab' };
+        }
+        if (access.granted !== true || access.originPattern !== pending.originPattern) {
+            return { status: 'permission_not_granted' };
+        }
+        pending = await readPendingTarget();
+        if (!pending || pending.requestId !== expectedRequestId) {
+            return { status: 'superseded' };
+        }
+    }
+
+    try {
+        const expectedGeneration = targetActivationGeneration;
+        const response = await activateTargetTab(pending.tabId, pending.tabTitle, {
+            requestHostAccess: false,
+            expectedGeneration
+        });
+        if (response.status === 'ok') {
+            addLog(`Website access granted; selected tab ${pending.tabId}`, 'success');
+            chrome.runtime.sendMessage({
+                type: 'TARGET_TAB_READY',
+                tabId: pending.tabId,
+                requestId: pending.requestId
+            }).catch(() => {});
+        }
+        return response;
+    } catch (error) {
+        if (error?.code !== HOST_ACCESS_REQUIRED_STATUS) {
+            await clearPendingTarget({
+                expectedRequestId: pending.requestId,
+                expectedTabId: pending.tabId
+            });
+            addLog(`Pending tab activation failed: ${error.message}`, 'warn');
+        }
+        return injectionFailureResponse(error);
+    }
+}
+
+if (chrome.permissions?.onAdded?.addListener) {
+    chrome.permissions.onAdded.addListener((addedPermissions) => {
+        ensureState().then(async () => {
+            const pending = await readPendingTarget();
+            if (!pending) return;
+            const addedOrigins = Array.isArray(addedPermissions?.origins)
+                ? addedPermissions.origins
+                : [];
+            if (!addedOrigins.includes(pending.originPattern) && !addedOrigins.includes('<all_urls>')) {
+                return;
+            }
+            await retryPendingTarget({
+                expectedRequestId: pending.requestId,
+                requireGrantedAccess: true
+            });
+        }).catch(error => addLog(`Website access retry failed: ${error.message}`, 'warn'));
+    });
+}
+
+if (chrome.tabs?.onRemoved?.addListener) {
+    chrome.tabs.onRemoved.addListener((removedTabId) => {
+        ensureState().then(async () => {
+            const tabId = normalizeTabId(removedTabId);
+            if (tabId === null) return;
+            const pending = await readPendingTarget();
+            const isCurrent = normalizeTabId(currentTabId) === tabId;
+            const isPending = pending?.tabId === tabId;
+            const isActivating = activeTargetActivation?.tabId === tabId;
+            if (!isCurrent && !isPending && !isActivating) return;
+
+            const hasReplacementActivation = activeTargetActivation
+                && activeTargetActivation.tabId !== tabId;
+            if (isCurrent) completeForceSyncBeforeTargetChange(null);
+            if (isActivating || (isCurrent && !hasReplacementActivation)) {
+                invalidateTargetActivations();
+            }
+            if (isCurrent) {
+                currentTabId = null;
+                currentTabTitle = null;
+                lastContentHeartbeatAt = null;
+                if (currentRoom) roomIdleSince = Date.now();
+            }
+            if (isPending) {
+                await clearPendingTarget({
+                    expectedRequestId: pending.requestId,
+                    expectedTabId: tabId
+                });
+            }
+            await chrome.storage.session.set({
+                currentTabId,
+                currentTabTitle,
+                roomIdleSince,
+                lastContentHeartbeatAt
+            });
+            updateBadgeStatus();
+            chrome.runtime.sendMessage({ type: 'TARGET_TAB_CLEARED', tabId }).catch(() => {});
+            if (isCurrent) {
+                addLog('Target tab closed.', 'warn');
+                if (currentRoom) {
+                    const roomAtClose = currentRoom;
+                    getSettings().then(settings => {
+                        if (currentRoom !== roomAtClose) return;
+                        emit(EVENTS.PEER_STATUS, {
+                            peerId,
+                            playbackState: 'paused',
+                            currentTime: null,
+                            mediaTitle: null,
+                            username: settings.username,
+                            tabTitle: null
+                        });
+                        const me = currentRoom?.peers?.find(p => (p.peerId || p) === peerId);
+                        if (me && typeof me === 'object') {
+                            me.playbackState = 'paused';
+                            me.currentTime = null;
+                            me.mediaTitle = null;
+                            me.tabTitle = null;
+                            me.lastHeartbeat = Date.now();
+                            if (storageInitialized) {
+                                chrome.storage.session.set({ currentRoom });
+                            }
+                            chrome.runtime.sendMessage({
+                                type: 'PEER_UPDATE',
+                                peers: currentRoom.peers
+                            }).catch(() => {});
+                        }
+                    }).catch(() => {});
+                }
+            }
+        }).catch(error => addLog(`Closed target-tab cleanup failed: ${error.message}`, 'warn'));
+    });
+}
+
+function _routeToContentInternal(tabId, action, payload, actionTimestamp, commandSenderId, retries, targetGeneration) {
+    if (!isCurrentTargetIdentity(tabId, targetGeneration)) return;
     chrome.tabs.sendMessage(tabId, { 
         type: 'SERVER_COMMAND',
         action,
@@ -1882,20 +2421,30 @@ function _routeToContentInternal(tabId, action, payload, actionTimestamp, comman
         actionTimestamp,
         commandSenderId
     }).catch(err => {
+        if (!isCurrentTargetIdentity(tabId, targetGeneration)) return;
         if (retries >= 3) {
             addLog(`Content Script not responding in tab ${tabId} after ${retries} retries`, 'warn');
-            clearTargetTabForIdle();
+            clearTargetTabForIdle(tabId, targetGeneration);
             return;
         }
         if (err.message.includes('Receiving end does not exist') || err.message.includes('Extension context invalidated')) {
-            injectContentScript(tabId).then(() => {
-                setTimeout(() => _routeToContentInternal(tabId, action, payload, actionTimestamp, commandSenderId, retries + 1), 500);
+            reactivateCurrentTarget(tabId, { expectedGeneration: targetGeneration }).then(response => {
+                if (response?.status !== 'ok') return;
+                setTimeout(() => _routeToContentInternal(
+                    tabId,
+                    action,
+                    payload,
+                    actionTimestamp,
+                    commandSenderId,
+                    retries + 1,
+                    response.generation
+                ), 500);
             }).catch(_err => {
                 addLog(`Auto-reinject failed for tab ${tabId}`, 'warn');
             });
         } else {
             addLog(`Content Script not responding in tab ${tabId}`, 'warn');
-            clearTargetTabForIdle();
+            clearTargetTabForIdle(tabId, targetGeneration);
         }
     });
 }
@@ -2058,6 +2607,10 @@ async function handleAsyncMessage(message, sender, sendResponse) {
         connect();
         sendResponse({ status: 'ok' });
     } else if (message.type === 'GET_STATUS') {
+        if (message.retryPendingTarget === true) {
+            await retryPendingTarget();
+        }
+        const pendingTarget = await readPendingTarget();
         const isConnected = socket && socket.readyState === WebSocket.OPEN && isNamespaceJoined;
         const isReconnecting = !isConnected && reconnectAttempts > 0;
         let status = isConnected ? 'connected' : (isConnecting || (socket && socket.readyState === WebSocket.CONNECTING) ? 'connecting' : (isReconnecting ? 'reconnecting' : 'disconnected'));
@@ -2069,6 +2622,10 @@ async function handleAsyncMessage(message, sender, sendResponse) {
             peers: currentRoom ? currentRoom.peers : [],
             lastActionState,
             targetTabId: currentTabId,
+            pendingTargetTabId: pendingTarget?.tabId ?? null,
+            pendingTargetHost: pendingTarget?.host ?? null,
+            pendingTargetOriginPattern: pendingTarget?.originPattern ?? null,
+            pendingTargetRequestId: pendingTarget?.requestId ?? null,
             episodeLobby: episodeLobby,
             reconnectAttempts,
             reconnectSlowMode: reconnectFailed,
@@ -2212,6 +2769,10 @@ async function handleAsyncMessage(message, sender, sendResponse) {
         // "Solo" to the host (stale-badge split-brain).
         sendResponse({ controlMode, hostPeerId, controllers, amHost: amHost(), amController: amController(), desynced: hcmDesynced, hostControlSupported: serverSupports(CAPABILITIES.HOST_CONTROL), coHostSupported: serverSupports(CAPABILITIES.CO_HOST) });
     } else if (message.type === 'REQUEST_HOST_SYNC') {
+        if (sender.tab && normalizeTabId(currentTabId) !== normalizeTabId(sender.tab.id)) {
+            sendResponse({ status: 'ignored_unselected_tab', target: null });
+            return;
+        }
         // content.js resync: hand back the host's extrapolated current position.
         sendResponse({ target: getHostSyncTarget() });
     } else if (message.type === 'GET_HCM_STRINGS') {
@@ -2235,7 +2796,7 @@ async function handleAsyncMessage(message, sender, sendResponse) {
     } else if (message.type === 'HCM_DESYNC_STATE') {
         // content.js tells us whether the local user chose to watch on their own.
         // Only accept from the currently selected tab.
-        if (sender.tab && currentTabId && currentTabId !== sender.tab.id) {
+        if (sender.tab && normalizeTabId(currentTabId) !== normalizeTabId(sender.tab.id)) {
             sendResponse({ status: 'ignored_unselected_tab' });
             return;
         }
@@ -2247,6 +2808,7 @@ async function handleAsyncMessage(message, sender, sendResponse) {
         sendResponse({ status: 'ok' });
     } else if (message.type === 'LEAVE_ROOM') {
         webJoinCoordinator.invalidate();
+        completeForceSyncBeforeTargetChange(null);
         connectIntent = false;
         reconnectFailed = false;
         reconnectAttempts = 0;
@@ -2263,6 +2825,7 @@ async function handleAsyncMessage(message, sender, sendResponse) {
         // stale guest-side HCM state (dialog/badge/desync) — H-2/H-3.
         broadcastControlMode();
         if (currentTabId) chrome.tabs.sendMessage(Number(currentTabId), { type: 'CHAT_DESTROY' }).catch(() => {});
+        invalidateTargetActivations();
         currentTabId = null;
         currentTabTitle = null;
         roomIdleSince = null;
@@ -2277,6 +2840,7 @@ async function handleAsyncMessage(message, sender, sendResponse) {
 
         // Cancel any active episode lobby
         clearEpisodeLobbyState();
+        await clearPendingTarget();
 
         chrome.storage.session.set({ 
             currentRoom: null,
@@ -2432,6 +2996,13 @@ async function handleAsyncMessage(message, sender, sendResponse) {
             sendResponse({ status: 'error', message: err.message });
         });
     } else if (message.type === 'CONTENT_EVENT') {
+        if (!sender?.tab && message.expectedTabId !== undefined) {
+            const expectedTabId = normalizeTabId(message.expectedTabId);
+            if (expectedTabId === null || normalizeTabId(currentTabId) !== expectedTabId) {
+                sendResponse({ status: 'stale_target' });
+                return;
+            }
+        }
         const processEvent = async () => {
             // Host Control Mode (sender-side): a non-controller in host-only mode must
             // not drive the room. Don't broadcast; hand the action back to content.js so
@@ -2575,6 +3146,10 @@ async function handleAsyncMessage(message, sender, sendResponse) {
             });
         }
     } else if (message.type === 'FORCE_SYNC_ACK') {
+        if (sender.tab && normalizeTabId(currentTabId) !== normalizeTabId(sender.tab.id)) {
+            sendResponse({ status: 'ignored_unselected_tab' });
+            return;
+        }
         if (isForceSyncInitiator) {
             forceSyncAcks.add(peerId);
             chrome.storage.session.set({ forceSyncAcks: Array.from(forceSyncAcks) });
@@ -2599,6 +3174,10 @@ async function handleAsyncMessage(message, sender, sendResponse) {
         }
         sendResponse({ status: 'ok' });
     } else if (message.type === 'CMD_ACK') {
+        if (sender.tab && normalizeTabId(currentTabId) !== normalizeTabId(sender.tab.id)) {
+            sendResponse({ status: 'ignored_unselected_tab' });
+            return;
+        }
         const commandSenderId = message.commandSenderId;
         // Only ACK if the command sender is still a known peer in our room.
         // If we've already seen their PEER_STATUS 'left', skip the ACK — it would
@@ -2662,45 +3241,67 @@ async function handleAsyncMessage(message, sender, sendResponse) {
             sendResponse({ status: 'ok' });
         });
     } else if (message.type === 'INJECT_CONTENT_SCRIPT') {
-        const tabId = Number(message.tabId);
-        if (!Number.isInteger(tabId)) {
+        const tabId = normalizeTabId(message.tabId);
+        if (tabId === null) {
             sendResponse({ status: 'invalid_tab' });
             return true;
         }
 
-        injectContentScript(tabId).then(() => {
-            sendResponse({ status: 'ok' });
+        const expectedCurrentTabId = normalizeTabId(message.expectedCurrentTabId);
+        if (expectedCurrentTabId === null
+            || tabId !== expectedCurrentTabId
+            || normalizeTabId(currentTabId) !== expectedCurrentTabId) {
+            sendResponse({ status: 'stale_target' });
+            return true;
+        }
+
+        reactivateCurrentTarget(tabId, {
+            expectedGeneration: targetActivationGeneration
+        }).then(response => {
+            sendResponse(response);
         }).catch(err => {
             addLog(`Failed to inject into tab: ${err.message}`, 'warn');
-            sendResponse({ status: 'error', message: err.message });
+            sendResponse(injectionFailureResponse(err));
         });
         return true;
     } else if (message.type === 'SET_TARGET_TAB') {
-        const previousTabId = currentTabId;
-        currentTabId = message.tabId;
-        currentTabTitle = message.tabTitle;
-        lastContentHeartbeatAt = null;
-        if (currentRoom) {
-            roomIdleSince = Date.now();
+        if (message.tabId === null || message.tabId === undefined || message.tabId === '') {
+            const previousTabId = currentTabId;
+            completeForceSyncBeforeTargetChange(null);
+            invalidateTargetActivations();
+            currentTabId = null;
+            currentTabTitle = null;
+            lastContentHeartbeatAt = null;
+            if (currentRoom) roomIdleSince = Date.now();
+            if (previousTabId) {
+                resetAudioProcessingInTab(previousTabId);
+                chrome.tabs.sendMessage(Number(previousTabId), { type: 'CHAT_DESTROY' }).catch(() => {});
+            }
+            await clearPendingTarget();
+            await chrome.storage.session.set({
+                currentTabId: null,
+                currentTabTitle: null,
+                roomIdleSince,
+                lastContentHeartbeatAt: null
+            });
+            updateBadgeStatus();
+            sendResponse({ status: 'ok', tabId: null });
+            return;
         }
-        chrome.storage.session.set({ currentTabId, currentTabTitle, roomIdleSince, lastContentHeartbeatAt });
-        updateBadgeStatus();
 
-        if (previousTabId && previousTabId !== currentTabId) {
-            resetAudioProcessingInTab(previousTabId);
-            chrome.tabs.sendMessage(Number(previousTabId), { type: 'CHAT_DESTROY' }).catch(() => {});
+        try {
+            const response = await activateTargetTab(message.tabId, message.tabTitle);
+            if (response?.status === 'ok') {
+                chrome.runtime.sendMessage({
+                    type: 'TARGET_TAB_READY',
+                    tabId: response.tabId
+                }).catch(() => {});
+            }
+            sendResponse(response);
+        } catch (error) {
+            addLog(`Failed to select tab: ${error.message}`, 'warn');
+            sendResponse(injectionFailureResponse(error));
         }
-        
-        if (currentTabId) {
-            const selectedTabId = currentTabId;
-            injectContentScript(selectedTabId)
-                .then(() => applyAudioSettingsToTab(selectedTabId))
-                .catch(err => {
-                    addLog(`Failed to inject into tab: ${err.message}`, 'warn');
-                });
-        }
-        
-        sendResponse({ status: 'ok' });
     } else if (message.type === 'LOG') {
         addLog(`[Content] ${message.message}`, message.level || 'info');
         sendResponse({ status: 'ok' });
@@ -2883,21 +3484,8 @@ async function handleAsyncMessage(message, sender, sendResponse) {
 
 initTabManager({
     getCurrentTabId: () => currentTabId,
-    setCurrentTabId: (val) => { currentTabId = val; },
-    setCurrentTabTitle: (val) => { currentTabTitle = val; },
-    setLastContentHeartbeatAt: (val) => { lastContentHeartbeatAt = val; },
-    setRoomIdleSince: (val) => { roomIdleSince = val; },
-    getCurrentRoom: () => currentRoom,
-    getPeerId: () => peerId,
-    getStorageInitialized: () => storageInitialized,
-    updateBadgeStatus,
-    addLog,
-    getSettings,
-    emit,
-    applyAudioSettingsToTab,
-    injectContentScript,
-    ensureState,
-    EVENTS
+    reactivateCurrentTarget,
+    ensureState
 });
 
 // Initial Connect — only if user has an active room configuration

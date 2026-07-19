@@ -1,8 +1,8 @@
 {
   "appName": {
-    "message": "KoalaSync"
+    "message": "Watch Party - KoalaSync"
   },
   "appDesc": {
-    "message": "Synchronisiere die Videowiedergabe auf YouTube, Netflix, Emby, Jellyfin und jeder HTML5-Seite in Echtzeit mit Freunden."
+    "message": "Erstelle private Watch Partys und synchronisiere Videos mit Freunden auf YouTube, Netflix, Jellyfin, Emby und fast jeder Website."
   }
 }

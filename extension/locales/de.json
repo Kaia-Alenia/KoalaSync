@@ -148,6 +148,8 @@
   "ERR_IDENTITY_NOT_LOADED": "Identität noch nicht geladen. Warte kurz und versuche es erneut.",
   "ERR_NO_PEERS_TIME": "Keine anderen Teilnehmer mit bekannter Zeit. Wechsle zu 'Zu mir springen'.",
   "ERR_NO_VIDEO_TAB": "Verbindung zum Video-Tab fehlgeschlagen.",
+  "SITE_ACCESS_REQUIRED": "Dein Browser blockiert KoalaSync auf {host}. Klicke unten auf „Zugriff erlauben“. Falls kein Dialog erscheint, erlaube KoalaSync in den Erweiterungs- oder Websiteberechtigungen für diese Seite.",
+  "BTN_RETRY_ACCESS": "Zugriff erlauben",
   "ERR_SELECT_VIDEO": "Bitte wähle zuerst ein Video aus!",
   "TOAST_INVITE_COPIED": "Einladungslink kopiert!",
   "TOAST_COPY_FAILED": "Kopieren in Zwischenablage fehlgeschlagen",
