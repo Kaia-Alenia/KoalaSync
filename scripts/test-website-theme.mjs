@@ -85,7 +85,11 @@ for (const metadata of requiredSupportSocialMetadata) {
 }
 if (!websiteBuild.includes("['log', '-1', '--format=%cs', '--', ...sourceFiles]")
     || !websiteBuild.includes("lastmod(['website/site-access-help.html'])")
-    || /const today = new Date\(\)/.test(websiteBuild)) {
+    || !websiteBuild.includes("['rev-parse', '--is-shallow-repository']")
+    || !websiteBuild.includes("['diff', '--name-only', '--']")
+    || !websiteBuild.includes("['diff', '--cached', '--name-only', '--']")
+    || !websiteBuild.includes("['ls-files', '--others', '--exclude-standard', '--']")
+    || !websiteBuild.includes('sourceFiles.some(file => dirtySourceFiles.has(file))')) {
   throw new Error('Sitemap lastmod values must come from the mapped source files in Git');
 }
 const documentedRelayUrls = [...llmsText.matchAll(/`(wss:\/\/[^`\s]+)`/g)].map(([, value]) => new URL(value));
