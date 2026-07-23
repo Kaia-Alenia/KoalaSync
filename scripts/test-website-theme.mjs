@@ -151,11 +151,9 @@ if (!/\.legal-inline-link\s*\{[^}]*text-decoration:\s*underline/s.test(legalCss)
   throw new Error('Legal prose links must use a non-color underline cue');
 }
 for (const [name, page] of [['imprint.html', imprintPage], ['impressum-de.html', germanImprintPage]]) {
-  if ((page.match(/class="legal-inline-link"/g) || []).length !== 3) {
-    throw new Error(`${name} must mark all three prose links as legal-inline-link`);
-  }
-  if ((page.match(/class="legal-inline-label"/g) || []).length !== 2 || /opacity:\s*0\.6/.test(page)) {
-    throw new Error(`${name} contact labels must use full-opacity theme text`);
+  if (!/rel="canonical" href="https:\/\/koalastuff\.net\/legal"/.test(page)
+      || !/href="https:\/\/koalastuff\.net\/legal"/.test(page)) {
+    throw new Error(`${name} must point to the central KoalaStuff legal notice`);
   }
 }
 

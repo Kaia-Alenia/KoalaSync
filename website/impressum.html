@@ -1,26 +1,14 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="robots" content="noindex, follow">
-    <title>Redirecting...</title>
-    <script>
-        (function() {
-            var savedLang = localStorage.getItem('koala_lang');
-            var browserLang = (navigator.language || navigator.userLanguage || '').toLowerCase();
-            var isDe = (savedLang === 'de') || (!savedLang && browserLang.indexOf('de') === 0);
-            var path = window.location.pathname;
-            var hasHtml = path.endsWith('.html');
-            if (isDe) {
-                window.location.replace(hasHtml ? 'de/impressum.html' : 'de/impressum');
-            } else {
-                window.location.replace(hasHtml ? 'imprint.html' : 'imprint');
-            }
-        })();
-    </script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="refresh" content="0; url=https://koalastuff.net/legal">
+  <meta name="robots" content="noindex, follow">
+  <link rel="canonical" href="https://koalastuff.net/legal">
+  <title>Legal Notice | KoalaSync</title>
 </head>
 <body>
-    <p>Redirecting / Weiterleitung...</p>
+  <p><a href="https://koalastuff.net/legal">Open the central KoalaStuff legal notice</a></p>
 </body>
 </html>

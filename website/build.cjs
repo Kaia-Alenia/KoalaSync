@@ -711,14 +711,8 @@ function generateSitemap(wwwDir) {
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
         xmlns:xhtml="http://www.w3.org/1999/xhtml">`;
 
-    // Static legal pages
+    // Static project-specific policy and help pages
     xml += `
-  <url>
-    <loc>https://sync.koalastuff.net/imprint</loc>
-    <lastmod>${today}</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.3</priority>
-  </url>
   <url>
     <loc>https://sync.koalastuff.net/privacy</loc>
     <lastmod>${today}</lastmod>
@@ -730,12 +724,6 @@ function generateSitemap(wwwDir) {
     <lastmod>${today}</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://sync.koalastuff.net/de/impressum</loc>
-    <lastmod>${today}</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.3</priority>
   </url>
   <url>
     <loc>https://sync.koalastuff.net/de/datenschutz</loc>
