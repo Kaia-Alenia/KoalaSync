@@ -791,13 +791,8 @@ function generateSitemap(websiteDir, wwwDir) {
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
         xmlns:xhtml="http://www.w3.org/1999/xhtml">`;
 
-    // Static legal pages
+    // Static project-specific policy and help pages
     xml += `
-  <url>
-    <loc>https://sync.koalastuff.net/imprint</loc>${lastmod(['website/imprint.html'])}
-    <changefreq>monthly</changefreq>
-    <priority>0.3</priority>
-  </url>
   <url>
     <loc>https://sync.koalastuff.net/privacy</loc>${lastmod(['website/privacy.html'])}
     <changefreq>monthly</changefreq>
@@ -807,11 +802,6 @@ function generateSitemap(websiteDir, wwwDir) {
     <loc>https://sync.koalastuff.net/site-access-help.html</loc>${lastmod(['website/site-access-help.html'])}
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://sync.koalastuff.net/de/impressum</loc>${lastmod(['website/impressum-de.html'])}
-    <changefreq>monthly</changefreq>
-    <priority>0.3</priority>
   </url>
   <url>
     <loc>https://sync.koalastuff.net/de/datenschutz</loc>${lastmod(['website/datenschutz-de.html'])}

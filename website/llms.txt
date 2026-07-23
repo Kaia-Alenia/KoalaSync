@@ -112,6 +112,6 @@ Compatibility depends on each website's player implementation and can change whe
 - [Main website](https://sync.koalastuff.net/)
 - [GitHub issues](https://github.com/Shik3i/KoalaSync/issues): Bugs, compatibility reports and feature requests
 - [Mastodon](https://mastodon.social/@koalastuff): Private contact and project updates
-- [Legal notice](https://sync.koalastuff.net/imprint)
+- [Legal notice](https://koalastuff.net/legal)
 
 KoalaSync is an independent project and is not affiliated with, endorsed by or associated with Netflix, Disney+, Amazon, YouTube, Twitch or any other streaming platform. All trademarks belong to their respective owners.
