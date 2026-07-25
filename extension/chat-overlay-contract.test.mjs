@@ -1,0 +1,104 @@
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { describe, expect, it } from 'vitest';
+
+const extensionDir = path.dirname(fileURLToPath(import.meta.url));
+const overlaySource = fs.readFileSync(path.join(extensionDir, 'chat-overlay.js'), 'utf8');
+const backgroundSource = fs.readFileSync(path.join(extensionDir, 'background.js'), 'utf8');
+const popupSource = fs.readFileSync(path.join(extensionDir, 'popup.js'), 'utf8');
+const localeDir = path.join(extensionDir, 'locales');
+const chatKeys = [
+    'LABEL_CHAT_ENABLED',
+    'LABEL_CHAT_ENABLED_TOOLTIP',
+    'CHAT_TITLE',
+    'CHAT_LIVE_ONLY',
+    'CHAT_OPEN',
+    'CHAT_CLOSE',
+    'CHAT_DOCK_LEFT',
+    'CHAT_DOCK_RIGHT',
+    'CHAT_DETACHED',
+    'CHAT_PLACEHOLDER',
+    'CHAT_SEND',
+    'CHAT_MISSING_KEY',
+    'CHAT_TOO_LONG',
+    'CHAT_SEND_FAILED',
+    'CHAT_EMPTY'
+];
+
+describe('chat overlay contract', () => {
+    it('isolates the overlay and never renders markup as HTML', () => {
+        expect(overlaySource).toContain("attachShadow({ mode: 'open' })");
+        expect(overlaySource).not.toMatch(/\.innerHTML\s*=|insertAdjacentHTML|\.outerHTML\s*=/);
+        expect(overlaySource).toContain('document.createTextNode(token.text)');
+    });
+
+    it('injects formatting and overlay code only with the selected-tab content script', () => {
+        expect(backgroundSource).toContain("files: ['chat-format.js', 'chat-overlay.js', 'content.js']");
+        expect(overlaySource).toContain("const storageKey = `chatOverlayLayout:${location.origin}`");
+        expect(overlaySource).toContain('document.fullscreenElement || document.documentElement');
+    });
+
+    it('supports all layout and theme combinations with bounded message DOM', () => {
+        expect(overlaySource).toContain("['left', 'right', 'detached']");
+        expect(overlaySource).toContain('!layout.detachedInitialized');
+        expect(overlaySource).toContain('const rect = panel.getBoundingClientRect()');
+        expect(overlaySource).not.toContain('contentRect');
+        expect(overlaySource).toContain("#app[data-palette=\"cyber\"][data-theme=\"light\"]");
+        expect(overlaySource).toContain("#app[data-palette=\"graphite\"][data-theme=\"light\"]");
+        expect(overlaySource).toContain('const MAX_MESSAGES = 200');
+        expect(overlaySource).toContain('while (messages.querySelectorAll(\'.message\').length > MAX_MESSAGES)');
+        expect(overlaySource).toContain('Math.max(1, window.innerWidth)');
+        expect(overlaySource).toContain('min(${MIN_WIDTH}px, calc(100vw - 16px))');
+    });
+
+    it('guards async refresh/send work and clears all composer state on room reset', () => {
+        expect(overlaySource).toContain('generation !== refreshGeneration');
+        expect(overlaySource).toContain('if (sending || !context?.enabled) return');
+        expect(overlaySource).toContain('textarea.value === submittedValue');
+        expect(overlaySource).toMatch(/CHAT_RESET[\s\S]*resetComposer\(\)/);
+        expect(overlaySource).toContain('setTimeout(() => finish(null), timeoutMs)');
+        expect(backgroundSource).toContain('chatReceiveQueue = chatReceiveQueue.catch(() => {}).then');
+        expect(backgroundSource).toContain("status: 'rate_limited'");
+    });
+
+    it('keeps chat hidden by default without discarding the room chat key', () => {
+        expect(popupSource).toContain('localData.chatEnabled === true');
+        expect(backgroundSource).toContain('chatEnabled: data.chatEnabled === true');
+        expect(backgroundSource).toContain('clientCapabilities: CLIENT_CAPABILITIES');
+        expect(overlaySource).toContain('all:initial;display:none;position:fixed');
+        expect(overlaySource).toContain("host.style.display = supported && optedIn ? '' : 'none'");
+        expect(overlaySource).toContain('supported && optedIn && hasKey && connected');
+        expect(popupSource).toContain("chrome.storage.local.set({ chatEnabled: elements.chatEnabled.checked })");
+        expect(popupSource).toMatch(/if \(isCreating\) \{[\s\S]*?type: 'CREATE_CHAT_KEY'[\s\S]*?chatKey = normalizeChatKey/);
+        expect(popupSource).not.toMatch(/chatEnabled[\s\S]{0,120}chatKey:\s*''/);
+    });
+
+    it('keeps unavailable chat controls discoverable to assistive technology', () => {
+        expect(overlaySource).toContain("launcher.setAttribute('aria-disabled'");
+        expect(overlaySource).not.toContain('launcher.disabled =');
+        expect(overlaySource).toContain("launcher.setAttribute('aria-describedby', launcherHint.id)");
+        expect(overlaySource).toContain("textarea.setAttribute('aria-describedby', 'chat-composer-count chat-composer-status')");
+        expect(overlaySource).toContain("status.setAttribute('role', 'status')");
+    });
+
+    it('creates a chat key for both generated-room entry points', () => {
+        expect(popupSource).toContain('let pendingRoomCreation = false');
+        expect(popupSource).toContain('const isCreating = pendingRoomCreation || !roomIdInput');
+        expect(popupSource).toMatch(/function handleCreateRoom\(\)[\s\S]*pendingRoomCreation = true[\s\S]*elements\.joinBtn\.click\(\)/);
+        expect(popupSource).toContain("type: 'CREATE_CHAT_KEY'");
+    });
+
+    it('contains every chat string in all 15 extension locales', () => {
+        const localeFiles = fs.readdirSync(localeDir).filter(file => file.endsWith('.json')).sort();
+        expect(localeFiles).toHaveLength(15);
+        for (const file of localeFiles) {
+            const messages = JSON.parse(fs.readFileSync(path.join(localeDir, file), 'utf8'));
+            for (const key of chatKeys) {
+                expect(messages[key], `${file}: ${key}`).toBeTypeOf('string');
+                expect(messages[key], `${file}: ${key}`).not.toBe('');
+                expect(messages[key], `${file}: ${key}`).not.toMatch(/[—–]/);
+            }
+        }
+    });
+});

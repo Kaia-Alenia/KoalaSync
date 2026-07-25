@@ -245,5 +245,20 @@
   "LABEL_SETTINGS_GROUP_PROFILE": "Profil ve Görünüm",
   "LABEL_SETTINGS_GROUP_PROFILE_TOOLTIP": "Kullanıcı adınızı, temanızı ve dil tercihlerinizi değiştirin.",
   "LABEL_SETTINGS_GROUP_SYNC": "Oynatma ve Eşitleme",
-  "LABEL_SETTINGS_GROUP_SYNC_TOOLTIP": "Oynatma, bildirim ve ses tercihlerini özelleştirin."
+  "LABEL_SETTINGS_GROUP_SYNC_TOOLTIP": "Oynatma, bildirim ve ses tercihlerini özelleştirin.",
+  "LABEL_CHAT_ENABLED": "Oda sohbetini etkinleştir",
+  "LABEL_CHAT_ENABLED_TOOLTIP": "Şifreli oda sohbetini seçili video sekmesinde göster.",
+  "CHAT_TITLE": "Oda Sohbeti",
+  "CHAT_LIVE_ONLY": "Yalnızca canlı. Geçmiş yok.",
+  "CHAT_OPEN": "Oda sohbetini aç",
+  "CHAT_CLOSE": "Sohbeti kapat",
+  "CHAT_DOCK_LEFT": "Sohbeti sola sabitle",
+  "CHAT_DOCK_RIGHT": "Sohbeti sağa sabitle",
+  "CHAT_DETACHED": "Sohbeti ayır",
+  "CHAT_PLACEHOLDER": "Bir mesaj yazın...",
+  "CHAT_SEND": "Gönder",
+  "CHAT_MISSING_KEY": "Sohbet yalnızca güncel bir davet bağlantısıyla kullanılabilir.",
+  "CHAT_TOO_LONG": "En fazla 500 karakter.",
+  "CHAT_SEND_FAILED": "Mesaj gönderilemedi.",
+  "CHAT_EMPTY": "Henüz mesaj yok. Sohbet yalnızca canlıdır."
 }

@@ -5,6 +5,7 @@
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
+const { execFileSync } = require('child_process');
 const sharp = require('sharp');
 const esbuild = require('esbuild');
 const htmlnano = require('htmlnano');
@@ -285,6 +286,12 @@ async function compile() {
     const appName = `app.${appHash}.min.js`;
     const appSRI = sha384(appMin);
 
+    const inviteLinksRaw = fs.readFileSync(path.join(websiteDir, '..', 'shared', 'invite-links.js'), 'utf8');
+    const inviteLinksMin = await minifyJS(inviteLinksRaw);
+    const inviteLinksHash = sha8(inviteLinksMin);
+    const inviteLinksName = `invite-links.${inviteLinksHash}.min.js`;
+    const inviteLinksSRI = sha384(inviteLinksMin);
+
     const langRaw = fs.readFileSync(path.join(websiteDir, 'lang-init.js'), 'utf8');
     const langMin = await minifyJS(langRaw);
     const langHash = sha8(langMin);
@@ -299,6 +306,7 @@ async function compile() {
         console.log(`  Landing ${bundle.key}: ${bundle.name} (${(bundle.min.length/1024).toFixed(1)} KB)`);
     }
     console.log(`  App: ${appName} (${(appMin.length/1024).toFixed(1)} KB, -${appPct}%)`);
+    console.log(`  Invite links: ${inviteLinksName} (${(inviteLinksMin.length/1024).toFixed(1)} KB)`);
     console.log(`  Lang: ${langName} (${(langMin.length/1024).toFixed(1)} KB, -${langPct}%)`);
 
     // ── 2. Clean stale minified output ──
@@ -315,6 +323,7 @@ async function compile() {
         fs.writeFileSync(path.join(wwwDir, bundle.name), bundle.min);
     }
     fs.writeFileSync(path.join(wwwDir, appName), appMin);
+    fs.writeFileSync(path.join(wwwDir, inviteLinksName), inviteLinksMin);
     fs.writeFileSync(path.join(wwwDir, langName), langMin);
 
     // ── 3. Compile HTML templates ──
@@ -541,7 +550,7 @@ async function compile() {
     }
 
     // ── 5.5 Generate dynamic sitemap ──
-    generateSitemap(wwwDir);
+    generateSitemap(websiteDir, wwwDir);
 
     // Auto-copy Google verification files and IndexNow/txt key files from website source to www root
     const websiteFiles = fs.readdirSync(websiteDir);
@@ -654,6 +663,9 @@ async function compile() {
         html = html.replace(/(<script\b[^>]*?\bsrc=")((?:\.\.\/)*\/?)app\.min\.js"/g, (m, before, prefix) => {
             return `${before}${prefix}${appName}" integrity="${appSRI}" crossorigin="anonymous"`;
         });
+        html = html.replace(/(<script\b[^>]*?\bsrc=")((?:\.\.\/)*\/?)invite-links\.min\.js"/g, (m, before, prefix) => {
+            return `${before}${prefix}${inviteLinksName}" integrity="${inviteLinksSRI}" crossorigin="anonymous"`;
+        });
         html = html.replace(/(<script\b[^>]*?\bsrc=")((?:\.\.\/)*\/?)lang-init\.min\.js"/g, (m, before, prefix) => {
             return `${before}${prefix}${langName}" integrity="${langSRI}" crossorigin="anonymous"`;
         });
@@ -686,7 +698,7 @@ async function compile() {
     console.log('KoalaSync build finished successfully! Output: website/www/');
 }
 
-function generateSitemap(wwwDir) {
+function generateSitemap(websiteDir, wwwDir) {
     const languages = [
       { code: 'en', prefix: '', hreflang: 'en' },
       { code: 'de', prefix: 'de/', hreflang: 'de' },
@@ -705,7 +717,75 @@ function generateSitemap(wwwDir) {
       { code: 'pt', prefix: 'pt/', hreflang: 'pt' }
     ];
 
-    const today = new Date().toISOString().split('T')[0];
+    const repoRoot = path.resolve(websiteDir, '..');
+    const lastModifiedCache = new Map();
+    const dirtySourceFiles = new Set();
+    let gitHistoryAvailable = false;
+    let usedDirtySourceDate = false;
+
+    try {
+      const isInsideWorkTree = execFileSync(
+        'git', ['rev-parse', '--is-inside-work-tree'],
+        { cwd: repoRoot, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }
+      ).trim() === 'true';
+      const isShallow = execFileSync(
+        'git', ['rev-parse', '--is-shallow-repository'],
+        { cwd: repoRoot, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }
+      ).trim() === 'true';
+      gitHistoryAvailable = isInsideWorkTree && !isShallow;
+
+      if (gitHistoryAvailable) {
+        const dirtyCommands = [
+          ['diff', '--name-only', '--'],
+          ['diff', '--cached', '--name-only', '--'],
+          ['ls-files', '--others', '--exclude-standard', '--']
+        ];
+        for (const args of dirtyCommands) {
+          const output = execFileSync(
+            'git', args,
+            { cwd: repoRoot, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }
+          );
+          for (const file of output.split(/\r?\n/).filter(Boolean)) {
+            dirtySourceFiles.add(file.replaceAll('\\', '/'));
+          }
+        }
+      }
+    } catch (_) {
+      gitHistoryAvailable = false;
+    }
+
+    function getLastModified(sourceFiles) {
+      const cacheKey = sourceFiles.slice().sort().join('\0');
+      if (lastModifiedCache.has(cacheKey)) return lastModifiedCache.get(cacheKey);
+      if (!gitHistoryAvailable) {
+        lastModifiedCache.set(cacheKey, null);
+        return null;
+      }
+      let date = null;
+      try {
+        if (sourceFiles.some(file => dirtySourceFiles.has(file))) {
+          usedDirtySourceDate = true;
+          date = new Date().toISOString().slice(0, 10);
+        } else {
+          const output = execFileSync(
+            'git',
+            ['log', '-1', '--format=%cs', '--', ...sourceFiles],
+            { cwd: repoRoot, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }
+          ).trim();
+          if (/^\d{4}-\d{2}-\d{2}$/.test(output)) date = output;
+        }
+      } catch (_) {
+        // Source archives and minimal deployment environments may not contain
+        // Git metadata. Omitting lastmod is more accurate than inventing a date.
+      }
+      lastModifiedCache.set(cacheKey, date);
+      return date;
+    }
+
+    function lastmod(sourceFiles, indent = '    ') {
+      const date = getLastModified(sourceFiles);
+      return date ? `\n${indent}<lastmod>${date}</lastmod>` : '';
+    }
 
     let xml = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
@@ -714,31 +794,28 @@ function generateSitemap(wwwDir) {
     // Static project-specific policy and help pages
     xml += `
   <url>
-    <loc>https://sync.koalastuff.net/privacy</loc>
-    <lastmod>${today}</lastmod>
+    <loc>https://sync.koalastuff.net/privacy</loc>${lastmod(['website/privacy.html'])}
     <changefreq>monthly</changefreq>
     <priority>0.3</priority>
   </url>
   <url>
-    <loc>https://sync.koalastuff.net/site-access-help.html</loc>
-    <lastmod>${today}</lastmod>
+    <loc>https://sync.koalastuff.net/site-access-help.html</loc>${lastmod(['website/site-access-help.html'])}
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://sync.koalastuff.net/de/datenschutz</loc>
-    <lastmod>${today}</lastmod>
+    <loc>https://sync.koalastuff.net/de/datenschutz</loc>${lastmod(['website/datenschutz-de.html'])}
     <changefreq>monthly</changefreq>
     <priority>0.3</priority>
   </url>`;
 
-    function addPage(relativePath, changefreq, priority) {
+    function addPage(relativePath, changefreq, priority, templateSource) {
       for (const lang of languages) {
         const loc = `https://sync.koalastuff.net/${lang.prefix}${relativePath}`;
+        const sourceFiles = [templateSource, `website/locales/${lang.code}.json`];
         xml += `
   <url>
-    <loc>${loc}</loc>
-    <lastmod>${today}</lastmod>
+    <loc>${loc}</loc>${lastmod(sourceFiles)}
     <changefreq>${changefreq}</changefreq>
     <priority>${priority}</priority>`;
         for (const alt of languages) {
@@ -753,24 +830,26 @@ function generateSitemap(wwwDir) {
       }
     }
 
-    addPage('', 'weekly', '1.0');
-    addPage('alternatives', 'weekly', '0.7');
+    addPage('', 'weekly', '1.0', 'website/template.html');
+    addPage('alternatives', 'weekly', '0.7', 'website/alternatives/index.html');
 
     const subpages = [
-      'alternatives/teleparty',
-      'alternatives/screen-sharing',
-      'alternatives/watch2gether',
-      'alternatives/scener',
-      'alternatives/kosmi',
-      'alternatives/twoseven'
+      ['alternatives/teleparty', 'website/alternatives/teleparty.html'],
+      ['alternatives/screen-sharing', 'website/alternatives/screen-sharing.html'],
+      ['alternatives/watch2gether', 'website/alternatives/watch2gether.html'],
+      ['alternatives/scener', 'website/alternatives/scener.html'],
+      ['alternatives/kosmi', 'website/alternatives/kosmi.html'],
+      ['alternatives/twoseven', 'website/alternatives/twoseven.html']
     ];
-    for (const sub of subpages) {
-      addPage(sub, 'weekly', '0.7');
+    for (const [sub, templateSource] of subpages) {
+      addPage(sub, 'weekly', '0.7', templateSource);
     }
 
     xml += `\n</urlset>\n`;
 
     fs.writeFileSync(path.join(wwwDir, 'sitemap.xml'), xml.trim() + '\n', 'utf8');
-    console.log('  ✓ Dynamically generated sitemap.xml with current date');
+    const datedEntries = (xml.match(/<lastmod>/g) || []).length;
+    const dateSource = usedDirtySourceDate ? 'Git/working-tree-derived' : 'Git-derived';
+    console.log(`  ✓ Dynamically generated sitemap.xml with ${datedEntries} ${dateSource} modification dates`);
 }
 compile().catch(err => { console.error('Build failed:', err); process.exit(1); });

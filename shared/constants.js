@@ -57,6 +57,9 @@ export const EVENTS = {
     EPISODE_READY: "episode_ready",      // Response: loaded the episode and paused at 0:00
     EPISODE_LOBBY_CANCEL: "episode_lobby_cancel", // Broadcast: cancel active lobby and resume
 
+    // Ephemeral end-to-end encrypted chat
+    CHAT_MESSAGE: "chat_message", // Ciphertext relay; no server history
+
     // Ping / Latency
     PING: "ping",  // { t: timestamp, target?: peerId } — empty target = server echo
     PONG: "pong"   // server responds with same { t } for client RTT calculation
@@ -77,7 +80,9 @@ export const CONTROL_MODES = {
 // simply ignore the field. Add a flag here as each server-gated feature lands.
 export const CAPABILITIES = {
     HOST_CONTROL: 'host-control',
-    CO_HOST: 'co-host'  // owner promotes guests to additional controllers
+    CO_HOST: 'co-host',  // owner promotes guests to additional controllers
+    CHAT: 'chat',        // legacy server capability used by the first chat beta
+    CHAT_V1: 'chat-v1'   // versioned client/server chat wire contract
 };
 
 export const HEARTBEAT_INTERVAL = 15000; // 15s

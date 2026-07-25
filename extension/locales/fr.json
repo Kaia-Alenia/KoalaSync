@@ -245,5 +245,20 @@
   "LABEL_SETTINGS_GROUP_PROFILE": "Profil & Apparence",
   "LABEL_SETTINGS_GROUP_PROFILE_TOOLTIP": "Modifiez votre nom d'utilisateur, votre thème et vos préférences linguistiques.",
   "LABEL_SETTINGS_GROUP_SYNC": "Lecture & Sync",
-  "LABEL_SETTINGS_GROUP_SYNC_TOOLTIP": "Personnalisez la lecture, les notifications et les préférences audio."
+  "LABEL_SETTINGS_GROUP_SYNC_TOOLTIP": "Personnalisez la lecture, les notifications et les préférences audio.",
+  "LABEL_CHAT_ENABLED": "Activer le chat du salon",
+  "LABEL_CHAT_ENABLED_TOOLTIP": "Afficher le chat chiffré du salon dans l'onglet vidéo sélectionné.",
+  "CHAT_TITLE": "Chat du salon",
+  "CHAT_LIVE_ONLY": "En direct uniquement. Aucun historique.",
+  "CHAT_OPEN": "Ouvrir le chat du salon",
+  "CHAT_CLOSE": "Fermer le chat",
+  "CHAT_DOCK_LEFT": "Ancrer le chat à gauche",
+  "CHAT_DOCK_RIGHT": "Ancrer le chat à droite",
+  "CHAT_DETACHED": "Détacher le chat",
+  "CHAT_PLACEHOLDER": "Écrire un message...",
+  "CHAT_SEND": "Envoyer",
+  "CHAT_MISSING_KEY": "Le chat est disponible uniquement via un lien d'invitation actuel.",
+  "CHAT_TOO_LONG": "500 caractères maximum.",
+  "CHAT_SEND_FAILED": "Le message n'a pas pu être envoyé.",
+  "CHAT_EMPTY": "Aucun message. Le chat est uniquement en direct."
 }

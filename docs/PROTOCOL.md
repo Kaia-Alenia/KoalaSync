@@ -11,6 +11,19 @@ the event names defined in `shared/constants.js`.
   object payload.
 - The relay caps incoming Socket.IO message size at 4 KB.
 
+## Invite fragments
+
+Current invitations use named URL-fragment fields:
+
+```text
+#j2:r=<roomId>&p=<password>&k=<base64url-chat-secret>[&u=<relayUrl>]
+```
+
+The fragment is parsed by the website and forwarded to the extension as structured
+fields. `k` is client-only and must never appear in a relay payload. Legacy
+`#join:<roomId>:<password>[:1:<relayUrl>]` fragments remain valid but provide no chat
+secret.
+
 ## Connection Handshake
 
 The Socket.IO handshake must include:
@@ -41,6 +54,7 @@ Payload:
   "password": "string, max 128, optional",
   "tabTitle": "string, max 100, optional",
   "mediaTitle": "string, max 100, optional",
+  "clientCapabilities": ["chat-v1"],
   "protocolVersion": "string, max 16"
 }
 ```
@@ -69,12 +83,55 @@ Payload:
   "hostPeerId": "string or null",
   "controlMode": "everyone | host-only",
   "controllers": ["peerId"],
-  "capabilities": ["host-control", "co-host"]
+  "capabilities": ["host-control", "co-host", "chat", "chat-v1"]
 }
 ```
 
 `room_data` is sent to the joining socket. It is not the general broadcast used
 for every later room update.
+
+## Ephemeral encrypted chat
+
+Relays advertise chat support with `"chat-v1"` in `room_data.capabilities` and keep
+the initial beta's `"chat"` flag during the transition. New clients announce
+`"chat-v1"` in optional `join_room.clientCapabilities` (at most the first 16 entries
+are inspected; unknown or malformed values are ignored). Old clients omit the field
+and continue using the pre-chat protocol unchanged.
+
+The relay sends `chat_message` only to sockets that announced `"chat-v1"`. As a
+transition for the first chat beta, a socket that sends a valid v1 ciphertext is
+marked capable for the rest of that connection. This prevents old non-chat
+extensions from receiving unknown events while preserving the first beta's send
+path.
+
+### `chat_message`
+
+Client to relay:
+
+```json
+{ "ciphertext": "<unpadded-base64url>" }
+```
+
+`ciphertext` contains a 12-byte AES-GCM IV followed by ciphertext and the 16-byte
+authentication tag. The relay validates only canonical base64url and byte bounds.
+It cannot inspect plaintext.
+
+Relay to every chat-capable current room peer, including the sender:
+
+```json
+{
+  "id": "<server-generated UUID>",
+  "senderId": "<server-stamped peer ID>",
+  "timestamp": 1710000000000,
+  "ciphertext": "<unpadded-base64url>"
+}
+```
+
+Client-provided `id`, `senderId`, `timestamp`, or plaintext fields are discarded.
+The relay keeps no message collection and `room_data` contains no chat history.
+Messages are limited to 10 per socket per 10 seconds in addition to the global event
+budget. There are no typing, read-receipt, history, or chat-specific peer-management
+events.
 
 ## Room Leave
 
@@ -365,5 +422,7 @@ If sender and target are still in the same room, the relay emits:
 
 - `host-control`
 - `co-host`
+- `chat`
+- `chat-v1`
 
 Clients should treat a missing or unknown capabilities list as unsupported.

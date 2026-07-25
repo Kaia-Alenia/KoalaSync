@@ -245,5 +245,20 @@
   "LABEL_SETTINGS_GROUP_PROFILE": "프로필 및 테마",
   "LABEL_SETTINGS_GROUP_PROFILE_TOOLTIP": "사용자 이름, 테마 및 언어 설정을 변경합니다.",
   "LABEL_SETTINGS_GROUP_SYNC": "재생 및 동기화",
-  "LABEL_SETTINGS_GROUP_SYNC_TOOLTIP": "재생, 알림 및 오디오 설정을 맞춤설정합니다."
+  "LABEL_SETTINGS_GROUP_SYNC_TOOLTIP": "재생, 알림 및 오디오 설정을 맞춤설정합니다.",
+  "LABEL_CHAT_ENABLED": "방 채팅 사용",
+  "LABEL_CHAT_ENABLED_TOOLTIP": "선택한 동영상 탭에 암호화된 방 채팅을 표시합니다.",
+  "CHAT_TITLE": "방 채팅",
+  "CHAT_LIVE_ONLY": "실시간 전용. 기록 없음.",
+  "CHAT_OPEN": "방 채팅 열기",
+  "CHAT_CLOSE": "채팅 닫기",
+  "CHAT_DOCK_LEFT": "채팅을 왼쪽에 고정",
+  "CHAT_DOCK_RIGHT": "채팅을 오른쪽에 고정",
+  "CHAT_DETACHED": "채팅 분리",
+  "CHAT_PLACEHOLDER": "메시지를 입력하세요...",
+  "CHAT_SEND": "보내기",
+  "CHAT_MISSING_KEY": "채팅은 최신 초대 링크를 통해서만 사용할 수 있습니다.",
+  "CHAT_TOO_LONG": "최대 500자입니다.",
+  "CHAT_SEND_FAILED": "메시지를 보낼 수 없습니다.",
+  "CHAT_EMPTY": "아직 메시지가 없습니다. 채팅은 실시간 전용입니다."
 }

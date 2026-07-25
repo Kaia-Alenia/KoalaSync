@@ -5,6 +5,7 @@ import { Server } from 'socket.io';
 import crypto from 'crypto';
 import dotenv from 'dotenv';
 import { EVENTS, OFFICIAL_SERVER_TOKEN, PROTOCOL_VERSION, CONTROL_MODES, CAPABILITIES } from '../shared/constants.js';
+import { createChatEnvelope } from './chat.js';
 import {
     buildHealthPayload,
     checkCooldown,
@@ -19,6 +20,7 @@ import {
     connectionCounts,
     failedAuthAttempts,
     eventCounts,
+    chatMessageCounts,
     healthCounts,
     adminMetricsAuthCounts,
     roomListCooldowns,
@@ -28,6 +30,7 @@ import {
     recordAuthFailure,
     checkConnectionRate,
     checkEventRate,
+    checkChatMessageRate,
     checkHealthRate,
     checkAdminMetricsAuthRate,
     checkLeaveRoomRate,
@@ -171,7 +174,26 @@ const HOST_ONLY_GATED_EVENTS = new Set([
 // Features this relay supports, advertised to clients in ROOM_DATA so they can
 // enable matching UI/behavior only when the server actually backs it. Append a
 // flag here when a new server-gated feature ships (e.g. co-host promotion).
-const SERVER_CAPABILITIES = [CAPABILITIES.HOST_CONTROL, CAPABILITIES.CO_HOST];
+const SERVER_CAPABILITIES = [
+    CAPABILITIES.HOST_CONTROL,
+    CAPABILITIES.CO_HOST,
+    CAPABILITIES.CHAT,
+    CAPABILITIES.CHAT_V1
+];
+
+function normalizeClientCapabilities(value) {
+    if (!Array.isArray(value)) return [];
+    return [...new Set(value.slice(0, 16)
+        .filter(capability => typeof capability === 'string')
+        .map(capability => capability.substring(0, 32))
+        .filter(capability => capability === CAPABILITIES.CHAT_V1)
+    )];
+}
+
+function clientSupportsChat(socket) {
+    return Array.isArray(socket?.data?.clientCapabilities) &&
+        socket.data.clientCapabilities.includes(CAPABILITIES.CHAT_V1);
+}
 
 // M-4: minimum interval between CONTROL_MODE changes per room. Stops a rapidly
 // toggling host from thrashing every guest's UI (locked/unlocked/locked...) and
@@ -353,6 +375,7 @@ io.on('connection', (socket) => {
         const username = typeof payload.username  === 'string' ? payload.username.substring(0, 30)  : null;
         const tabTitle = typeof payload.tabTitle  === 'string' ? payload.tabTitle.substring(0, 100) : null;
         const mediaTitle = typeof payload.mediaTitle === 'string' ? payload.mediaTitle.substring(0, 100) : null;
+        const clientCapabilities = normalizeClientCapabilities(payload.clientCapabilities);
 
         if (!roomId || !peerId) return; // Guard: empty or invalid after sanitization
 
@@ -367,6 +390,7 @@ io.on('connection', (socket) => {
             // Cleanup old room if re-joining
             const oldMapping = socketToRoom.get(socket.id);
             if (oldMapping && oldMapping.roomId === roomId && oldMapping.peerId === peerId) {
+                socket.data.clientCapabilities = clientCapabilities;
                 return; // Already in this room with same peerId, ignore to prevent spam
             }
             if (oldMapping && oldMapping.roomId !== roomId) {
@@ -490,6 +514,7 @@ io.on('connection', (socket) => {
             }
 
             socket.join(roomId);
+            socket.data.clientCapabilities = clientCapabilities;
             room.peers.add(socket.id);
             room.peerIds.set(socket.id, peerId);
             room.peerData.set(socket.id, { 
@@ -844,8 +869,45 @@ io.on('connection', (socket) => {
         }
     });
 
+    socket.on(EVENTS.CHAT_MESSAGE, (data) => {
+        try {
+            if (!checkEventRate(socket.id) || !checkChatMessageRate(socket.id)) {
+                log('SECURITY', `Encrypted chat rate limit exceeded for socket: ${socket.id}`);
+                socket.disconnect(true);
+                return;
+            }
+
+            const mapping = socketToRoom.get(socket.id);
+            if (!mapping) return;
+            const room = rooms.get(mapping.roomId);
+            if (!room) return;
+
+            const envelope = createChatEnvelope(data, mapping.peerId);
+            if (!envelope) return;
+            // Transitional compatibility: the first chat beta did not announce
+            // clientCapabilities. Successfully sending a canonical chat frame is
+            // sufficient proof that this socket understands the v1 receive event.
+            if (!clientSupportsChat(socket)) {
+                socket.data.clientCapabilities = [
+                    ...(socket.data.clientCapabilities || []),
+                    CAPABILITIES.CHAT_V1
+                ];
+            }
+            room.lastActivity = Date.now();
+            for (const socketId of room.peers) {
+                const recipient = io.sockets.sockets.get(socketId);
+                if (clientSupportsChat(recipient)) {
+                    recipient.emit(EVENTS.CHAT_MESSAGE, envelope);
+                }
+            }
+        } catch (err) {
+            log('ERROR', `CHAT_MESSAGE handler error: ${err.message}`);
+        }
+    });
+
     socket.on('disconnect', () => {
         eventCounts.delete(socket.id);
+        chatMessageCounts.delete(socket.id);
         roomListCooldowns.delete(socket.id);
         leaveRoomCounts.delete(socket.id);
         const mapping = socketToRoom.get(socket.id);

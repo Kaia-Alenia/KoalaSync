@@ -11,11 +11,12 @@ document.documentElement.dataset.koalasyncInstalled = 'true';
 // 2. Listen for Join Requests from the Website
 window.addEventListener('KOALASYNC_JOIN_REQUEST', (e) => {
     if (!e || !e.detail) return;
-    const { roomId, password, useCustomServer, serverUrl } = e.detail;
+    const { roomId, password, chatKey, useCustomServer, serverUrl } = e.detail;
     chrome.runtime.sendMessage({ 
         type: 'WEB_JOIN_REQUEST', 
         roomId, 
         password,
+        chatKey,
         useCustomServer,
         serverUrl
     }).catch(() => {});

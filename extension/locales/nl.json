@@ -245,5 +245,20 @@
   "LABEL_SETTINGS_GROUP_PROFILE": "Profiel & Weergave",
   "LABEL_SETTINGS_GROUP_PROFILE_TOOLTIP": "Wijzig uw gebruikersnaam, thema en taalvoorkeuren.",
   "LABEL_SETTINGS_GROUP_SYNC": "Afspelen & Sync",
-  "LABEL_SETTINGS_GROUP_SYNC_TOOLTIP": "Pas afspelen, meldingen en audiovoorkeuren aan."
+  "LABEL_SETTINGS_GROUP_SYNC_TOOLTIP": "Pas afspelen, meldingen en audiovoorkeuren aan.",
+  "LABEL_CHAT_ENABLED": "Kamerchat inschakelen",
+  "LABEL_CHAT_ENABLED_TOOLTIP": "Versleutelde kamerchat tonen in het geselecteerde videotabblad.",
+  "CHAT_TITLE": "Kamerchat",
+  "CHAT_LIVE_ONLY": "Alleen live. Geen geschiedenis.",
+  "CHAT_OPEN": "Kamerchat openen",
+  "CHAT_CLOSE": "Chat sluiten",
+  "CHAT_DOCK_LEFT": "Chat links vastzetten",
+  "CHAT_DOCK_RIGHT": "Chat rechts vastzetten",
+  "CHAT_DETACHED": "Chat losmaken",
+  "CHAT_PLACEHOLDER": "Schrijf een bericht...",
+  "CHAT_SEND": "Verzenden",
+  "CHAT_MISSING_KEY": "Chat is alleen beschikbaar via een actuele uitnodigingslink.",
+  "CHAT_TOO_LONG": "Maximaal 500 tekens.",
+  "CHAT_SEND_FAILED": "Bericht kon niet worden verzonden.",
+  "CHAT_EMPTY": "Nog geen berichten. Chat is alleen live."
 }

@@ -6,9 +6,9 @@ name: Beta Server Image
 #
 # Tags produced (on ghcr.io/<owner>/<repo>):
 #   - beta                         moving channel pointer to the newest build
-#   - <branch-slug>                e.g. feature-host-control-mode
+#   - <branch-slug>                e.g. feature-textchat
 #   - sha-<short-commit>           immutable, pin to an exact build
-#   - <custom>                     only on manual run, e.g. hostcontrol01
+#   - <custom>                     only on manual run, e.g. chatbeta01
 # Never ':latest' (flavor: latest=false).
 #
 # Remove this workflow once the feature is merged & released the normal way.
@@ -16,11 +16,11 @@ name: Beta Server Image
 on:
   push:
     branches:
-      - feature/host-control-mode
+      - feature/textchat
   workflow_dispatch:
     inputs:
       tag:
-        description: 'Extra immutable tag for this build (e.g. hostcontrol01). Optional.'
+        description: 'Extra immutable tag for this build (e.g. chatbeta01). Optional.'
         required: false
         default: ''
 
@@ -37,6 +37,27 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+          cache: 'npm'
+          cache-dependency-path: |
+            package-lock.json
+            server/package-lock.json
+
+      - name: Install root dependencies
+        run: npm ci
+
+      - name: Install server dependencies
+        run: npm ci
+        working-directory: server
+
+      - name: Run verification suite
+        run: npm run verify
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v4

@@ -245,5 +245,20 @@
   "LABEL_SETTINGS_GROUP_PROFILE": "Профіль та Вигляд",
   "LABEL_SETTINGS_GROUP_PROFILE_TOOLTIP": "Змініть ім'я користувача, тему та мовні налаштування.",
   "LABEL_SETTINGS_GROUP_SYNC": "Відтворення та Синхронізація",
-  "LABEL_SETTINGS_GROUP_SYNC_TOOLTIP": "Налаштуйте відтворення, сповіщення та параметри звуку."
+  "LABEL_SETTINGS_GROUP_SYNC_TOOLTIP": "Налаштуйте відтворення, сповіщення та параметри звуку.",
+  "LABEL_CHAT_ENABLED": "Увімкнути чат кімнати",
+  "LABEL_CHAT_ENABLED_TOOLTIP": "Показувати зашифрований чат кімнати на вибраній вкладці з відео.",
+  "CHAT_TITLE": "Чат кімнати",
+  "CHAT_LIVE_ONLY": "Лише наживо. Без історії.",
+  "CHAT_OPEN": "Відкрити чат кімнати",
+  "CHAT_CLOSE": "Закрити чат",
+  "CHAT_DOCK_LEFT": "Закріпити чат ліворуч",
+  "CHAT_DOCK_RIGHT": "Закріпити чат праворуч",
+  "CHAT_DETACHED": "Від'єднати чат",
+  "CHAT_PLACEHOLDER": "Напишіть повідомлення...",
+  "CHAT_SEND": "Надіслати",
+  "CHAT_MISSING_KEY": "Чат доступний лише за актуальним посиланням-запрошенням.",
+  "CHAT_TOO_LONG": "Не більше 500 символів.",
+  "CHAT_SEND_FAILED": "Не вдалося надіслати повідомлення.",
+  "CHAT_EMPTY": "Повідомлень ще немає. Чат працює лише наживо."
 }

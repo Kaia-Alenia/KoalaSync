@@ -1371,7 +1371,7 @@
             <!-- Room credentials — distinct group below the server picker. -->
             <div class="form-group">
                 <label for="roomId" title="The unique identifier for your sync room" data-i18n="LABEL_ROOM_ID" data-i18n-title="LABEL_ROOM_ID_TOOLTIP">Room ID</label>
-                <input type="text" id="roomId" data-i18n-placeholder="PLACEHOLDER_ROOM_ID" data-i18n-title="PLACEHOLDER_ROOM_ID_TOOLTIP" placeholder="Enter Room ID" title="The unique ID of the room you want to join">
+                <input type="text" id="roomId" maxlength="64" data-i18n-placeholder="PLACEHOLDER_ROOM_ID" data-i18n-title="PLACEHOLDER_ROOM_ID_TOOLTIP" placeholder="Enter Room ID" title="The unique ID of the room you want to join">
             </div>
             <div class="form-group">
                 <label for="password" title="Optional password to restrict room access" data-i18n="LABEL_PASSWORD" data-i18n-title="LABEL_PASSWORD_TOOLTIP">Password (Optional)</label>
@@ -1622,6 +1622,13 @@
                     <label for="autoSyncNextEpisode" title="Pauses automatically and waits for all peers when an episode changes, then sync-starts together." data-i18n="LABEL_AUTO_SYNC_NEXT" data-i18n-title="LABEL_AUTO_SYNC_NEXT_TOOLTIP">Auto-Sync Next Episode</label>
                     <label class="toggle-switch">
                         <input type="checkbox" id="autoSyncNextEpisode">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                <div class="settings-row">
+                    <label for="chatEnabled" title="Show encrypted room chat on the selected video tab." data-i18n="LABEL_CHAT_ENABLED" data-i18n-title="LABEL_CHAT_ENABLED_TOOLTIP">Enable Room Chat</label>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="chatEnabled">
                         <span class="slider"></span>
                     </label>
                 </div>

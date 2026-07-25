@@ -245,5 +245,20 @@
   "LABEL_SETTINGS_GROUP_PROFILE": "Perfil e Aparência",
   "LABEL_SETTINGS_GROUP_PROFILE_TOOLTIP": "Altere o seu nome de usuário, tema e preferências de idioma.",
   "LABEL_SETTINGS_GROUP_SYNC": "Reprodução e Sincronização",
-  "LABEL_SETTINGS_GROUP_SYNC_TOOLTIP": "Personalize a reprodução, as notificações e as preferências de áudio."
+  "LABEL_SETTINGS_GROUP_SYNC_TOOLTIP": "Personalize a reprodução, as notificações e as preferências de áudio.",
+  "LABEL_CHAT_ENABLED": "Ativar chat da sala",
+  "LABEL_CHAT_ENABLED_TOOLTIP": "Mostrar o chat criptografado da sala na guia de vídeo selecionada.",
+  "CHAT_TITLE": "Chat da sala",
+  "CHAT_LIVE_ONLY": "Somente ao vivo. Sem histórico.",
+  "CHAT_OPEN": "Abrir chat da sala",
+  "CHAT_CLOSE": "Fechar chat",
+  "CHAT_DOCK_LEFT": "Fixar chat à esquerda",
+  "CHAT_DOCK_RIGHT": "Fixar chat à direita",
+  "CHAT_DETACHED": "Desanexar chat",
+  "CHAT_PLACEHOLDER": "Escreva uma mensagem...",
+  "CHAT_SEND": "Enviar",
+  "CHAT_MISSING_KEY": "O chat está disponível apenas por um link de convite atual.",
+  "CHAT_TOO_LONG": "Máximo de 500 caracteres.",
+  "CHAT_SEND_FAILED": "Não foi possível enviar a mensagem.",
+  "CHAT_EMPTY": "Ainda não há mensagens. O chat é somente ao vivo."
 }

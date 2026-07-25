@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { Buffer } from 'node:buffer';
 import http from 'node:http';
 import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
@@ -22,7 +23,10 @@ async function c() {
 function s(ws, evt, d={}) { ws.send(`42${JSON.stringify([evt,d])}`); }
 function a(ws) { if (ws._m.length) { const r=ws._m.shift(); return r.startsWith('42') ? JSON.parse(r.substring(2)) : r; } return new Promise((resolve, reject) => { const t=setTimeout(()=>reject(Error('timeout')),3e3); const h=(d)=>{clearTimeout(t);ws.removeListener('message',h);const r=d.toString();resolve(r.startsWith('42')?JSON.parse(r.substring(2)):r);};ws.on('message',h);}); }
 async function w(ws, evt, ms=3000) { const st=Date.now(); while(Date.now()-st<ms) { for(let i=0;i<ws._m.length;i++){const r=ws._m[i];ws._m.splice(i,1);if(r.startsWith('42')){try{const[e]=JSON.parse(r.substring(2));if(e===evt)return e}catch{/* skip */}}} await new Promise(r=>setTimeout(r,50));} throw Error(`wait:${evt}`); }
-async function j(ws, rid, pid, pw=null) { s(ws,'join_room',{roomId:rid,peerId:pid,password:pw,protocolVersion:'1.0.0'}); assert.equal((await a(ws))[0],'room_data'); }
+async function j(ws, rid, pid, pw=null, clientCapabilities=undefined) {
+    s(ws,'join_room',{roomId:rid,peerId:pid,password:pw,protocolVersion:'1.0.0',clientCapabilities});
+    assert.equal((await a(ws))[0],'room_data');
+}
 function close() { clients.forEach(w=>{try{w.close()}catch{/* ignore */}}); clients.length=0; }
 // Test suite opens >10 connections/min — clear the IP connection counter so the
 // connection rate limiter doesn't mask test failures (test-only, never at runtime).
@@ -70,6 +74,70 @@ try {
     assert.equal(capEv, 'room_data');
     assert.ok(Array.isArray(capData.capabilities) && capData.capabilities.includes('host-control'),
         'ROOM_DATA advertises the host-control capability');
+    assert.ok(capData.capabilities.includes('chat'), 'ROOM_DATA advertises the chat capability');
+    assert.ok(capData.capabilities.includes('chat-v1'), 'ROOM_DATA advertises the versioned chat capability');
+    assert.equal(capData.chatHistory, undefined, 'ROOM_DATA never contains chat history');
+    close();
+    resetConnectionRate();
+
+    // --- Encrypted chat is a live-only canonical relay ---
+    const chatRoom = 'chat-'+Date.now();
+    const chat1 = await c(), chat2 = await c();
+    await j(chat1, chatRoom, 'alice', null, ['chat-v1']);
+    await j(chat2, chatRoom, 'bob', null, ['chat-v1']);
+    chat1._m.length = chat2._m.length = 0;
+    const ciphertext = Buffer.alloc(64, 7).toString('base64url');
+    s(chat1, 'chat_message', {
+        ciphertext,
+        id: 'spoofed-id', senderId: 'mallory', timestamp: 1, text: 'plaintext'
+    });
+    const [chat1Event, chat1Data] = await a(chat1);
+    const [chat2Event, chat2Data] = await a(chat2);
+    assert.equal(chat1Event, 'chat_message', 'sender receives canonical chat envelope');
+    assert.equal(chat2Event, 'chat_message', 'peer receives canonical chat envelope');
+    assert.deepEqual(chat2Data, chat1Data, 'all peers receive the same canonical envelope');
+    assert.equal(chat1Data.senderId, 'alice', 'relay stamps senderId');
+    assert.equal(chat1Data.ciphertext, ciphertext, 'relay preserves ciphertext');
+    assert.equal(chat1Data.text, undefined, 'relay drops plaintext fields');
+    assert.notEqual(chat1Data.id, 'spoofed-id', 'relay replaces client IDs');
+    assert.ok(Number.isFinite(chat1Data.timestamp) && chat1Data.timestamp > 1, 'relay stamps timestamp');
+
+    const late = await c();
+    s(late, 'join_room', { roomId: chatRoom, peerId: 'late', protocolVersion: '1.0.0' });
+    const [lateEvent, lateRoomData] = await a(late);
+    assert.equal(lateEvent, 'room_data');
+    assert.equal(lateRoomData.chatHistory, undefined, 'late joiner gets no chat backlog');
+    assert.equal(late._m.some(raw => raw.includes('chat_message')), false, 'late joiner receives no old message');
+    close();
+    resetConnectionRate();
+
+    // --- Mixed rollout: old non-chat clients never receive unknown chat events ---
+    const mixedChatRoom = 'chat-mixed-'+Date.now();
+    const newChat = await c(), oldNoChat = await c();
+    await j(newChat, mixedChatRoom, 'new-chat', null, ['chat-v1', 'chat-v1', 'future-chat', 42]);
+    await j(oldNoChat, mixedChatRoom, 'old-no-chat', null, ['chat-v2']);
+    newChat._m.length = oldNoChat._m.length = 0;
+    s(newChat, 'chat_message', { ciphertext });
+    await w(newChat, 'chat_message');
+    let oldReceivedChat = false;
+    try { await w(oldNoChat, 'chat_message', 500); oldReceivedChat = true; } catch { /* expected */ }
+    assert.equal(oldReceivedChat, false, 'old client receives no unknown chat event');
+
+    // The same old client remains fully usable for the pre-chat protocol.
+    newChat._m.length = oldNoChat._m.length = 0;
+    s(oldNoChat, 'play', { currentTime: 12 });
+    await w(newChat, 'play');
+    s(newChat, 'pause', { currentTime: 13 });
+    await w(oldNoChat, 'pause');
+
+    // First chat beta compatibility: sending a valid chat frame dynamically
+    // proves receive support even when that beta omitted clientCapabilities.
+    const firstBeta = await c();
+    await j(firstBeta, mixedChatRoom, 'first-beta');
+    firstBeta._m.length = newChat._m.length = 0;
+    s(firstBeta, 'chat_message', { ciphertext });
+    await w(firstBeta, 'chat_message');
+    await w(newChat, 'chat_message');
     close();
     resetConnectionRate();
 

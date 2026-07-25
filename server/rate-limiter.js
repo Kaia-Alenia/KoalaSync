@@ -12,6 +12,8 @@ export const CONNECTION_RATE_LIMIT = 10;           // max new connections per IP
 export const CONNECTION_RATE_WINDOW_MS = 60000;    // 1 minute
 export const EVENT_RATE_LIMIT = 50;                // max relayed events per socket per window
 export const EVENT_RATE_WINDOW_MS = 10000;         // 10 seconds
+export const CHAT_MESSAGE_RATE_LIMIT = 10;         // max encrypted chat messages per socket per window
+export const CHAT_MESSAGE_RATE_WINDOW_MS = 10000;  // 10 seconds
 export const HEALTH_RATE_WINDOW_MS = 60000;        // 1 minute
 export const ADMIN_METRICS_AUTH_WINDOW_MS = 60000; // 1 minute
 export const LEAVE_ROOM_RATE_LIMIT = 10;           // max LEAVE_ROOM events per socket per window
@@ -20,6 +22,7 @@ export const LEAVE_ROOM_RATE_WINDOW_MS = 60000;    // 1 minute
 export const connectionCounts = new Map(); // ip -> { count, resetTime }
 export const failedAuthAttempts = new Map(); // Map<IP+RoomID, {count, lastAttempt}>
 export const eventCounts = new Map(); // socketId -> { count, resetTime }
+export const chatMessageCounts = new Map(); // socketId -> { count, resetTime }
 export const healthCounts = new Map(); // ip -> { count, resetTime }
 export const adminMetricsAuthCounts = new Map(); // ip -> { count, resetTime }
 export const roomListCooldowns = new Map(); // socketId -> last allowed timestamp
@@ -28,6 +31,7 @@ export const leaveRoomCounts = new Map();    // socketId -> { count, resetTime }
 export const rateLimitDenied = {
     connections: 0,
     events: 0,
+    chatMessages: 0,
     health: 0,
     adminMetricsAuth: 0,
     roomList: 0,
@@ -104,6 +108,17 @@ export function checkEventRate(socketId) {
     return false;
 }
 
+export function checkChatMessageRate(socketId) {
+    const now = Date.now();
+    const entry = chatMessageCounts.get(socketId) || { count: 0, resetTime: now + CHAT_MESSAGE_RATE_WINDOW_MS };
+    if (now > entry.resetTime) { entry.count = 0; entry.resetTime = now + CHAT_MESSAGE_RATE_WINDOW_MS; }
+    entry.count++;
+    chatMessageCounts.set(socketId, entry);
+    if (entry.count <= CHAT_MESSAGE_RATE_LIMIT) return true;
+    rateLimitDenied.chatMessages++;
+    return false;
+}
+
 export function checkHealthRate(ip) {
     const now = Date.now();
     const entry = healthCounts.get(ip) || { count: 0, resetTime: now + HEALTH_RATE_WINDOW_MS };
@@ -163,6 +178,11 @@ export function startRateLimitCleanup(io) {
                 eventCounts.delete(socketId);
             }
         }
+        for (const [socketId, entry] of chatMessageCounts.entries()) {
+            if (now > entry.resetTime || !io.sockets.sockets.has(socketId)) {
+                chatMessageCounts.delete(socketId);
+            }
+        }
         for (const [socketId, entry] of leaveRoomCounts.entries()) {
             if (now > entry.resetTime || !io.sockets.sockets.has(socketId)) {
                 leaveRoomCounts.delete(socketId);
@@ -189,6 +209,7 @@ export function clearRateLimitMaps() {
     connectionCounts.clear();
     failedAuthAttempts.clear();
     eventCounts.clear();
+    chatMessageCounts.clear();
 
     healthCounts.clear();
     adminMetricsAuthCounts.clear();

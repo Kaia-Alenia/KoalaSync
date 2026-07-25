@@ -12,11 +12,14 @@ const demoCss = fs.readFileSync(path.join(repoRoot, 'website', 'styles', 'demo.c
 const landingPrimaryCss = fs.readFileSync(path.join(repoRoot, 'website', 'styles', 'landing-primary.css'), 'utf8');
 const legalCss = fs.readFileSync(path.join(repoRoot, 'website', 'styles', 'legal.css'), 'utf8');
 const joinPage = fs.readFileSync(path.join(repoRoot, 'website', 'join.html'), 'utf8');
+const siteAccessHelpPage = fs.readFileSync(path.join(repoRoot, 'website', 'site-access-help.html'), 'utf8');
+const websiteBuild = fs.readFileSync(path.join(repoRoot, 'website', 'build.cjs'), 'utf8');
 const imprintPage = fs.readFileSync(path.join(repoRoot, 'website', 'imprint.html'), 'utf8');
 const germanImprintPage = fs.readFileSync(path.join(repoRoot, 'website', 'impressum-de.html'), 'utf8');
 const alternativesIndex = fs.readFileSync(path.join(repoRoot, 'website', 'alternatives', 'index.html'), 'utf8');
 const alternativesCss = fs.readFileSync(path.join(repoRoot, 'website', 'styles', 'alternatives.css'), 'utf8');
 const llmsText = fs.readFileSync(path.join(repoRoot, 'website', 'llms.txt'), 'utf8');
+const websiteVersion = JSON.parse(fs.readFileSync(path.join(repoRoot, 'website', 'version.json'), 'utf8')).version;
 const mockupStart = template.indexOf('<div class="extension-mockup">');
 const mockupEnd = template.indexOf('<div class="demo-invite-fly"', mockupStart);
 
@@ -62,6 +65,32 @@ for (const section of requiredLlmsSections) {
 }
 if (/\bWebRTC\b|\bport 54000\b|peer-to-peer by design/i.test(llmsText)) {
   throw new Error('llms.txt must describe the current WebSocket relay architecture without obsolete WebRTC or port claims');
+}
+if (!llmsText.includes(`Current website release: ${websiteVersion}`)) {
+  throw new Error(`llms.txt release must match website/version.json (${websiteVersion})`);
+}
+const requiredSupportSocialMetadata = [
+  'name="twitter:card" content="summary_large_image"',
+  'name="twitter:title"',
+  'name="twitter:description"',
+  'name="twitter:image"',
+  '"datePublished"',
+  '"dateModified"',
+  '"mainEntityOfPage"'
+];
+for (const metadata of requiredSupportSocialMetadata) {
+  if (!siteAccessHelpPage.includes(metadata)) {
+    throw new Error(`site-access-help.html is missing SEO metadata: ${metadata}`);
+  }
+}
+if (!websiteBuild.includes("['log', '-1', '--format=%cs', '--', ...sourceFiles]")
+    || !websiteBuild.includes("lastmod(['website/site-access-help.html'])")
+    || !websiteBuild.includes("['rev-parse', '--is-shallow-repository']")
+    || !websiteBuild.includes("['diff', '--name-only', '--']")
+    || !websiteBuild.includes("['diff', '--cached', '--name-only', '--']")
+    || !websiteBuild.includes("['ls-files', '--others', '--exclude-standard', '--']")
+    || !websiteBuild.includes('sourceFiles.some(file => dirtySourceFiles.has(file))')) {
+  throw new Error('Sitemap lastmod values must come from the mapped source files in Git');
 }
 const documentedRelayUrls = [...llmsText.matchAll(/`(wss:\/\/[^`\s]+)`/g)].map(([, value]) => new URL(value));
 const hasCanonicalPublicRelay = documentedRelayUrls.some((url) => (
@@ -174,6 +203,7 @@ if (!/animation:\s*none\s*!important/.test(reducedMotionRule)) {
 console.log('Extension mockup theme-sensitive text uses theme-aware colors');
 console.log('Landing CSS is render-blocking, single-request, and cascade-stable');
 console.log('Landing head discovers a complete and architecture-accurate llms.txt');
+console.log('Support-page social metadata and Git-derived sitemap dates remain truthful');
 console.log('Website self-hosting examples include production secrets and consistent networking');
 console.log('Foreground film birds use complete, always-on wing and glide animations');
 console.log('All Getting Started mockups define explicit light-theme surfaces');
