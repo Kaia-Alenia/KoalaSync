@@ -1,6 +1,5 @@
 const fs = require('fs');
 const path = require('path');
-const archiver = require('archiver');
 
 const rootDir = path.join(__dirname, '..');
 const extDir = path.join(rootDir, 'extension');
@@ -202,18 +201,18 @@ function copyExtensionFiles(targetDir, browserName) {
 }
 
 // Helper to zip a directory
-function zipDirectory(sourceDir, outPath) {
+async function zipDirectory(sourceDir, outPath) {
+  const { ZipArchive } = await import('archiver');
   return new Promise((resolve, reject) => {
-    const archive = archiver('zip', { zlib: { level: 9 } });
+    const archive = new ZipArchive({ zlib: { level: 9 } });
     const stream = fs.createWriteStream(outPath);
 
-    archive
-      .directory(sourceDir, false)
-      .on('error', err => reject(err))
-      .pipe(stream);
-
+    archive.on('error', reject);
     stream.on('close', () => resolve());
-    archive.finalize();
+    stream.on('error', reject);
+    archive.pipe(stream);
+    archive.directory(sourceDir, false);
+    void archive.finalize().catch(reject);
   });
 }
 

@@ -22,7 +22,7 @@ Please note that by participating in this project, you agree to abide by our [Co
 
 ### Prerequisites
 
-- **Node.js** v18+
+- **Node.js** v20.9+
 - **Docker** (for local relay server testing)
 
 ### Quick Start
