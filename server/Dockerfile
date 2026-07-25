@@ -1,4 +1,4 @@
-FROM node:20-alpine
+FROM node:24-alpine
 WORKDIR /app
 
 # Copy shared protocol first
@@ -6,7 +6,7 @@ COPY shared/ ./shared/
 
 # Copy server
 COPY server/package*.json ./server/
-RUN cd server && npm install --production
+RUN cd server && npm ci --omit=dev
 COPY server/ ./server/
 
 WORKDIR /app/server
