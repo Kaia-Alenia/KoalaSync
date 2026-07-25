@@ -68,6 +68,7 @@ const elements = {
     playBtn: document.getElementById('playBtn'),
     pauseBtn: document.getElementById('pauseBtn'),
     autoSyncNextEpisode: document.getElementById('autoSyncNextEpisode'),
+    chatEnabled: document.getElementById('chatEnabled'),
     sendTabTitle: document.getElementById('sendTabTitle'),
     mediaTitlePrivacyMode: document.getElementById('mediaTitlePrivacyMode'),
     episodeLobbyCard: document.getElementById('episodeLobbyCard'),
@@ -337,7 +338,7 @@ function setRoomRefreshCooldown() {
 async function init() {
     // Local-only by design — settings and room credentials never come from
     // storage.sync (only onboardingComplete + dismissedHints live there).
-    const localData = await chrome.storage.local.get(['serverUrl', 'useCustomServer', 'roomId', 'password', 'chatKey', 'username', 'filterNoise', 'autoSyncNextEpisode', 'sendTabTitle', 'mediaTitlePrivacyMode', 'titlePrivacyMode', 'forceSyncMode', 'browserNotifications', 'autoCopyInvite', 'locale', 'audioSettings', 'activeTab', 'themeMode', 'themePalette']);
+    const localData = await chrome.storage.local.get(['serverUrl', 'useCustomServer', 'roomId', 'password', 'chatKey', 'chatEnabled', 'username', 'filterNoise', 'autoSyncNextEpisode', 'sendTabTitle', 'mediaTitlePrivacyMode', 'titlePrivacyMode', 'forceSyncMode', 'browserNotifications', 'autoCopyInvite', 'locale', 'audioSettings', 'activeTab', 'themeMode', 'themePalette']);
 
     let activeLang = localData.locale;
     if (!activeLang) {
@@ -368,6 +369,7 @@ async function init() {
     syncDevToolsVisibility();
     if (elements.filterNoise) elements.filterNoise.checked = localData.filterNoise !== false;
     if (elements.autoSyncNextEpisode) elements.autoSyncNextEpisode.checked = localData.autoSyncNextEpisode !== false;
+    if (elements.chatEnabled) elements.chatEnabled.checked = localData.chatEnabled === true;
     const legacyTitlePrivacyMode = Object.values(TITLE_PRIVACY_MODES).includes(localData.titlePrivacyMode) ? localData.titlePrivacyMode : TITLE_PRIVACY_MODES.FULL;
     const mediaTitlePrivacyMode = Object.values(TITLE_PRIVACY_MODES).includes(localData.mediaTitlePrivacyMode) ? localData.mediaTitlePrivacyMode : legacyTitlePrivacyMode;
     if (elements.sendTabTitle) elements.sendTabTitle.checked = normalizeSendTabTitle(localData.sendTabTitle, legacyTitlePrivacyMode);
@@ -1455,6 +1457,12 @@ elements.filterNoise.addEventListener('change', () => {
 elements.autoSyncNextEpisode.addEventListener('change', () => {
     chrome.storage.local.set({ autoSyncNextEpisode: elements.autoSyncNextEpisode.checked });
 });
+
+if (elements.chatEnabled) {
+    elements.chatEnabled.addEventListener('change', () => {
+        chrome.storage.local.set({ chatEnabled: elements.chatEnabled.checked });
+    });
+}
 
 if (elements.sendTabTitle) {
     elements.sendTabTitle.addEventListener('change', () => {

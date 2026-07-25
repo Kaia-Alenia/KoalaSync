@@ -246,6 +246,8 @@
   "LABEL_SETTINGS_GROUP_PROFILE_TOOLTIP": "ユーザー名、テーマ、言語設定を変更します。",
   "LABEL_SETTINGS_GROUP_SYNC": "再生と同期",
   "LABEL_SETTINGS_GROUP_SYNC_TOOLTIP": "再生、通知、オーディオ設定をカスタマイズします。",
+  "LABEL_CHAT_ENABLED": "ルームチャットを有効化",
+  "LABEL_CHAT_ENABLED_TOOLTIP": "選択した動画タブに暗号化されたルームチャットを表示します。",
   "CHAT_TITLE": "ルームチャット",
   "CHAT_LIVE_ONLY": "ライブのみ。履歴はありません。",
   "CHAT_OPEN": "ルームチャットを開く",

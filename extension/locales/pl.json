@@ -246,6 +246,8 @@
   "LABEL_SETTINGS_GROUP_PROFILE_TOOLTIP": "Zmień swoją nazwę użytkownika, motyw i preferencje językowe.",
   "LABEL_SETTINGS_GROUP_SYNC": "Odtwarzanie i Sync",
   "LABEL_SETTINGS_GROUP_SYNC_TOOLTIP": "Dostosuj odtwarzanie, powiadomienia i preferencje audio.",
+  "LABEL_CHAT_ENABLED": "Włącz czat pokoju",
+  "LABEL_CHAT_ENABLED_TOOLTIP": "Pokaż zaszyfrowany czat pokoju na wybranej karcie wideo.",
   "CHAT_TITLE": "Czat pokoju",
   "CHAT_LIVE_ONLY": "Tylko na żywo. Bez historii.",
   "CHAT_OPEN": "Otwórz czat pokoju",

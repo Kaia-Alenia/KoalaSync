@@ -67,6 +67,19 @@ the stamped value as AAD.
 - It follows all eucalyptus, cyber, and graphite light/dark theme combinations.
 - Without a key, the panel stays closed and a disabled chat control explains that a
   current invite link is required.
+- Chat display is a local option and defaults to off. Enabling or disabling it never
+  deletes the room chat secret, so it can be enabled later without creating a room.
 - Without the relay `chat` capability, no chat control is shown.
+
+## Mixed-version rollout
+
+- New extensions announce `chat-v1` in `join_room.clientCapabilities`.
+- Old non-chat extensions omit the optional field and receive no `chat_message`
+  events. Their playback and room protocol remains unchanged.
+- The first chat beta omitted the capability. When it sends one valid v1 chat
+  frame, the relay treats that socket as chat-capable for the rest of the
+  connection.
+- New extensions accept the first beta's unversioned server `chat` capability as
+  well as `chat-v1`, so a server-first or extension-first rollout degrades safely.
 
 Peer removal and role management are outside chat scope.

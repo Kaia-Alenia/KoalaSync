@@ -25,7 +25,7 @@
 
     const host = document.createElement('div');
     host.id = 'koalasync-chat-overlay-host';
-    host.style.cssText = 'all:initial;position:fixed;inset:0;z-index:2147483647;pointer-events:none;contain:layout style paint;transform:translateZ(0);';
+    host.style.cssText = 'all:initial;display:none;position:fixed;inset:0;z-index:2147483647;pointer-events:none;contain:layout style paint;transform:translateZ(0);';
     const shadow = host.attachShadow({ mode: 'open' });
     const style = document.createElement('style');
     style.textContent = `
@@ -324,11 +324,12 @@
         const previousRoomId = context?.roomId;
         context = next || null;
         const supported = !!context?.supported;
+        const optedIn = !!context?.enabled;
         const hasKey = !!context?.hasKey;
         const connected = !!context?.connected;
-        context = context ? { ...context, enabled: supported && hasKey && connected } : null;
+        context = context ? { ...context, enabled: supported && optedIn && hasKey && connected } : null;
         if (previousRoomId && previousRoomId !== context?.roomId) clearMessages();
-        host.style.display = supported ? '' : 'none';
+        host.style.display = supported && optedIn ? '' : 'none';
         launcher.setAttribute('aria-disabled', String(!context?.enabled));
         if (!context?.enabled) setOpened(false);
         applyStrings();

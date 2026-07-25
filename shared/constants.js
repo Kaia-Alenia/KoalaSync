@@ -81,7 +81,8 @@ export const CONTROL_MODES = {
 export const CAPABILITIES = {
     HOST_CONTROL: 'host-control',
     CO_HOST: 'co-host',  // owner promotes guests to additional controllers
-    CHAT: 'chat'
+    CHAT: 'chat',        // legacy server capability used by the first chat beta
+    CHAT_V1: 'chat-v1'   // versioned client/server chat wire contract
 };
 
 export const HEARTBEAT_INTERVAL = 15000; // 15s

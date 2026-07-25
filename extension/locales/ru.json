@@ -246,6 +246,8 @@
   "LABEL_SETTINGS_GROUP_PROFILE_TOOLTIP": "Измените имя пользователя, тему и настройки языка.",
   "LABEL_SETTINGS_GROUP_SYNC": "Воспроизведение и Синхронизация",
   "LABEL_SETTINGS_GROUP_SYNC_TOOLTIP": "Настройте воспроизведение, уведомления и параметры звука.",
+  "LABEL_CHAT_ENABLED": "Включить чат комнаты",
+  "LABEL_CHAT_ENABLED_TOOLTIP": "Показывать зашифрованный чат комнаты на выбранной вкладке с видео.",
   "CHAT_TITLE": "Чат комнаты",
   "CHAT_LIVE_ONLY": "Только в реальном времени. Без истории.",
   "CHAT_OPEN": "Открыть чат комнаты",

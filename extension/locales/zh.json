@@ -246,6 +246,8 @@
   "LABEL_SETTINGS_GROUP_PROFILE_TOOLTIP": "更改您的用户名、主题和语言首选项。",
   "LABEL_SETTINGS_GROUP_SYNC": "播放与同步",
   "LABEL_SETTINGS_GROUP_SYNC_TOOLTIP": "自定义播放、通知和音频首选项。",
+  "LABEL_CHAT_ENABLED": "启用房间聊天",
+  "LABEL_CHAT_ENABLED_TOOLTIP": "在选定的视频标签页中显示加密的房间聊天。",
   "CHAT_TITLE": "房间聊天",
   "CHAT_LIVE_ONLY": "仅实时显示，无历史记录。",
   "CHAT_OPEN": "打开房间聊天",

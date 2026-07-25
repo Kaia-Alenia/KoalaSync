@@ -246,6 +246,8 @@
   "LABEL_SETTINGS_GROUP_PROFILE_TOOLTIP": "사용자 이름, 테마 및 언어 설정을 변경합니다.",
   "LABEL_SETTINGS_GROUP_SYNC": "재생 및 동기화",
   "LABEL_SETTINGS_GROUP_SYNC_TOOLTIP": "재생, 알림 및 오디오 설정을 맞춤설정합니다.",
+  "LABEL_CHAT_ENABLED": "방 채팅 사용",
+  "LABEL_CHAT_ENABLED_TOOLTIP": "선택한 동영상 탭에 암호화된 방 채팅을 표시합니다.",
   "CHAT_TITLE": "방 채팅",
   "CHAT_LIVE_ONLY": "실시간 전용. 기록 없음.",
   "CHAT_OPEN": "방 채팅 열기",

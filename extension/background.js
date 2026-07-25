@@ -91,6 +91,10 @@ let chatReceiveQueue = Promise.resolve();
 const chatSendLimiter = createChatSendLimiter();
 const webJoinCoordinator = createLatestTaskQueue();
 function serverSupports(cap) { return Array.isArray(serverCapabilities) && serverCapabilities.includes(cap); }
+function serverSupportsChat() {
+    return serverSupports(CAPABILITIES.CHAT_V1) || serverSupports(CAPABILITIES.CHAT);
+}
+const CLIENT_CAPABILITIES = Object.freeze([CAPABILITIES.CHAT_V1]);
 
 function invalidateChatSession() {
     chatSessionGeneration++;
@@ -394,7 +398,7 @@ async function getSettings() {
     // (username) must NEVER come from storage.sync — syncing them across devices
     // both leaks them and resurrects dead rooms on reinstall (a fresh install
     // has empty local storage but sync survives in the user's Google account).
-    const data = await chrome.storage.local.get(['serverUrl', 'useCustomServer', 'roomId', 'password', 'chatKey', 'username', 'sendTabTitle', 'mediaTitlePrivacyMode', 'titlePrivacyMode']);
+    const data = await chrome.storage.local.get(['serverUrl', 'useCustomServer', 'roomId', 'password', 'chatKey', 'chatEnabled', 'username', 'sendTabTitle', 'mediaTitlePrivacyMode', 'titlePrivacyMode']);
     let username = data.username;
     if (!username) {
         username = generateUsername();
@@ -412,6 +416,7 @@ async function getSettings() {
         roomId,
         password: data.password || '',
         chatKey,
+        chatEnabled: data.chatEnabled === true,
         username,
         sendTabTitle: normalizeSendTabTitle(data.sendTabTitle, legacyTitlePrivacyMode),
         mediaTitlePrivacyMode
@@ -748,6 +753,7 @@ async function connect() {
                         peerId,
                         username: settings.username,
                         tabTitle: sharedTitles.tabTitle,
+                        clientCapabilities: CLIENT_CAPABILITIES,
                         protocolVersion: PROTOCOL_VERSION
                     });
                 }
@@ -1193,7 +1199,7 @@ async function handleServerEvent(event, data) {
             chrome.runtime.sendMessage({ type: 'ROOM_LIST', rooms: data.rooms }).catch(() => {});
             break;
         case EVENTS.CHAT_MESSAGE: {
-            if (!currentRoom || !serverSupports(CAPABILITIES.CHAT) || !currentTabId) break;
+            if (!currentRoom || !serverSupportsChat() || !currentTabId) break;
             const generation = chatSessionGeneration;
             const roomId = currentRoom.roomId;
             const tabId = Number(currentTabId);
@@ -1203,7 +1209,7 @@ async function handleServerEvent(event, data) {
             chatReceiveQueue = chatReceiveQueue.catch(() => {}).then(async () => {
                 if (!isCurrentSession()) return;
                 const settings = await getSettings();
-                if (!settings.chatKey || settings.roomId !== roomId || !isCurrentSession()) return;
+                if (!settings.chatEnabled || !settings.chatKey || settings.roomId !== roomId || !isCurrentSession()) return;
                 const chatKey = settings.chatKey;
                 try {
                     const text = await decryptChatMessage({
@@ -2547,7 +2553,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 });
 
 chrome.storage.onChanged.addListener((changes, area) => {
-    if (area !== 'local' || (!changes.roomId && !changes.chatKey)) return;
+    if (area !== 'local' || (!changes.roomId && !changes.chatKey && !changes.chatEnabled)) return;
     if (changes.chatKey) chatSecretGuard = validateChatSecret(changes.chatKey.newValue);
     invalidateChatSession();
     if (currentTabId) chrome.tabs.sendMessage(Number(currentTabId), { type: 'CHAT_CONTEXT_UPDATE' }).catch(() => {});
@@ -2593,6 +2599,7 @@ async function handleAsyncMessage(message, sender, sendResponse) {
                 peerId,
                 username: settings.username,
                 tabTitle: sharedTitles.tabTitle,
+                clientCapabilities: CLIENT_CAPABILITIES,
                 protocolVersion: PROTOCOL_VERSION
             });
         }
@@ -2611,6 +2618,7 @@ async function handleAsyncMessage(message, sender, sendResponse) {
             await retryPendingTarget();
         }
         const pendingTarget = await readPendingTarget();
+        const settings = await getSettings();
         const isConnected = socket && socket.readyState === WebSocket.OPEN && isNamespaceJoined;
         const isReconnecting = !isConnected && reconnectAttempts > 0;
         let status = isConnected ? 'connected' : (isConnecting || (socket && socket.readyState === WebSocket.CONNECTING) ? 'connecting' : (isReconnecting ? 'reconnecting' : 'disconnected'));
@@ -2641,8 +2649,9 @@ async function handleAsyncMessage(message, sender, sendResponse) {
             amController: amController(),
             hostControlSupported: serverSupports(CAPABILITIES.HOST_CONTROL),
             coHostSupported: serverSupports(CAPABILITIES.CO_HOST),
-            chatSupported: serverSupports(CAPABILITIES.CHAT),
-            hasChatKey: !!(await getSettings()).chatKey
+            chatSupported: serverSupportsChat(),
+            hasChatKey: !!settings.chatKey,
+            chatEnabled: settings.chatEnabled
         });
     } else if (message.type === 'GET_CHAT_CONTEXT') {
         const senderTabId = sender.tab?.id;
@@ -2658,7 +2667,8 @@ async function handleAsyncMessage(message, sender, sendResponse) {
             return value === key ? '' : value;
         };
         sendResponse({
-            supported: serverSupports(CAPABILITIES.CHAT),
+            supported: serverSupportsChat(),
+            enabled: settings.chatEnabled,
             hasKey: !!settings.chatKey,
             connected: !!(socket && socket.readyState === WebSocket.OPEN && isNamespaceJoined),
             peerId,
@@ -2686,7 +2696,7 @@ async function handleAsyncMessage(message, sender, sendResponse) {
             sendResponse({ status: 'invalid_tab' });
             return;
         }
-        if (!serverSupports(CAPABILITIES.CHAT)) {
+        if (!serverSupportsChat()) {
             sendResponse({ status: 'unsupported' });
             return;
         }
@@ -2702,6 +2712,10 @@ async function handleAsyncMessage(message, sender, sendResponse) {
             currentRoom?.roomId === roomId && Number(currentTabId) === tabId &&
             socket === socketSnapshot && socketSnapshot.readyState === WebSocket.OPEN && isNamespaceJoined;
         const settings = await getSettings();
+        if (!settings.chatEnabled) {
+            sendResponse({ status: 'disabled' });
+            return;
+        }
         if (!settings.chatKey || settings.roomId !== roomId || !isCurrentSession()) {
             sendResponse({ status: settings.chatKey ? 'session_changed' : 'missing_key' });
             return;
@@ -2945,6 +2959,7 @@ async function handleAsyncMessage(message, sender, sendResponse) {
                         peerId,
                         username: settings.username,
                         tabTitle: sharedTitles.tabTitle,
+                        clientCapabilities: CLIENT_CAPABILITIES,
                         protocolVersion: PROTOCOL_VERSION
                     });
                 }

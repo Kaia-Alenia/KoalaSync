@@ -9,6 +9,8 @@ const backgroundSource = fs.readFileSync(path.join(extensionDir, 'background.js'
 const popupSource = fs.readFileSync(path.join(extensionDir, 'popup.js'), 'utf8');
 const localeDir = path.join(extensionDir, 'locales');
 const chatKeys = [
+    'LABEL_CHAT_ENABLED',
+    'LABEL_CHAT_ENABLED_TOOLTIP',
     'CHAT_TITLE',
     'CHAT_LIVE_ONLY',
     'CHAT_OPEN',
@@ -58,6 +60,18 @@ describe('chat overlay contract', () => {
         expect(overlaySource).toContain('setTimeout(() => finish(null), timeoutMs)');
         expect(backgroundSource).toContain('chatReceiveQueue = chatReceiveQueue.catch(() => {}).then');
         expect(backgroundSource).toContain("status: 'rate_limited'");
+    });
+
+    it('keeps chat hidden by default without discarding the room chat key', () => {
+        expect(popupSource).toContain('localData.chatEnabled === true');
+        expect(backgroundSource).toContain('chatEnabled: data.chatEnabled === true');
+        expect(backgroundSource).toContain('clientCapabilities: CLIENT_CAPABILITIES');
+        expect(overlaySource).toContain('all:initial;display:none;position:fixed');
+        expect(overlaySource).toContain("host.style.display = supported && optedIn ? '' : 'none'");
+        expect(overlaySource).toContain('supported && optedIn && hasKey && connected');
+        expect(popupSource).toContain("chrome.storage.local.set({ chatEnabled: elements.chatEnabled.checked })");
+        expect(popupSource).toMatch(/if \(isCreating\) \{[\s\S]*?type: 'CREATE_CHAT_KEY'[\s\S]*?chatKey = normalizeChatKey/);
+        expect(popupSource).not.toMatch(/chatEnabled[\s\S]{0,120}chatKey:\s*''/);
     });
 
     it('keeps unavailable chat controls discoverable to assistive technology', () => {

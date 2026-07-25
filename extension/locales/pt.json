@@ -246,6 +246,8 @@
   "LABEL_SETTINGS_GROUP_PROFILE_TOOLTIP": "Altere o seu nome de utilizador, tema e preferências de idioma.",
   "LABEL_SETTINGS_GROUP_SYNC": "Reprodução e Sincronização",
   "LABEL_SETTINGS_GROUP_SYNC_TOOLTIP": "Personalize a reprodução, as notificações e as preferências de áudio.",
+  "LABEL_CHAT_ENABLED": "Ativar chat da sala",
+  "LABEL_CHAT_ENABLED_TOOLTIP": "Mostrar o chat encriptado da sala no separador de vídeo selecionado.",
   "CHAT_TITLE": "Chat da sala",
   "CHAT_LIVE_ONLY": "Apenas em direto. Sem histórico.",
   "CHAT_OPEN": "Abrir chat da sala",

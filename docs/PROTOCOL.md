@@ -54,6 +54,7 @@ Payload:
   "password": "string, max 128, optional",
   "tabTitle": "string, max 100, optional",
   "mediaTitle": "string, max 100, optional",
+  "clientCapabilities": ["chat-v1"],
   "protocolVersion": "string, max 16"
 }
 ```
@@ -82,7 +83,7 @@ Payload:
   "hostPeerId": "string or null",
   "controlMode": "everyone | host-only",
   "controllers": ["peerId"],
-  "capabilities": ["host-control", "co-host", "chat"]
+  "capabilities": ["host-control", "co-host", "chat", "chat-v1"]
 }
 ```
 
@@ -91,8 +92,17 @@ for every later room update.
 
 ## Ephemeral encrypted chat
 
-Relays advertise chat support with `"chat"` in `room_data.capabilities`. Clients
-must not infer support from another field.
+Relays advertise chat support with `"chat-v1"` in `room_data.capabilities` and keep
+the initial beta's `"chat"` flag during the transition. New clients announce
+`"chat-v1"` in optional `join_room.clientCapabilities` (at most the first 16 entries
+are inspected; unknown or malformed values are ignored). Old clients omit the field
+and continue using the pre-chat protocol unchanged.
+
+The relay sends `chat_message` only to sockets that announced `"chat-v1"`. As a
+transition for the first chat beta, a socket that sends a valid v1 ciphertext is
+marked capable for the rest of that connection. This prevents old non-chat
+extensions from receiving unknown events while preserving the first beta's send
+path.
 
 ### `chat_message`
 
@@ -106,7 +116,7 @@ Client to relay:
 authentication tag. The relay validates only canonical base64url and byte bounds.
 It cannot inspect plaintext.
 
-Relay to every current room peer, including the sender:
+Relay to every chat-capable current room peer, including the sender:
 
 ```json
 {
@@ -413,5 +423,6 @@ If sender and target are still in the same room, the relay emits:
 - `host-control`
 - `co-host`
 - `chat`
+- `chat-v1`
 
 Clients should treat a missing or unknown capabilities list as unsupported.

@@ -246,6 +246,8 @@
   "LABEL_SETTINGS_GROUP_PROFILE_TOOLTIP": "Change your username, theme, and language preferences.",
   "LABEL_SETTINGS_GROUP_SYNC": "Playback & Sync",
   "LABEL_SETTINGS_GROUP_SYNC_TOOLTIP": "Customize playback, notifications, and audio preferences.",
+  "LABEL_CHAT_ENABLED": "Enable Room Chat",
+  "LABEL_CHAT_ENABLED_TOOLTIP": "Show encrypted room chat on the selected video tab.",
   "CHAT_TITLE": "Room Chat",
   "CHAT_LIVE_ONLY": "Live only. No history.",
   "CHAT_OPEN": "Open room chat",

@@ -246,6 +246,8 @@
   "LABEL_SETTINGS_GROUP_PROFILE_TOOLTIP": "Ändere deinen Benutzernamen, dein Design und deine Spracheinstellungen.",
   "LABEL_SETTINGS_GROUP_SYNC": "Wiedergabe & Sync",
   "LABEL_SETTINGS_GROUP_SYNC_TOOLTIP": "Passe Wiedergabe-, Benachrichtigungs- und Audioeinstellungen an.",
+  "LABEL_CHAT_ENABLED": "Raum-Chat aktivieren",
+  "LABEL_CHAT_ENABLED_TOOLTIP": "Verschlüsselten Raum-Chat im ausgewählten Video-Tab anzeigen.",
   "CHAT_TITLE": "Raum-Chat",
   "CHAT_LIVE_ONLY": "Nur live. Kein Verlauf.",
   "CHAT_OPEN": "Raum-Chat öffnen",

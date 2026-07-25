@@ -246,6 +246,8 @@
   "LABEL_SETTINGS_GROUP_PROFILE_TOOLTIP": "Modifiez votre nom d'utilisateur, votre thème et vos préférences linguistiques.",
   "LABEL_SETTINGS_GROUP_SYNC": "Lecture & Sync",
   "LABEL_SETTINGS_GROUP_SYNC_TOOLTIP": "Personnalisez la lecture, les notifications et les préférences audio.",
+  "LABEL_CHAT_ENABLED": "Activer le chat du salon",
+  "LABEL_CHAT_ENABLED_TOOLTIP": "Afficher le chat chiffré du salon dans l'onglet vidéo sélectionné.",
   "CHAT_TITLE": "Chat du salon",
   "CHAT_LIVE_ONLY": "En direct uniquement. Aucun historique.",
   "CHAT_OPEN": "Ouvrir le chat du salon",

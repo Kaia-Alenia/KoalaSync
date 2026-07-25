@@ -246,6 +246,8 @@
   "LABEL_SETTINGS_GROUP_PROFILE_TOOLTIP": "Kullanıcı adınızı, temanızı ve dil tercihlerinizi değiştirin.",
   "LABEL_SETTINGS_GROUP_SYNC": "Oynatma ve Eşitleme",
   "LABEL_SETTINGS_GROUP_SYNC_TOOLTIP": "Oynatma, bildirim ve ses tercihlerini özelleştirin.",
+  "LABEL_CHAT_ENABLED": "Oda sohbetini etkinleştir",
+  "LABEL_CHAT_ENABLED_TOOLTIP": "Şifreli oda sohbetini seçili video sekmesinde göster.",
   "CHAT_TITLE": "Oda Sohbeti",
   "CHAT_LIVE_ONLY": "Yalnızca canlı. Geçmiş yok.",
   "CHAT_OPEN": "Oda sohbetini aç",
