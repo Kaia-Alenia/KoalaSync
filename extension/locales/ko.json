@@ -257,7 +257,7 @@
   "OPTION_CHAT_SIZE_COMPACT": "작게",
   "OPTION_CHAT_SIZE_STANDARD": "표준",
   "OPTION_CHAT_SIZE_LARGE": "크게",
-  "OPTION_CHAT_SIZE_CUSTOM": "마지막 사용자 크기",
+  "OPTION_CHAT_SIZE_CUSTOM": "마지막 사용자 지정 크기",
   "LABEL_CHAT_START_MODE": "시작 화면",
   "LABEL_CHAT_START_MODE_TOOLTIP": "플로팅 버블 또는 열린 오버레이로 시작할지 선택합니다.",
   "OPTION_CHAT_START_BUBBLE": "플로팅 채팅 버블",

@@ -26,7 +26,16 @@
     let refreshGeneration = 0;
     let sendGeneration = 0;
     let sending = false;
-    let layout = { mode: 'right', x: 24, y: 72, width: DEFAULT_WIDTH, height: DEFAULT_HEIGHT, detachedInitialized: false };
+    let layout = {
+        mode: 'right',
+        x: 24,
+        y: 72,
+        width: DEFAULT_WIDTH,
+        height: DEFAULT_HEIGHT,
+        customWidth: DEFAULT_WIDTH,
+        customHeight: DEFAULT_HEIGHT,
+        detachedInitialized: false
+    };
     let chatPosition = 'right';
     let chatSize = 'standard';
     let chatStartMode = 'bubble';
@@ -263,8 +272,8 @@
 
     function preferredSize() {
         return SIZE_PRESETS[chatSize] || {
-            width: Number(layout.width) || DEFAULT_WIDTH,
-            height: Number(layout.height) || DEFAULT_HEIGHT
+            width: Number(layout.customWidth) || DEFAULT_WIDTH,
+            height: Number(layout.customHeight) || DEFAULT_HEIGHT
         };
     }
 
@@ -345,8 +354,11 @@
         if (preset) {
             layout.width = preset.width;
             layout.height = preset.height;
-            if (layout.mode === 'detached') clampDetached();
+        } else {
+            layout.width = Number(layout.customWidth) || DEFAULT_WIDTH;
+            layout.height = Number(layout.customHeight) || DEFAULT_HEIGHT;
         }
+        if (layout.mode === 'detached') clampDetached();
         applyLayout();
         saveLayout();
         if (persistPreference) chrome.storage.local.set({ chatSize }).catch(() => {});
@@ -502,8 +514,15 @@
         if (applyingLayout || layout.mode !== 'detached') return;
         const rect = panel.getBoundingClientRect();
         if (!opened || !rect?.width || !rect.height) return;
+        if (Math.abs(rect.width - layout.width) < 1 && Math.abs(rect.height - layout.height) < 1) return;
         layout.width = rect.width;
         layout.height = rect.height;
+        layout.customWidth = rect.width;
+        layout.customHeight = rect.height;
+        if (chatSize !== 'custom') {
+            chatSize = 'custom';
+            chrome.storage.local.set({ chatSize }).catch(() => {});
+        }
         clampDetached();
         saveLayout();
     });
@@ -577,7 +596,12 @@
     chrome.storage.onChanged.addListener(handleStorage);
     chrome.runtime.onMessage.addListener(handleRuntime);
     chrome.storage.local.get([storageKey, 'themeMode', 'themePalette', 'chatPosition', 'chatSize', 'chatStartMode'], data => {
-        if (data[storageKey] && typeof data[storageKey] === 'object') layout = { ...layout, ...data[storageKey] };
+        const storedLayout = data[storageKey];
+        if (storedLayout && typeof storedLayout === 'object') {
+            layout = { ...layout, ...storedLayout };
+            layout.customWidth = Number(storedLayout.customWidth) || Number(storedLayout.width) || DEFAULT_WIDTH;
+            layout.customHeight = Number(storedLayout.customHeight) || Number(storedLayout.height) || DEFAULT_HEIGHT;
+        }
         chatPosition = normalizePosition(data.chatPosition);
         chatSize = normalizeSize(data.chatSize);
         chatStartMode = data.chatStartMode === 'open' ? 'open' : 'bubble';

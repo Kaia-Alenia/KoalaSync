@@ -38,13 +38,23 @@ for (const value of ['bubble', 'open']) {
     assert.match(chatSection, new RegExp(`<option value="${value}"`), `chat start mode supports ${value}`);
 }
 
-for (const key of ['chatPosition', 'chatSize', 'chatStartMode']) {
+for (const key of ['chatEnabled', 'chatPosition', 'chatSize', 'chatStartMode']) {
     assert.match(popupJs, new RegExp(`chrome\\.storage\\.local\\.set\\(\\{ ${key}`), `popup persists ${key}`);
-    assert.ok(overlayJs.includes(`'${key}'`), `overlay reads ${key}`);
     assert.ok(backgroundJs.includes(`'${key}'`), `legacy sync purge includes ${key}`);
 }
+for (const key of ['chatPosition', 'chatSize', 'chatStartMode']) {
+    assert.ok(overlayJs.includes(`'${key}'`), `overlay reads ${key}`);
+}
+assert.match(backgroundJs, /chatEnabled:\s*data\.chatEnabled === true/, 'background reads chatEnabled with an off-by-default contract');
+assert.match(overlayJs, /context\?\.enabled/, 'overlay consumes chat enablement from the validated background context');
 
 assert.match(overlayJs, /SIZE_PRESETS[\s\S]*compact[\s\S]*standard[\s\S]*large/, 'overlay defines all size presets');
+assert.match(
+    overlayJs,
+    /} else {\s*layout\.width = Number\(layout\.customWidth\) \|\| DEFAULT_WIDTH;\s*layout\.height = Number\(layout\.customHeight\) \|\| DEFAULT_HEIGHT;/,
+    'custom size restores its dedicated dimensions'
+);
+assert.match(overlayJs, /layout\.customWidth = rect\.width[\s\S]*layout\.customHeight = rect\.height/, 'detached resize updates the custom-size snapshot');
 assert.match(overlayJs, /changes\.chatPosition[\s\S]*setMode/, 'position changes apply live');
 assert.match(overlayJs, /changes\.chatSize[\s\S]*setSize/, 'size changes apply live');
 assert.match(overlayJs, /changes\.chatStartMode[\s\S]*setOpened/, 'startup-mode changes apply live');
