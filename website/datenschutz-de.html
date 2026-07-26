@@ -208,6 +208,15 @@
                     Zur Bereitstellung der Raumfunktion verarbeitet der Relay Raum- und Synchronisationsdaten temporär im Arbeitsspeicher, solange ein Raum aktiv ist. Dazu können Room-ID, Peer-ID, Anzeigename, Wiedergabestatus, Sync-Events und – abhängig von den Titel-Privatsphäre-Einstellungen – Tab-/Medientitel gehören. Diese Daten werden nur an Teilnehmer desselben Raums weitergeleitet und aus dem Arbeitsspeicher entfernt, wenn der Raum abläuft oder geschlossen wird.
                 </p>
                 <p style="margin-top: 0.5rem;">
+                    Der Inhalt von Raum-Chatnachrichten wird bereits in der Browser-Erweiterung vor der Übertragung Ende-zu-Ende verschlüsselt. KoalaSync leitet lokal aus der Room-ID und einem zufällig erzeugten Chat-Secret einen 256-Bit-Schlüssel für AES-GCM ab. Das Chat-Secret wird über den Einladungslink geteilt und von der Erweiterung lokal gespeichert; es ist nicht Bestandteil der an den Relay gesendeten Chat-Nutzdaten.
+                </p>
+                <p style="margin-top: 0.5rem;">
+                    Der Relay erhält ausschließlich den verschlüsselten Nachrichteninhalt sowie die für die Live-Zustellung erforderlichen technischen Metadaten, beispielsweise Absender-ID, Nachrichten-ID und Zeitstempel. Da der Relay das Chat-Secret nicht erhält, kann er den Nachrichtentext nicht entschlüsseln oder lesen. Er leitet den verschlüsselten Inhalt an die aktuell verbundenen Teilnehmer desselben Raums weiter und erstellt keine serverseitige Chat-Historie, schreibt keine Nachrichten auf Festplatte und bewahrt sie nach der Live-Weiterleitung nicht auf.
+                </p>
+                <p style="margin-top: 0.5rem;">
+                    Wer einen gültigen Einladungslink einschließlich Chat-Secret erhält, kann Nachrichten dieses Raums möglicherweise entschlüsseln. Einladungslinks sollten daher ausschließlich mit den vorgesehenen Teilnehmern geteilt werden.
+                </p>
+                <p style="margin-top: 0.5rem;">
                     Rechtsgrundlage: Art. 6 Abs. 1 lit. f DSGVO, berechtigtes Interesse an der Bereitstellung der gewünschten Synchronisationsfunktion, Sicherheit und Missbrauchsprävention.
                 </p>
                 <p style="margin-top: 0.5rem;">
@@ -221,7 +230,13 @@
                     Zur Synchronisierung der Wiedergabe zwischen Teilnehmern desselben Raums erfasst die KoalaSync Browser-Erweiterung temporär Daten des aktuell aktiven Video-Tabs (z. B. Tab-Titel, Medien-Metadaten wie den Videotitel sowie den Wiedergabestatus). Tab- oder Medientitel können je nach Inhalt potenziell personenbezogen sein. Sie werden nur für die Synchronisationsfunktion verarbeitet, können über die Privatsphäre-Einstellungen der Erweiterung eingeschränkt oder deaktiviert werden, werden nur an Teilnehmer desselben Raums weitergeleitet und vom Relay nicht protokolliert oder dauerhaft gespeichert.
                 </p>
                 <p style="margin-top: 0.5rem;">
-                    Die Erweiterung speichert nur für den Betrieb erforderliche Einstellungen lokal im Browser, z. B. Anzeigename, Server-URL, aktuelle Raumdaten, Sprache, Titel-Privatsphäre-Einstellungen, Benachrichtigungseinstellungen und Audio-Processing-Einstellungen. KoalaSync speichert keinen allgemeinen Browserverlauf und keinen persistenten Wiedergabeverlauf.
+                    Die Erweiterung speichert nur für den Betrieb erforderliche Einstellungen lokal im Browser, z. B. Anzeigename, Server-URL, aktuelle Raumdaten einschließlich Chat-Secret, Sprache, Titel-Privatsphäre-Einstellungen, Benachrichtigungseinstellungen und Audio-Processing-Einstellungen. KoalaSync speichert keinen allgemeinen Browserverlauf und keinen persistenten Wiedergabeverlauf.
+                </p>
+                <p style="margin-top: 0.5rem;">
+                    Entschlüsselte Chatnachrichten werden ausschließlich im Arbeitsspeicher des Overlays im aktuellen Video-Tab gehalten; sichtbar bleiben höchstens 200 Nachrichten- oder Aktivitätseinträge. Sie werden nicht in den Browser-Speicher geschrieben und verschwinden, wenn der Chat zurückgesetzt oder entfernt, die Seite neu geladen oder die Raumsitzung beendet wird. Im Chat angezeigte Wiedergabe- und Anwesenheitseinträge werden lokal aus bereits vorhandenen Raum-Events erzeugt und erstellen keine separate serverseitige Historie.
+                </p>
+                <p style="margin-top: 0.5rem;">
+                    Wenn Chat-Benachrichtigungen aktiviert sind, werden der entschlüsselte Anzeigename und Nachrichtentext an die Benachrichtigungs-API des Browsers übergeben und können entsprechend den Einstellungen des Browsers oder Betriebssystems angezeigt oder dort vorgehalten werden. Chat-Benachrichtigungen können in den Einstellungen der Erweiterung deaktiviert werden.
                 </p>
                 <p style="margin-top: 0.5rem;">
                     Die Erweiterung verbindet sich nur mit dem Relay-Server, während Sie sich aktiv in einem Raum befinden. Es wird keine dauerhafte Hintergrundverbindung aufrechterhalten, sodass Ihre IP-Adresse dem Server nicht offengelegt wird, wenn Sie die Erweiterung nicht nutzen.
@@ -254,14 +269,14 @@
             <section>
                 <h2>8. Empfänger & Dritte</h2>
                 <p>
-                    Technische Hosting- und Verbindungsdaten können durch Hetzner als Hosting-Anbieter im Auftrag des Betreibers verarbeitet werden. Raum-Synchronisationsdaten werden nur an Teilnehmer desselben Raums weitergeleitet. KoalaSync verwendet keine Analytics-Anbieter, Werbenetzwerke oder Tracking-Dienste.
+                    Technische Hosting- und Verbindungsdaten können durch Hetzner als Hosting-Anbieter im Auftrag des Betreibers verarbeitet werden. Raum-Synchronisationsdaten werden nur an Teilnehmer desselben Raums weitergeleitet. Verschlüsselte Raum-Chat-Nutzdaten und deren Zustellungsmetadaten werden ebenfalls nur innerhalb des Raums weitergeleitet; lesbarer Nachrichteninhalt steht nur Teilnehmern zur Verfügung, die das Chat-Secret besitzen. KoalaSync verwendet keine Analytics-Anbieter, Werbenetzwerke oder Tracking-Dienste.
                 </p>
             </section>
 
             <section>
                 <h2>9. Erforderliche & optionale Daten</h2>
                 <p>
-                    Die Bereitstellung technischer Verbindungsdaten ist erforderlich, um die Website aufzurufen und den Relay zu nutzen. Raumdaten und Sync-Events sind erforderlich, um die Raumsynchronisation zu verwenden. Das Teilen von Tab-/Medientitel ist optional und kann über die Privatsphäre-Einstellungen der Erweiterung eingeschränkt werden.
+                    Die Bereitstellung technischer Verbindungsdaten ist erforderlich, um die Website aufzurufen und den Relay zu nutzen. Raumdaten und Sync-Events sind erforderlich, um die Raumsynchronisation zu verwenden. Der Text-Chat ist optional; bei seiner Nutzung sind verschlüsselte Nachrichten-Nutzdaten und Zustellungsmetadaten für die Live-Zustellung erforderlich. Das Teilen von Tab-/Medientiteln und Browser-Benachrichtigungen sind optional und können über die Privatsphäre-Einstellungen der Erweiterung gesteuert werden.
                 </p>
             </section>
 
