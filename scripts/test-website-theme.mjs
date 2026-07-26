@@ -16,6 +16,8 @@ const siteAccessHelpPage = fs.readFileSync(path.join(repoRoot, 'website', 'site-
 const websiteBuild = fs.readFileSync(path.join(repoRoot, 'website', 'build.cjs'), 'utf8');
 const imprintPage = fs.readFileSync(path.join(repoRoot, 'website', 'imprint.html'), 'utf8');
 const germanImprintPage = fs.readFileSync(path.join(repoRoot, 'website', 'impressum-de.html'), 'utf8');
+const privacyPage = fs.readFileSync(path.join(repoRoot, 'website', 'privacy.html'), 'utf8');
+const germanPrivacyPage = fs.readFileSync(path.join(repoRoot, 'website', 'datenschutz-de.html'), 'utf8');
 const alternativesIndex = fs.readFileSync(path.join(repoRoot, 'website', 'alternatives', 'index.html'), 'utf8');
 const alternativesCss = fs.readFileSync(path.join(repoRoot, 'website', 'styles', 'alternatives.css'), 'utf8');
 const llmsText = fs.readFileSync(path.join(repoRoot, 'website', 'llms.txt'), 'utf8');
@@ -28,6 +30,32 @@ if (mockupStart === -1 || mockupEnd === -1) {
 }
 
 const mockup = template.slice(mockupStart, mockupEnd);
+
+const privacyChatContracts = [
+  [privacyPage, 'English', [
+    'end-to-end encrypted in the browser extension before transmission',
+    '256-bit AES-GCM key',
+    'the relay does not receive the chat secret',
+    'does not create a server-side chat history',
+    'maximum of 200 visible message or activity entries',
+    "browser's notification API"
+  ]],
+  [germanPrivacyPage, 'German', [
+    'vor der Übertragung Ende-zu-Ende verschlüsselt',
+    '256-Bit-Schlüssel für AES-GCM',
+    'der Relay das Chat-Secret nicht erhält',
+    'keine serverseitige Chat-Historie',
+    'höchstens 200 Nachrichten- oder Aktivitätseinträge',
+    'Benachrichtigungs-API des Browsers'
+  ]]
+];
+for (const [page, language, statements] of privacyChatContracts) {
+  for (const statement of statements) {
+    if (!page.includes(statement)) {
+      throw new Error(`${language} privacy policy is missing encrypted-chat disclosure: ${statement}`);
+    }
+  }
+}
 const themeSensitiveControls = [
   ['video selector', /<select[^>]+id="demo-video-select"[^>]+>/],
   ['sync target', /<div[^>]+class="mock-input"[^>]+title="Choose sync target"[^>]*>/],
@@ -65,6 +93,9 @@ for (const section of requiredLlmsSections) {
 }
 if (/\bWebRTC\b|\bport 54000\b|peer-to-peer by design/i.test(llmsText)) {
   throw new Error('llms.txt must describe the current WebSocket relay architecture without obsolete WebRTC or port claims');
+}
+if (!llmsText.includes('- built-in voice, video or webcam chat') || llmsText.includes('- built-in text, voice or webcam chat')) {
+  throw new Error('llms.txt must distinguish built-in encrypted text chat from unsupported voice, video or webcam chat');
 }
 if (!llmsText.includes(`Current website release: ${websiteVersion}`)) {
   throw new Error(`llms.txt release must match website/version.json (${websiteVersion})`);

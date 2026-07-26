@@ -69,6 +69,7 @@ const elements = {
     pauseBtn: document.getElementById('pauseBtn'),
     autoSyncNextEpisode: document.getElementById('autoSyncNextEpisode'),
     chatEnabled: document.getElementById('chatEnabled'),
+    chatNotifications: document.getElementById('chatNotifications'),
     chatPosition: document.getElementById('chatPosition'),
     chatSize: document.getElementById('chatSize'),
     chatStartMode: document.getElementById('chatStartMode'),
@@ -341,7 +342,7 @@ function setRoomRefreshCooldown() {
 async function init() {
     // Local-only by design — settings and room credentials never come from
     // storage.sync (only onboardingComplete + dismissedHints live there).
-    const localData = await chrome.storage.local.get(['serverUrl', 'useCustomServer', 'roomId', 'password', 'chatKey', 'chatEnabled', 'chatPosition', 'chatSize', 'chatStartMode', 'username', 'filterNoise', 'autoSyncNextEpisode', 'sendTabTitle', 'mediaTitlePrivacyMode', 'titlePrivacyMode', 'forceSyncMode', 'browserNotifications', 'autoCopyInvite', 'locale', 'audioSettings', 'activeTab', 'themeMode', 'themePalette']);
+    const localData = await chrome.storage.local.get(['serverUrl', 'useCustomServer', 'roomId', 'password', 'chatKey', 'chatEnabled', 'chatNotifications', 'chatPosition', 'chatSize', 'chatStartMode', 'username', 'filterNoise', 'autoSyncNextEpisode', 'sendTabTitle', 'mediaTitlePrivacyMode', 'titlePrivacyMode', 'forceSyncMode', 'browserNotifications', 'autoCopyInvite', 'locale', 'audioSettings', 'activeTab', 'themeMode', 'themePalette']);
 
     let activeLang = localData.locale;
     if (!activeLang) {
@@ -373,6 +374,7 @@ async function init() {
     if (elements.filterNoise) elements.filterNoise.checked = localData.filterNoise !== false;
     if (elements.autoSyncNextEpisode) elements.autoSyncNextEpisode.checked = localData.autoSyncNextEpisode !== false;
     if (elements.chatEnabled) elements.chatEnabled.checked = localData.chatEnabled === true;
+    if (elements.chatNotifications) elements.chatNotifications.checked = localData.chatNotifications !== false;
     if (elements.chatPosition) elements.chatPosition.value = ['left', 'detached'].includes(localData.chatPosition) ? localData.chatPosition : 'right';
     if (elements.chatSize) elements.chatSize.value = ['compact', 'large', 'custom'].includes(localData.chatSize) ? localData.chatSize : 'standard';
     if (elements.chatStartMode) elements.chatStartMode.value = localData.chatStartMode === 'open' ? 'open' : 'bubble';
@@ -1467,7 +1469,7 @@ elements.autoSyncNextEpisode.addEventListener('change', () => {
 
 function syncChatSettingsState() {
     const enabled = elements.chatEnabled?.checked === true;
-    for (const control of [elements.chatPosition, elements.chatSize, elements.chatStartMode]) {
+    for (const control of [elements.chatNotifications, elements.chatPosition, elements.chatSize, elements.chatStartMode]) {
         if (control) control.disabled = !enabled;
     }
     document.querySelectorAll('[data-chat-setting]').forEach(row => {
@@ -1480,6 +1482,11 @@ if (elements.chatEnabled) {
     elements.chatEnabled.addEventListener('change', () => {
         syncChatSettingsState();
         chrome.storage.local.set({ chatEnabled: elements.chatEnabled.checked });
+    });
+}
+if (elements.chatNotifications) {
+    elements.chatNotifications.addEventListener('change', () => {
+        chrome.storage.local.set({ chatNotifications: elements.chatNotifications.checked });
     });
 }
 if (elements.chatPosition) {
@@ -2388,7 +2395,7 @@ chrome.runtime.onMessage.addListener((msg) => {
                 applyConnectionStatus(msg.status);
                 if (res && res.reconnectAttempts !== undefined) {
                     if (elements.connText) {
-                        elements.connText.textContent = `Reconnecting... (${res.reconnectAttempts})`;
+                        elements.connText.textContent = `${getMessage('STATUS_RECONNECTING')} (${res.reconnectAttempts})`;
                     }
                 }
             });
@@ -2710,35 +2717,35 @@ function refreshDebugInfo() {
 
                 if (!state.found) {
                     // No video found — show diagnostic info
-                    addSection('Video Detection');
+                    addSection(getMessage('DEBUG_SECTION_VIDEO_DETECTION'));
                     const notFound = document.createElement('div');
                     notFound.style.cssText = 'color: var(--status-error-text); font-weight: 700; margin-bottom: 8px;';
-                    notFound.textContent = 'NO VIDEO ELEMENT FOUND';
+                    notFound.textContent = getMessage('DEBUG_VIDEO_NOT_FOUND');
                     elements.videoDebug.appendChild(notFound);
 
                     addField('Platform', state.platform || '?', 'var(--accent)');
                     addField('Page Title', state.pageTitle || '?');
                     addField('URL', state.url || '?');
                     addField('Video Tags', String(state.videoCount || 0));
-                    addField('Shadow DOM', state.inShadowDom ? 'YES (checked)' : 'NO');
+                    addField('Shadow DOM', state.inShadowDom ? getMessage('DEBUG_YES_CHECKED') : getMessage('DEBUG_NO'));
 
                     if (state.metadata) {
-                        addSection('Media Session API');
-                        addField('Title', state.metadata.title || 'n/a');
-                        addField('Artist', state.metadata.artist || 'n/a');
-                        addField('Album', state.metadata.album || 'n/a');
+                        addSection(getMessage('DEBUG_SECTION_MEDIA_SESSION'));
+                        addField('Title', state.metadata.title || getMessage('DEBUG_NA'));
+                        addField('Artist', state.metadata.artist || getMessage('DEBUG_NA'));
+                        addField('Album', state.metadata.album || getMessage('DEBUG_NA'));
                     }
 
                     const hint = document.createElement('div');
                     hint.style.cssText = 'margin-top: 12px; padding: 8px; background: color-mix(in oklch, var(--warning), transparent 88%); border-left: 3px solid var(--warning); border-radius: 4px; font-size: 10px; color: var(--text);';
-                    hint.textContent = 'Is a video currently playing? The extension only detects <video> elements. Ensure media is actively loaded on the page.';
+                    hint.textContent = getMessage('DEBUG_VIDEO_HINT');
                     elements.videoDebug.appendChild(hint);
                     return;
                 }
 
                 // Video found — full debug
-                addSection('Playback');
-                addField('State', state.paused ? 'PAUSED' : 'PLAYING', state.paused ? 'var(--text-muted)' : 'var(--status-success-text)');
+                addSection(getMessage('DEBUG_SECTION_PLAYBACK'));
+                addField('State', state.paused ? getMessage('DEBUG_STATE_PAUSED') : getMessage('DEBUG_STATE_PLAYING'), state.paused ? 'var(--text-muted)' : 'var(--status-success-text)');
                 addField('Time', `${state.currentTime.toFixed(2)}s / ${(state.duration || 0).toFixed(2)}s`);
                 addField('ReadyState', `${state.readyState} (${state.readyStateLabel || '?'})`,
                     state.readyState >= 3 ? 'var(--status-success-text)' : 'var(--status-warning-text)');
@@ -2757,7 +2764,7 @@ function refreshDebugInfo() {
                     const buttons = Array.isArray(quirk.seekButtons) ? quirk.seekButtons.slice(0, 4).join(' | ') : '';
                     if (buttons) addField(`${label} Buttons`, buttons);
                 }
-                addSection('Properties');
+                addSection(getMessage('DEBUG_SECTION_PROPERTIES'));
                 addField('Seeking', String(state.seeking));
                 addField('Ended', String(state.ended));
                 addField('Loop', String(state.loop));
@@ -2765,45 +2772,45 @@ function refreshDebugInfo() {
                 addField('Volume', String(state.volume));
                 addField('Speed', `${state.playbackRate}x`);
 
-                addSection('Dimensions');
+                addSection(getMessage('DEBUG_SECTION_DIMENSIONS'));
                 const dimsOk = state.videoWidth > 0 && state.videoHeight > 0;
                 addField('Resolution', `${state.videoWidth}x${state.videoHeight}`, dimsOk ? 'var(--status-success-text)' : 'var(--status-error-text)');
                 if (!dimsOk) {
                     const dimHint = document.createElement('div');
                     dimHint.style.cssText = 'color: var(--status-warning-text); font-size: 10px; margin: 2px 0 6px 12px;';
-                    dimHint.textContent = '0x0 = video element hidden or not yet loaded';
+                    dimHint.textContent = getMessage('DEBUG_DIMENSIONS_HINT');
                     elements.videoDebug.appendChild(dimHint);
                 }
 
                 if (state.error) {
-                    addSection('Media Error');
+                    addSection(getMessage('DEBUG_SECTION_MEDIA_ERROR'));
                     addField('Code', String(state.error.code), 'var(--status-error-text)');
                     addField('Message', state.error.message || '?', 'var(--status-error-text)');
                 }
 
-                addSection('Detection');
+                addSection(getMessage('DEBUG_SECTION_DETECTION'));
                 addField('Platform', state.platform || '?', 'var(--accent)');
                 addField('Video Count', String(state.videoCount || 0));
-                addField('Shadow DOM', state.inShadowDom ? 'YES' : 'NO');
+                addField('Shadow DOM', state.inShadowDom ? getMessage('DEBUG_YES') : getMessage('DEBUG_NO'));
 
-                addSection('Identification');
+                addSection(getMessage('DEBUG_SECTION_IDENTIFICATION'));
                 addField('URL', state.url);
                 addField('ID', state.id);
                 addField('CLASS', state.className);
 
-                addSection('Media Source');
+                addSection(getMessage('DEBUG_SECTION_MEDIA_SOURCE'));
                 addField('CurrentSrc', state.currentSrc);
                 addField('Src', state.src);
 
                 if (state.metadata) {
-                    addSection('Media Session API');
-                    addField('Title', state.metadata.title || 'n/a');
-                    addField('Artist', state.metadata.artist || 'n/a');
-                    addField('Album', state.metadata.album || 'n/a');
+                    addSection(getMessage('DEBUG_SECTION_MEDIA_SESSION'));
+                    addField('Title', state.metadata.title || getMessage('DEBUG_NA'));
+                    addField('Artist', state.metadata.artist || getMessage('DEBUG_NA'));
+                    addField('Album', state.metadata.album || getMessage('DEBUG_NA'));
                 }
 
                 if (state.dataAttributes && Object.keys(state.dataAttributes).length > 0) {
-                    addSection('Data Attributes');
+                    addSection(getMessage('DEBUG_SECTION_DATA_ATTRIBUTES'));
                     for (const [key, val] of Object.entries(state.dataAttributes)) {
                         addField(key.replace('data-', '').toUpperCase(), val);
                     }

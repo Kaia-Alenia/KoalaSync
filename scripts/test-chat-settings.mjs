@@ -23,7 +23,7 @@ function detailsSection(marker) {
 const chatSection = detailsSection('data-i18n="CHAT_TITLE"');
 const syncSection = detailsSection('data-i18n="LABEL_SETTINGS_GROUP_SYNC"');
 
-for (const id of ['chatEnabled', 'chatPosition', 'chatSize', 'chatStartMode']) {
+for (const id of ['chatEnabled', 'chatNotifications', 'chatPosition', 'chatSize', 'chatStartMode']) {
     assert.match(chatSection, new RegExp(`id="${id}"`), `${id} belongs in the dedicated chat settings section`);
 }
 assert.doesNotMatch(syncSection, /id="chatEnabled"/, 'chat enablement must not remain under Playback & Sync');
@@ -38,7 +38,7 @@ for (const value of ['bubble', 'open']) {
     assert.match(chatSection, new RegExp(`<option value="${value}"`), `chat start mode supports ${value}`);
 }
 
-for (const key of ['chatEnabled', 'chatPosition', 'chatSize', 'chatStartMode']) {
+for (const key of ['chatEnabled', 'chatNotifications', 'chatPosition', 'chatSize', 'chatStartMode']) {
     assert.match(popupJs, new RegExp(`chrome\\.storage\\.local\\.set\\(\\{ ${key}`), `popup persists ${key}`);
     assert.ok(backgroundJs.includes(`'${key}'`), `legacy sync purge includes ${key}`);
 }
@@ -46,6 +46,9 @@ for (const key of ['chatPosition', 'chatSize', 'chatStartMode']) {
     assert.ok(overlayJs.includes(`'${key}'`), `overlay reads ${key}`);
 }
 assert.match(backgroundJs, /chatEnabled:\s*data\.chatEnabled === true/, 'background reads chatEnabled with an off-by-default contract');
+assert.match(backgroundJs, /chatNotifications:\s*data\.chatNotifications !== false/, 'chat message notifications default on');
+assert.match(popupJs, /elements\.chatNotifications\.checked = localData\.chatNotifications !== false/, 'popup shows chat notifications on by default');
+assert.match(popupJs, /elements\.browserNotifications\.checked = localData\.browserNotifications === true/, 'activity notifications remain off by default');
 assert.match(overlayJs, /context\?\.enabled/, 'overlay consumes chat enablement from the validated background context');
 
 assert.match(overlayJs, /SIZE_PRESETS[\s\S]*compact[\s\S]*standard[\s\S]*large/, 'overlay defines all size presets');

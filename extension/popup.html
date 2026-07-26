@@ -1633,6 +1633,13 @@
                     </label>
                 </div>
                 <div class="settings-row" data-chat-setting>
+                    <label for="chatNotifications" title="Shows a system notification for new room-chat messages when the video tab is not focused." data-i18n="LABEL_CHAT_NOTIFICATIONS" data-i18n-title="LABEL_CHAT_NOTIFICATIONS_TOOLTIP">Chat Notifications</label>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="chatNotifications">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                <div class="settings-row" data-chat-setting>
                     <label for="chatPosition" title="Choose where chat is attached to the selected player." data-i18n="LABEL_CHAT_POSITION" data-i18n-title="LABEL_CHAT_POSITION_TOOLTIP">Position</label>
                     <span class="settings-select">
                         <select id="chatPosition" class="settings-control">
@@ -1690,7 +1697,7 @@
                     </label>
                 </div>
                 <div class="settings-row">
-                    <label for="browserNotifications" title="Shows native system notifications when someone joins/leaves or plays/pauses." data-i18n="LABEL_NOTIFICATIONS" data-i18n-title="LABEL_NOTIFICATIONS_TOOLTIP">Browser Notifications</label>
+                    <label for="browserNotifications" title="Shows system notifications when someone joins, leaves, plays, or pauses." data-i18n="LABEL_EVENT_NOTIFICATIONS" data-i18n-title="LABEL_EVENT_NOTIFICATIONS_TOOLTIP">Playback &amp; Room Notifications</label>
                     <label class="toggle-switch">
                         <input type="checkbox" id="browserNotifications">
                         <span class="slider"></span>
@@ -1732,7 +1739,7 @@
 
         <label title="Technical details about the currently selected video element" data-i18n="LABEL_VIDEO_DEBUG" data-i18n-title="LABEL_VIDEO_DEBUG_TOOLTIP">Video Debug Info</label>
         <div id="videoDebug" class="info-card" style="font-size: 10px; font-family: monospace; color: var(--text-muted); max-height: 250px; overflow-y: auto; line-height: 1.4;">
-            No tab selected or video detected.
+            <span data-i18n="VIDEO_DEBUG_EMPTY">No tab selected or video detected.</span>
         </div>
 
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 8px;">

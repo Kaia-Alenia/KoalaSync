@@ -19,7 +19,7 @@ KoalaSync is not a fit when users need:
 
 - video or screen sharing to people who do not have access to the content
 - a hosted video library, remote browser or cloud-streaming service
-- built-in text, voice or webcam chat
+- built-in voice, video or webcam chat
 - a mobile app or Safari extension
 - guaranteed compatibility with a player that does not expose an accessible HTML5 video element
 

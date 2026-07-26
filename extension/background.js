@@ -398,7 +398,7 @@ async function getSettings() {
     // (username) must NEVER come from storage.sync — syncing them across devices
     // both leaks them and resurrects dead rooms on reinstall (a fresh install
     // has empty local storage but sync survives in the user's Google account).
-    const data = await chrome.storage.local.get(['serverUrl', 'useCustomServer', 'roomId', 'password', 'chatKey', 'chatEnabled', 'username', 'sendTabTitle', 'mediaTitlePrivacyMode', 'titlePrivacyMode']);
+    const data = await chrome.storage.local.get(['serverUrl', 'useCustomServer', 'roomId', 'password', 'chatKey', 'chatEnabled', 'chatNotifications', 'username', 'sendTabTitle', 'mediaTitlePrivacyMode', 'titlePrivacyMode']);
     let username = data.username;
     if (!username) {
         username = generateUsername();
@@ -417,6 +417,7 @@ async function getSettings() {
         password: data.password || '',
         chatKey,
         chatEnabled: data.chatEnabled === true,
+        chatNotifications: data.chatNotifications !== false,
         username,
         sendTabTitle: normalizeSendTabTitle(data.sendTabTitle, legacyTitlePrivacyMode),
         mediaTitlePrivacyMode
@@ -453,7 +454,7 @@ function emitEpisodeLobbyForCurrentPrivacy() {
 // otherwise be redistributed across devices and resurrected on reinstall).
 const LEGACY_SYNC_KEYS = [
     'serverUrl', 'useCustomServer', 'roomId', 'password', 'chatKey',
-    'chatEnabled', 'chatPosition', 'chatSize', 'chatStartMode', 'username',
+    'chatEnabled', 'chatNotifications', 'chatPosition', 'chatSize', 'chatStartMode', 'username',
     'filterNoise', 'autoSyncNextEpisode', 'forceSyncMode',
     'browserNotifications', 'autoCopyInvite', 'locale', 'audioSettings',
     'titlePrivacyMode', 'sendTabTitle', 'mediaTitlePrivacyMode'
@@ -907,7 +908,11 @@ function showNotification(senderName, action) {
             displayName = getMessage('LABEL_YOU') || 'YOU';
         }
 
-        const message = getMessage('TOAST_PEER_ACTION', { name: displayName, action: label }) + '.';
+        const message = action === 'joined'
+            ? getMessage('TOAST_PEER_JOINED', { name: displayName })
+            : action === 'left'
+                ? getMessage('TOAST_PEER_LEFT', { name: displayName })
+                : getMessage('TOAST_PEER_ACTION', { name: displayName, action: label }) + '.';
 
         chrome.notifications.create(`sync_${Date.now()}`, {
             type: 'basic',
@@ -917,6 +922,43 @@ function showNotification(senderName, action) {
             priority: 1
         });
     });
+}
+
+function showChatNotification(displayName, text) {
+    chrome.storage.local.get(['chatNotifications', 'locale'], async (settings) => {
+        if (settings.chatNotifications === false) return;
+
+        await loadLocale(settings.locale || getSystemLanguage());
+        chrome.notifications.create(`chat_${Date.now()}`, {
+            type: 'basic',
+            iconUrl: 'icons/icon128.png',
+            title: getMessage('CHAT_TITLE') || 'KoalaSync',
+            message: `${displayName || getMessage('CHAT_TITLE') || 'Room Chat'}: ${text}`,
+            priority: 1
+        });
+    });
+}
+
+function chatActivityDisplayName(senderId) {
+    if (senderId === peerId) return '';
+    const peer = currentRoom?.peers?.find(candidate =>
+        (typeof candidate === 'object' ? candidate.peerId : candidate) === senderId
+    );
+    return typeof peer === 'object' ? peer.username || senderId : senderId;
+}
+
+function sendChatActivity(action, senderId, timestamp = Date.now()) {
+    if (!currentTabId || !serverSupportsChat()) return;
+    if (![EVENTS.PLAY, EVENTS.PAUSE, EVENTS.SEEK, EVENTS.FORCE_SYNC_PREPARE, EVENTS.FORCE_SYNC_EXECUTE, 'joined', 'left'].includes(action)) return;
+    chrome.tabs.sendMessage(Number(currentTabId), {
+        type: 'CHAT_EVENT',
+        event: {
+            action,
+            senderId,
+            username: chatActivityDisplayName(senderId),
+            timestamp: Number.isFinite(timestamp) ? timestamp : Date.now()
+        }
+    }).catch(() => {});
 }
 
 function scheduleReconnect() {
@@ -1235,6 +1277,12 @@ async function handleServerEvent(event, data) {
                             }
                         }).catch(() => {});
                     }
+                    if (received.senderId !== peerId) {
+                        showChatNotification(
+                            typeof senderPeer === 'object' ? senderPeer.username : received.senderId,
+                            text
+                        );
+                    }
                 } catch (_) {
                     if (isCurrentSession()) addLog('Discarded chat message that failed authentication', 'warn');
                 }
@@ -1291,6 +1339,7 @@ async function handleServerEvent(event, data) {
             if (data.senderId) {
                 addToHistory(event, data.senderId);
                 showNotification(data.senderId, event);
+                sendChatActivity(event, data.senderId, data.actionTimestamp);
                 updateLastAction(event, data.senderId);
                 lastActionState.targetTime = data.targetTime !== undefined ? data.targetTime : data.currentTime;
                 if (storageInitialized) chrome.storage.session.set({ lastActionState });
@@ -1348,6 +1397,7 @@ async function handleServerEvent(event, data) {
             if (data?.senderId) {
                 addToHistory(event, data.senderId);
                 showNotification(data.senderId, event);
+                sendChatActivity(event, data.senderId, data.actionTimestamp);
 
                 // (The sender's state is updated below with everyone else)
             }
@@ -1403,6 +1453,8 @@ async function handleServerEvent(event, data) {
                         currentRoom.peers.push(createPeerData(data));
                         if (storageInitialized) chrome.storage.session.set({ currentRoom });
                         chrome.runtime.sendMessage({ type: 'PEER_UPDATE', peers: currentRoom.peers }).catch(() => {});
+                        sendChatActivity('joined', data.peerId, Date.now());
+                        showNotification(data.username || data.peerId, 'joined');
 
                         // We were alone and now we're not — proactively push our
                         // current playback state so the newcomer syncs immediately
@@ -1416,6 +1468,9 @@ async function handleServerEvent(event, data) {
                         }
                     }
                 } else if (data.status === 'left') {
+                    const departedDisplayName = chatActivityDisplayName(data.peerId);
+                    sendChatActivity('left', data.peerId, Date.now());
+                    showNotification(departedDisplayName, 'left');
                     currentRoom.peers = currentRoom.peers.filter(p => (p.peerId || p) !== data.peerId);
                     if (storageInitialized) chrome.storage.session.set({ currentRoom });
                     chrome.runtime.sendMessage({ type: 'PEER_UPDATE', peers: currentRoom.peers }).catch(() => {});
@@ -1577,6 +1632,7 @@ function executeForceSync() {
 
     emit(EVENTS.FORCE_SYNC_EXECUTE, { actionTimestamp: executionTimestamp, seq: localSeq });
     routeToContent(EVENTS.FORCE_SYNC_EXECUTE, { actionTimestamp: executionTimestamp, seq: localSeq });
+    sendChatActivity(EVENTS.FORCE_SYNC_EXECUTE, peerId, executionTimestamp);
     addLog('Force Sync Executed', 'success');
 }
 
@@ -2554,7 +2610,11 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 });
 
 chrome.storage.onChanged.addListener((changes, area) => {
-    if (area !== 'local' || (!changes.roomId && !changes.chatKey && !changes.chatEnabled)) return;
+    if (area !== 'local') return;
+    if (changes.browserNotifications && currentTabId) {
+        chrome.tabs.sendMessage(Number(currentTabId), { type: 'CHAT_CONTEXT_UPDATE' }).catch(() => {});
+    }
+    if (!changes.roomId && !changes.chatKey && !changes.chatEnabled) return;
     if (changes.chatKey) chatSecretGuard = validateChatSecret(changes.chatKey.newValue);
     invalidateChatSession();
     if (currentTabId) chrome.tabs.sendMessage(Number(currentTabId), { type: 'CHAT_CONTEXT_UPDATE' }).catch(() => {});
@@ -2661,7 +2721,7 @@ async function handleAsyncMessage(message, sender, sendResponse) {
             return;
         }
         const settings = await getSettings();
-        const localeData = await chrome.storage.local.get(['locale']);
+        const localeData = await chrome.storage.local.get(['locale', 'browserNotifications']);
         await loadLocale(localeData.locale || getSystemLanguage());
         const translated = key => {
             const value = getMessage(key);
@@ -2672,6 +2732,7 @@ async function handleAsyncMessage(message, sender, sendResponse) {
             enabled: settings.chatEnabled,
             hasKey: !!settings.chatKey,
             connected: !!(socket && socket.readyState === WebSocket.OPEN && isNamespaceJoined),
+            eventNotifications: localeData.browserNotifications === true,
             peerId,
             roomId: currentRoom.roomId,
             strings: {
@@ -2688,7 +2749,15 @@ async function handleAsyncMessage(message, sender, sendResponse) {
                 tooLong: translated('CHAT_TOO_LONG'),
                 sendFailed: translated('CHAT_SEND_FAILED'),
                 empty: translated('CHAT_EMPTY'),
-                you: translated('LABEL_YOU')
+                you: translated('LABEL_YOU'),
+                eventPlay: translated('NOTIF_PLAY'),
+                eventPause: translated('NOTIF_PAUSE'),
+                eventSeek: translated('NOTIF_SEEK'),
+                eventForcePrepare: translated('NOTIF_FORCE_PREPARE'),
+                eventForceExecute: translated('NOTIF_FORCE_EXECUTE'),
+                eventAction: translated('TOAST_PEER_ACTION'),
+                eventJoined: translated('TOAST_PEER_JOINED'),
+                eventLeft: translated('TOAST_PEER_LEFT')
             }
         });
     } else if (message.type === 'CHAT_SEND') {
@@ -3127,6 +3196,7 @@ async function handleAsyncMessage(message, sender, sendResponse) {
                 }, FORCE_SYNC_TIMEOUT);
             }
             addToHistory(message.action, 'You');
+            sendChatActivity(message.action, peerId, timestamp);
 
             const isNonEssentialEvent = message.action === EVENTS.PLAY || message.action === EVENTS.PAUSE || message.action === EVENTS.SEEK;
             if (isNonEssentialEvent && !hasOtherPeers) {

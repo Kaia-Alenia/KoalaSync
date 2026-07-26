@@ -9,6 +9,11 @@
     const MIN_HEIGHT = 320;
     const DEFAULT_WIDTH = 360;
     const DEFAULT_HEIGHT = 520;
+    const LAUNCHER_SIZE = 48;
+    const EDGE_INSET = 8;
+    const DOCK_MIN_PAGE_WIDTH = 480;
+    const PAGE_DOCK_ATTRIBUTE = 'data-koalasync-chat-dock';
+    const PAGE_DOCK_WIDTH = '--koalasync-chat-dock-width';
     const SIZE_PRESETS = Object.freeze({
         compact: Object.freeze({ width: 320, height: 400 }),
         standard: Object.freeze({ width: DEFAULT_WIDTH, height: DEFAULT_HEIGHT }),
@@ -26,6 +31,7 @@
     let refreshGeneration = 0;
     let sendGeneration = 0;
     let sending = false;
+    let unreadCount = 0;
     let layout = {
         mode: 'right',
         x: 24,
@@ -34,7 +40,10 @@
         height: DEFAULT_HEIGHT,
         customWidth: DEFAULT_WIDTH,
         customHeight: DEFAULT_HEIGHT,
-        detachedInitialized: false
+        detachedInitialized: false,
+        launcherX: null,
+        launcherY: null,
+        launcherInitialized: false
     };
     let chatPosition = 'right';
     let chatSize = 'standard';
@@ -103,21 +112,31 @@
         button, textarea { font: inherit; }
         button { color: inherit; }
         .launcher {
-            position: fixed; width: 48px; height: 48px; border: 1px solid var(--border-strong);
-            border-radius: 16px; background: var(--card); color: var(--text); cursor: pointer;
-            pointer-events: auto; box-shadow: 0 10px 28px rgb(0 0 0 / .32); font-size: 22px;
-        }
-        .launcher:hover:not([aria-disabled="true"]) { border-color: var(--accent); transform: translateY(-1px); }
-        .launcher[aria-disabled="true"] { cursor: not-allowed; opacity: .58; }
-        .panel {
+             position: fixed; width: 48px; height: 48px; border: 1px solid var(--border-strong);
+             border-radius: 16px; background: var(--card); color: var(--text); cursor: pointer;
+             pointer-events: auto; box-shadow: 0 10px 28px rgb(0 0 0 / .32); font-size: 22px;
+             touch-action: none; user-select: none;
+         }
+         .launcher:hover:not([aria-disabled="true"]) { border-color: var(--accent); transform: translateY(-1px); }
+         .launcher[aria-disabled="true"] { cursor: not-allowed; opacity: .58; }
+         .launcher-icon { pointer-events: none; }
+         .unread {
+             position: absolute; top: -7px; right: -7px; display: none; min-width: 22px; height: 22px;
+             align-items: center; justify-content: center; padding: 0 6px; border: 2px solid var(--card);
+             border-radius: 999px; background: var(--danger); color: white; font-size: 11px; font-weight: 800;
+             line-height: 1; pointer-events: none;
+         }
+         .unread.visible { display: flex; }
+         .panel {
             position: fixed; display: none; flex-direction: column; overflow: hidden;
             min-width: min(${MIN_WIDTH}px, calc(100vw - 16px)); min-height: min(${MIN_HEIGHT}px, calc(100vh - 16px)); max-width: calc(100vw - 16px);
             max-height: calc(100vh - 16px); pointer-events: auto; color: var(--text);
             background: var(--card); border: 1px solid var(--border-strong); border-radius: 18px;
             box-shadow: 0 18px 55px rgb(0 0 0 / .38); transform: translateZ(0);
-        }
-        .panel.open { display: flex; }
-        .header { display: flex; align-items: center; gap: 10px; padding: 12px; border-bottom: 1px solid var(--border-soft); user-select: none; }
+         }
+         .panel.open { display: flex; }
+         .panel.docked { border-radius: 0; max-height: 100vh; }
+         .header { display: flex; align-items: center; gap: 10px; padding: 12px; border-bottom: 1px solid var(--border-soft); user-select: none; }
         .header.detached { cursor: move; }
         .heading { min-width: 0; flex: 1; }
         .title { font-size: 14px; font-weight: 760; }
@@ -131,7 +150,13 @@
         .meta { display: flex; align-items: baseline; gap: 7px; margin-bottom: 2px; }
         .sender { color: var(--accent); font-weight: 700; font-size: 12px; }
         .time { color: var(--text-muted); font-size: 10px; }
-        .body { white-space: pre-wrap; color: var(--text); }
+         .body { white-space: pre-wrap; color: var(--text); }
+         .event-message {
+             display: flex; align-items: center; justify-content: center; gap: 7px; margin: 8px 0;
+             color: var(--text-muted); font-size: 11px; text-align: center;
+         }
+         .event-message::before, .event-message::after { content: ""; flex: 1; height: 1px; background: var(--border-soft); }
+         .event-text { max-width: 78%; }
         .composer { padding: 10px; border-top: 1px solid var(--border-soft); background: var(--card); }
         textarea { width: 100%; min-height: 62px; max-height: 132px; resize: vertical; border: 1px solid var(--border-strong); border-radius: 11px; padding: 9px; background: var(--surface-deep); color: var(--text); outline: none; }
         textarea:focus { border-color: var(--accent); }
@@ -156,8 +181,12 @@
 
     const app = element('div');
     app.id = 'app';
-    const launcher = element('button', 'launcher', '💬');
+    const launcher = element('button', 'launcher');
     launcher.type = 'button';
+    const launcherIcon = element('span', 'launcher-icon', '💬');
+    const unreadBadge = element('span', 'unread');
+    unreadBadge.setAttribute('aria-hidden', 'true');
+    launcher.append(launcherIcon, unreadBadge);
     const launcherHint = element('span', 'visually-hidden');
     launcherHint.id = 'chat-launcher-hint';
     const panel = element('section', 'panel');
@@ -169,7 +198,7 @@
     heading.append(title, subtitle);
     const modes = element('div', 'modes');
     const leftButton = element('button', 'icon-button', '←');
-    const detachedButton = element('button', 'icon-button', '↗');
+    const detachedButton = element('button', 'icon-button', '✥');
     const rightButton = element('button', 'icon-button', '→');
     const closeButton = element('button', 'icon-button', '×');
     for (const button of [leftButton, detachedButton, rightButton, closeButton]) button.type = 'button';
@@ -199,6 +228,19 @@
     app.append(launcherHint, launcher, panel);
     shadow.append(style, app);
     document.documentElement.append(host);
+    const pageDockStyle = document.createElement('style');
+    pageDockStyle.id = 'koalasync-chat-page-dock-style';
+    pageDockStyle.textContent = `
+        html[${PAGE_DOCK_ATTRIBUTE}="left"] {
+            box-sizing: border-box !important;
+            padding-left: var(${PAGE_DOCK_WIDTH}) !important;
+        }
+        html[${PAGE_DOCK_ATTRIBUTE}="right"] {
+            box-sizing: border-box !important;
+            padding-right: var(${PAGE_DOCK_WIDTH}) !important;
+        }
+    `;
+    document.documentElement.append(pageDockStyle);
 
     function messageRuntime(payload, timeoutMs = 5000) {
         return new Promise(resolve => {
@@ -250,6 +292,7 @@
         detachedButton.setAttribute('aria-label', text.detached || '');
         rightButton.setAttribute('aria-label', text.dockRight || '');
         closeButton.setAttribute('aria-label', text.close || '');
+        applyUnreadCount();
     }
 
     function applyTheme() {
@@ -277,6 +320,52 @@
         };
     }
 
+    function clampLauncher() {
+        const viewport = viewportBounds();
+        const maxX = Math.max(0, viewport.width - LAUNCHER_SIZE - EDGE_INSET);
+        const maxY = Math.max(0, viewport.height - LAUNCHER_SIZE - EDGE_INSET);
+        layout.launcherX = Math.min(Math.max(Number(layout.launcherX) || EDGE_INSET, EDGE_INSET), maxX);
+        layout.launcherY = Math.min(Math.max(Number(layout.launcherY) || EDGE_INSET, EDGE_INSET), maxY);
+    }
+
+    function initializeLauncher() {
+        if (layout.launcherInitialized) return;
+        const viewport = viewportBounds();
+        layout.launcherX = chatPosition === 'left'
+            ? Math.min(16, Math.max(EDGE_INSET, viewport.width - LAUNCHER_SIZE - EDGE_INSET))
+            : Math.max(EDGE_INSET, viewport.width - LAUNCHER_SIZE - 16);
+        layout.launcherY = Math.max(EDGE_INSET, Math.round(viewport.height / 2 - LAUNCHER_SIZE / 2));
+        layout.launcherInitialized = true;
+        clampLauncher();
+    }
+
+    function clearPageDock() {
+        document.documentElement.removeAttribute(PAGE_DOCK_ATTRIBUTE);
+        document.documentElement.style.removeProperty(PAGE_DOCK_WIDTH);
+    }
+
+    function applyPageDock(side, width) {
+        const viewport = viewportBounds();
+        if (!opened || document.fullscreenElement || viewport.width - width < DOCK_MIN_PAGE_WIDTH) {
+            clearPageDock();
+            return;
+        }
+        document.documentElement.setAttribute(PAGE_DOCK_ATTRIBUTE, side);
+        document.documentElement.style.setProperty(PAGE_DOCK_WIDTH, `${width}px`);
+    }
+
+    function applyUnreadCount() {
+        unreadBadge.textContent = unreadCount > 99 ? '99+' : String(unreadCount);
+        unreadBadge.classList.toggle('visible', unreadCount > 0);
+        const openLabel = strings().open || '';
+        launcher.setAttribute('aria-label', unreadCount > 0 ? `${openLabel} (${unreadCount})` : openLabel);
+    }
+
+    function setUnreadCount(next) {
+        unreadCount = Math.max(0, Number.isFinite(next) ? Math.trunc(next) : 0);
+        applyUnreadCount();
+    }
+
     function clampDetached() {
         const viewport = viewportBounds();
         const maxWidth = Math.max(1, Math.min(600, viewport.width - 16));
@@ -300,35 +389,37 @@
     function applyLayout() {
         applyingLayout = true;
         const size = preferredSize();
+        initializeLauncher();
+        clampLauncher();
+        launcher.style.left = `${layout.launcherX}px`;
+        launcher.style.right = 'auto';
+        launcher.style.top = `${layout.launcherY}px`;
         panel.style.right = 'auto';
         panel.style.left = 'auto';
         panel.style.bottom = 'auto';
         panel.style.resize = 'none';
+        panel.classList.toggle('docked', layout.mode !== 'detached');
         header.classList.toggle('detached', layout.mode === 'detached');
         leftButton.classList.toggle('active', layout.mode === 'left');
         detachedButton.classList.toggle('active', layout.mode === 'detached');
         rightButton.classList.toggle('active', layout.mode === 'right');
         if (layout.mode === 'detached') {
+            clearPageDock();
             clampDetached();
             panel.style.left = `${layout.x}px`;
             panel.style.top = `${layout.y}px`;
             panel.style.width = `${layout.width}px`;
             panel.style.height = `${layout.height}px`;
             panel.style.resize = 'both';
-            launcher.style.left = `${layout.x}px`;
-            launcher.style.right = 'auto';
-            launcher.style.top = `${layout.y}px`;
         } else {
             const viewport = viewportBounds();
-            const gutter = Math.min(16, Math.max(0, Math.floor((viewport.width - 1) / 2)));
-            const panelTop = viewport.height < MIN_HEIGHT + 80 ? Math.min(8, Math.max(0, viewport.height - 1)) : 64;
-            panel.style.top = `${panelTop}px`;
-            panel.style.width = `${Math.max(1, Math.min(size.width, viewport.width - gutter * 2))}px`;
-            panel.style.height = `${Math.max(1, Math.min(size.height, viewport.height - panelTop - Math.min(16, Math.max(0, viewport.height - panelTop - 1))))}px`;
-            panel.style[layout.mode] = `${gutter}px`;
-            launcher.style.top = `${Math.max(0, Math.min(viewport.height - 48, viewport.height / 2 - 24))}px`;
-            launcher.style.left = layout.mode === 'left' ? `${gutter}px` : 'auto';
-            launcher.style.right = layout.mode === 'right' ? `${gutter}px` : 'auto';
+            const dockWidth = Math.max(1, Math.min(size.width, viewport.width - 16));
+            panel.style.top = '0';
+            panel.style.bottom = '0';
+            panel.style.width = `${dockWidth}px`;
+            panel.style.height = `${viewport.height}px`;
+            panel.style[layout.mode] = '0';
+            applyPageDock(layout.mode, dockWidth);
         }
         globalThis.queueMicrotask(() => { applyingLayout = false; });
     }
@@ -369,9 +460,11 @@
         panel.classList.toggle('open', opened);
         launcher.style.display = opened ? 'none' : '';
         if (opened) {
+            setUnreadCount(0);
             textarea.focus();
             messages.scrollTop = messages.scrollHeight;
         }
+        applyLayout();
     }
 
     function applyContext(next) {
@@ -413,6 +506,7 @@
         const wrapper = element('article', 'message');
         const meta = element('div', 'meta');
         const own = message.senderId === context.peerId;
+        if (!opened && !own) setUnreadCount(unreadCount + 1);
         const sender = element('span', 'sender', own ? (strings().you || '') : (message.username || message.senderId || ''));
         const time = element('time', 'time');
         const date = new Date(message.timestamp);
@@ -431,8 +525,44 @@
         messages.scrollTop = messages.scrollHeight;
     }
 
+    function appendEvent(event) {
+        if (!context?.enabled || !event || typeof event.action !== 'string') return;
+        const own = event.senderId === context.peerId;
+        const displayName = own ? (strings().you || '') : (event.username || event.senderId || '');
+        const labels = {
+            play: strings().eventPlay,
+            pause: strings().eventPause,
+            seek: strings().eventSeek,
+            force_sync_prepare: strings().eventForcePrepare,
+            force_sync_execute: strings().eventForceExecute
+        };
+        let eventText = '';
+        if (event.action === 'joined' || event.action === 'left') {
+            const template = event.action === 'joined' ? strings().eventJoined : strings().eventLeft;
+            eventText = (template || '{name}').replace('{name}', displayName);
+        } else if (labels[event.action]) {
+            eventText = (strings().eventAction || '{name} {action}')
+                .replace('{name}', displayName)
+                .replace('{action}', labels[event.action]);
+        }
+        if (!eventText) return;
+
+        if (empty.isConnected) empty.remove();
+        if (!opened && context.eventNotifications) setUnreadCount(unreadCount + 1);
+        const wrapper = element('article', 'message event-message');
+        const body = element('span', 'event-text', eventText);
+        const time = element('time', 'time');
+        const date = new Date(event.timestamp);
+        time.textContent = Number.isFinite(date.getTime()) ? date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
+        wrapper.append(body, time);
+        messages.append(wrapper);
+        while (messages.querySelectorAll('.message').length > MAX_MESSAGES) messages.querySelector('.message')?.remove();
+        messages.scrollTop = messages.scrollHeight;
+    }
+
     function clearMessages() {
         messages.replaceChildren(empty);
+        setUnreadCount(0);
     }
 
     function resetComposer() {
@@ -445,7 +575,48 @@
         sendButton.disabled = false;
     }
 
-    launcher.addEventListener('click', () => setOpened(true));
+    let launcherDrag = null;
+    let suppressLauncherClick = false;
+    launcher.addEventListener('click', event => {
+        if (suppressLauncherClick && event.detail !== 0) {
+            suppressLauncherClick = false;
+            return;
+        }
+        suppressLauncherClick = false;
+        setOpened(true);
+    });
+    launcher.addEventListener('pointerdown', event => {
+        launcherDrag = {
+            pointerId: event.pointerId,
+            startX: event.clientX,
+            startY: event.clientY,
+            x: layout.launcherX,
+            y: layout.launcherY,
+            moved: false
+        };
+        launcher.setPointerCapture(event.pointerId);
+    });
+    launcher.addEventListener('pointermove', event => {
+        if (!launcherDrag || event.pointerId !== launcherDrag.pointerId) return;
+        const deltaX = event.clientX - launcherDrag.startX;
+        const deltaY = event.clientY - launcherDrag.startY;
+        if (Math.hypot(deltaX, deltaY) >= 4) launcherDrag.moved = true;
+        layout.launcherX = launcherDrag.x + deltaX;
+        layout.launcherY = launcherDrag.y + deltaY;
+        clampLauncher();
+        launcher.style.left = `${layout.launcherX}px`;
+        launcher.style.top = `${layout.launcherY}px`;
+    });
+    launcher.addEventListener('pointerup', event => {
+        if (!launcherDrag || event.pointerId !== launcherDrag.pointerId) return;
+        suppressLauncherClick = launcherDrag.moved;
+        launcherDrag = null;
+        saveLayout();
+    });
+    launcher.addEventListener('pointercancel', () => {
+        launcherDrag = null;
+        suppressLauncherClick = false;
+    });
     closeButton.addEventListener('click', () => setOpened(false));
     leftButton.addEventListener('click', () => setMode('left'));
     detachedButton.addEventListener('click', () => setMode('detached'));
@@ -457,12 +628,18 @@
         count.style.color = length > 500 ? 'var(--danger)' : '';
         status.textContent = length > 500 ? (strings().tooLong || '') : '';
     });
-    textarea.addEventListener('keydown', event => {
-        if (event.key === 'Enter' && !event.shiftKey) {
+    const stopPageKeyboardShortcut = event => {
+        const path = typeof event.composedPath === 'function' ? event.composedPath() : [];
+        if (!path.includes(textarea) && !path.includes(composer)) return;
+        if (event.type === 'keydown' && event.key === 'Enter' && !event.shiftKey) {
             event.preventDefault();
             if (!sending) composer.requestSubmit();
         }
-    });
+        event.stopImmediatePropagation();
+    };
+    for (const eventName of ['keydown', 'keyup', 'keypress']) {
+        window.addEventListener(eventName, stopPageKeyboardShortcut, true);
+    }
     composer.addEventListener('submit', async event => {
         event.preventDefault();
         if (sending || !context?.enabled) return;
@@ -535,10 +712,11 @@
     }
 
     function handleResize() {
+        clampLauncher();
+        applyLayout();
+        saveLayout();
         if (layout.mode === 'detached') {
             clampDetached();
-            applyLayout();
-            saveLayout();
         }
     }
 
@@ -565,6 +743,7 @@
 
     function handleRuntime(message) {
         if (message?.type === 'CHAT_MESSAGE') appendMessage(message.message);
+        if (message?.type === 'CHAT_EVENT') appendEvent(message.event);
         if (message?.type === 'CHAT_CONTEXT_UPDATE' || message?.type === 'CONNECTION_STATUS') refresh();
         if (message?.type === 'CHAT_RESET') {
             clearMessages();
@@ -581,6 +760,11 @@
         sendGeneration++;
         if (saveTimer) clearTimeout(saveTimer);
         resizeObserver.disconnect();
+        clearPageDock();
+        pageDockStyle.remove();
+        for (const eventName of ['keydown', 'keyup', 'keypress']) {
+            window.removeEventListener(eventName, stopPageKeyboardShortcut, true);
+        }
         document.removeEventListener('fullscreenchange', moveIntoFullscreen);
         window.removeEventListener('resize', handleResize);
         systemTheme.removeEventListener('change', handleSystemTheme);

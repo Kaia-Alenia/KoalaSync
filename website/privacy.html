@@ -11,7 +11,7 @@
     <link rel="alternate" hreflang="en" href="https://sync.koalastuff.net/privacy">
     <link rel="alternate" hreflang="de" href="https://sync.koalastuff.net/de/datenschutz">
     <link rel="alternate" hreflang="x-default" href="https://sync.koalastuff.net/privacy">
-    <meta name="description" content="Privacy Policy of KoalaSync - We take data security and transparency seriously. Learn about our zero-tracking, zero-log, and zero-cookie approach.">
+    <meta name="description" content="Privacy Policy of KoalaSync. Learn how live room data, encrypted chat, operational logs and website access logs are handled.">
     <meta name="robots" content="index, follow">
 
     <script type="application/ld+json">
@@ -31,7 +31,7 @@
       "@type": "WebPage",
       "name": "Privacy Policy",
       "url": "https://sync.koalastuff.net/privacy",
-      "description": "Privacy Policy of KoalaSync - We take data security and transparency seriously. Learn about our zero-tracking, zero-log, and zero-cookie approach.",
+      "description": "Privacy Policy of KoalaSync. Learn how live room data, encrypted chat, operational logs and website access logs are handled.",
       "inLanguage": "en",
       "isPartOf": {
         "@type": "WebSite",
@@ -202,10 +202,19 @@
             <section>
                 <h2>4. Official Relay Server & Room Data</h2>
                 <p>
-                    The official KoalaSync relay server does not keep persistent logs. It does not store room history, sync history, watch history, room messages, playback events, tab titles, or media titles on disk.
+                    The official KoalaSync relay server does not create a room, chat, synchronization or watch history. Operational console logs used for security and troubleshooting may contain IP addresses, socket or peer identifiers, protocol versions and shortened room identifiers. Their retention depends on the server infrastructure and logging configuration.
                 </p>
                 <p style="margin-top: 0.5rem;">
                     To provide the room feature, the relay temporarily processes room and synchronization data in memory while a room is active. This can include room ID, peer ID, display name, playback state, sync events, and, depending on title privacy settings, tab/media titles. This data is only forwarded to participants in the same room and is removed from memory when the room expires or is closed.
+                </p>
+                <p style="margin-top: 0.5rem;">
+                    Room-chat message content is end-to-end encrypted in the browser extension before transmission. KoalaSync derives a 256-bit AES-GCM key locally from the room ID and a randomly generated chat secret. The chat secret is shared through the invite link and stored locally by the extension; it is not included in chat payloads sent to the relay.
+                </p>
+                <p style="margin-top: 0.5rem;">
+                    The relay receives only encrypted message content together with the technical metadata required for live delivery, such as sender ID, message ID and timestamp. Because the relay does not receive the chat secret, it cannot decrypt or read the message text. It forwards the encrypted payload to current participants in the same room and does not create a server-side chat history, write messages to disk or retain them after live forwarding.
+                </p>
+                <p style="margin-top: 0.5rem;">
+                    Anyone who obtains a valid invite link and its chat secret may be able to decrypt messages in that room. Invite links should therefore be shared only with intended participants.
                 </p>
                 <p style="margin-top: 0.5rem;">
                     Legal basis: Art. 6(1)(f) GDPR, legitimate interest in providing the requested synchronization functionality, maintaining security, and preventing abuse.
@@ -221,7 +230,13 @@
                     To synchronize playback between participants in the same room, the KoalaSync browser extension temporarily captures data from the currently active video tab (e.g., tab title, media metadata like the video title, and playback state). Tab or media titles can potentially be personal depending on content. They are only processed for the synchronization feature, can be limited or disabled through title privacy settings in the extension, are forwarded only to room participants, and are not logged or stored persistently by the relay.
                 </p>
                 <p style="margin-top: 0.5rem;">
-                    The extension stores only settings required for operation locally in the browser, such as username, server URL, current room credentials, language, title privacy settings, notification preferences and audio-processing settings. KoalaSync does not store general browsing history or a persistent watch history.
+                    The extension stores only settings required for operation locally in the browser, such as username, server URL, current room credentials (including the chat secret), language, title privacy settings, notification preferences and audio-processing settings. KoalaSync does not store general browsing history or a persistent watch history.
+                </p>
+                <p style="margin-top: 0.5rem;">
+                    Decrypted chat messages are kept only in the memory of the current video-tab overlay, with a maximum of 200 visible message or activity entries. They are not written to browser storage and disappear when the chat is reset or destroyed, the page is reloaded, or the room session ends. Playback and presence entries shown inside the chat are generated locally from existing room events and do not create a separate server-side history.
+                </p>
+                <p style="margin-top: 0.5rem;">
+                    If chat notifications are enabled, the decrypted sender name and message text are passed to the browser's notification API and may be displayed or retained by the browser or operating system according to its own notification settings. Chat notifications can be disabled in the extension settings.
                 </p>
                 <p style="margin-top: 0.5rem;">
                     The extension only connects to the relay server while you are actively in a room. No persistent background connection is maintained, so your IP address is not exposed to the server when you are not using the extension.
@@ -254,14 +269,14 @@
             <section>
                 <h2>8. Recipients & Third Parties</h2>
                 <p>
-                    Technical hosting and connection data may be processed by Hetzner as hosting provider on behalf of the operator. Room sync data is forwarded only to participants in the same room. KoalaSync does not use analytics providers, advertising networks, or tracking services.
+                    Technical hosting and connection data may be processed by Hetzner as hosting provider on behalf of the operator. Room sync data is forwarded only to participants in the same room. Encrypted room-chat payloads and their delivery metadata are likewise forwarded only within the room; readable message content is available only to participants who possess the chat secret. KoalaSync does not use analytics providers, advertising networks, or tracking services.
                 </p>
             </section>
 
             <section>
                 <h2>9. Required & Optional Data</h2>
                 <p>
-                    Providing technical connection data is necessary to access the website and use the relay. Room credentials and sync events are necessary to use room synchronization. Sharing tab/media titles is optional and can be limited through the extension’s privacy settings.
+                    Providing technical connection data is necessary to access the website and use the relay. Room credentials and sync events are necessary to use room synchronization. Text chat is optional; when used, encrypted message payloads and delivery metadata are required for live delivery. Sharing tab/media titles and enabling browser notifications are optional and can be controlled through the extension’s privacy settings.
                 </p>
             </section>
 
@@ -295,7 +310,7 @@
     <footer>
         <div class="container">
             <p>&copy; 2026 KoalaSync. Open source under the MIT License.</p>
-            <p style="font-size: 0.8rem; margin-top: 0.5rem;">No relay logs. No tracking. Website access logs are deleted after 7 days.</p>
+            <p style="font-size: 0.8rem; margin-top: 0.5rem;">No chat or watch history. No tracking. Website access logs are deleted after 7 days.</p>
             <div style="margin-top: 1.5rem; font-size: 0.8rem; display: flex; justify-content: center; align-items: center; gap: 1.5rem; flex-wrap: wrap;">
                 <a href="https://koalastuff.net/legal" style="color: var(--text-muted); text-decoration: none;">Legal Notice</a>
                 <a href="privacy" style="color: var(--text-muted); text-decoration: none;">Privacy Policy</a>

@@ -22,6 +22,39 @@ const localeFiles = fs.readdirSync(localesDir)
 
 let hasError = false;
 
+const encryptedChatComparisonKeys = [
+  'ALT_TELEPARTY_INTRO',
+  'ALT_TELEPARTY_WHEN_TELE_BODY',
+  'ALT_TELEPARTY_MAIN_DIFF_BODY',
+  'ALT_TELEPARTY_LIMITS_BODY',
+  'ALT_TELEPARTY_SUMMARY_BODY',
+  'ALT_SCREEN_LIMITS_BODY',
+  'ALT_W2G_MAIN_DIFF_BODY',
+  'ALT_W2G_LIMITS_BODY',
+  'ALT_W2G_SUMMARY_BODY',
+  'ALT_SCENER_INTRO',
+  'ALT_SCENER_MAIN_DIFF_BODY',
+  'ALT_SCENER_LIMITS_BODY',
+  'ALT_KOSMI_LIMITS_BODY',
+  'ALT_TWOSEVEN_LIMITS_BODY'
+];
+const staleChatClaims = /does not currently have a built-in chat|has no built-in chat|no built-in chat box overlay|no built-in chat or webcam|no built-in chat or voice/i;
+for (const key of encryptedChatComparisonKeys) {
+  const value = enDict[key];
+  if (typeof value !== 'string' || !value.includes('end-to-end encrypted')) {
+    hasError = true;
+    console.error(`❌ English comparison key ${key} must describe KoalaSync's end-to-end encrypted chat.`);
+  }
+  if (staleChatClaims.test(value)) {
+    hasError = true;
+    console.error(`❌ English comparison key ${key} still claims that KoalaSync has no built-in text chat.`);
+  }
+}
+if (!enDict.ALT_TWOSEVEN_LIMITS_BODY.includes('floating and dockable')) {
+  hasError = true;
+  console.error('❌ TwoSeven comparison must describe KoalaSync text chat as floating and dockable.');
+}
+
 console.log(`Auditing website i18n locales using ${enKeys.length} baseline keys from en.json...\n`);
 
 for (const file of localeFiles) {
