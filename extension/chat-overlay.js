@@ -9,6 +9,11 @@
     const MIN_HEIGHT = 320;
     const DEFAULT_WIDTH = 360;
     const DEFAULT_HEIGHT = 520;
+    const SIZE_PRESETS = Object.freeze({
+        compact: Object.freeze({ width: 320, height: 400 }),
+        standard: Object.freeze({ width: DEFAULT_WIDTH, height: DEFAULT_HEIGHT }),
+        large: Object.freeze({ width: 440, height: 640 })
+    });
     const storageKey = `chatOverlayLayout:${location.origin}`;
     const systemTheme = window.matchMedia('(prefers-color-scheme: light)');
     let context = null;
@@ -16,10 +21,15 @@
     let destroyed = false;
     let saveTimer = null;
     let applyingLayout = false;
+    let preferencesLoaded = false;
+    let startStateApplied = false;
     let refreshGeneration = 0;
     let sendGeneration = 0;
     let sending = false;
     let layout = { mode: 'right', x: 24, y: 72, width: DEFAULT_WIDTH, height: DEFAULT_HEIGHT, detachedInitialized: false };
+    let chatPosition = 'right';
+    let chatSize = 'standard';
+    let chatStartMode = 'bubble';
     let themeMode = 'system';
     let themePalette = 'eucalyptus';
 
@@ -243,6 +253,21 @@
         return { width: Math.max(1, window.innerWidth), height: Math.max(1, window.innerHeight) };
     }
 
+    function normalizePosition(value) {
+        return ['left', 'right', 'detached'].includes(value) ? value : 'right';
+    }
+
+    function normalizeSize(value) {
+        return ['compact', 'standard', 'large', 'custom'].includes(value) ? value : 'standard';
+    }
+
+    function preferredSize() {
+        return SIZE_PRESETS[chatSize] || {
+            width: Number(layout.width) || DEFAULT_WIDTH,
+            height: Number(layout.height) || DEFAULT_HEIGHT
+        };
+    }
+
     function clampDetached() {
         const viewport = viewportBounds();
         const maxWidth = Math.max(1, Math.min(600, viewport.width - 16));
@@ -265,6 +290,7 @@
 
     function applyLayout() {
         applyingLayout = true;
+        const size = preferredSize();
         panel.style.right = 'auto';
         panel.style.left = 'auto';
         panel.style.bottom = 'auto';
@@ -288,8 +314,8 @@
             const gutter = Math.min(16, Math.max(0, Math.floor((viewport.width - 1) / 2)));
             const panelTop = viewport.height < MIN_HEIGHT + 80 ? Math.min(8, Math.max(0, viewport.height - 1)) : 64;
             panel.style.top = `${panelTop}px`;
-            panel.style.width = `${Math.max(1, Math.min(DEFAULT_WIDTH, viewport.width - gutter * 2))}px`;
-            panel.style.height = `${Math.max(1, Math.min(560, viewport.height - panelTop - Math.min(16, Math.max(0, viewport.height - panelTop - 1))))}px`;
+            panel.style.width = `${Math.max(1, Math.min(size.width, viewport.width - gutter * 2))}px`;
+            panel.style.height = `${Math.max(1, Math.min(size.height, viewport.height - panelTop - Math.min(16, Math.max(0, viewport.height - panelTop - 1))))}px`;
             panel.style[layout.mode] = `${gutter}px`;
             launcher.style.top = `${Math.max(0, Math.min(viewport.height - 48, viewport.height / 2 - 24))}px`;
             launcher.style.left = layout.mode === 'left' ? `${gutter}px` : 'auto';
@@ -298,16 +324,32 @@
         globalThis.queueMicrotask(() => { applyingLayout = false; });
     }
 
-    function setMode(mode) {
-        if (!['left', 'right', 'detached'].includes(mode)) return;
+    function setMode(mode, persistPreference = true) {
+        mode = normalizePosition(mode);
         if (mode === 'detached' && !layout.detachedInitialized) {
-            layout.x = Math.max(8, Math.round((window.innerWidth - DEFAULT_WIDTH) / 2));
-            layout.y = Math.max(8, Math.round((window.innerHeight - DEFAULT_HEIGHT) / 2));
+            const size = preferredSize();
+            layout.x = Math.max(8, Math.round((window.innerWidth - size.width) / 2));
+            layout.y = Math.max(8, Math.round((window.innerHeight - size.height) / 2));
             layout.detachedInitialized = true;
         }
+        chatPosition = mode;
         layout.mode = mode;
         applyLayout();
         saveLayout();
+        if (persistPreference) chrome.storage.local.set({ chatPosition: mode }).catch(() => {});
+    }
+
+    function setSize(size, persistPreference = true) {
+        chatSize = normalizeSize(size);
+        const preset = SIZE_PRESETS[chatSize];
+        if (preset) {
+            layout.width = preset.width;
+            layout.height = preset.height;
+            if (layout.mode === 'detached') clampDetached();
+        }
+        applyLayout();
+        saveLayout();
+        if (persistPreference) chrome.storage.local.set({ chatSize }).catch(() => {});
     }
 
     function setOpened(next) {
@@ -328,10 +370,19 @@
         const hasKey = !!context?.hasKey;
         const connected = !!context?.connected;
         context = context ? { ...context, enabled: supported && optedIn && hasKey && connected } : null;
-        if (previousRoomId && previousRoomId !== context?.roomId) clearMessages();
+        if (previousRoomId && previousRoomId !== context?.roomId) {
+            clearMessages();
+            startStateApplied = false;
+        }
         host.style.display = supported && optedIn ? '' : 'none';
         launcher.setAttribute('aria-disabled', String(!context?.enabled));
-        if (!context?.enabled) setOpened(false);
+        if (!optedIn) startStateApplied = false;
+        if (!context?.enabled) {
+            setOpened(false);
+        } else if (preferencesLoaded && !startStateApplied) {
+            startStateApplied = true;
+            setOpened(chatStartMode === 'open');
+        }
         applyStrings();
         applyLayout();
     }
@@ -481,6 +532,15 @@
         if (changes.themeMode) themeMode = changes.themeMode.newValue || 'system';
         if (changes.themePalette) themePalette = changes.themePalette.newValue || 'eucalyptus';
         if (changes.themeMode || changes.themePalette) applyTheme();
+        if (changes.chatPosition) setMode(changes.chatPosition.newValue, false);
+        if (changes.chatSize) setSize(changes.chatSize.newValue, false);
+        if (changes.chatStartMode) {
+            chatStartMode = changes.chatStartMode.newValue === 'open' ? 'open' : 'bubble';
+            if (context?.enabled) {
+                startStateApplied = true;
+                setOpened(chatStartMode === 'open');
+            }
+        }
         if (changes.locale) refresh();
     }
 
@@ -516,16 +576,25 @@
     systemTheme.addEventListener('change', handleSystemTheme);
     chrome.storage.onChanged.addListener(handleStorage);
     chrome.runtime.onMessage.addListener(handleRuntime);
-    chrome.storage.local.get([storageKey, 'themeMode', 'themePalette'], data => {
+    chrome.storage.local.get([storageKey, 'themeMode', 'themePalette', 'chatPosition', 'chatSize', 'chatStartMode'], data => {
         if (data[storageKey] && typeof data[storageKey] === 'object') layout = { ...layout, ...data[storageKey] };
-        if (!['left', 'right', 'detached'].includes(layout.mode)) layout.mode = 'right';
+        chatPosition = normalizePosition(data.chatPosition);
+        chatSize = normalizeSize(data.chatSize);
+        chatStartMode = data.chatStartMode === 'open' ? 'open' : 'bubble';
+        layout.mode = chatPosition;
         if (layout.mode === 'detached') layout.detachedInitialized = true;
+        const preset = SIZE_PRESETS[chatSize];
+        if (preset) {
+            layout.width = preset.width;
+            layout.height = preset.height;
+        }
         themeMode = data.themeMode || 'system';
         themePalette = data.themePalette || 'eucalyptus';
+        preferencesLoaded = true;
         applyTheme();
         applyLayout();
+        refresh();
     });
 
     window.koalaSyncChatOverlay = { refresh, destroy };
-    refresh();
 })();

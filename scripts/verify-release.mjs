@@ -20,6 +20,7 @@ const checks = [
   ['content video finder', 'node', ['scripts/test-content-video-finder.cjs']],
   ['audio settings', 'node', ['scripts/test-audio-settings.mjs']],
   ['popup refresh cooldown', 'node', ['scripts/test-popup-refresh-cooldown.mjs']],
+  ['chat settings', 'node', ['scripts/test-chat-settings.mjs']],
   ['host access recovery', 'node', ['scripts/test-host-access.mjs']],
   ['server syntax index', 'node', ['-c', 'server/index.js']],
   ['server syntax ops', 'node', ['-c', 'server/ops.js']],

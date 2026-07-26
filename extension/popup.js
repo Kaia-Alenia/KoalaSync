@@ -69,6 +69,9 @@ const elements = {
     pauseBtn: document.getElementById('pauseBtn'),
     autoSyncNextEpisode: document.getElementById('autoSyncNextEpisode'),
     chatEnabled: document.getElementById('chatEnabled'),
+    chatPosition: document.getElementById('chatPosition'),
+    chatSize: document.getElementById('chatSize'),
+    chatStartMode: document.getElementById('chatStartMode'),
     sendTabTitle: document.getElementById('sendTabTitle'),
     mediaTitlePrivacyMode: document.getElementById('mediaTitlePrivacyMode'),
     episodeLobbyCard: document.getElementById('episodeLobbyCard'),
@@ -338,7 +341,7 @@ function setRoomRefreshCooldown() {
 async function init() {
     // Local-only by design — settings and room credentials never come from
     // storage.sync (only onboardingComplete + dismissedHints live there).
-    const localData = await chrome.storage.local.get(['serverUrl', 'useCustomServer', 'roomId', 'password', 'chatKey', 'chatEnabled', 'username', 'filterNoise', 'autoSyncNextEpisode', 'sendTabTitle', 'mediaTitlePrivacyMode', 'titlePrivacyMode', 'forceSyncMode', 'browserNotifications', 'autoCopyInvite', 'locale', 'audioSettings', 'activeTab', 'themeMode', 'themePalette']);
+    const localData = await chrome.storage.local.get(['serverUrl', 'useCustomServer', 'roomId', 'password', 'chatKey', 'chatEnabled', 'chatPosition', 'chatSize', 'chatStartMode', 'username', 'filterNoise', 'autoSyncNextEpisode', 'sendTabTitle', 'mediaTitlePrivacyMode', 'titlePrivacyMode', 'forceSyncMode', 'browserNotifications', 'autoCopyInvite', 'locale', 'audioSettings', 'activeTab', 'themeMode', 'themePalette']);
 
     let activeLang = localData.locale;
     if (!activeLang) {
@@ -370,6 +373,10 @@ async function init() {
     if (elements.filterNoise) elements.filterNoise.checked = localData.filterNoise !== false;
     if (elements.autoSyncNextEpisode) elements.autoSyncNextEpisode.checked = localData.autoSyncNextEpisode !== false;
     if (elements.chatEnabled) elements.chatEnabled.checked = localData.chatEnabled === true;
+    if (elements.chatPosition) elements.chatPosition.value = ['left', 'detached'].includes(localData.chatPosition) ? localData.chatPosition : 'right';
+    if (elements.chatSize) elements.chatSize.value = ['compact', 'large', 'custom'].includes(localData.chatSize) ? localData.chatSize : 'standard';
+    if (elements.chatStartMode) elements.chatStartMode.value = localData.chatStartMode === 'open' ? 'open' : 'bubble';
+    syncChatSettingsState();
     const legacyTitlePrivacyMode = Object.values(TITLE_PRIVACY_MODES).includes(localData.titlePrivacyMode) ? localData.titlePrivacyMode : TITLE_PRIVACY_MODES.FULL;
     const mediaTitlePrivacyMode = Object.values(TITLE_PRIVACY_MODES).includes(localData.mediaTitlePrivacyMode) ? localData.mediaTitlePrivacyMode : legacyTitlePrivacyMode;
     if (elements.sendTabTitle) elements.sendTabTitle.checked = normalizeSendTabTitle(localData.sendTabTitle, legacyTitlePrivacyMode);
@@ -1458,9 +1465,38 @@ elements.autoSyncNextEpisode.addEventListener('change', () => {
     chrome.storage.local.set({ autoSyncNextEpisode: elements.autoSyncNextEpisode.checked });
 });
 
+function syncChatSettingsState() {
+    const enabled = elements.chatEnabled?.checked === true;
+    for (const control of [elements.chatPosition, elements.chatSize, elements.chatStartMode]) {
+        if (control) control.disabled = !enabled;
+    }
+    document.querySelectorAll('[data-chat-setting]').forEach(row => {
+        row.classList.toggle('is-disabled', !enabled);
+        row.setAttribute('aria-disabled', String(!enabled));
+    });
+}
+
 if (elements.chatEnabled) {
     elements.chatEnabled.addEventListener('change', () => {
+        syncChatSettingsState();
         chrome.storage.local.set({ chatEnabled: elements.chatEnabled.checked });
+    });
+}
+if (elements.chatPosition) {
+    elements.chatPosition.addEventListener('change', () => {
+        const chatPosition = ['left', 'detached'].includes(elements.chatPosition.value) ? elements.chatPosition.value : 'right';
+        chrome.storage.local.set({ chatPosition });
+    });
+}
+if (elements.chatSize) {
+    elements.chatSize.addEventListener('change', () => {
+        const chatSize = ['compact', 'large', 'custom'].includes(elements.chatSize.value) ? elements.chatSize.value : 'standard';
+        chrome.storage.local.set({ chatSize });
+    });
+}
+if (elements.chatStartMode) {
+    elements.chatStartMode.addEventListener('change', () => {
+        chrome.storage.local.set({ chatStartMode: elements.chatStartMode.value === 'open' ? 'open' : 'bubble' });
     });
 }
 
