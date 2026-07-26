@@ -4,6 +4,18 @@ All notable changes to the KoalaSync browser extension and relay server.
 
 ---
 
+## [v3.0.1] — 2026-07-26
+
+### Added
+- **Extension: Google Drive workaround** — Detects and controls videos opened on `drive.google.com` through the site-specific embedded-player path.
+- **Extension: Chat event messages** — Optionally shows timestamped room and playback events in chat while keeping chat-message notifications enabled by default and event notifications disabled by default.
+
+### Fixed
+- **Extension: Chat interactions** — Prevents video-player keyboard shortcuts while typing, makes the floating chat draggable, restores left/right docking, updates unread notifications, and keeps chat timestamps visible.
+- **Extension: Embedded-player selection** — Avoids selecting a stale hidden media frame when multiple nested frames are temporarily ambiguous.
+- **Extension: Popup layout** — Moves the video-selection hint lower and reduces its glow.
+- **Website and extension copy** — Corrects malformed translations, separates chat and playback notification labels, removes stale version references and unsupported comparison claims, and accurately documents encrypted live chat and operational logging.
+
 ## [v3.0.0] — 2026-07-26
 
 ### Added
