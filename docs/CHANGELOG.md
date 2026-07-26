@@ -4,6 +4,22 @@ All notable changes to the KoalaSync browser extension and relay server.
 
 ---
 
+## [v3.0.0] — 2026-07-26
+
+### Added
+- **Extension: Optional encrypted room chat** — Rooms now support live-only, end-to-end encrypted text messages. Chat is disabled and hidden by default and can be enabled explicitly in the extension options.
+- **Extension: Persistent room chat key** — Every room generates and retains a chat key even while chat is disabled, so chat can be enabled later without creating a new room.
+- **Extension: Floating player chat** — When enabled, chat is available from a floating control over the selected player and opens in an overlay without replacing the synchronized video.
+- **Extension: Dedicated chat settings** — Chat now has its own settings section for enablement, left/right/free-floating placement, compact/standard/large/custom sizing, and bubble-versus-open startup behavior.
+
+### Security
+- **Ciphertext-only relay** — The relay receives and forwards encrypted message payloads without storing chat history or accepting client-supplied plaintext, sender identities, timestamps, or message IDs as authoritative.
+- **Backward-compatible rollout** — Versioned `chat-v1` capabilities ensure old non-chat extensions never receive unknown chat events, while current extensions continue to work with older chatless relay versions.
+
+### Changed
+- **Build dependencies** — Updated the supported build and validation toolchain and refreshed compatible transitive dependencies.
+- **Relay container runtime** — Moved the production container from end-of-life Node.js 20 to Node.js 24 LTS and made production dependency installation deterministic with `npm ci --omit=dev`.
+
 ## [v2.6.4] — 2026-07-16
 
 ### Changed

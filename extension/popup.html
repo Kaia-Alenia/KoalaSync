@@ -1215,6 +1215,12 @@
             line-height: 1.45;
             text-align: left;
         }
+        [data-chat-setting] {
+            transition: opacity 0.2s;
+        }
+        [data-chat-setting].is-disabled {
+            opacity: 0.5;
+        }
         .settings-issue-link {
             margin: 8px 0 2px;
             padding-top: 9px;
@@ -1616,19 +1622,56 @@
         </details>
 
         <details class="form-group" name="settings-accordion">
+            <summary title="Configure encrypted room chat appearance and placement." data-i18n="CHAT_TITLE" data-i18n-title="LABEL_SETTINGS_GROUP_CHAT_TOOLTIP">Room Chat</summary>
+            <div class="details-content">
+                <p class="settings-note" data-i18n="CHAT_SETTINGS_NOTE">Optional and end-to-end encrypted. Messages are live only and are not stored by the relay.</p>
+                <div class="settings-row">
+                    <label for="chatEnabled" title="Show encrypted room chat on the selected video tab." data-i18n="LABEL_CHAT_ENABLED" data-i18n-title="LABEL_CHAT_ENABLED_TOOLTIP">Enable Room Chat</label>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="chatEnabled">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                <div class="settings-row" data-chat-setting>
+                    <label for="chatPosition" title="Choose where chat is attached to the selected player." data-i18n="LABEL_CHAT_POSITION" data-i18n-title="LABEL_CHAT_POSITION_TOOLTIP">Position</label>
+                    <span class="settings-select">
+                        <select id="chatPosition" class="settings-control">
+                            <option value="right" data-i18n="CHAT_DOCK_RIGHT">Dock chat right</option>
+                            <option value="left" data-i18n="CHAT_DOCK_LEFT">Dock chat left</option>
+                            <option value="detached" data-i18n="CHAT_DETACHED">Detach chat</option>
+                        </select>
+                    </span>
+                </div>
+                <div class="settings-row" data-chat-setting>
+                    <label for="chatSize" title="Choose the default size of the chat overlay." data-i18n="LABEL_CHAT_SIZE" data-i18n-title="LABEL_CHAT_SIZE_TOOLTIP">Overlay size</label>
+                    <span class="settings-select">
+                        <select id="chatSize" class="settings-control">
+                            <option value="compact" data-i18n="OPTION_CHAT_SIZE_COMPACT">Compact</option>
+                            <option value="standard" data-i18n="OPTION_CHAT_SIZE_STANDARD">Standard</option>
+                            <option value="large" data-i18n="OPTION_CHAT_SIZE_LARGE">Large</option>
+                            <option value="custom" data-i18n="OPTION_CHAT_SIZE_CUSTOM">Last custom size</option>
+                        </select>
+                    </span>
+                </div>
+                <div class="settings-row" data-chat-setting>
+                    <label for="chatStartMode" title="Choose whether chat starts as a floating bubble or an open overlay." data-i18n="LABEL_CHAT_START_MODE" data-i18n-title="LABEL_CHAT_START_MODE_TOOLTIP">Start as</label>
+                    <span class="settings-select">
+                        <select id="chatStartMode" class="settings-control">
+                            <option value="bubble" data-i18n="OPTION_CHAT_START_BUBBLE">Floating bubble</option>
+                            <option value="open" data-i18n="OPTION_CHAT_START_OPEN">Open overlay</option>
+                        </select>
+                    </span>
+                </div>
+            </div>
+        </details>
+
+        <details class="form-group" name="settings-accordion">
             <summary title="Customize playback, notifications, and audio preferences." data-i18n="LABEL_SETTINGS_GROUP_SYNC" data-i18n-title="LABEL_SETTINGS_GROUP_SYNC_TOOLTIP">Playback &amp; Sync</summary>
             <div class="details-content">
                 <div class="settings-row">
                     <label for="autoSyncNextEpisode" title="Pauses automatically and waits for all peers when an episode changes, then sync-starts together." data-i18n="LABEL_AUTO_SYNC_NEXT" data-i18n-title="LABEL_AUTO_SYNC_NEXT_TOOLTIP">Auto-Sync Next Episode</label>
                     <label class="toggle-switch">
                         <input type="checkbox" id="autoSyncNextEpisode">
-                        <span class="slider"></span>
-                    </label>
-                </div>
-                <div class="settings-row">
-                    <label for="chatEnabled" title="Show encrypted room chat on the selected video tab." data-i18n="LABEL_CHAT_ENABLED" data-i18n-title="LABEL_CHAT_ENABLED_TOOLTIP">Enable Room Chat</label>
-                    <label class="toggle-switch">
-                        <input type="checkbox" id="chatEnabled">
                         <span class="slider"></span>
                     </label>
                 </div>

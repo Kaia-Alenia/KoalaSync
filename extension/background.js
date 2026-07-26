@@ -452,7 +452,8 @@ function emitEpisodeLobbyForCurrentPrivacy() {
 // removes legacy keys that older versions wrote to sync (and that would
 // otherwise be redistributed across devices and resurrected on reinstall).
 const LEGACY_SYNC_KEYS = [
-    'serverUrl', 'useCustomServer', 'roomId', 'password', 'chatKey', 'username',
+    'serverUrl', 'useCustomServer', 'roomId', 'password', 'chatKey',
+    'chatEnabled', 'chatPosition', 'chatSize', 'chatStartMode', 'username',
     'filterNoise', 'autoSyncNextEpisode', 'forceSyncMode',
     'browserNotifications', 'autoCopyInvite', 'locale', 'audioSettings',
     'titlePrivacyMode', 'sendTabTitle', 'mediaTitlePrivacyMode'
