@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en" class="lang-en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KoalaSync Help | Setup, Video Detection & Troubleshooting</title>
+    <meta name="description" content="Get KoalaSync working: understand browser permissions, restore website access, find missing video tabs, diagnose video detection, fix sync issues, and report reproducible bugs.">
+    <meta name="robots" content="index, follow">
+    <link rel="preload" href="style.min.css" as="style">
+    <link rel="stylesheet" href="style.min.css">
+    <link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32x32.png">
+    <link rel="canonical" href="https://sync.koalastuff.net/help">
+    <link rel="alternate" hreflang="en" href="https://sync.koalastuff.net/help">
+    <link rel="alternate" hreflang="x-default" href="https://sync.koalastuff.net/help">
+    <link rel="alternate" type="text/markdown" href="https://sync.koalastuff.net/llms.txt" title="KoalaSync information for AI assistants">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://sync.koalastuff.net/help">
+    <meta property="og:title" content="KoalaSync Help">
+    <meta property="og:description" content="Setup help, browser permissions, video detection, synchronization checks, and reproducible bug reports.">
+    <meta property="og:image" content="https://sync.koalastuff.net/assets/og-image.png">
+    <meta property="og:image:width" content="1280">
+    <meta property="og:image:height" content="640">
+    <meta property="og:image:type" content="image/png">
+    <meta property="og:image:alt" content="KoalaSync browser extension">
+    <meta property="og:site_name" content="KoalaSync">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="KoalaSync Help">
+    <meta name="twitter:description" content="Setup help, browser permissions, video detection, synchronization checks, and reproducible bug reports.">
+    <meta name="twitter:image" content="https://sync.koalastuff.net/assets/og-image.png">
+    <meta name="twitter:image:alt" content="KoalaSync browser extension">
+    <meta name="theme-color" content="#10190e">
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "WebSite",
+          "@id": "https://sync.koalastuff.net/#website",
+          "name": "KoalaSync",
+          "url": "https://sync.koalastuff.net/"
+        },
+        {
+          "@type": "Organization",
+          "@id": "https://sync.koalastuff.net/#organization",
+          "name": "KoalaSync",
+          "url": "https://sync.koalastuff.net/",
+          "logo": "https://sync.koalastuff.net/assets/NewLogoIcon.webp",
+          "sameAs": ["https://github.com/Shik3i/KoalaSync"]
+        },
+        {
+          "@type": ["CollectionPage", "FAQPage"],
+          "@id": "https://sync.koalastuff.net/help#webpage",
+          "name": "KoalaSync Help",
+          "headline": "KoalaSync Help: Setup, Video Detection and Troubleshooting",
+          "description": "Help for granting browser access, finding missing video tabs, diagnosing video detection, fixing playback synchronization, and reporting reproducible bugs.",
+          "url": "https://sync.koalastuff.net/help",
+          "datePublished": "2026-07-28",
+          "dateModified": "2026-07-28",
+          "inLanguage": "en",
+          "isPartOf": {"@id": "https://sync.koalastuff.net/#website"},
+          "publisher": {"@id": "https://sync.koalastuff.net/#organization"},
+          "mainEntity": [
+            {
+              "@type": "Question",
+              "name": "Why does the browser show such a broad permission warning for KoalaSync?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "KoalaSync works with video players across many websites. It uses access on the video tab you actively select to find and control the video element, synchronize playback, and display optional room chat. Open tab titles populate the tab selector; KoalaSync does not create a general browsing or watch history."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Why does a video tab not appear in KoalaSync?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Reload the video page, reopen KoalaSync, and disable Hide Clutter Tabs in Settings. If the tab then appears, report the domain because it was filtered by mistake. Otherwise, verify that KoalaSync has website access."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Why does KoalaSync find no video on a listed tab?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Select the tab containing the visible player and start playback once. Check Video Debug Info in the Status tab, reload after permission changes, and temporarily disable extensions that modify the player. Some protected or non-HTML5 players may need site-specific support."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Why are connected KoalaSync participants not synchronized?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Confirm that everyone uses the same KoalaSync version and selected the correct local video tab. Reload after website-access changes, test play, pause, and seeking separately, and collect a debug report from each affected participant."
+              }
+            }
+          ]
+        },
+        {
+          "@type": "BreadcrumbList",
+          "@id": "https://sync.koalastuff.net/help#breadcrumb",
+          "itemListElement": [
+            {
+              "@type": "ListItem",
+              "position": 1,
+              "name": "KoalaSync",
+              "item": "https://sync.koalastuff.net/"
+            },
+            {
+              "@type": "ListItem",
+              "position": 2,
+              "name": "Help",
+              "item": "https://sync.koalastuff.net/help"
+            }
+          ]
+        }
+      ]
+    }
+    </script>
+    <script src="lang-init.min.js"></script>
+</head>
+<body class="support-page">
+    <div class="scroll-progress-bar"></div>
+    <a class="skip-link" href="#main-content">Skip to help topics</a>
+
+    <nav>
+        <div class="container nav-content">
+            <a class="logo-area" href="./" aria-label="KoalaSync home">
+                <img class="nav-logo-img" src="assets/NewLogoIcon_128.webp" srcset="assets/NewLogoIcon_64.webp 64w, assets/NewLogoIcon_128.webp 128w, assets/NewLogoIcon.webp 256w" sizes="64px" alt="KoalaSync logo" width="64" height="64">
+                <span>KoalaSync</span>
+            </a>
+            <div class="nav-links" id="primary-nav" role="navigation" aria-label="Primary">
+                <a href="./">Home</a>
+                <a href="privacy">Privacy</a>
+                <a href="https://github.com/Shik3i/KoalaSync" target="_blank" rel="noopener">GitHub</a>
+            </div>
+            <div class="nav-right">
+                <button class="theme-toggle" id="theme-toggle" type="button" aria-label="Toggle light or dark theme" title="Toggle light or dark theme">
+                    <svg class="theme-icon-sun" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+                    <svg class="theme-icon-moon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18" aria-hidden="true"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>
+                </button>
+                <button class="hamburger" aria-label="Toggle navigation menu" aria-expanded="false" aria-controls="primary-nav">
+                    <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <main id="main-content" class="support-content">
+        <header class="support-hero">
+            <span class="support-status">Help center</span>
+            <h1>How can we help?</h1>
+            <p class="support-lead">Start with the symptom you see. These checks cover browser access, missing tabs, video detection, playback synchronization, and the information needed for a useful bug report.</p>
+        </header>
+
+        <section aria-labelledby="start-title">
+            <h2 id="start-title" class="support-section-title">Choose your problem</h2>
+            <div class="support-grid">
+                <a class="support-card support-card-link" href="site-access-help.html">
+                    <span class="support-card-icon" aria-hidden="true">🔒</span>
+                    <span class="support-eyebrow">Browser access</span>
+                    <h3>KoalaSync cannot access the video site</h3>
+                    <p>Restore “read and change site data” access in Chrome, Edge, Brave, Opera, or Vivaldi.</p>
+                    <span class="support-card-cta">Open access guide →</span>
+                </a>
+                <a class="support-card support-card-link" href="#missing-tab">
+                    <span class="support-card-icon" aria-hidden="true">🗂️</span>
+                    <span class="support-eyebrow">Tab list</span>
+                    <h3>The video tab is missing</h3>
+                    <p>Test the clutter filter, reload the page, and identify domains that KoalaSync hides by mistake.</p>
+                    <span class="support-card-cta">Check missing tabs →</span>
+                </a>
+                <a class="support-card support-card-link" href="#video-detection">
+                    <span class="support-card-icon" aria-hidden="true">🎬</span>
+                    <span class="support-eyebrow">Video detection</span>
+                    <h3>The tab appears, but no video is found</h3>
+                    <p>Check the selected tab, player state, Shadow DOM diagnostics, and conflicting extensions.</p>
+                    <span class="support-card-cta">Diagnose the player →</span>
+                </a>
+                <a class="support-card support-card-link" href="#sync-problems">
+                    <span class="support-card-icon" aria-hidden="true">↔️</span>
+                    <span class="support-eyebrow">Synchronization</span>
+                    <h3>Play, pause, or seeking does not sync</h3>
+                    <p>Compare versions, selected tabs, room state, and debug reports from every participant.</p>
+                    <span class="support-card-cta">Check synchronization →</span>
+                </a>
+            </div>
+        </section>
+
+        <section id="permissions" class="support-card support-anchor-section" aria-labelledby="permissions-title">
+            <span class="support-eyebrow">Privacy & permissions</span>
+            <h2 id="permissions-title">Why does the browser show such a broad warning?</h2>
+            <p>Browsers may say that KoalaSync can “read and change all your data on all websites.” The wording is broad because KoalaSync is designed to work with video players across many different websites instead of a short fixed list.</p>
+            <p>KoalaSync injects its synchronization script into the video tab you actively select. On that tab it needs to find and control the video element, synchronize play, pause, and seeking, and display the optional room chat overlay. Open tab titles are read to populate the tab selector. KoalaSync does not create a general browsing or watch history.</p>
+            <p><a class="support-link" href="privacy#extension-permissions">Read the complete permission and data-handling explanation</a></p>
+        </section>
+
+        <section id="missing-tab" class="support-card support-anchor-section" aria-labelledby="missing-tab-title">
+            <span class="support-eyebrow">Tab list</span>
+            <h2 id="missing-tab-title">The video tab does not appear</h2>
+            <ol class="support-steps">
+                <li>Keep the video page open and reload it once.</li>
+                <li>Close and reopen the KoalaSync popup, then check <strong>Select Video</strong> again.</li>
+                <li>Open KoalaSync <strong>Settings</strong> and turn off <strong>Hide Clutter Tabs</strong>.</li>
+                <li>Return to the tab selector. If the tab now appears, the site was filtered as clutter by mistake.</li>
+                <li>If the tab is still missing, verify website access using the <a class="support-link" href="site-access-help.html">site-access guide</a>.</li>
+            </ol>
+            <div class="support-callout" role="note">
+                <span class="support-callout-icon" aria-hidden="true">i</span>
+                <div>
+                    <strong>Tell us which domain was classified incorrectly.</strong>
+                    <p>For a false clutter match, report the domain, whether the tab appears with the filter disabled, and whether the page contains a visible HTML5 video. A domain such as <code>video.example.com</code> is usually enough; do not publish a private URL containing account or session details.</p>
+                </div>
+            </div>
+        </section>
+
+        <section id="video-detection" class="support-card support-anchor-section" aria-labelledby="video-detection-title">
+            <span class="support-eyebrow">Video detection</span>
+            <h2 id="video-detection-title">The tab appears, but KoalaSync finds no usable video</h2>
+            <ul>
+                <li>Select the exact tab containing the visible player, not a login, search, or media-library tab.</li>
+                <li>Start the video once. Some websites create their video element only after playback begins.</li>
+                <li>Open the KoalaSync <strong>Status</strong> tab and inspect <strong>Video Debug Info</strong>.</li>
+                <li>If the report says <strong>NO VIDEO ELEMENT</strong>, note the video count and whether Shadow DOM was detected.</li>
+                <li>Temporarily disable other extensions that modify the player, then reload and test again.</li>
+                <li>Protected, heavily customized, or non-HTML5 players may require site-specific support.</li>
+            </ul>
+        </section>
+
+        <section id="sync-problems" class="support-card support-anchor-section" aria-labelledby="sync-problems-title">
+            <span class="support-eyebrow">Synchronization</span>
+            <h2 id="sync-problems-title">Everyone is connected, but playback does not sync</h2>
+            <ol class="support-steps">
+                <li>Update KoalaSync in every browser and confirm everyone uses the same extension version.</li>
+                <li>Make sure each participant selected the correct local video tab.</li>
+                <li>Reload the video page after changing website access, then select the tab again.</li>
+                <li>Test play, pause, and seeking separately and note which action fails.</li>
+                <li>Before anyone leaves the room, collect a debug report from every affected participant.</li>
+            </ol>
+        </section>
+
+        <section id="report-issue" class="support-card support-anchor-section" aria-labelledby="report-issue-title">
+            <span class="support-eyebrow">Still not working?</span>
+            <h2 id="report-issue-title">Create a useful GitHub issue</h2>
+            <ol class="support-steps">
+                <li>Open KoalaSync, switch to <strong>Status</strong>, and click <strong>Copy Logs</strong> while the problem is still visible.</li>
+                <li>Open the KoalaSync GitHub bug-report form and sign in to GitHub if requested.</li>
+                <li>Describe the exact steps that reproduce the problem, what you expected, and what happened instead.</li>
+                <li>Add your browser, operating system, KoalaSync version, and the affected website or domain.</li>
+                <li>Paste the debug report, add a screenshot if useful, and review everything before publishing.</li>
+            </ol>
+            <div class="support-callout support-callout-warning" role="note">
+                <span class="support-callout-icon" aria-hidden="true">!</span>
+                <div>
+                    <strong>GitHub issues are public.</strong>
+                    <p>The copied report can include page titles and URLs, peer and room identifiers, participant names, and a custom server URL. Remove anything private. Never publish an invite link, room password, chat secret, account token, or a URL containing private session parameters.</p>
+                </div>
+            </div>
+            <div class="support-actions">
+                <a class="btn btn-primary" href="https://github.com/Shik3i/KoalaSync/issues/new?template=bug_report.md" target="_blank" rel="noopener">Create a bug report</a>
+                <a class="btn btn-secondary" href="https://github.com/Shik3i/KoalaSync/issues" target="_blank" rel="noopener">Search existing issues</a>
+            </div>
+        </section>
+
+        <div class="support-actions">
+            <a class="btn btn-secondary" href="./">Back to KoalaSync</a>
+            <a class="btn btn-secondary" href="privacy">Privacy policy</a>
+        </div>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p class="footer-ram">No chat or watch history. No tracking. Website access logs are deleted after 7 days.</p>
+            <p class="footer-copyright">&copy; 2026 KoalaSync. Open source under the MIT License.</p>
+            <div class="footer-links">
+                <a href="./">Home</a>
+                <a href="help">Help</a>
+                <a href="privacy">Privacy</a>
+                <a href="https://koalastuff.net/legal">Legal notice</a>
+                <a href="https://github.com/Shik3i/KoalaSync" target="_blank" rel="noopener">GitHub</a>
+            </div>
+        </div>
+    </footer>
+
+    <script src="app.min.js"></script>
+</body>
+</html>

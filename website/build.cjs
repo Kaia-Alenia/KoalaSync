@@ -524,6 +524,7 @@ async function compile() {
         { src: 'join.html', dest: 'join.html' },
         { src: 'imprint.html', dest: 'imprint.html' },
         { src: 'privacy.html', dest: 'privacy.html' },
+        { src: 'help.html', dest: 'help.html' },
         { src: 'site-access-help.html', dest: 'site-access-help.html' },
         { src: 'impressum-de.html', dest: 'de/impressum.html' },
         { src: 'datenschutz-de.html', dest: 'de/datenschutz.html' },
@@ -797,6 +798,11 @@ function generateSitemap(websiteDir, wwwDir) {
     <loc>https://sync.koalastuff.net/privacy</loc>${lastmod(['website/privacy.html'])}
     <changefreq>monthly</changefreq>
     <priority>0.3</priority>
+  </url>
+  <url>
+    <loc>https://sync.koalastuff.net/help</loc>${lastmod(['website/help.html', 'website/styles/support.css'])}
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
   </url>
   <url>
     <loc>https://sync.koalastuff.net/site-access-help.html</loc>${lastmod(['website/site-access-help.html'])}

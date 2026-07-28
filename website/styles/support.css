@@ -1,4 +1,4 @@
-/* --- Site-access troubleshooting page --- */
+/* --- Help and site-access support pages --- */
 .support-page {
     min-height: 100vh;
 }
@@ -135,6 +135,75 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 1.25rem;
     margin-top: 1.25rem;
+}
+
+.support-section-title {
+    margin: 0 0 0.25rem;
+    color: var(--text);
+    text-align: center;
+    font-size: clamp(1.45rem, 3vw, 1.9rem);
+}
+
+.support-card-link {
+    position: relative;
+    display: block;
+    color: inherit;
+    text-decoration: none;
+    transition: transform 180ms ease, border-color 180ms ease, box-shadow 180ms ease;
+}
+
+.support-card-link:hover,
+.support-card-link:focus-visible {
+    transform: translateY(-3px);
+    border-color: color-mix(in oklch, var(--accent) 55%, transparent);
+    box-shadow: 0 24px 65px rgba(0, 0, 0, 0.2);
+}
+
+.support-card-link:focus-visible {
+    outline: 3px solid color-mix(in oklch, var(--accent) 45%, transparent);
+    outline-offset: 3px;
+}
+
+.support-card-link .support-eyebrow {
+    margin-bottom: 1rem;
+}
+
+.support-card-icon {
+    float: right;
+    display: grid;
+    place-items: center;
+    width: 2.8rem;
+    height: 2.8rem;
+    margin-left: 0.75rem;
+    border: 1px solid color-mix(in oklch, var(--accent) 25%, transparent);
+    border-radius: 14px;
+    background: color-mix(in oklch, var(--accent) 9%, var(--card));
+    font-size: 1.3rem;
+}
+
+.support-card-cta {
+    display: inline-block;
+    margin-top: 1rem;
+    color: var(--accent);
+    font-weight: 800;
+}
+
+.support-anchor-section {
+    scroll-margin-top: 7rem;
+}
+
+.support-anchor-section code {
+    overflow-wrap: anywhere;
+    color: var(--text);
+}
+
+.support-callout-warning {
+    border-color: color-mix(in oklch, var(--accent-terracotta) 50%, transparent);
+    background: color-mix(in oklch, var(--accent-terracotta) 9%, var(--card-surface));
+}
+
+.support-callout-warning .support-callout-icon {
+    background: var(--accent-terracotta);
 }
 
 .support-steps {

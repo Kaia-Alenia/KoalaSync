@@ -76,6 +76,15 @@ Compatibility depends on each website's player implementation and can change whe
 - [Firefox Add-ons](https://addons.mozilla.org/firefox/addon/koalasync/): Firefox
 - [GitHub Releases](https://github.com/Shik3i/KoalaSync/releases): Release notes and manual packages
 
+## Help and troubleshooting
+
+- [Help Center](https://sync.koalastuff.net/help): Browser permissions, missing tabs, video detection, synchronization checks and safe bug reports
+- [Website access guide](https://sync.koalastuff.net/site-access-help.html): Restore access when Chrome, Edge, Brave, Opera or Vivaldi blocks KoalaSync on a video site
+- If a video tab is missing, disable `Hide Clutter Tabs` temporarily. If the tab then appears, report the affected domain so the filter can be corrected.
+- If a listed tab has no detected video, start playback once and inspect `Status` → `Video Debug Info`.
+- GitHub issues are public. Remove private page URLs, titles, room or peer identifiers, participant names, custom server URLs, credentials and session parameters before publishing logs.
+- [GitHub bug report](https://github.com/Shik3i/KoalaSync/issues/new?template=bug_report.md): Include reproducible steps, browser, operating system, KoalaSync version and sanitized debug output
+
 ## Technical information
 
 - Current website release: 3.0.1

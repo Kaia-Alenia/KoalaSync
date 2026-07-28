@@ -12,6 +12,7 @@ const demoCss = fs.readFileSync(path.join(repoRoot, 'website', 'styles', 'demo.c
 const landingPrimaryCss = fs.readFileSync(path.join(repoRoot, 'website', 'styles', 'landing-primary.css'), 'utf8');
 const legalCss = fs.readFileSync(path.join(repoRoot, 'website', 'styles', 'legal.css'), 'utf8');
 const joinPage = fs.readFileSync(path.join(repoRoot, 'website', 'join.html'), 'utf8');
+const helpPage = fs.readFileSync(path.join(repoRoot, 'website', 'help.html'), 'utf8');
 const siteAccessHelpPage = fs.readFileSync(path.join(repoRoot, 'website', 'site-access-help.html'), 'utf8');
 const websiteBuild = fs.readFileSync(path.join(repoRoot, 'website', 'build.cjs'), 'utf8');
 const imprintPage = fs.readFileSync(path.join(repoRoot, 'website', 'imprint.html'), 'utf8');
@@ -114,7 +115,28 @@ for (const metadata of requiredSupportSocialMetadata) {
     throw new Error(`site-access-help.html is missing SEO metadata: ${metadata}`);
   }
 }
+const requiredHelpMetadata = [
+  '<link rel="canonical" href="https://sync.koalastuff.net/help">',
+  'type="text/markdown" href="https://sync.koalastuff.net/llms.txt"',
+  'name="twitter:card" content="summary_large_image"',
+  'property="og:image:alt"',
+  'name="twitter:image:alt"',
+  '"@type": ["CollectionPage", "FAQPage"]',
+  '"@type": "BreadcrumbList"',
+  '"datePublished"',
+  '"dateModified"'
+];
+for (const metadata of requiredHelpMetadata) {
+  if (!helpPage.includes(metadata)) {
+    throw new Error(`help.html is missing SEO/AEO metadata: ${metadata}`);
+  }
+}
+if (!llmsText.includes('[Help Center](https://sync.koalastuff.net/help)')
+    || !llmsText.includes('[Website access guide](https://sync.koalastuff.net/site-access-help.html)')) {
+  throw new Error('llms.txt must expose the Help Center and website-access guide');
+}
 if (!websiteBuild.includes("['log', '-1', '--format=%cs', '--', ...sourceFiles]")
+    || !websiteBuild.includes("lastmod(['website/help.html', 'website/styles/support.css'])")
     || !websiteBuild.includes("lastmod(['website/site-access-help.html'])")
     || !websiteBuild.includes("['rev-parse', '--is-shallow-repository']")
     || !websiteBuild.includes("['diff', '--name-only', '--']")
