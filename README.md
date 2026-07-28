@@ -10,6 +10,7 @@
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue" alt="License"></a>
   <a href="https://addons.mozilla.org/de/firefox/addon/koalasync/"><img src="https://img.shields.io/badge/Firefox-Download-orange?logo=firefoxbrowser&logoColor=white" alt="Firefox Add-on"></a>
   <a href="https://chromewebstore.google.com/detail/koalasync/obbnmkmlaaddodakcbdljknjpagklifc"><img src="https://img.shields.io/badge/Chrome-Download-blue?logo=googlechrome&logoColor=white" alt="Chrome Extension"></a>
+  <a href="https://microsoftedge.microsoft.com/addons/detail/koalasync/gefnlpeoagcjfbmmfjjildkmofekbibg"><img src="https://img.shields.io/badge/Edge-Download-0078D7?logo=microsoftedge&logoColor=white" alt="Microsoft Edge Add-on"></a>
 </p>
 
 <p align="center"><i>KoalaSync is a lightweight Browser Extension and Relay Server for synchronized video playback on almost any website with a video element—YouTube, Twitch, Netflix, Emby, Jellyfin, and beyond. Built with a focus on <b>Data Sovereignty</b> and <b>Performance</b>.</i></p>
@@ -46,6 +47,7 @@ The easiest and safest way to install KoalaSync is directly through the official
 <p>
   <a href="https://chromewebstore.google.com/detail/koalasync/obbnmkmlaaddodakcbdljknjpagklifc"><img src="https://img.shields.io/badge/Chrome-Download-blue?logo=googlechrome&logoColor=white&style=for-the-badge" alt="Chrome Extension"></a>
   <a href="https://addons.mozilla.org/de/firefox/addon/koalasync/"><img src="https://img.shields.io/badge/Firefox-Download-orange?logo=firefoxbrowser&logoColor=white&style=for-the-badge" alt="Firefox Add-on"></a>
+  <a href="https://microsoftedge.microsoft.com/addons/detail/koalasync/gefnlpeoagcjfbmmfjjildkmofekbibg"><img src="https://img.shields.io/badge/Edge-Download-0078D7?logo=microsoftedge&logoColor=white&style=for-the-badge" alt="Microsoft Edge Add-on"></a>
 </p>
 
 *(For manual offline installation: Download the latest `.zip` from the [Releases](https://github.com/Shik3i/KoalaSync/releases) page and load it as an "Unpacked Extension" in Developer Mode).*
