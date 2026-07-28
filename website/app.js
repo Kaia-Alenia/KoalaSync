@@ -1593,6 +1593,8 @@ document.addEventListener('DOMContentLoaded', () => {
             tempSpan.style.fontFamily = style.fontFamily;
             tempSpan.style.fontSize = style.fontSize;
             tempSpan.style.fontWeight = style.fontWeight;
+            tempSpan.style.fontStyle = style.fontStyle;
+            tempSpan.style.letterSpacing = style.letterSpacing;
             tempSpan.style.visibility = 'hidden';
             tempSpan.style.position = 'absolute';
             tempSpan.style.whiteSpace = 'nowrap';
@@ -1602,7 +1604,18 @@ document.addEventListener('DOMContentLoaded', () => {
                 tempSpan.textContent = activeOption.textContent;
                 document.body.appendChild(tempSpan);
                 const textWidth = tempSpan.getBoundingClientRect().width;
-                select.style.width = (textWidth + 18) + 'px';
+                const borderBoxChrome = style.boxSizing === 'border-box'
+                    ? [
+                        style.paddingLeft,
+                        style.paddingRight,
+                        style.borderLeftWidth,
+                        style.borderRightWidth
+                    ].reduce((total, value) => total + (Number.parseFloat(value) || 0), 0)
+                    : 0;
+                // Leave a few extra pixels for platform-specific native select
+                // text rendering. The right padding already reserves the
+                // visible chevron area.
+                select.style.width = `${Math.ceil(textWidth + borderBoxChrome + 4)}px`;
                 document.body.removeChild(tempSpan);
             }
         });
@@ -1747,6 +1760,9 @@ document.addEventListener('DOMContentLoaded', () => {
     updateDynamicVersion();
     localizeHomeLinks();
     initLanguageSelectorValue();
+    if (document.fonts?.ready) {
+        document.fonts.ready.then(adjustDropdownWidth);
+    }
     // FAQ Accordion Transition (Web Animations API for smooth vertical spring height collapse/expand)
     try {
         document.querySelectorAll('.faq-item').forEach(details => {
