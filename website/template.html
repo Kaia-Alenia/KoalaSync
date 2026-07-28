@@ -1418,6 +1418,10 @@
     <span class="t-key">root</span> <span class="t-val">*</span> <span class="t-str">/var/www/koalasync/website/www</span>
     <span class="t-key">encode</span> <span class="t-val">zstd gzip</span>
     
+    <span class="t-comment"># Redirect legacy support-page URLs to their canonical clean URLs</span>
+    <span class="t-key">redir</span> <span class="t-val">/help.html /help 308</span>
+    <span class="t-key">redir</span> <span class="t-val">/site-access-help.html /site-access-help 308</span>
+
     <span class="t-comment"># Clean URLs support (no .html required)</span>
     <span class="t-key">try_files</span> <span class="t-val">{path} {path}.html {path}/</span>
     <span class="t-key">file_server</span>
@@ -1449,6 +1453,10 @@
 <span class="t-key">sync.koalastuff.net</span> {
     <span class="t-key">encode</span> <span class="t-val">zstd gzip</span>
     <span class="t-key">root</span> <span class="t-val">*</span> <span class="t-str">/var/www/koalasync/website/www</span>
+
+    <span class="t-comment"># Redirect legacy support-page URLs to their canonical clean URLs</span>
+    <span class="t-key">redir</span> <span class="t-val">/help.html /help 308</span>
+    <span class="t-key">redir</span> <span class="t-val">/site-access-help.html /site-access-help 308</span>
 
     <span class="t-comment"># Clean URLs: Resolves paths without .html in the URL</span>
     <span class="t-key">try_files</span> <span class="t-val">{path} {path}.html {path}/</span>

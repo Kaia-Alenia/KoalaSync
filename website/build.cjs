@@ -109,9 +109,19 @@ function stageFlagFontSubset(websiteDir, wwwDir) {
 function copyDirSync(src, dest) {
     fs.mkdirSync(dest, { recursive: true });
     for (const entry of fs.readdirSync(src, { withFileTypes: true })) {
+        if (entry.name === '.DS_Store') continue;
         const s = path.join(src, entry.name);
         const d = path.join(dest, entry.name);
         entry.isDirectory() ? copyDirSync(s, d) : fs.copyFileSync(s, d);
+    }
+}
+
+function removeBuildMetadata(dir) {
+    if (!fs.existsSync(dir)) return;
+    for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+        const entryPath = path.join(dir, entry.name);
+        if (entry.name === '.DS_Store') fs.rmSync(entryPath, { force: true });
+        else if (entry.isDirectory()) removeBuildMetadata(entryPath);
     }
 }
 
@@ -164,6 +174,7 @@ async function compile() {
     const websiteDir = __dirname;
     const wwwDir = path.join(websiteDir, 'www');
     fs.mkdirSync(wwwDir, { recursive: true });
+    removeBuildMetadata(wwwDir);
 
     // ── 0. Auto-generate website logo sizes and sync favicons ──
     console.log('Generating responsive website logos...');
@@ -796,34 +807,24 @@ function generateSitemap(websiteDir, wwwDir) {
     xml += `
   <url>
     <loc>https://sync.koalastuff.net/privacy</loc>${lastmod(['website/privacy.html'])}
-    <changefreq>monthly</changefreq>
-    <priority>0.3</priority>
   </url>
   <url>
-    <loc>https://sync.koalastuff.net/help</loc>${lastmod(['website/help.html', 'website/styles/support.css'])}
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
+    <loc>https://sync.koalastuff.net/help</loc>${lastmod(['website/help.html', 'website/styles/support.css', 'website/app.js'])}
   </url>
   <url>
-    <loc>https://sync.koalastuff.net/site-access-help.html</loc>${lastmod(['website/site-access-help.html'])}
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
+    <loc>https://sync.koalastuff.net/site-access-help</loc>${lastmod(['website/site-access-help.html', 'website/app.js'])}
   </url>
   <url>
     <loc>https://sync.koalastuff.net/de/datenschutz</loc>${lastmod(['website/datenschutz-de.html'])}
-    <changefreq>monthly</changefreq>
-    <priority>0.3</priority>
   </url>`;
 
-    function addPage(relativePath, changefreq, priority, templateSource) {
+    function addPage(relativePath, templateSource) {
       for (const lang of languages) {
         const loc = `https://sync.koalastuff.net/${lang.prefix}${relativePath}`;
         const sourceFiles = [templateSource, `website/locales/${lang.code}.json`];
         xml += `
   <url>
-    <loc>${loc}</loc>${lastmod(sourceFiles)}
-    <changefreq>${changefreq}</changefreq>
-    <priority>${priority}</priority>`;
+    <loc>${loc}</loc>${lastmod(sourceFiles)}`;
         for (const alt of languages) {
           const altHref = `https://sync.koalastuff.net/${alt.prefix}${relativePath}`;
           xml += `
@@ -836,8 +837,8 @@ function generateSitemap(websiteDir, wwwDir) {
       }
     }
 
-    addPage('', 'weekly', '1.0', 'website/template.html');
-    addPage('alternatives', 'weekly', '0.7', 'website/alternatives/index.html');
+    addPage('', 'website/template.html');
+    addPage('alternatives', 'website/alternatives/index.html');
 
     const subpages = [
       ['alternatives/teleparty', 'website/alternatives/teleparty.html'],
@@ -848,7 +849,7 @@ function generateSitemap(websiteDir, wwwDir) {
       ['alternatives/twoseven', 'website/alternatives/twoseven.html']
     ];
     for (const [sub, templateSource] of subpages) {
-      addPage(sub, 'weekly', '0.7', templateSource);
+      addPage(sub, templateSource);
     }
 
     xml += `\n</urlset>\n`;

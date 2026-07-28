@@ -137,6 +137,12 @@ jobs:
           npm ci
           npm run build:extension
 
+      - name: Generate extension checksums
+        run: |
+          cd dist
+          sha256sum koalasync-chrome.zip koalasync-firefox.zip > SHA256SUMS
+          cat SHA256SUMS
+
       - name: Generate artifact attestation for extensions
         uses: actions/attest@v4
         with:
@@ -158,6 +164,7 @@ jobs:
           files: |
             dist/koalasync-chrome.zip
             dist/koalasync-firefox.zip
+            dist/SHA256SUMS
           name: Release ${{ github.ref_name }}
           generate_release_notes: true
           draft: false

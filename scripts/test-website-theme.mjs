@@ -102,6 +102,7 @@ if (!llmsText.includes(`Current website release: ${websiteVersion}`)) {
   throw new Error(`llms.txt release must match website/version.json (${websiteVersion})`);
 }
 const requiredSupportSocialMetadata = [
+  '<link rel="canonical" href="https://sync.koalastuff.net/site-access-help">',
   'name="twitter:card" content="summary_large_image"',
   'name="twitter:title"',
   'name="twitter:description"',
@@ -132,18 +133,21 @@ for (const metadata of requiredHelpMetadata) {
   }
 }
 if (!llmsText.includes('[Help Center](https://sync.koalastuff.net/help)')
-    || !llmsText.includes('[Website access guide](https://sync.koalastuff.net/site-access-help.html)')) {
+    || !llmsText.includes('[Website access guide](https://sync.koalastuff.net/site-access-help)')) {
   throw new Error('llms.txt must expose the Help Center and website-access guide');
 }
 if (!websiteBuild.includes("['log', '-1', '--format=%cs', '--', ...sourceFiles]")
-    || !websiteBuild.includes("lastmod(['website/help.html', 'website/styles/support.css'])")
-    || !websiteBuild.includes("lastmod(['website/site-access-help.html'])")
+    || !websiteBuild.includes("lastmod(['website/help.html', 'website/styles/support.css', 'website/app.js'])")
+    || !websiteBuild.includes("lastmod(['website/site-access-help.html', 'website/app.js'])")
     || !websiteBuild.includes("['rev-parse', '--is-shallow-repository']")
     || !websiteBuild.includes("['diff', '--name-only', '--']")
     || !websiteBuild.includes("['diff', '--cached', '--name-only', '--']")
     || !websiteBuild.includes("['ls-files', '--others', '--exclude-standard', '--']")
     || !websiteBuild.includes('sourceFiles.some(file => dirtySourceFiles.has(file))')) {
   throw new Error('Sitemap lastmod values must come from the mapped source files in Git');
+}
+if (websiteBuild.includes('<changefreq>') || websiteBuild.includes('<priority>')) {
+  throw new Error('Sitemap must not emit ignored changefreq or priority hints');
 }
 const documentedRelayUrls = [...llmsText.matchAll(/`(wss:\/\/[^`\s]+)`/g)].map(([, value]) => new URL(value));
 const hasCanonicalPublicRelay = documentedRelayUrls.some((url) => (
@@ -178,6 +182,10 @@ for (const value of requiredSelfHostingValues) {
 }
 if ((selfHostingExamples.match(/localhost:3000/g) || []).length !== 2 || selfHostingExamples.includes('KoalaSync:3000')) {
   throw new Error('Both Caddy examples must match the compose loopback port binding');
+}
+if ((selfHostingExamples.match(/\/help\.html \/help 308/g) || []).length !== 2
+    || (selfHostingExamples.match(/\/site-access-help\.html \/site-access-help 308/g) || []).length !== 2) {
+  throw new Error('Both Caddy examples must redirect legacy support-page URLs to their clean canonicals');
 }
 
 const landingStylesheet = landingStylesheets[0][0];

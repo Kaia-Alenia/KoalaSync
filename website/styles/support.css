@@ -79,8 +79,7 @@
 }
 
 .support-content > .support-card + .support-card,
-.support-grid + .support-card,
-.support-card + .support-grid,
+.support-card + .support-topic-grid,
 .support-callout + .support-card {
     margin-top: 1.25rem;
 }
@@ -130,62 +129,109 @@
     margin-top: 0.6rem;
 }
 
-.support-grid {
+.support-topic-grid {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 1.25rem;
     margin-top: 1.25rem;
 }
 
+.support-topic-index {
+    margin-bottom: 2.75rem;
+}
+
 .support-section-title {
-    margin: 0 0 0.25rem;
+    margin: 0 0 0.4rem;
     color: var(--text);
     text-align: center;
     font-size: clamp(1.45rem, 3vw, 1.9rem);
 }
 
-.support-card-link {
+.support-topic-group {
     position: relative;
+    overflow: hidden;
+    padding: 0;
+    border-top-color: color-mix(in oklch, var(--accent) 55%, var(--card-border));
+}
+
+.support-topic-group::before {
+    content: '';
+    position: absolute;
+    inset: 0 0 auto;
+    height: 2px;
+    background: linear-gradient(90deg, var(--accent), color-mix(in oklch, var(--accent) 12%, transparent) 72%, transparent);
+}
+
+.support-topic-header {
+    min-height: 7.4rem;
+    padding: 1.55rem 1.6rem 1.25rem;
+}
+
+.support-topic-header h3 {
+    margin: 0 0 0.45rem;
+    color: var(--text);
+    font-size: 1.2rem;
+    letter-spacing: -0.015em;
+}
+
+.support-topic-header p {
+    max-width: 34rem;
+    margin: 0;
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    line-height: 1.55;
+}
+
+.support-topic-links {
     display: block;
-    color: inherit;
+    border-top: 1px solid var(--card-border);
+}
+
+.support-topic-links a {
+    display: flex;
+    min-height: 3.85rem;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.9rem 1.6rem;
+    color: var(--text);
+    font-size: 0.94rem;
+    font-weight: 700;
+    line-height: 1.4;
     text-decoration: none;
-    transition: transform 180ms ease, border-color 180ms ease, box-shadow 180ms ease;
+    transition: background-color 160ms ease, color 160ms ease, padding-left 160ms ease;
 }
 
-.support-card-link:hover,
-.support-card-link:focus-visible {
-    transform: translateY(-3px);
-    border-color: color-mix(in oklch, var(--accent) 55%, transparent);
-    box-shadow: 0 24px 65px rgba(0, 0, 0, 0.2);
+.support-topic-links a + a {
+    border-top: 1px solid color-mix(in oklch, var(--card-border) 78%, transparent);
 }
 
-.support-card-link:focus-visible {
-    outline: 3px solid color-mix(in oklch, var(--accent) 45%, transparent);
-    outline-offset: 3px;
-}
-
-.support-card-link .support-eyebrow {
-    margin-bottom: 1rem;
-}
-
-.support-card-icon {
-    float: right;
-    display: grid;
-    place-items: center;
-    width: 2.8rem;
-    height: 2.8rem;
-    margin-left: 0.75rem;
-    border: 1px solid color-mix(in oklch, var(--accent) 25%, transparent);
-    border-radius: 14px;
-    background: color-mix(in oklch, var(--accent) 9%, var(--card));
-    font-size: 1.3rem;
-}
-
-.support-card-cta {
-    display: inline-block;
-    margin-top: 1rem;
+.support-topic-links a::after {
+    content: '›';
+    flex: 0 0 auto;
     color: var(--accent);
-    font-weight: 800;
+    font-size: 1.45rem;
+    font-weight: 500;
+    line-height: 1;
+    transition: transform 160ms ease;
+}
+
+.support-topic-links a:hover {
+    padding-left: 1.75rem;
+    background: color-mix(in oklch, var(--accent) 9%, transparent);
+    color: color-mix(in oklch, var(--text) 88%, var(--accent));
+}
+
+.support-topic-links a:hover::after {
+    transform: translateX(3px);
+}
+
+.support-topic-links a:focus-visible {
+    position: relative;
+    z-index: 1;
+    outline: 3px solid color-mix(in oklch, var(--accent) 50%, transparent);
+    outline-offset: -3px;
+    background: color-mix(in oklch, var(--accent) 12%, transparent);
 }
 
 .support-anchor-section {
@@ -283,12 +329,71 @@
 
 .support-actions .btn {
     min-width: 180px;
+    justify-content: center;
+    text-align: center;
+}
+
+.support-actions-trust {
+    margin: 1.5rem 0;
+}
+
+.support-details {
+    margin-top: 1.25rem;
+    border: 1px solid var(--card-border);
+    border-radius: 16px;
+    background: color-mix(in oklch, var(--card) 82%, transparent);
+}
+
+.support-details summary {
+    padding: 1rem 1.15rem;
+    color: var(--text);
+    cursor: pointer;
+    font-weight: 800;
+}
+
+.support-details summary:focus-visible {
+    outline: 3px solid color-mix(in oklch, var(--accent) 45%, transparent);
+    outline-offset: 3px;
+    border-radius: 14px;
+}
+
+.support-details[open] {
+    padding-bottom: 1rem;
+}
+
+.support-details[open] summary {
+    margin-bottom: 0.25rem;
+}
+
+.support-details p,
+.support-details pre {
+    margin: 0.75rem 1.15rem 0;
+}
+
+.support-details pre {
+    overflow-x: auto;
+    border: 1px solid color-mix(in oklch, var(--accent) 22%, var(--card-border));
+    border-radius: 12px;
+    background: color-mix(in oklch, var(--bg) 82%, black);
+    padding: 1rem;
+    color: var(--text);
+    font-size: 0.82rem;
+    line-height: 1.6;
+}
+
+.support-details code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 }
 
 html.theme-light .support-card,
-html.theme-light .support-callout {
+html.theme-light .support-callout,
+html.theme-light .support-details {
     background-color: var(--card-surface);
     box-shadow: 0 18px 45px rgba(44, 62, 37, 0.1);
+}
+
+html.theme-light .support-details pre {
+    background: color-mix(in oklch, var(--bg) 92%, white);
 }
 
 @media (max-width: 720px) {
@@ -297,12 +402,30 @@ html.theme-light .support-callout {
         padding-top: 7.5rem;
     }
 
-    .support-grid {
+    .support-topic-grid {
         grid-template-columns: 1fr;
+    }
+
+    .support-topic-index {
+        margin-bottom: 2.25rem;
     }
 
     .support-card {
         border-radius: 18px;
+    }
+
+    .support-topic-header {
+        min-height: 0;
+        padding: 1.35rem 1.3rem 1rem;
+    }
+
+    .support-topic-links a {
+        min-height: 3.65rem;
+        padding: 0.85rem 1.3rem;
+    }
+
+    .support-topic-links a:hover {
+        padding-left: 1.4rem;
     }
 
     .support-callout {

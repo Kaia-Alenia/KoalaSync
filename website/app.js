@@ -235,20 +235,55 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Auto-update URL hash as user scrolls through sections
     // (preserves position across language switches)
-    if ('IntersectionObserver' in window) {
-        const sectionObserver = new IntersectionObserver((entries) => {
-            entries.forEach(entry => {
-                if (entry.isIntersecting) {
-                    if (entry.target.id === 'top') {
-                        history.replaceState(null, null, window.location.pathname + window.location.search);
-                    } else {
-                        history.replaceState(null, null, '#' + entry.target.id);
-                    }
-                    if (forestGreet) forestGreet();
-                }
+    const trackedSections = [...document.querySelectorAll('section[id], header[id]')];
+    if (trackedSections.length > 0) {
+        let hashUpdateFrame = null;
+        let hashNavigationTimer = null;
+        let hashNavigationInProgress = false;
+        const updateSectionHash = () => {
+            hashUpdateFrame = null;
+            const readingLine = 112;
+            const activeSection = trackedSections.reduce((closest, section) => {
+                const distance = Math.abs(section.getBoundingClientRect().top - readingLine);
+                const closestDistance = Math.abs(closest.getBoundingClientRect().top - readingLine);
+                return distance < closestDistance ? section : closest;
             });
-        }, { threshold: 0.3 });
-        document.querySelectorAll('section[id], header[id]').forEach(el => sectionObserver.observe(el));
+
+            const nextHash = activeSection.id === 'top' ? '' : '#' + activeSection.id;
+            if (window.location.hash === nextHash) return;
+            if (nextHash === '') {
+                history.replaceState(null, null, window.location.pathname + window.location.search);
+            } else {
+                history.replaceState(null, null, nextHash);
+            }
+            if (forestGreet) forestGreet();
+        };
+        const scheduleSectionHashUpdate = () => {
+            if (hashUpdateFrame !== null) return;
+            hashUpdateFrame = requestAnimationFrame(updateSectionHash);
+        };
+        const finishHashNavigation = () => {
+            hashNavigationTimer = null;
+            hashNavigationInProgress = false;
+            scheduleSectionHashUpdate();
+        };
+        const beginHashNavigation = () => {
+            hashNavigationInProgress = true;
+            if (hashNavigationTimer !== null) clearTimeout(hashNavigationTimer);
+            hashNavigationTimer = setTimeout(finishHashNavigation, 250);
+        };
+        const handleSectionScroll = () => {
+            if (!hashNavigationInProgress) {
+                scheduleSectionHashUpdate();
+                return;
+            }
+            if (hashNavigationTimer !== null) clearTimeout(hashNavigationTimer);
+            hashNavigationTimer = setTimeout(finishHashNavigation, 180);
+        };
+        window.addEventListener('hashchange', beginHashNavigation);
+        window.addEventListener('scroll', handleSectionScroll, { passive: true });
+        if (window.location.hash) beginHashNavigation();
+        else scheduleSectionHashUpdate();
     }
 
     // Navbar scroll effect (class-based so it follows the active theme)

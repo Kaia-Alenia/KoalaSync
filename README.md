@@ -50,7 +50,7 @@ The easiest and safest way to install KoalaSync is directly through the official
   <a href="https://microsoftedge.microsoft.com/addons/detail/koalasync/gefnlpeoagcjfbmmfjjildkmofekbibg"><img src="https://img.shields.io/badge/Edge-Download-0078D7?logo=data%3Aimage%2Fsvg%2Bxml%3Bbase64%2CPHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA1MTIgNTEyIj48IS0tISBGb250IEF3ZXNvbWUgRnJlZSA3LjMuMSBieSBAZm9udGF3ZXNvbWUgLSBodHRwczovL2ZvbnRhd2Vzb21lLmNvbSBMaWNlbnNlIC0gaHR0cHM6Ly9mb250YXdlc29tZS5jb20vbGljZW5zZS9mcmVlIChJY29uczogQ0MgQlkgNC4wLCBGb250czogU0lMIE9GTCAxLjEsIENvZGU6IE1JVCBMaWNlbnNlKSBDb3B5cmlnaHQgMjAyNiBGb250aWNvbnMsIEluYy4gLS0%2BPHBhdGggZmlsbD0iI2ZmZiIgZD0iTTEyMC4xIDM3LjRjNDEtMjUuMiA4Ny42LTM4LjIgMTM0LjktMzcuNCAxNjggMCAyNTcgMTIzLjggMjU3IDIxOS41LS4xIDMyLjctMTMgNjMuOS0zNS45IDg3LjItMjIuOSAyMy4yLTU0IDM2LjUtODYuNyAzNy03NS4yIDAtOTEuNS0yMy4xLTkxLjUtMzIgMC0zLjggMS4yLTYuMiA0LjgtOS40bDEtMS4yIC40LTEuNmMxMC41LTExLjUgMTUuOS0yNi4yIDE1LjktNDEuNiAwLTc4LjctODIuMi0xNDIuNy0xODQtMTQyLjctMzcuNS0uMy03NC41IDguOS0xMDcuNSAyNi45IDI3LTU3LjUgODIuNy05Ny42IDkxLjMtMTAzLjggLjgtLjYgLjMtLjggLjMtLjh6bTE1LjYgMzE4LjFjLTEuNCAzMCA0LjYgNjAgMTYuNCA4Ny4yIDEzLjYgMjYuNCAzMi43IDUxIDU2LjUgNjkuMy01OS41LTExLjUtMTExLjUtNDMuOS0xNDkuNC04OS4zLTM4LjEtNDYuNC01OS4yLTEwNC4zLTU5LjItMTY0LjggMC01MS4yIDYyLjQtOTQuNCAxMzYtOTQuNCAzNi42LS42IDcyLjQgMTAuOSAxMDEuOCAzMi43bC0zLjYgMS4yYy01MS41IDE3LjYtOTguNSA5MC43LTk4LjUgMTU4LjF6TTQ2OS44IDQwMGwtLjcgLjFjLTExLjggMTguOC0yNS45IDM1LjEtNDIuMiA0OS41LTMwLjggMjgtNjguMSA0NS41LTEwOC44IDQ5LjktMTguNiAuMy0zNi44LTMuMi01My44LTExLjQtMjUuNi0xMC4zLTQ3LjEtMzAtNjEuNi01My0xNC40LTIzLjktMjEuMS01MS43LTE5LTc5LjYtLjYtMjAuMSA1LjQtNDAuMyAxNS01OC4yIDEzLjkgMzMuMSAzNy41IDYxLjMgNjcuNiA4MC44czY1LjUgMjkuNSAxMDEuNCAyOC42YzMxIC4zIDYyLjEtNi43IDkwLjItMjAuNWwxLjktLjljMy45LTIuMyA3LjctMy45IDExLjYgMCA0LjUgNC45IDEuOCA5LjItMS4yIDE0LS4yIC4yLS4zIC41LS40IC43eiIvPjwvc3ZnPg%3D%3D&style=for-the-badge" alt="Microsoft Edge Add-on"></a>
 </p>
 
-*(For manual offline installation: Download the latest `.zip` from the [Releases](https://github.com/Shik3i/KoalaSync/releases) page and load it as an "Unpacked Extension" in Developer Mode).*
+*(For manual offline installation: Download the latest `.zip` from the [Releases](https://github.com/Shik3i/KoalaSync/releases) page, extract it, and load the extracted browser package using your browser's developer or manual extension installation process.)*
 
 **How to use:**
 1. **Create a Room:** Click the Koala icon in your browser and hit `+ Create New Room`.
@@ -112,7 +112,14 @@ To verify your relay is reachable from outside, visit `https://your-domain.com` 
 
 #### Supply Chain Security (v2.2.2+)
 
-All official release artifacts (Docker images and extension binaries) are published with signed [artifact attestations](https://docs.github.com/en/actions/how-tos/secure-your-work/use-artifact-attestations) to prove they were built from this repository's source code.
+Extension ZIPs attached to GitHub Releases and Docker images published to GitHub Container Registry receive signed [artifact attestations](https://docs.github.com/en/actions/how-tos/secure-your-work/use-artifact-attestations). These attestations connect an artifact's exact digest to this repository, its release tag and commit, and the public GitHub Actions workflow that built it.
+
+Each new GitHub Release also includes `SHA256SUMS` for a quick checksum comparison:
+```bash
+sha256sum --check SHA256SUMS
+```
+
+Checksums detect a changed or incomplete download. Signed provenance additionally verifies where the artifact came from and which workflow built it. Neither check guarantees that the software contains no bugs or vulnerabilities. These attestations cover the GitHub release ZIPs and GHCR images; they do not by themselves prove that browser-store packages are byte-for-byte identical.
 
 **Verify a Docker image:**
 ```bash

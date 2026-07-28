@@ -24,7 +24,7 @@ When you push a Git tag matching `v*` (e.g., `v2.5.1`), the GitHub Actions relea
    - `README.md` (updates badge and announcement banner)
    - `website/sitemap.xml` (updates `lastmod` dates)
 3. **Commits and pushes** these version updates back to the `main` branch automatically with the commit message `chore(release): update versions to vX.X.X [skip ci]`.
-4. **Builds the extension** for both Chrome and Firefox and publishes the zipped archives.
+4. **Builds the extension** for both Chrome and Firefox and publishes the zipped archives with a `SHA256SUMS` checksum file and signed provenance attestations.
 5. **Builds the website** and uploads website artifacts.
 6. **Builds and publishes** the Docker image for the relay server to the GitHub Container Registry (`ghcr.io`).
 
