@@ -15,10 +15,6 @@
 #     root * /var/www/koalasync/website/www
 #     encode zstd gzip
 #
-#     # Keep one canonical URL for indexable support pages.
-#     redir /help.html /help 308
-#     redir /site-access-help.html /site-access-help 308
-#
 #     # Clean URLs support (resolves /join to join.html, etc.)
 #     try_files {path} {path}.html {path}/
 #     file_server
@@ -64,10 +60,6 @@
 sync.koalastuff.net {
     encode zstd gzip
     root * /var/www/koalasync/website/www
-
-    # Keep one canonical URL for indexable support pages.
-    redir /help.html /help 308
-    redir /site-access-help.html /site-access-help 308
 
     # Clean URLs: Resolves paths without .html in the URL
     try_files {path} {path}.html {path}/

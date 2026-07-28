@@ -183,11 +183,6 @@ for (const value of requiredSelfHostingValues) {
 if ((selfHostingExamples.match(/localhost:3000/g) || []).length !== 2 || selfHostingExamples.includes('KoalaSync:3000')) {
   throw new Error('Both Caddy examples must match the compose loopback port binding');
 }
-if ((selfHostingExamples.match(/\/help\.html \/help 308/g) || []).length !== 2
-    || (selfHostingExamples.match(/\/site-access-help\.html \/site-access-help 308/g) || []).length !== 2) {
-  throw new Error('Both Caddy examples must redirect legacy support-page URLs to their clean canonicals');
-}
-
 const landingStylesheet = landingStylesheets[0][0];
 if (!/href="\{\{ASSET_PATH\}\}landing\.min\.css"/.test(landingStylesheet)) {
   throw new Error('Landing stylesheet must use the landing.min.css build placeholder');

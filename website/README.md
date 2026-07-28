@@ -73,8 +73,6 @@ Minimal static-site block:
 ```caddy
 sync.koalastuff.net {
     root * /var/www/koalasync/website/www
-    redir /help.html /help 308
-    redir /site-access-help.html /site-access-help 308
     try_files {path} {path}.html {path}/
     file_server
     encode zstd gzip
