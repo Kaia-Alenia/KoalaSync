@@ -37,9 +37,10 @@
 - **Category:** Social / Communication / Privacy
 - **Status:** Planned. This is a roadmap target, not a release announcement.
 - **Existing foundation:** Opt-in, live-only end-to-end encrypted room chat; a floating
-  chat bubble over the selected player opens a dockable, detachable, resizable overlay.
-  The relay stores no chat history and mixed extension versions use capability-gated
-  delivery.
+  Koala launcher over the selected player opens a dockable, detachable, resizable
+  overlay. Quick reactions can stay in chat or fall over the video, and a bounded
+  browser-session activity timeline survives overlay reinjection. The relay stores no
+  chat history and mixed extension versions use capability-gated delivery.
 
 #### Core experience
 
@@ -57,8 +58,8 @@
 
 #### Messaging
 
-- Replies with quoted context, emoji reactions, emoji picker, mentions, and typing
-  indicators.
+- Replies with quoted context, per-message reaction counters, a full emoji picker,
+  mentions, and typing indicators.
 - Edit and delete own messages with clear local tombstones; no silent mutation.
 - Delivery states (`sending`, `sent`, `failed`, `retry`) with idempotent retries and
   duplicate suppression after reconnects.

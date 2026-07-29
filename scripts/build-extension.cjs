@@ -95,7 +95,7 @@ function replaceRequiredBlock(content, pattern, replacement, description) {
   return content.replace(pattern, replacement);
 }
 
-// Helper to copy files, ignoring manifest.json and manifest.base.json
+// Helper to copy runtime files, ignoring source manifests and test-only modules
 // Also injects shared constants into content.js
 function copyExtensionFiles(targetDir, browserName) {
   fs.mkdirSync(targetDir, { recursive: true });
@@ -120,7 +120,7 @@ function copyExtensionFiles(targetDir, browserName) {
   
   const items = fs.readdirSync(extDir);
   for (const item of items) {
-    if (item === 'manifest.json' || item === 'manifest.base.json') continue;
+    if (item === 'manifest.json' || item === 'manifest.base.json' || /\.test\.[cm]?js$/u.test(item)) continue;
     
     const srcPath = path.join(extDir, item);
     const destPath = path.join(targetDir, item);

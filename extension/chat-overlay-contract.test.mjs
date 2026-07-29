@@ -7,6 +7,8 @@ const extensionDir = path.dirname(fileURLToPath(import.meta.url));
 const overlaySource = fs.readFileSync(path.join(extensionDir, 'chat-overlay.js'), 'utf8');
 const backgroundSource = fs.readFileSync(path.join(extensionDir, 'background.js'), 'utf8');
 const popupSource = fs.readFileSync(path.join(extensionDir, 'popup.js'), 'utf8');
+const manifestSource = fs.readFileSync(path.join(extensionDir, 'manifest.base.json'), 'utf8');
+const buildSource = fs.readFileSync(path.join(extensionDir, '..', 'scripts', 'build-extension.cjs'), 'utf8');
 const localeDir = path.join(extensionDir, 'locales');
 const chatKeys = [
     'LABEL_CHAT_ENABLED',
@@ -23,7 +25,12 @@ const chatKeys = [
     'CHAT_MISSING_KEY',
     'CHAT_TOO_LONG',
     'CHAT_SEND_FAILED',
-    'CHAT_EMPTY'
+    'CHAT_EMPTY',
+    'LABEL_CHAT_REACTION_DISPLAY',
+    'LABEL_CHAT_REACTION_DISPLAY_TOOLTIP',
+    'OPTION_CHAT_REACTIONS_CHAT',
+    'OPTION_CHAT_REACTIONS_VIDEO',
+    'CHAT_QUICK_REACTIONS'
 ];
 
 describe('chat overlay contract', () => {
@@ -60,20 +67,28 @@ describe('chat overlay contract', () => {
         expect(overlaySource).toContain('window.removeEventListener(eventName, stopPageKeyboardShortcut, true)');
     });
 
-    it('keeps the launcher draggable independently from dock mode', () => {
+    it('keeps the launcher draggable only in detached mode and anchors dock launchers', () => {
         expect(overlaySource).toContain("launcher.addEventListener('pointerdown'");
+        expect(overlaySource).toMatch(/launcher\.addEventListener\('pointerdown'[\s\S]*layout\.mode !== 'detached'/);
         expect(overlaySource).toContain("launcher.addEventListener('pointermove'");
         expect(overlaySource).toContain('layout.launcherX = launcherDrag.x + deltaX');
         expect(overlaySource).toContain('layout.launcherY = launcherDrag.y + deltaY');
         expect(overlaySource).toContain('suppressLauncherClick = launcherDrag.moved');
-        expect(overlaySource).not.toMatch(/launcher\.style\.left = `\$\{layout\.x\}px`/);
+        expect(overlaySource).toContain("launcher.classList.toggle('docked-left'");
+        expect(overlaySource).toContain("launcher.classList.toggle('docked-right'");
     });
 
     it('reserves page space for real left and right dock modes', () => {
         expect(overlaySource).toContain("const PAGE_DOCK_ATTRIBUTE = 'data-koalasync-chat-dock'");
-        expect(overlaySource).toContain('padding-left: var(${PAGE_DOCK_WIDTH}) !important');
-        expect(overlaySource).toContain('padding-right: var(${PAGE_DOCK_WIDTH}) !important');
-        expect(overlaySource).toContain('document.documentElement.setAttribute(PAGE_DOCK_ATTRIBUTE, side)');
+        expect(overlaySource).toContain('width: calc(100% - var(${PAGE_DOCK_WIDTH})) !important');
+        expect(overlaySource).toContain('margin-left: var(${PAGE_DOCK_WIDTH}) !important');
+        expect(overlaySource).toContain('margin-right: var(${PAGE_DOCK_WIDTH}) !important');
+        expect(overlaySource).toContain('html[${PAGE_DOCK_ATTRIBUTE}] > body');
+        expect(overlaySource).toContain('clip-path: inset(0) !important');
+        expect(overlaySource).toContain('> :not(#koalasync-chat-overlay-host)');
+        expect(overlaySource).toContain('const target = document.fullscreenElement || document.documentElement');
+        expect(overlaySource).toContain('pageDockTarget = target');
+        expect(overlaySource).not.toContain('DOCK_MIN_PAGE_WIDTH');
         expect(overlaySource).toContain('applyPageDock(layout.mode, dockWidth)');
         expect(overlaySource).toContain('clearPageDock()');
     });
@@ -98,12 +113,32 @@ describe('chat overlay contract', () => {
         expect(backgroundSource).toContain("sendChatActivity(event, data.senderId, data.actionTimestamp)");
         expect(backgroundSource).toContain("sendChatActivity('joined', data.peerId, Date.now())");
         expect(backgroundSource).toContain("sendChatActivity('left', data.peerId, Date.now())");
+        expect(backgroundSource).toContain('activity: chatActivityStore.snapshot()');
+        expect(overlaySource).toContain('renderedActivityIds.has(event.id)');
+        expect(overlaySource).toContain('const MAX_RENDERED_ACTIVITY_IDS = 200');
+        expect(overlaySource).toContain('while (renderedActivityIdOrder.length > MAX_RENDERED_ACTIVITY_IDS)');
+        expect(overlaySource).toContain('renderedActivityIds.delete(renderedActivityIdOrder.shift())');
+    });
+
+    it('uses the KoalaSync icon and offers bounded encrypted quick reactions', () => {
+        expect(overlaySource).toContain("const LAUNCHER_ICON_DATA_URL = 'data:image/png;base64,");
+        expect(overlaySource).toContain('launcherIcon.src = LAUNCHER_ICON_DATA_URL');
+        expect(manifestSource).not.toContain('web_accessible_resources');
+        expect(overlaySource).toContain("const QUICK_REACTIONS = Object.freeze(['❤️', '😂', '😮', '😢', '👏', '🔥'])");
+        expect(overlaySource).toContain("messageRuntime({ type: 'CHAT_SEND', text })");
+        expect(overlaySource).toContain("chatReactionDisplay !== 'video'");
+        expect(overlaySource).toContain('MAX_REACTION_PARTICLES - reactionLayer.childElementCount');
+        expect(overlaySource).toContain('reducedMotion.matches');
+    });
+
+    it('excludes test-only modules from production extension artifacts', () => {
+        expect(buildSource).toContain("/\\.test\\.[cm]?js$/u.test(item)");
     });
 
     it('guards async refresh/send work and clears all composer state on room reset', () => {
         expect(overlaySource).toContain('generation !== refreshGeneration');
         expect(overlaySource).toContain('if (sending || !context?.enabled) return');
-        expect(overlaySource).toContain('textarea.value === submittedValue');
+        expect(overlaySource).toContain("clearComposerValue && textarea.value.trim() === text");
         expect(overlaySource).toMatch(/CHAT_RESET[\s\S]*resetComposer\(\)/);
         expect(overlaySource).toContain('setTimeout(() => finish(null), timeoutMs)');
         expect(backgroundSource).toContain('chatReceiveQueue = chatReceiveQueue.catch(() => {}).then');

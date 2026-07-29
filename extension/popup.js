@@ -73,6 +73,7 @@ const elements = {
     chatPosition: document.getElementById('chatPosition'),
     chatSize: document.getElementById('chatSize'),
     chatStartMode: document.getElementById('chatStartMode'),
+    chatReactionDisplay: document.getElementById('chatReactionDisplay'),
     sendTabTitle: document.getElementById('sendTabTitle'),
     mediaTitlePrivacyMode: document.getElementById('mediaTitlePrivacyMode'),
     episodeLobbyCard: document.getElementById('episodeLobbyCard'),
@@ -342,7 +343,7 @@ function setRoomRefreshCooldown() {
 async function init() {
     // Local-only by design — settings and room credentials never come from
     // storage.sync (only onboardingComplete + dismissedHints live there).
-    const localData = await chrome.storage.local.get(['serverUrl', 'useCustomServer', 'roomId', 'password', 'chatKey', 'chatEnabled', 'chatNotifications', 'chatPosition', 'chatSize', 'chatStartMode', 'username', 'filterNoise', 'autoSyncNextEpisode', 'sendTabTitle', 'mediaTitlePrivacyMode', 'titlePrivacyMode', 'forceSyncMode', 'browserNotifications', 'autoCopyInvite', 'locale', 'audioSettings', 'activeTab', 'themeMode', 'themePalette']);
+    const localData = await chrome.storage.local.get(['serverUrl', 'useCustomServer', 'roomId', 'password', 'chatKey', 'chatEnabled', 'chatNotifications', 'chatPosition', 'chatSize', 'chatStartMode', 'chatReactionDisplay', 'username', 'filterNoise', 'autoSyncNextEpisode', 'sendTabTitle', 'mediaTitlePrivacyMode', 'titlePrivacyMode', 'forceSyncMode', 'browserNotifications', 'autoCopyInvite', 'locale', 'audioSettings', 'activeTab', 'themeMode', 'themePalette']);
 
     let activeLang = localData.locale;
     if (!activeLang) {
@@ -378,6 +379,7 @@ async function init() {
     if (elements.chatPosition) elements.chatPosition.value = ['left', 'detached'].includes(localData.chatPosition) ? localData.chatPosition : 'right';
     if (elements.chatSize) elements.chatSize.value = ['compact', 'large', 'custom'].includes(localData.chatSize) ? localData.chatSize : 'standard';
     if (elements.chatStartMode) elements.chatStartMode.value = localData.chatStartMode === 'open' ? 'open' : 'bubble';
+    if (elements.chatReactionDisplay) elements.chatReactionDisplay.value = localData.chatReactionDisplay === 'video' ? 'video' : 'chat';
     syncChatSettingsState();
     const legacyTitlePrivacyMode = Object.values(TITLE_PRIVACY_MODES).includes(localData.titlePrivacyMode) ? localData.titlePrivacyMode : TITLE_PRIVACY_MODES.FULL;
     const mediaTitlePrivacyMode = Object.values(TITLE_PRIVACY_MODES).includes(localData.mediaTitlePrivacyMode) ? localData.mediaTitlePrivacyMode : legacyTitlePrivacyMode;
@@ -1469,7 +1471,7 @@ elements.autoSyncNextEpisode.addEventListener('change', () => {
 
 function syncChatSettingsState() {
     const enabled = elements.chatEnabled?.checked === true;
-    for (const control of [elements.chatNotifications, elements.chatPosition, elements.chatSize, elements.chatStartMode]) {
+    for (const control of [elements.chatNotifications, elements.chatPosition, elements.chatSize, elements.chatStartMode, elements.chatReactionDisplay]) {
         if (control) control.disabled = !enabled;
     }
     document.querySelectorAll('[data-chat-setting]').forEach(row => {
@@ -1504,6 +1506,11 @@ if (elements.chatSize) {
 if (elements.chatStartMode) {
     elements.chatStartMode.addEventListener('change', () => {
         chrome.storage.local.set({ chatStartMode: elements.chatStartMode.value === 'open' ? 'open' : 'bubble' });
+    });
+}
+if (elements.chatReactionDisplay) {
+    elements.chatReactionDisplay.addEventListener('change', () => {
+        chrome.storage.local.set({ chatReactionDisplay: elements.chatReactionDisplay.value === 'video' ? 'video' : 'chat' });
     });
 }
 

@@ -7,6 +7,7 @@ import { initTabManager } from './modules/tab-manager.js';
 import { clearChatKeyCache, decryptChatMessage, encryptChatMessage, generateChatSecret, validateChatSecret } from './chat-crypto.js';
 import { buildChatRelayPayload, encodeSocketEvent } from './chat-wire.js';
 import { createChatSendLimiter, createLatestTaskQueue, normalizeRoomId } from './chat-session.js';
+import { createChatActivityStore } from './chat-activity.js';
 import { HOST_ACCESS_REQUIRED_STATUS, normalizeTabId, inspectTabHostAccess, isHostAccessError, addTabHostAccessRequest, removeTabHostAccessRequest } from './host-access.js';
 import './page-api-seek-overrides.js';
 
@@ -89,6 +90,7 @@ let chatSecretGuard = '';
 let chatSessionGeneration = 0;
 let chatReceiveQueue = Promise.resolve();
 const chatSendLimiter = createChatSendLimiter();
+const chatActivityStore = createChatActivityStore();
 const webJoinCoordinator = createLatestTaskQueue();
 function serverSupports(cap) { return Array.isArray(serverCapabilities) && serverCapabilities.includes(cap); }
 function serverSupportsChat() {
@@ -101,6 +103,11 @@ function invalidateChatSession() {
     chatReceiveQueue = Promise.resolve();
     chatSendLimiter.reset();
     clearChatKeyCache();
+}
+
+function clearChatActivity() {
+    chatActivityStore.clear();
+    if (storageInitialized) chrome.storage.session.set({ chatActivityTimeline: [] }).catch(() => {});
 }
 
 async function clearFailedJoinCredentials() {
@@ -194,7 +201,7 @@ function ensureState() {
                 'eventQueue', 'isForceSyncInitiator', 'forceSyncAcks', 
                 'forceSyncDeadline', 'reconnectFailed', 'reconnectStartTime', 'reconnectAttempts', 'currentTabId', 'currentTabTitle',
                 'episodeLobby', 'localSeq', 'lastSeqBySender', 'expectedAcksCount', 'roomIdleSince', 'lastContentHeartbeatAt',
-                'hcmDesynced'
+                'hcmDesynced', 'chatActivityTimeline'
             ], (data) => {
                 clearTimeout(storageTimeout);
                 if (data.expectedAcksCount !== undefined) expectedAcksCount = data.expectedAcksCount;
@@ -215,6 +222,7 @@ function ensureState() {
                     hostPeerId = currentRoom.hostPeerId || null;
                     controllers = Array.isArray(currentRoom.controllers) ? currentRoom.controllers : [];
                     serverCapabilities = Array.isArray(currentRoom.capabilities) ? currentRoom.capabilities : [];
+                    chatActivityStore.restore(data.chatActivityTimeline);
                 }
                 if (data.hcmDesynced !== undefined) hcmDesynced = data.hcmDesynced;
                 // L-2: enforce the desync invariant on restore — a persisted hcmDesynced=true
@@ -454,7 +462,7 @@ function emitEpisodeLobbyForCurrentPrivacy() {
 // otherwise be redistributed across devices and resurrected on reinstall).
 const LEGACY_SYNC_KEYS = [
     'serverUrl', 'useCustomServer', 'roomId', 'password', 'chatKey',
-    'chatEnabled', 'chatNotifications', 'chatPosition', 'chatSize', 'chatStartMode', 'username',
+    'chatEnabled', 'chatNotifications', 'chatPosition', 'chatSize', 'chatStartMode', 'chatReactionDisplay', 'username',
     'filterNoise', 'autoSyncNextEpisode', 'forceSyncMode',
     'browserNotifications', 'autoCopyInvite', 'locale', 'audioSettings',
     'titlePrivacyMode', 'sendTabTitle', 'mediaTitlePrivacyMode'
@@ -608,6 +616,7 @@ async function leaveRoomAfterIdleGrace(reason) {
     emit(EVENTS.LEAVE_ROOM, { peerId });
     forceDisconnect();
     currentRoom = null;
+    clearChatActivity();
     controlMode = CONTROL_MODES.EVERYONE;
     hostPeerId = null;
     controllers = [];
@@ -626,6 +635,7 @@ async function leaveRoomAfterIdleGrace(reason) {
     await clearPendingTarget();
     await chrome.storage.session.set({
         currentRoom: null,
+        chatActivityTimeline: [],
         currentTabId: null,
         currentTabTitle: null,
         roomIdleSince: null,
@@ -948,17 +958,21 @@ function chatActivityDisplayName(senderId) {
 }
 
 function sendChatActivity(action, senderId, timestamp = Date.now()) {
-    if (!currentTabId || !serverSupportsChat()) return;
+    if (!currentRoom || !serverSupportsChat()) return;
     if (![EVENTS.PLAY, EVENTS.PAUSE, EVENTS.SEEK, EVENTS.FORCE_SYNC_PREPARE, EVENTS.FORCE_SYNC_EXECUTE, 'joined', 'left'].includes(action)) return;
+    const entry = chatActivityStore.add({
+        action,
+        senderId,
+        username: chatActivityDisplayName(senderId),
+        timestamp: Number.isFinite(timestamp) ? timestamp : Date.now()
+    });
+    if (!entry) return;
+    if (storageInitialized) chrome.storage.session.set({ chatActivityTimeline: chatActivityStore.snapshot() }).catch(() => {});
+    if (!currentTabId) return;
     chrome.tabs.sendMessage(Number(currentTabId), {
         type: 'CHAT_EVENT',
-        event: {
-            action,
-            senderId,
-            username: chatActivityDisplayName(senderId),
-            timestamp: Number.isFinite(timestamp) ? timestamp : Date.now()
-        }
-    }).catch(() => {});
+        event: entry
+    }).catch(error => addLog(`Chat activity delivery failed: ${error.message}`, 'warn'));
 }
 
 function scheduleReconnect() {
@@ -1156,7 +1170,10 @@ async function handleServerEvent(event, data) {
     }
     switch (event) {
         case EVENTS.ROOM_DATA:
-            if (currentRoom?.roomId !== data.roomId) invalidateChatSession();
+            if (currentRoom?.roomId !== data.roomId) {
+                invalidateChatSession();
+                clearChatActivity();
+            }
             currentRoom = data;
             // Host Control Mode: adopt room role/mode on (re)join.
             controlMode = data.controlMode || CONTROL_MODES.EVERYONE;
@@ -2556,6 +2573,7 @@ function leaveOldRoomIfSwitching(newRoomId) {
         addLog(`Switching rooms: leaving ${currentRoom.roomId} to join ${newRoomId}`, 'info');
         forceDisconnect();
         currentRoom = null;
+        clearChatActivity();
         controlMode = CONTROL_MODES.EVERYONE;
         hostPeerId = null;
         controllers = [];
@@ -2735,6 +2753,7 @@ async function handleAsyncMessage(message, sender, sendResponse) {
             eventNotifications: localeData.browserNotifications === true,
             peerId,
             roomId: currentRoom.roomId,
+            activity: chatActivityStore.snapshot(),
             strings: {
                 title: translated('CHAT_TITLE'),
                 liveOnly: translated('CHAT_LIVE_ONLY'),
@@ -2757,7 +2776,8 @@ async function handleAsyncMessage(message, sender, sendResponse) {
                 eventForceExecute: translated('NOTIF_FORCE_EXECUTE'),
                 eventAction: translated('TOAST_PEER_ACTION'),
                 eventJoined: translated('TOAST_PEER_JOINED'),
-                eventLeft: translated('TOAST_PEER_LEFT')
+                eventLeft: translated('TOAST_PEER_LEFT'),
+                quickReactions: translated('CHAT_QUICK_REACTIONS')
             }
         });
     } else if (message.type === 'CHAT_SEND') {
@@ -2900,6 +2920,7 @@ async function handleAsyncMessage(message, sender, sendResponse) {
         resetAudioProcessingInTab(currentTabId);
         emit(EVENTS.LEAVE_ROOM, { peerId });
         currentRoom = null;
+        clearChatActivity();
         controlMode = CONTROL_MODES.EVERYONE;
         hostPeerId = null;
         controllers = [];
@@ -2928,6 +2949,7 @@ async function handleAsyncMessage(message, sender, sendResponse) {
 
         chrome.storage.session.set({ 
             currentRoom: null,
+            chatActivityTimeline: [],
             currentTabId: null,
             currentTabTitle: null,
             roomIdleSince: null,

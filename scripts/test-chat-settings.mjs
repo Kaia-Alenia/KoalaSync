@@ -23,7 +23,7 @@ function detailsSection(marker) {
 const chatSection = detailsSection('data-i18n="CHAT_TITLE"');
 const syncSection = detailsSection('data-i18n="LABEL_SETTINGS_GROUP_SYNC"');
 
-for (const id of ['chatEnabled', 'chatNotifications', 'chatPosition', 'chatSize', 'chatStartMode']) {
+for (const id of ['chatEnabled', 'chatNotifications', 'chatPosition', 'chatSize', 'chatStartMode', 'chatReactionDisplay']) {
     assert.match(chatSection, new RegExp(`id="${id}"`), `${id} belongs in the dedicated chat settings section`);
 }
 assert.doesNotMatch(syncSection, /id="chatEnabled"/, 'chat enablement must not remain under Playback & Sync');
@@ -37,12 +37,15 @@ for (const value of ['compact', 'standard', 'large', 'custom']) {
 for (const value of ['bubble', 'open']) {
     assert.match(chatSection, new RegExp(`<option value="${value}"`), `chat start mode supports ${value}`);
 }
+for (const value of ['chat', 'video']) {
+    assert.match(chatSection, new RegExp(`<option value="${value}"`), `chat reaction display supports ${value}`);
+}
 
-for (const key of ['chatEnabled', 'chatNotifications', 'chatPosition', 'chatSize', 'chatStartMode']) {
+for (const key of ['chatEnabled', 'chatNotifications', 'chatPosition', 'chatSize', 'chatStartMode', 'chatReactionDisplay']) {
     assert.match(popupJs, new RegExp(`chrome\\.storage\\.local\\.set\\(\\{ ${key}`), `popup persists ${key}`);
     assert.ok(backgroundJs.includes(`'${key}'`), `legacy sync purge includes ${key}`);
 }
-for (const key of ['chatPosition', 'chatSize', 'chatStartMode']) {
+for (const key of ['chatPosition', 'chatSize', 'chatStartMode', 'chatReactionDisplay']) {
     assert.ok(overlayJs.includes(`'${key}'`), `overlay reads ${key}`);
 }
 assert.match(backgroundJs, /chatEnabled:\s*data\.chatEnabled === true/, 'background reads chatEnabled with an off-by-default contract');
@@ -61,5 +64,6 @@ assert.match(overlayJs, /layout\.customWidth = rect\.width[\s\S]*layout\.customH
 assert.match(overlayJs, /changes\.chatPosition[\s\S]*setMode/, 'position changes apply live');
 assert.match(overlayJs, /changes\.chatSize[\s\S]*setSize/, 'size changes apply live');
 assert.match(overlayJs, /changes\.chatStartMode[\s\S]*setOpened/, 'startup-mode changes apply live');
+assert.match(overlayJs, /changes\.chatReactionDisplay[\s\S]*chatReactionDisplay/, 'reaction display changes apply live');
 
 console.log('chat settings tests passed');

@@ -52,6 +52,8 @@ the stamped value as AAD.
 - Maximum plaintext length: 500 Unicode code points.
 - Decrypted text is untrusted. Escape HTML before applying the supported limited
   Markdown formatting.
+- Quick reactions use the same encrypted message path as text. They remain readable
+  by current chat clients without adding a relay-visible reaction event.
 - No read receipts and no typing indicators.
 - The local message DOM is bounded; this is presentation state, not server history.
 
@@ -61,9 +63,21 @@ the stamped value as AAD.
 - Live modes: right, left, and detached.
 - Detached mode is draggable and moderately resizable. Size and position are stored
   per origin and clamped to the current viewport.
-- The overlay uses a Shadow DOM and never changes host-page layout.
+- Left and right modes anchor the launcher to the selected edge and reserve a
+  full-height page column while the panel is open. Detached mode is the only freely
+  movable launcher.
+- Docking keeps a reserved column on narrow pages and in fullscreen instead of
+  silently falling back to an overlay.
+- The overlay uses a Shadow DOM. Docking changes root-page or fullscreen-container
+  width and margins while the dock is open and clips viewport-bound page layers to
+  the remaining page column. The overrides stop applying when chat is detached or
+  closed, and the injected style element is removed when chat is destroyed.
 - On `fullscreenchange`, its host moves into `document.fullscreenElement` and remains
   visible.
+- Six encrypted quick reactions are available from the composer. Users can keep them
+  in chat or additionally show a bounded falling-emoji animation over the video.
+- Playback and room activity is retained in a bounded per-room browser-session
+  timeline so overlay reinjection does not lose command rows. It is not relay history.
 - It follows all eucalyptus, cyber, and graphite light/dark theme combinations.
 - Without a key, the panel stays closed and a disabled chat control explains that a
   current invite link is required.

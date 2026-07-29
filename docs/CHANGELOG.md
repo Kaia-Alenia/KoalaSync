@@ -4,6 +4,16 @@ All notable changes to the KoalaSync browser extension and relay server.
 
 ---
 
+## Unreleased
+
+### Added
+- **Extension: Quick reactions** — Adds six encrypted one-click reactions with a local choice between chat-only display and bounded falling reactions over the video.
+- **Extension: Resilient chat activity** — Keeps a bounded per-room browser-session timeline for play, pause, seek, force-sync, join, and leave rows so overlay reinjection no longer loses them.
+
+### Changed
+- **Extension: Real dock behavior** — Anchors the collapsed Koala chat launcher to the selected side, reserves a page column in normal and fullscreen layouts, and clips viewport-bound page layers away from the open dock; detached mode remains freely movable.
+- **Extension: Koala chat launcher** — Replaces the generic speech-bubble emoji with the KoalaSync extension icon plus a chat marker.
+
 ## [v3.0.1] — 2026-07-26
 
 ### Added
