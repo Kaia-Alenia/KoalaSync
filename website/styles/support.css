@@ -238,6 +238,58 @@
     scroll-margin-top: 7rem;
 }
 
+.support-accordion > summary {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 0.65rem 1rem;
+    align-items: center;
+    list-style: none;
+    cursor: pointer;
+}
+
+.support-accordion > summary::-webkit-details-marker {
+    display: none;
+}
+
+.support-accordion > summary::after {
+    grid-column: 2;
+    grid-row: 1 / span 2;
+    content: "+";
+    display: grid;
+    width: 2rem;
+    height: 2rem;
+    place-items: center;
+    border: 1px solid color-mix(in oklch, var(--accent) 35%, var(--card-border));
+    border-radius: 999px;
+    color: var(--accent);
+    font-size: 1.35rem;
+    line-height: 1;
+}
+
+.support-accordion[open] > summary::after {
+    content: "−";
+}
+
+.support-accordion > summary .support-eyebrow {
+    grid-column: 1;
+    width: fit-content;
+}
+
+.support-accordion > summary h2 {
+    grid-column: 1;
+    margin: 0;
+}
+
+.support-accordion > summary:focus-visible {
+    outline: 3px solid color-mix(in oklch, var(--accent) 50%, transparent);
+    outline-offset: 6px;
+    border-radius: 12px;
+}
+
+.support-accordion[open] > summary {
+    margin-bottom: 1rem;
+}
+
 .support-anchor-section code {
     overflow-wrap: anywhere;
     color: var(--text);

@@ -1760,6 +1760,20 @@ document.addEventListener('DOMContentLoaded', () => {
     updateDynamicVersion();
     localizeHomeLinks();
     initLanguageSelectorValue();
+    const openSupportAccordion = hash => {
+        if (!hash || hash === '#') return;
+        const target = document.getElementById(decodeURIComponent(hash.slice(1)));
+        if (target?.matches('details.support-accordion')) {
+            target.open = true;
+            window.requestAnimationFrame(() => target.scrollIntoView({ block: 'start' }));
+        }
+    };
+    openSupportAccordion(window.location.hash);
+    window.addEventListener('hashchange', () => openSupportAccordion(window.location.hash));
+    document.addEventListener('click', event => {
+        const link = event.target.closest('a[href^="#"]');
+        if (link) openSupportAccordion(link.hash);
+    });
     if (document.fonts?.ready) {
         document.fonts.ready.then(adjustDropdownWidth);
     }

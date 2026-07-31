@@ -62,122 +62,122 @@
           "mainEntity": [
             {
               "@type": "Question",
-              "name": "How do I start a KoalaSync watch party?",
+              "name": "Install KoalaSync and prepare your browser",
               "acceptedAnswer": {
                 "@type": "Answer",
-                "text": "Install KoalaSync in each participant's desktop browser, open the extension, create a new room, and share the copied invite link. Everyone then opens the video locally and selects that browser tab under Sync."
+                "text": "KoalaSync does not provide or stream the video. Everyone opens the same content locally, and KoalaSync coordinates playback controls."
               }
             },
             {
               "@type": "Question",
-              "name": "What does the KoalaSync Sync button do?",
+              "name": "Play, pause, seek, and Force Sync",
               "acceptedAnswer": {
                 "@type": "Answer",
-                "text": "The Sync button performs a coordinated Force Sync. Jump to Others moves you to the known playback time of other participants; Jump to Me moves the room to your selected video's current time. Select a video first."
+                "text": "When room control is open to everyone, actions on the selected player and the popup's Play and Pause buttons are sent to the room. The Last Activity Status shows the most recent room action."
               }
             },
             {
               "@type": "Question",
-              "name": "How does Host Control work in KoalaSync?",
+              "name": "Choose who can control the room",
               "acceptedAnswer": {
                 "@type": "Answer",
-                "text": "The room host can enable Only I can control playback and grant control to individual participants. Guests can remain synchronized or choose to watch locally in Solo mode, then use Resync to rejoin the shared playback."
+                "text": "The person who created the room is the host. Under Room → Host Control, the host can enable Only I can control playback. The host can then use Give control beside individual participants to make them controllers, and Revoke to remove that role."
               }
             },
             {
               "@type": "Question",
-              "name": "How does Auto-Sync Next Episode work?",
+              "name": "Use Auto-Sync Next Episode",
               "acceptedAnswer": {
                 "@type": "Answer",
-                "text": "On supported sites with recognizable episode titles, KoalaSync pauses at an episode change and opens an Episode Lobby until participating browsers have loaded the same episode. The initiator can skip the lobby and play anyway. The feature does not work when the site exposes no usable episode identity or media-title sharing is disabled."
+                "text": "Auto-Sync Next Episode is enabled by default under Settings → Playback & Sync. On supported sites, KoalaSync detects a recognizable episode change, pauses, and opens an Episode Lobby while participants load the same episode. Playback starts together when the lobby is ready."
               }
             },
             {
               "@type": "Question",
-              "name": "What does KoalaSync Audio Processing change?",
+              "name": "Balance quiet and loud scenes with Audio Processing",
               "acceptedAnswer": {
                 "@type": "Answer",
-                "text": "Audio Processing is a local per-browser option for the selected video. Its compressor presets can reduce the difference between quiet and loud passages. It does not change the audio heard by other room participants."
+                "text": "Audio Processing affects only your selected video in your browser. It is not shared or synchronized with the room."
               }
             },
             {
               "@type": "Question",
-              "name": "Why does the browser show such a broad permission warning for KoalaSync?",
+              "name": "Why does the browser show such a broad warning?",
               "acceptedAnswer": {
                 "@type": "Answer",
-                "text": "KoalaSync works with video players across many websites. It uses access on the video tab you actively select to find and control the video element, synchronize playback, and display optional room chat. Open tab titles populate the tab selector; KoalaSync does not create a general browsing or watch history."
+                "text": "Browsers may say that KoalaSync can “read and change all your data on all websites.” The wording is broad because KoalaSync is designed to work with video players across many different websites instead of a short fixed list."
               }
             },
             {
               "@type": "Question",
-              "name": "Why does a KoalaSync invite link not join the room?",
+              "name": "The invite opens, but nothing happens",
               "acceptedAnswer": {
                 "@type": "Answer",
-                "text": "Open the complete invite link in the same desktop browser profile where KoalaSync is installed. If the invite page was already open when the extension was installed or enabled, reload it. Confirm that the browser allows KoalaSync to run on sync.koalastuff.net, then ask the sender for a newly copied invite if the link is incomplete."
+                "text": "Open the invite in the same desktop browser profile where KoalaSync is installed. Extensions installed in another browser or profile cannot receive the join request."
               }
             },
             {
               "@type": "Question",
-              "name": "Why does a video tab not appear in KoalaSync?",
+              "name": "The video tab does not appear",
               "acceptedAnswer": {
                 "@type": "Answer",
-                "text": "Reload the video page, reopen KoalaSync, and disable Hide Clutter Tabs in Settings. If the tab then appears, report the domain because it was filtered by mistake. Otherwise, verify that KoalaSync has website access."
+                "text": "Keep the video page open and reload it once."
               }
             },
             {
               "@type": "Question",
-              "name": "Why does KoalaSync find no video on a listed tab?",
+              "name": "The tab appears, but KoalaSync finds no usable video",
               "acceptedAnswer": {
                 "@type": "Answer",
-                "text": "Select the tab containing the visible player and start playback once. Check Video Debug Info in the Status tab, reload after permission changes, and temporarily disable extensions that modify the player. Some protected or non-HTML5 players may need site-specific support."
+                "text": "Select the exact tab containing the visible player, not a login, search, or media-library tab."
               }
             },
             {
               "@type": "Question",
-              "name": "Why does KoalaSync room chat not work for everyone?",
+              "name": "Chat does not work, or one person cannot see it",
               "acceptedAnswer": {
                 "@type": "Answer",
-                "text": "Room chat requires KoalaSync 3.0.0 or newer. The room creator receives a chat encryption secret when creating a new room, and every friend must join through that room's current invite link to receive the same secret. Manual room entry and old invite links can still join playback synchronization, but do not provide chat access."
+                "text": "Room chat was introduced in KoalaSync 3.0.0. Every participant who wants to send or read chat messages needs version 3.0.0 or newer. Supported pre-3.0 versions may still synchronize playback, but they do not support room chat."
               }
             },
             {
               "@type": "Question",
-              "name": "Why are connected KoalaSync participants not synchronized?",
+              "name": "Everyone is connected, but playback does not sync",
               "acceptedAnswer": {
                 "@type": "Answer",
-                "text": "Confirm that everyone uses the same KoalaSync version and selected the correct local video tab. Reload after website-access changes, test play, pause, and seeking separately, and collect a debug report from each affected participant."
+                "text": "Make sure everyone uses a currently supported KoalaSync version. Different supported versions can work together, but optional features may not be available to everyone."
               }
             },
             {
               "@type": "Question",
-              "name": "Does KoalaSync stream the video to other participants?",
+              "name": "Does KoalaSync send the video to my friends?",
               "acceptedAnswer": {
                 "@type": "Answer",
-                "text": "No. KoalaSync does not stream, upload, proxy, share, or bypass access to video content. Everyone watches locally in their own browser and needs their own access to the website or streaming service. KoalaSync only synchronizes playback actions such as play, pause, and seeking."
+                "text": "No. KoalaSync does not stream, upload, proxy, download, or redistribute video content. It only sends the live room and playback events needed to keep actions such as play, pause, and seeking synchronized."
               }
             },
             {
               "@type": "Question",
-              "name": "Which devices and browsers support KoalaSync?",
+              "name": "Browsers, websites, and known limitations",
               "acceptedAnswer": {
                 "@type": "Answer",
-                "text": "KoalaSync is a desktop browser extension for Chrome, Firefox, Edge, and compatible Chromium-based browsers on Windows, macOS, Linux, and ChromeOS. It does not currently provide a mobile app or Safari extension. Website compatibility also depends on the site's video player."
+                "text": "KoalaSync is currently a desktop browser extension. It supports Google Chrome, Mozilla Firefox, Microsoft Edge, Opera, Brave, Vivaldi, and other compatible Chromium-based desktop browsers on Windows, macOS, Linux, and ChromeOS."
               }
             },
             {
               "@type": "Question",
-              "name": "What data does KoalaSync send from the browser?",
+              "name": "What data leaves my browser?",
               "acceptedAnswer": {
                 "@type": "Answer",
-                "text": "While you are in a room, KoalaSync sends the room, peer, and playback data needed for live synchronization. Display names and, depending on privacy settings, tab or media titles may be shared with room participants. Chat text is encrypted in the extension before transmission. KoalaSync does not create a persistent chat, browsing, synchronization, or watch history."
+                "text": "KoalaSync only connects to a relay while you are actively in a room. During that session, the relay temporarily processes the data required to connect participants and synchronize playback."
               }
             },
             {
               "@type": "Question",
-              "name": "How can official KoalaSync releases be verified?",
+              "name": "Why should I trust KoalaSync?",
               "acceptedAnswer": {
                 "@type": "Answer",
-                "text": "The extension, relay server, build scripts, release workflow, and Dockerfile are public under the MIT License. Extension ZIPs on GitHub Releases and Docker images on GitHub Container Registry receive signed provenance attestations that bind their exact digest to this repository, a release tag and commit, and the public GitHub Actions workflow."
+                "text": "Trust should not depend on promises alone. The KoalaSync browser extension, relay server, build scripts, release workflow, and Dockerfile used for official GitHub releases are public under the MIT License."
               }
             }
           ]
@@ -258,7 +258,7 @@
                         <h3>Playback & room controls</h3>
                         <p>Use synchronization, host roles, and episode changes.</p>
                     </header>
-                    <div class="support-topic-links" role="navigation" aria-label="Playback and chat help">
+                    <div class="support-topic-links" role="navigation" aria-label="Playback and room control help">
                         <a href="#sync-controls">Synchronization and Force Sync</a>
                         <a href="#host-control">Host Control and Co-Hosts</a>
                         <a href="#episode-sync">Auto-Sync Next Episode</a>
@@ -281,7 +281,7 @@
                         <h3>Compatibility & troubleshooting</h3>
                         <p>Fix access, detection, connection, and sync problems.</p>
                     </header>
-                    <div class="support-topic-links" role="navigation" aria-label="Privacy and trust help">
+                    <div class="support-topic-links" role="navigation" aria-label="Compatibility and troubleshooting help">
                         <a href="#compatibility">Browsers, websites, and limitations</a>
                         <a href="#permissions">Privacy and browser permissions</a>
                         <a href="#invite-problems">Invite problems</a>
@@ -344,9 +344,8 @@
             <p>Force Sync cannot fix different videos, missing website access, an unloaded player, or a site that blocks the required playback action. Check that everyone selected the intended content first.</p>
         </section>
 
-        <section id="host-control" class="support-card support-anchor-section" aria-labelledby="host-control-title">
-            <span class="support-eyebrow">Host &amp; Co-Hosts</span>
-            <h2 id="host-control-title">Choose who can control the room</h2>
+        <details id="host-control" class="support-card support-anchor-section support-accordion" aria-labelledby="host-control-title">
+            <summary><span class="support-eyebrow">Host &amp; Co-Hosts</span><h2 id="host-control-title">Choose who can control the room</h2></summary>
             <p>The person who created the room is the host. Under <strong>Room → Host Control</strong>, the host can enable <strong>Only I can control playback</strong>. The host can then use <strong>Give control</strong> beside individual participants to make them controllers, and <strong>Revoke</strong> to remove that role.</p>
             <ul>
                 <li>Hosts and granted controllers can move the shared room with play, pause, seek, Force Sync, and episode-lobby actions.</li>
@@ -354,11 +353,10 @@
                 <li>A guest can choose <strong>Watch on my own</strong> to enter <strong>Solo</strong> mode. Host commands are then ignored locally until the guest clicks <strong>Resync</strong>.</li>
                 <li>If the host leaves while others remain, another participant becomes host and control returns to everyone.</li>
             </ul>
-        </section>
+        </details>
 
-        <section id="episode-sync" class="support-card support-anchor-section" aria-labelledby="episode-sync-title">
-            <span class="support-eyebrow">Episode changes</span>
-            <h2 id="episode-sync-title">Use Auto-Sync Next Episode</h2>
+        <details id="episode-sync" class="support-card support-anchor-section support-accordion" aria-labelledby="episode-sync-title">
+            <summary><span class="support-eyebrow">Episode changes</span><h2 id="episode-sync-title">Use Auto-Sync Next Episode</h2></summary>
             <p><strong>Auto-Sync Next Episode</strong> is enabled by default under <strong>Settings → Playback &amp; Sync</strong>. On supported sites, KoalaSync detects a recognizable episode change, pauses, and opens an <strong>Episode Lobby</strong> while participants load the same episode. Playback starts together when the lobby is ready.</p>
             <ul>
                 <li>Use <strong>Skip &amp; Play anyway</strong> if you do not want to wait.</li>
@@ -366,11 +364,10 @@
                 <li>The feature depends on usable episode titles. It is not available for ordinary single videos, and some services expose too little episode information.</li>
                 <li>Choosing <strong>Do not send</strong> for media titles prevents creation of an episode lobby. <strong>Send episode ID</strong> can preserve episode matching without sharing the full media title when an episode ID is detectable.</li>
             </ul>
-        </section>
+        </details>
 
-        <section id="audio-processing" class="support-card support-anchor-section" aria-labelledby="audio-processing-title">
-            <span class="support-eyebrow">Local audio</span>
-            <h2 id="audio-processing-title">Balance quiet and loud scenes with Audio Processing</h2>
+        <details id="audio-processing" class="support-card support-anchor-section support-accordion" aria-labelledby="audio-processing-title">
+            <summary><span class="support-eyebrow">Local audio</span><h2 id="audio-processing-title">Balance quiet and loud scenes with Audio Processing</h2></summary>
             <p>Open <strong>Settings → Playback &amp; Sync → Audio Processing</strong>. Enable Audio Processing and the compressor, then start with a preset such as <strong>Recommended</strong>, <strong>Dynamic Range</strong>, <strong>Vocal Enhancement</strong>, or <strong>Smooth</strong>. Selecting <strong>Custom</strong> exposes the compressor controls.</p>
             <ul>
                 <li>Audio Processing affects only your selected video in your browser. It is not shared or synchronized with the room.</li>
@@ -378,11 +375,10 @@
                 <li>The Equalizer is marked <strong>Coming soon</strong> and is not currently available.</li>
                 <li>If a site replaces its player or audio stops behaving normally, reload the page and reselect the tab; disable Audio Processing to compare.</li>
             </ul>
-        </section>
+        </details>
 
-        <section id="invite-problems" class="support-card support-anchor-section" aria-labelledby="invite-problems-title">
-            <span class="support-eyebrow">Invite links</span>
-            <h2 id="invite-problems-title">The invite opens, but nothing happens</h2>
+        <details id="invite-problems" class="support-card support-anchor-section support-accordion" aria-labelledby="invite-problems-title">
+            <summary><span class="support-eyebrow">Invite links</span><h2 id="invite-problems-title">The invite opens, but nothing happens</h2></summary>
             <ol class="support-steps">
                 <li>Open the invite in the same desktop browser profile where KoalaSync is installed. Extensions installed in another browser or profile cannot receive the join request.</li>
                 <li>If you installed, enabled, or updated KoalaSync after opening the invite, reload the invite page once so the extension can connect to it.</li>
@@ -397,11 +393,10 @@
                     <p>If the page still offers an install button even though KoalaSync is installed, the usual causes are a different browser profile, blocked website access, or a page that was opened before the extension became available.</p>
                 </div>
             </div>
-        </section>
+        </details>
 
-        <section id="missing-tab" class="support-card support-anchor-section" aria-labelledby="missing-tab-title">
-            <span class="support-eyebrow">Tab list</span>
-            <h2 id="missing-tab-title">The video tab does not appear</h2>
+        <details id="missing-tab" class="support-card support-anchor-section support-accordion" aria-labelledby="missing-tab-title">
+            <summary><span class="support-eyebrow">Tab list</span><h2 id="missing-tab-title">The video tab does not appear</h2></summary>
             <ol class="support-steps">
                 <li>Keep the video page open and reload it once.</li>
                 <li>Close and reopen the KoalaSync popup, then check <strong>Select Video</strong> again.</li>
@@ -416,11 +411,10 @@
                     <p>For a false clutter match, report the domain, whether the tab appears with the filter disabled, and whether the page contains a visible HTML5 video. A domain such as <code>video.example.com</code> is usually enough; do not publish a private URL containing account or session details.</p>
                 </div>
             </div>
-        </section>
+        </details>
 
-        <section id="video-detection" class="support-card support-anchor-section" aria-labelledby="video-detection-title">
-            <span class="support-eyebrow">Video detection</span>
-            <h2 id="video-detection-title">The tab appears, but KoalaSync finds no usable video</h2>
+        <details id="video-detection" class="support-card support-anchor-section support-accordion" aria-labelledby="video-detection-title">
+            <summary><span class="support-eyebrow">Video detection</span><h2 id="video-detection-title">The tab appears, but KoalaSync finds no usable video</h2></summary>
             <ul>
                 <li>Select the exact tab containing the visible player, not a login, search, or media-library tab.</li>
                 <li>Start the video once. Some websites create their video element only after playback begins.</li>
@@ -429,12 +423,12 @@
                 <li>Temporarily disable other extensions that modify the player, then reload and test again.</li>
                 <li>Protected, heavily customized, or non-HTML5 players may require site-specific support.</li>
             </ul>
-        </section>
+        </details>
 
-        <section id="room-chat" class="support-card support-anchor-section" aria-labelledby="room-chat-title">
-            <span class="support-eyebrow">Room chat</span>
-            <h2 id="room-chat-title">Chat does not work, or one person cannot see it</h2>
-            <p>Room chat was introduced in KoalaSync 3.0.0. Every participant who wants to send or read chat messages needs version 3.0.0 or newer. Older versions can still join a room and synchronize playback, but they do not support room chat.</p>
+        <details id="room-chat" class="support-card support-anchor-section support-accordion" aria-labelledby="room-chat-title">
+            <summary><span class="support-eyebrow">Room chat</span><h2 id="room-chat-title">Chat does not work, or one person cannot see it</h2></summary>
+            <p>Room chat was introduced in KoalaSync 3.0.0. Every participant who wants to send or read chat messages needs version 3.0.0 or newer. Supported pre-3.0 versions may still synchronize playback, but they do not support room chat.</p>
+            <p>Chat is optional and appears on the selected video page. Under <strong>Settings → Room Chat</strong>, you can start it as a floating bubble or open overlay, dock it left or right, detach it, choose its size, control chat notifications, and keep quick reactions in chat or also show them over the video.</p>
             <ol class="support-steps">
                 <li>Update KoalaSync in every browser. Open the extension and check the version in the top-right corner. Each participant needs version <strong>3.0.0 or newer</strong>.</li>
                 <li>After updating, the room creator should leave the old room and click <strong>Create New Room</strong>. This creates a new chat encryption secret and includes it in the new invite link.</li>
@@ -449,11 +443,10 @@
                     <p>There is no server-side message history. Someone who joins later sees only messages sent after they joined. Keep the invite link private: it contains the chat secret used to decrypt messages in that room.</p>
                 </div>
             </div>
-        </section>
+        </details>
 
-        <section id="title-privacy" class="support-card support-anchor-section" aria-labelledby="title-privacy-title">
-            <span class="support-eyebrow">Title privacy</span>
-            <h2 id="title-privacy-title">Control which titles the room receives</h2>
+        <details id="title-privacy" class="support-card support-anchor-section support-accordion" aria-labelledby="title-privacy-title">
+            <summary><span class="support-eyebrow">Title privacy</span><h2 id="title-privacy-title">Control which titles the room receives</h2></summary>
             <p>Open <strong>Settings → Privacy</strong>. Tab titles and media titles have separate controls:</p>
             <ul>
                 <li><strong>Send tab title:</strong> shares or withholds the title shown by the selected browser tab.</li>
@@ -462,11 +455,10 @@
                 <li><strong>Do not send:</strong> withholds the media title.</li>
             </ul>
             <p>Reducing title sharing can make automatic tab matching and episode coordination less informative. Disabling media-title sharing also prevents Auto-Sync Next Episode from creating a lobby.</p>
-        </section>
+        </details>
 
-        <section id="custom-relay" class="support-card support-anchor-section" aria-labelledby="custom-relay-title">
-            <span class="support-eyebrow">Custom Relay &amp; self-hosting</span>
-            <h2 id="custom-relay-title">Connect to a relay you trust</h2>
+        <details id="custom-relay" class="support-card support-anchor-section support-accordion" aria-labelledby="custom-relay-title">
+            <summary><span class="support-eyebrow">Custom Relay &amp; self-hosting</span><h2 id="custom-relay-title">Connect to a relay you trust</h2></summary>
             <p>KoalaSync uses the official relay by default. If you or someone you trust operates a compatible KoalaSync relay, open <strong>Room → Manual Connect / Advanced</strong>, choose <strong>Custom</strong>, enter its WebSocket URL, then join or create a room.</p>
             <ul>
                 <li>Use a <code>wss://</code> URL for a relay on the public internet. Plain <code>ws://</code> is intended for local testing on <code>localhost</code>.</li>
@@ -475,13 +467,12 @@
                 <li>If the custom URL is rejected or the connection fails, confirm the complete WebSocket URL with its operator. A normal website URL is not always the relay URL.</li>
             </ul>
             <p><a class="support-link" href="./#self-hosting">See the self-hosting overview</a>. Deployment instructions are intended for the person operating the server; ordinary participants only need the supplied relay URL.</p>
-        </section>
+        </details>
 
-        <section id="sync-problems" class="support-card support-anchor-section" aria-labelledby="sync-problems-title">
-            <span class="support-eyebrow">Synchronization</span>
-            <h2 id="sync-problems-title">Everyone is connected, but playback does not sync</h2>
+        <details id="sync-problems" class="support-card support-anchor-section support-accordion" aria-labelledby="sync-problems-title">
+            <summary><span class="support-eyebrow">Synchronization</span><h2 id="sync-problems-title">Everyone is connected, but playback does not sync</h2></summary>
             <ol class="support-steps">
-                <li>Update KoalaSync in every browser and confirm everyone uses the same extension version.</li>
+                <li>Make sure everyone uses a currently supported KoalaSync version. Different supported versions can work together, but optional features may not be available to everyone.</li>
                 <li>Make sure each participant selected the correct local video tab.</li>
                 <li>Reload the video page after changing website access, then select the tab again.</li>
                 <li>Test play, pause, and seeking separately and note which action fails.</li>
@@ -489,11 +480,10 @@
                 <li>If KoalaSync reports <strong>Duplicate Identity</strong>, open <strong>Settings → Troubleshooting</strong> and click <strong>Regenerate Peer ID</strong>.</li>
                 <li>Before anyone leaves the room, collect a debug report from every affected participant.</li>
             </ol>
-        </section>
+        </details>
 
-        <section id="video-access" class="support-card support-anchor-section" aria-labelledby="video-access-title">
-            <span class="support-eyebrow">Video access</span>
-            <h2 id="video-access-title">Does KoalaSync send the video to my friends?</h2>
+        <details id="video-access" class="support-card support-anchor-section support-accordion" aria-labelledby="video-access-title">
+            <summary><span class="support-eyebrow">Video access</span><h2 id="video-access-title">Does KoalaSync send the video to my friends?</h2></summary>
             <p>No. KoalaSync does not stream, upload, proxy, download, or redistribute video content. It only sends the live room and playback events needed to keep actions such as play, pause, and seeking synchronized.</p>
             <ul>
                 <li>Everyone watches the video locally in their own browser on the original website.</li>
@@ -501,34 +491,32 @@
                 <li>KoalaSync does not bypass subscriptions, logins, DRM, regional restrictions, or platform rules.</li>
                 <li>Subtitles, audio tracks, fullscreen, and video quality remain local choices when the video player supports them.</li>
             </ul>
-        </section>
+        </details>
 
-        <section id="compatibility" class="support-card support-anchor-section" aria-labelledby="supported-devices-title">
-            <span class="support-eyebrow">Compatibility</span>
-            <h2 id="supported-devices-title">Browsers, websites, and known limitations</h2>
+        <details id="compatibility" class="support-card support-anchor-section support-accordion" aria-labelledby="supported-devices-title">
+            <summary><span class="support-eyebrow">Compatibility</span><h2 id="supported-devices-title">Browsers, websites, and known limitations</h2></summary>
             <p>KoalaSync is currently a desktop browser extension. It supports Google Chrome, Mozilla Firefox, Microsoft Edge, Opera, Brave, Vivaldi, and other compatible Chromium-based desktop browsers on Windows, macOS, Linux, and ChromeOS.</p>
             <ul>
                 <li>There is currently no KoalaSync mobile app for phones or tablets.</li>
                 <li>There is currently no Safari extension.</li>
                 <li>KoalaSync targets visible HTML5 video players. Protected, customized, cross-origin, or non-HTML5 players may expose only part of the information or controls KoalaSync needs.</li>
-                <li>Current project testing records full playback sync for YouTube, Twitch, Netflix, Emby, Jellyfin, Disney+, Prime Video, and Vix. Title and episode support varies: Netflix exposes no usable media title in the recorded tests; Disney+ exposes only a partial title; automatic episode sync is recorded for Emby, Jellyfin, and Vix.</li>
+                <li>The project's compatibility matrix currently lists playback sync as working for YouTube, Twitch, Netflix, Emby, Jellyfin, Disney+, Prime Video, and Vix. These project records are not a compatibility guarantee and do not currently include test dates or extension versions.</li>
+                <li>Title and episode support varies: Netflix exposes no usable media title in the recorded tests; Disney+ exposes only a partial title; automatic episode sync is recorded for Emby, Jellyfin, and Vix.</li>
                 <li>Plex, Max, Crunchyroll, Vimeo, Dailymotion, and ARD/ZDF are currently listed as not tested, not as supported or unsupported.</li>
                 <li>Website compatibility can change when a service changes its player, DRM behavior, page structure, or browser restrictions.</li>
             </ul>
             <p><a class="support-link" href="https://github.com/Shik3i/KoalaSync/blob/main/docs/TESTED_SERVICES.md" target="_blank" rel="noopener">View the current tested-services matrix</a></p>
-        </section>
+        </details>
 
-        <section id="permissions" class="support-card support-anchor-section" aria-labelledby="permissions-title">
-            <span class="support-eyebrow">Privacy & permissions</span>
-            <h2 id="permissions-title">Why does the browser show such a broad warning?</h2>
+        <details id="permissions" class="support-card support-anchor-section support-accordion" aria-labelledby="permissions-title">
+            <summary><span class="support-eyebrow">Privacy &amp; permissions</span><h2 id="permissions-title">Why does the browser show such a broad warning?</h2></summary>
             <p>Browsers may say that KoalaSync can “read and change all your data on all websites.” The wording is broad because KoalaSync is designed to work with video players across many different websites instead of a short fixed list.</p>
             <p>KoalaSync injects its synchronization script into the video tab you actively select. On that tab it needs to find and control the video element, synchronize play, pause, and seeking, and display the optional room chat overlay. Open tab titles are read to populate the tab selector. KoalaSync does not create a general browsing or watch history.</p>
             <p><a class="support-link" href="privacy#extension-permissions">Read the complete permission and data-handling explanation</a></p>
-        </section>
+        </details>
 
-        <section id="data-handling" class="support-card support-anchor-section" aria-labelledby="data-handling-title">
-            <span class="support-eyebrow">Privacy</span>
-            <h2 id="data-handling-title">What data leaves my browser?</h2>
+        <details id="data-handling" class="support-card support-anchor-section support-accordion" aria-labelledby="data-handling-title">
+            <summary><span class="support-eyebrow">Privacy</span><h2 id="data-handling-title">What data leaves my browser?</h2></summary>
             <p>KoalaSync only connects to a relay while you are actively in a room. During that session, the relay temporarily processes the data required to connect participants and synchronize playback.</p>
             <ul>
                 <li><strong>Room and presence:</strong> room ID, peer ID, display name, connection state, and the information needed to join the room.</li>
@@ -540,11 +528,10 @@
             </ul>
             <p>KoalaSync does not create a persistent browsing, room, synchronization, chat, or watch history. Browser or operating-system notifications may retain notification text according to their own settings.</p>
             <p><a class="support-link" href="privacy">Read the complete privacy policy</a></p>
-        </section>
+        </details>
 
-        <section id="trust" class="support-card support-anchor-section" aria-labelledby="trust-title">
-            <span class="support-eyebrow">Trust & verification</span>
-            <h2 id="trust-title">Why should I trust KoalaSync?</h2>
+        <details id="trust" class="support-card support-anchor-section support-accordion" aria-labelledby="trust-title">
+            <summary><span class="support-eyebrow">Trust &amp; verification</span><h2 id="trust-title">Why should I trust KoalaSync?</h2></summary>
             <p>Trust should not depend on promises alone. The KoalaSync browser extension, relay server, build scripts, release workflow, and Dockerfile used for official GitHub releases are public under the MIT License.</p>
             <p>Official extension ZIPs on GitHub Releases and Docker images on GitHub Container Registry are built by the public GitHub Actions release workflow. Signed SLSA provenance attestations connect each artifact's exact digest to this repository, its release tag and commit, and the workflow that built it.</p>
             <p>You can install KoalaSync from an official browser store, download the Chrome or Firefox ZIP from GitHub Releases, build the extension yourself, or run your own relay server. Manual ZIP installation uses your browser's developer or manual extension installation process.</p>
@@ -570,11 +557,10 @@
                     <p>An attestation proves the origin and build workflow of the GitHub release ZIP or GHCR image with that exact digest. It does not guarantee that software has no bugs or vulnerabilities. It also does not by itself prove that a package downloaded from a browser store is byte-for-byte identical to a GitHub release ZIP.</p>
                 </div>
             </div>
-        </section>
+        </details>
 
-        <section id="report-issue" class="support-card support-anchor-section" aria-labelledby="report-issue-title">
-            <span class="support-eyebrow">Still not working?</span>
-            <h2 id="report-issue-title">Create a useful GitHub issue</h2>
+        <details id="report-issue" class="support-card support-anchor-section support-accordion" aria-labelledby="report-issue-title">
+            <summary><span class="support-eyebrow">Still not working?</span><h2 id="report-issue-title">Create a useful GitHub issue</h2></summary>
             <ol class="support-steps">
                 <li>Open KoalaSync and switch to <strong>Status</strong> while the problem is still visible. Check <strong>Connection Status</strong>, <strong>Video Debug Info</strong>, <strong>Full Action History</strong>, and the last 50 connection logs.</li>
                 <li>Click <strong>Copy Logs</strong>. The copied debug report combines the relevant status, room, participant, video, action, and log details for troubleshooting.</li>
@@ -594,7 +580,7 @@
                 <a class="btn btn-primary" href="https://github.com/Shik3i/KoalaSync/issues/new?template=bug_report.md" target="_blank" rel="noopener">Create a bug report</a>
                 <a class="btn btn-secondary" href="https://github.com/Shik3i/KoalaSync/issues" target="_blank" rel="noopener">Search existing issues</a>
             </div>
-        </section>
+        </details>
 
         <div class="support-actions">
             <a class="btn btn-secondary" href="./">Back to KoalaSync</a>

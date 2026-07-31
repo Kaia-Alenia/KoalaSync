@@ -132,6 +132,32 @@ for (const metadata of requiredHelpMetadata) {
     throw new Error(`help.html is missing SEO/AEO metadata: ${metadata}`);
   }
 }
+const helpStructuredDataMatch = helpPage.match(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/);
+if (!helpStructuredDataMatch) {
+  throw new Error('help.html must contain JSON-LD structured data');
+}
+const helpStructuredData = JSON.parse(helpStructuredDataMatch[1]);
+const helpFaqPage = helpStructuredData['@graph'].find(item => (
+  Array.isArray(item['@type']) && item['@type'].includes('FAQPage')
+));
+const helpVisibleText = helpPage
+  .replace(/<script[\s\S]*?<\/script>/g, ' ')
+  .replace(/<[^>]+>/g, '')
+  .replaceAll('&amp;', '&')
+  .replaceAll('&quot;', '"')
+  .replaceAll('&#39;', "'")
+  .replaceAll('&lt;', '<')
+  .replaceAll('&gt;', '>')
+  .replaceAll('&nbsp;', ' ')
+  .replace(/\s+/g, ' ');
+for (const question of helpFaqPage?.mainEntity || []) {
+  if (!helpVisibleText.includes(question.name) || !helpVisibleText.includes(question.acceptedAnswer?.text)) {
+    throw new Error(`help.html FAQ content must be visible and exact: ${question.name}`);
+  }
+}
+if ((helpPage.match(/class="support-card support-anchor-section support-accordion"/g) || []).length < 10) {
+  throw new Error('help.html must keep advanced and troubleshooting sections compact with native accordions');
+}
 if (!llmsText.includes('[Help Center](https://sync.koalastuff.net/help)')
     || !llmsText.includes('[Website access guide](https://sync.koalastuff.net/site-access-help)')) {
   throw new Error('llms.txt must expose the Help Center and website-access guide');
