@@ -6,6 +6,10 @@ All notable changes to the KoalaSync browser extension and relay server.
 
 ## [v3.0.2] — 2026-07-31
 
+This release adds three focused chat improvements: encrypted quick-reaction emojis,
+acknowledged splitting of messages up to 5000 Unicode code points, and true left/right
+docking that prevents the selected page content from continuing behind the chat.
+
 ### Added
 - **Extension: Quick reactions** — Adds six encrypted one-click reactions with a local choice between chat-only display and bounded falling reactions over the video.
 - **Extension: Resilient chat activity** — Keeps a bounded per-room browser-session timeline for play, pause, seek, force-sync, join, and leave rows so overlay reinjection no longer loses them.

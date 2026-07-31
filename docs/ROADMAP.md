@@ -26,27 +26,11 @@
 
 ---
 
-## ✅ Completed
-
-### v3.0.2 — Chat UX hardening
-
-- **Release date:** 2026-07-31
-- **Status:** Shipped
-- **Quick-reaction emojis:** Six encrypted one-click reactions can appear only in chat
-  or as a bounded animation over the selected video.
-- **Long-message splitting:** The composer accepts up to 5000 Unicode characters and
-  sends them sequentially as at most ten acknowledged messages of 500 characters each.
-- **Non-overlapping docking:** Left and right dock modes reserve page space in normal
-  and fullscreen layouts, so the selected video and other page content end at the chat
-  edge instead of continuing behind it.
-
----
-
 ## 📋 Planned
 
 *Prioritized for upcoming phases.*
 
-### Future — Modern Room Chat
+### v3.0 — Modern Room Chat
 
 - **Release date:** Not scheduled
 - **Priority:** P1
@@ -106,7 +90,7 @@
 - Bounded queues, payloads, unread counters, typing events, reactions, and attachment
   metadata; backpressure and rate limits on both client and relay.
 - Real Chrome and Firefox extension E2E coverage for bubble, unread count, overlay,
-  fullscreen, reconnect, and mixed-version rooms before these additions ship.
+  fullscreen, reconnect, and mixed-version rooms before v3.0 can ship.
 
 #### Accessibility and localization
 
@@ -116,7 +100,7 @@
 - All chat UI, notification text, moderation states, and errors localized across every
   supported locale before release.
 
-#### Explicit non-goals for the planned chat expansion
+#### Explicit non-goals for the first v3.0 release
 
 - No server-readable plaintext.
 - No mandatory accounts, public room directory, advertising, tracking, or presence
