@@ -4,7 +4,7 @@ All notable changes to the KoalaSync browser extension and relay server.
 
 ---
 
-## Unreleased
+## [v3.0.2] — 2026-07-31
 
 ### Added
 - **Extension: Quick reactions** — Adds six encrypted one-click reactions with a local choice between chat-only display and bounded falling reactions over the video.
@@ -13,6 +13,11 @@ All notable changes to the KoalaSync browser extension and relay server.
 ### Changed
 - **Extension: Real dock behavior** — Anchors the collapsed Koala chat launcher to the selected side, reserves a page column in normal and fullscreen layouts, and clips viewport-bound page layers away from the open dock; detached mode remains freely movable.
 - **Extension: Koala chat launcher** — Replaces the generic speech-bubble emoji with the KoalaSync extension icon plus a chat marker.
+- **Extension: Reliable long chat sends** — Accepts up to 5000 Unicode code points, splits them into at most ten compatible 500-codepoint messages, waits for each relay echo before clearing text, and suppresses chat notifications while the selected video tab is focused.
+
+### Fixed
+- **Extension: Strict target-tab lifecycle** — Fully deactivates playback, audio, heartbeat, observer, seek-bridge, and chat code before changing targets, cleans up superseded injections, and limits website-bridge status delivery to the KoalaSync site instead of broadcasting to every open tab.
+- **Extension: Tab switching and page restore** — Keeps ordinary tab changes idle and injection-free, makes selecting the same target idempotent, blocks delayed callbacks after teardown, and restores the existing target cleanly after Firefox back/forward-cache suspension.
 
 ## [v3.0.1] — 2026-07-26
 

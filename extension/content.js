@@ -12,7 +12,34 @@
     } catch (_e) {
         // Context invalidated, proceed with re-injection
     }
-    window.koalaSyncInjected = true;
+    window.koalaSyncInjected = true;
+    let destroyed = false;
+    const lifecycleTimeouts = new Set();
+    const seekPollTimers = new Set();
+    const attachedVideos = new Set();
+
+    function scheduleLifecycleTimeout(callback, delay) {
+        const timer = setTimeout(() => {
+            lifecycleTimeouts.delete(timer);
+            if (!destroyed) callback();
+        }, delay);
+        lifecycleTimeouts.add(timer);
+        return timer;
+    }
+
+    function runtimeMessage(message, callback) {
+        if (destroyed) return Promise.resolve(undefined);
+        try {
+            if (!chrome.runtime?.id) {
+                destroyContentScript();
+                return Promise.resolve(undefined);
+            }
+            return chrome.runtime.sendMessage(message, callback) || Promise.resolve(undefined);
+        } catch (_e) {
+            destroyContentScript();
+            return Promise.resolve(undefined);
+        }
+    }
 
     // --- SHARED_EVENTS_INJECT_START ---
     // This block is automatically updated by /scripts/build-extension.cjs
@@ -62,15 +89,16 @@
     // (background.js installPageApiSeekBridge). The isolated content world
     // can't read the page's media player directly.
     let disneyPageApiTime = null;
+    function handlePageApiTime(event) {
+        if (destroyed || event.source !== window) return;
+        const data = event.data;
+        if (data && data.__koalaPlayerTime === 1 && data.provider === 'disney'
+            && Number.isFinite(data.position) && Number.isFinite(data.duration) && data.duration > 0) {
+            disneyPageApiTime = { position: data.position, duration: data.duration, at: Date.now() };
+        }
+    }
     if (typeof window !== 'undefined' && typeof window.addEventListener === 'function') {
-        window.addEventListener('message', (event) => {
-            if (event.source !== window) return;
-            const data = event.data;
-            if (data && data.__koalaPlayerTime === 1 && data.provider === 'disney'
-                && Number.isFinite(data.position) && Number.isFinite(data.duration) && data.duration > 0) {
-                disneyPageApiTime = { position: data.position, duration: data.duration, at: Date.now() };
-            }
-        });
+        window.addEventListener('message', handlePageApiTime);
     }
 
     function hostMatchesUrl(host, url) {
@@ -210,17 +238,20 @@
     let _audioProcessingAllowed = true;
 
     // Cache the autoSyncNextEpisode setting (local-only; never read from sync)
-    chrome.storage.local.get(['autoSyncNextEpisode', 'audioSettings'], (data) => {
+    chrome.storage.local.get(['autoSyncNextEpisode', 'audioSettings'], (data) => {
+        if (destroyed) return;
         _autoSyncEnabled = data.autoSyncNextEpisode !== false;
         _audioSettings = mergeAudioSettings(data.audioSettings);
         const video = findVideo();
         if (video && _audioProcessingAllowed) applyAudioSettings(video, _audioSettings);
     });
-    chrome.storage.onChanged.addListener((changes, area) => {
-        if (area === 'local' && changes.autoSyncNextEpisode) {
-            _autoSyncEnabled = changes.autoSyncNextEpisode.newValue !== false;
-        }
-    });
+    function handleStorageChanged(changes, area) {
+        if (destroyed) return;
+        if (area === 'local' && changes.autoSyncNextEpisode) {
+            _autoSyncEnabled = changes.autoSyncNextEpisode.newValue !== false;
+        }
+    }
+    chrome.storage.onChanged.addListener(handleStorageChanged);
 
     // --- Host Control Mode (guest-side) ---
     // When a room is in 'host-only' mode and we're a guest, a deliberate local
@@ -234,8 +265,9 @@
     let hcmSnapBackCooldownUntil = 0;  // suppress re-trigger right after a snap-back
     let hcmDeferredSnapPending = false; // a buffer-aware snap-back is waiting for readiness
     let hcmLastUserGestureAt = 0;      // for deliberate-vs-involuntary classification
-    let hcmBufferingUntil = 0;         // set on 'waiting' — buffering grace window
-    let hcmDialogTimer = null;         // 8s auto-stay timer — cleared on dialog replace (H-4)
+    let hcmBufferingUntil = 0;         // set on 'waiting' — buffering grace window
+    let hcmDialogTimer = null;         // 8s auto-stay timer — cleared on dialog replace (H-4)
+    let hcmBadgeDomReadyHandler = null;
     // Localized strings for the in-page dialog/badge (content has no i18n loader;
     // background resolves them via GET_HCM_STRINGS on init). English fallbacks here.
     const hcmStrings = {
@@ -320,9 +352,9 @@
     function hcmRequestHostSyncWithRetry() {
         let attempts = 0;
         const tryOnce = () => {
-            chrome.runtime.sendMessage({ type: 'REQUEST_HOST_SYNC' }, (res) => {
+            runtimeMessage({ type: 'REQUEST_HOST_SYNC' }, (res) => {
                 if (chrome.runtime.lastError || !res || !res.target) {
-                    if (++attempts < 5) setTimeout(tryOnce, 250);
+                    if (++attempts < 5) scheduleLifecycleTimeout(tryOnce, 250);
                     else reportLog('Host-only: resync requested but host state unavailable', 'warn');
                     return;
                 }
@@ -355,7 +387,7 @@
                 hcmRequestHostSyncWithRetry(); // fresh host position + snap once
                 return;
             }
-            setTimeout(poll, 300);
+            scheduleLifecycleTimeout(poll, 300);
         };
         poll();
     }
@@ -457,7 +489,7 @@
         // Notify background so it can relay our desynced state to the host via
         // heartbeats — the host's UI then knows we're not following commands
         // instead of appearing silently un-ACK'd.
-        chrome.runtime.sendMessage({ type: 'HCM_DESYNC_STATE', desynced: true }).catch(() => {});
+        runtimeMessage({ type: 'HCM_DESYNC_STATE', desynced: true }).catch(() => {});
         hcmShowBadge();
     }
 
@@ -466,7 +498,7 @@
         hcmDesynced = false;
         hcmRemoveBadge();
         if (wasDesynced) {
-            chrome.runtime.sendMessage({ type: 'HCM_DESYNC_STATE', desynced: false }).catch(() => {});
+            runtimeMessage({ type: 'HCM_DESYNC_STATE', desynced: false }).catch(() => {});
         }
         // Resync to the host's current position (retries if host state not yet known).
         hcmRequestHostSyncWithRetry();
@@ -480,14 +512,16 @@
             // otherwise the desynced user silently never sees the badge (L-4).
             if (!hcmBadgePending) {
                 hcmBadgePending = true;
-                const retry = () => {
-                    hcmBadgePending = false;
-                    if (hcmDesynced && !hcmBadgeHost) hcmShowBadge();
-                };
-                if (document.readyState === 'loading') {
-                    document.addEventListener('DOMContentLoaded', retry, { once: true });
+                const retry = () => {
+                    hcmBadgeDomReadyHandler = null;
+                    hcmBadgePending = false;
+                    if (hcmDesynced && !hcmBadgeHost) hcmShowBadge();
+                };
+                if (document.readyState === 'loading') {
+                    hcmBadgeDomReadyHandler = retry;
+                    document.addEventListener('DOMContentLoaded', retry, { once: true });
                 } else {
-                    setTimeout(retry, 50);
+                    scheduleLifecycleTimeout(retry, 50);
                 }
             }
             return;
@@ -518,12 +552,12 @@
         // desynced in heartbeats (otherwise the host's UI keeps showing the
         // stale Solo badge until the next state change).
         if (wasDesynced) {
-            chrome.runtime.sendMessage({ type: 'HCM_DESYNC_STATE', desynced: false }).catch(() => {});
+            runtimeMessage({ type: 'HCM_DESYNC_STATE', desynced: false }).catch(() => {});
         }
     }
 
     function reportLog(message, level = 'info') {
-        chrome.runtime.sendMessage({ type: 'LOG', message, level }).catch(() => {});
+        runtimeMessage({ type: 'LOG', message, level }).catch(() => {});
     }
 
     // --- Helper: find the best video element on the page ---
@@ -786,7 +820,7 @@
         // Do NOT pause here. We notify background.js first.
         // Background checks the setting; if enabled it creates a lobby
         // and sends back PAUSE_FOR_LOBBY so we only freeze if the feature is on.
-        chrome.runtime.sendMessage({
+        runtimeMessage({
             type: 'EPISODE_CHANGED',
             payload: { newTitle }
         }).catch(() => {});
@@ -810,7 +844,7 @@
                 video.pause();
             }
             stopLobbyPoll();
-            chrome.runtime.sendMessage({
+            runtimeMessage({
                 type: 'EPISODE_READY_LOCAL',
                 payload: { title: currentTitle }
             }).catch(() => {});
@@ -923,36 +957,52 @@
     }
 
     // --- Helper: Wait until video is ready for playback (buffered & seeked) ---
-    function pollSeekReady(targetTime, timeoutMs = 8000) {
-        return new Promise((resolve) => {
-            const interval = 150;
-            let elapsed = 0;
-            const timer = setInterval(() => {
-                const video = findVideo(); // Re-query DOM on every iteration
-                if (!video) {
-                    clearInterval(timer);
-                    resolve(false);
-                    return;
+    function pollSeekReady(targetTime, timeoutMs = 8000) {
+        return new Promise((resolve) => {
+            const interval = 150;
+            let elapsed = 0;
+            const timer = setInterval(() => {
+                if (destroyed) {
+                    clearInterval(timer);
+                    seekPollTimers.delete(timer);
+                    resolve(false);
+                    return;
+                }
+                const video = findVideo(); // Re-query DOM on every iteration
+                if (!video) {
+                    clearInterval(timer);
+                    seekPollTimers.delete(timer);
+                    resolve(false);
+                    return;
                 }
 
                 elapsed += interval;
                 const current = getSyncCurrentTime(video);
                 const timeDiff = current !== null ? Math.abs(current - targetTime) : Infinity;
                 const ready = video.readyState >= 3 && timeDiff < 2.0;
-                if (ready) {
-                    clearInterval(timer);
-                    resolve(true);
-                } else if (elapsed >= timeoutMs) {
-                    clearInterval(timer);
-                    resolve(false);
-                }
-            }, interval);
-        });
-    }
+                if (ready) {
+                    clearInterval(timer);
+                    seekPollTimers.delete(timer);
+                    resolve(true);
+                } else if (elapsed >= timeoutMs) {
+                    clearInterval(timer);
+                    seekPollTimers.delete(timer);
+                    resolve(false);
+                }
+            }, interval);
+            seekPollTimers.add(timer);
+        });
+    }
 
     // Listen for commands from background.js
-    chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+    function handleRuntimeMessage(message, sender, sendResponse) {
         if (!message) return;
+        if (message.type === 'TARGET_DEACTIVATE') {
+            destroyContentScript();
+            sendResponse({ ok: true });
+            return true;
+        }
+        if (destroyed) return;
         if (message.action === 'get_current_time') {
             const video = findVideo();
             sendResponse({ currentTime: video ? getSyncCurrentTime(video) : null });
@@ -1019,7 +1069,7 @@
                 const soloIgnored = [EVENTS.PLAY, EVENTS.PAUSE, EVENTS.SEEK, EVENTS.FORCE_SYNC_PREPARE, EVENTS.FORCE_SYNC_EXECUTE];
                 if (soloIgnored.includes(action)) {
                     if (action === EVENTS.FORCE_SYNC_PREPARE) {
-                        chrome.runtime.sendMessage({ type: 'FORCE_SYNC_ACK' }).catch(() => {});
+                        runtimeMessage({ type: 'FORCE_SYNC_ACK' }).catch(() => {});
                     }
                     return;
                 }
@@ -1037,7 +1087,7 @@
                 if (isDifferentEpisode(senderTitle, myTitle)) {
                     reportLog(`Episode mismatch: sender="${senderTitle || '?'}" vs mine="${myTitle || '?'}" — skipping ${action}. Disable "Auto-Sync next Episode" in settings if this causes issues.`, 'warn');
                     if (action !== EVENTS.FORCE_SYNC_PREPARE && action !== EVENTS.FORCE_SYNC_EXECUTE) {
-                        chrome.runtime.sendMessage({ type: 'CMD_ACK', actionTimestamp: message.actionTimestamp, commandSenderId: message.commandSenderId }).catch(() => {});
+                        runtimeMessage({ type: 'CMD_ACK', actionTimestamp: message.actionTimestamp, commandSenderId: message.commandSenderId }).catch(() => {});
                     }
                     return;
                 }
@@ -1045,15 +1095,15 @@
             
             if (action === EVENTS.PLAY) {
                 tryMediaAction(EVENTS.PLAY);
-                chrome.runtime.sendMessage({ type: 'CMD_ACK', actionTimestamp: message.actionTimestamp, commandSenderId: message.commandSenderId });
+                runtimeMessage({ type: 'CMD_ACK', actionTimestamp: message.actionTimestamp, commandSenderId: message.commandSenderId });
                 actionCompleted = true;
             } else if (action === EVENTS.PAUSE) {
                 tryMediaAction(EVENTS.PAUSE);
-                chrome.runtime.sendMessage({ type: 'CMD_ACK', actionTimestamp: message.actionTimestamp, commandSenderId: message.commandSenderId });
+                runtimeMessage({ type: 'CMD_ACK', actionTimestamp: message.actionTimestamp, commandSenderId: message.commandSenderId });
                 actionCompleted = true;
             } else if (action === EVENTS.SEEK) {
                 tryMediaAction(EVENTS.SEEK, payload);
-                chrome.runtime.sendMessage({ type: 'CMD_ACK', actionTimestamp: message.actionTimestamp, commandSenderId: message.commandSenderId });
+                runtimeMessage({ type: 'CMD_ACK', actionTimestamp: message.actionTimestamp, commandSenderId: message.commandSenderId });
                 actionCompleted = true;
             } else if (action === EVENTS.FORCE_SYNC_PREPARE) {
                 if (!payload || payload.targetTime === undefined) return;
@@ -1071,7 +1121,7 @@
                         reportLog(`Force Sync Seek Error: ${e.message}`, 'error');
                     }
                     pollSeekReady(payload.targetTime).then((ready) => {
-                        chrome.runtime.sendMessage({ type: 'FORCE_SYNC_ACK' }).catch(() => {});
+                        runtimeMessage({ type: 'FORCE_SYNC_ACK' }).catch(() => {});
                         if (ready) {
                             scheduleProactiveHeartbeat();
                         } else {
@@ -1082,7 +1132,7 @@
             } else if (action === EVENTS.FORCE_SYNC_EXECUTE) {
                 stopLobbyPoll();
                 tryMediaAction(EVENTS.PLAY);
-                chrome.runtime.sendMessage({ type: 'CMD_ACK', actionTimestamp: message.actionTimestamp, commandSenderId: message.commandSenderId });
+                runtimeMessage({ type: 'CMD_ACK', actionTimestamp: message.actionTimestamp, commandSenderId: message.commandSenderId });
                 actionCompleted = true;
             }
 
@@ -1265,14 +1315,16 @@
                 });
             }
         }
-    });
+    }
+    chrome.runtime.onMessage.addListener(handleRuntimeMessage);
 
     // Detect native events
     // Build the relay payload from the *current* media state and send it to
     // background.js. Re-reads the video each call so deferred (coalesced) emits
     // carry an up-to-date position. Safe with no/invalid video — it no-ops.
-    function sendContentEvent(action) {
-        const video = findVideo();
+    function sendContentEvent(action) {
+        if (destroyed) return;
+        const video = findVideo();
         if (!video) return;
 
         const current = getSyncCurrentTime(video);
@@ -1280,7 +1332,7 @@
 
         const mediaTitle = (navigator.mediaSession && navigator.mediaSession.metadata) ? navigator.mediaSession.metadata.title : null;
 
-        chrome.runtime.sendMessage({
+        runtimeMessage({
             type: 'CONTENT_EVENT',
             action,
             payload: {
@@ -1308,8 +1360,9 @@
         sendContentEvent(finalAction);
     }
 
-    function reportEvent(action) {
-        if (seekDebounceTimer && (action === EVENTS.PLAY || action === EVENTS.PAUSE)) {
+    function reportEvent(action) {
+        if (destroyed) return;
+        if (seekDebounceTimer && (action === EVENTS.PLAY || action === EVENTS.PAUSE)) {
             clearTimeout(seekDebounceTimer);
             seekDebounceTimer = null;
             const v = findVideo();
@@ -1373,42 +1426,64 @@
     // We suppress only SEEK for a short grace period after tab re-focus.
     // Play/Pause are NOT suppressed — the user may legitimately want to
     // pause immediately after switching back.
-    let pageVisible = !document.hidden;
+    let pageVisible = !document.hidden;
+    let pageSuspended = false;
     let visibilityGraceUntil = 0;
     const VISIBILITY_GRACE_MS = 300;
 
-    document.addEventListener('visibilitychange', () => {
-        if (document.hidden) {
-            pageVisible = false;
-        } else if (!pageVisible) {
+    function handleVisibilityChange() {
+        if (destroyed) return;
+        try {
+            if (!chrome.runtime?.id) {
+                destroyContentScript();
+                return;
+            }
+        } catch (_e) {
+            destroyContentScript();
+            return;
+        }
+        if (document.hidden) {
+            pageVisible = false;
+        } else if (!pageVisible) {
             pageVisible = true;
             visibilityGraceUntil = Date.now() + VISIBILITY_GRACE_MS;
-            reportLog(`Tab re-focused — suppressing seeks for ${VISIBILITY_GRACE_MS / 1000}s to prevent ghost relay`, 'warn');
-        }
-    });
-
-    // Reset on page hide/show (bfcache, tab discard)
-    window.addEventListener('pagehide', () => {
-        pageVisible = false;
-        closeAudioContext();
-        if (keepAlivePort) { try { keepAlivePort.disconnect(); } catch (_e) { /* ignore */ } keepAlivePort = null; }
+            reportLog(`Tab re-focused — suppressing seeks for ${VISIBILITY_GRACE_MS / 1000}s to prevent ghost relay`, 'warn');
+        }
+    }
+
+    // Reset on page hide/show (bfcache, tab discard)
+    function handlePageHide() {
+        if (destroyed) return;
+        pageSuspended = true;
+        pageVisible = false;
+        closeAudioContext();
+        if (keepAlivePort) { try { keepAlivePort.disconnect(); } catch (_e) { /* ignore */ } keepAlivePort = null; }
         if (lobbyPollTimer) { clearInterval(lobbyPollTimer); lobbyPollTimer = null; }
         if (heartbeatTimeout) { clearTimeout(heartbeatTimeout); heartbeatTimeout = null; }
         if (proactiveHeartbeatTimeout) { clearTimeout(proactiveHeartbeatTimeout); proactiveHeartbeatTimeout = null; }
         // Drop any pending coalesced play/pause: we are tearing down and will
         // disconnect — peers learn we are gone via PEER_STATUS 'left'. This also
         // intentionally suppresses the teardown play/pause burst at the source.
-        if (playPauseCoalesceTimer) { clearTimeout(playPauseCoalesceTimer); playPauseCoalesceTimer = null; pendingPlayPauseAction = null; }
-        observer.disconnect();
-    });
-    window.addEventListener('pageshow', (event) => {
-        // event.persisted is true ONLY when restored from bfcache, not on initial load
-        if (event.persisted && !pageVisible) {
-            pageVisible = true;
-            visibilityGraceUntil = Date.now() + VISIBILITY_GRACE_MS;
-            reportLog(`Page restored from cache — suppressing seeks for ${VISIBILITY_GRACE_MS / 1000}s`, 'warn');
-        }
-    });
+        if (playPauseCoalesceTimer) { clearTimeout(playPauseCoalesceTimer); playPauseCoalesceTimer = null; pendingPlayPauseAction = null; }
+        observer.disconnect();
+    }
+    function handlePageShow(event) {
+        if (destroyed) return;
+        // event.persisted is true ONLY when restored from bfcache, not on initial load
+        if (!event.persisted) return;
+        pageSuspended = false;
+        pageVisible = !document.hidden;
+        if (pageVisible) visibilityGraceUntil = Date.now() + VISIBILITY_GRACE_MS;
+        observer.observe(document.documentElement, { childList: true, subtree: true });
+        setupListeners();
+        connectKeepAlivePort();
+        schedulePeriodicHeartbeat();
+        scheduleProactiveHeartbeat();
+        reportLog(`Page restored from cache — suppressing seeks for ${VISIBILITY_GRACE_MS / 1000}s`, 'warn');
+    }
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('pagehide', handlePageHide);
+    window.addEventListener('pageshow', handlePageShow);
 
     const handlePlay = () => reportEvent(EVENTS.PLAY);
     const handlePause = () => reportEvent(EVENTS.PAUSE);
@@ -1475,8 +1550,9 @@
     };
 
     function setupListeners() {
-        const video = findVideo();
-        if (video) {
+        if (destroyed) return;
+        const video = findVideo();
+        if (video) {
             if (currentAudioVideo && currentAudioVideo !== video) {
                 bypassCurrentAudioProcessing();
             }
@@ -1492,9 +1568,10 @@
             video.addEventListener('play', handlePlay);
             video.addEventListener('pause', handlePause);
             video.addEventListener('seeked', handleSeeked);
-            video.addEventListener('loadeddata', handleLoadedData);
-            video.addEventListener('waiting', handleWaiting);
-            video.dataset.koalaAttached = 'true';
+            video.addEventListener('loadeddata', handleLoadedData);
+            video.addEventListener('waiting', handleWaiting);
+            attachedVideos.add(video);
+            video.dataset.koalaAttached = 'true';
             lastVideoSrc = video.currentSrc || video.src || null;
 
             if (!lastKnownMediaTitle) {
@@ -1509,8 +1586,9 @@
     let lastMutate = 0;
     let observerTimeout = null;
 
-    function checkVideo() {
-        lastMutate = Date.now();
+    function checkVideo() {
+        if (destroyed) return;
+        lastMutate = Date.now();
         const video = findVideo();
 
         if (!video && lastVideoSrc !== undefined) {
@@ -1532,8 +1610,9 @@
         }
     }
 
-    const observer = new MutationObserver(() => {
-        const now = Date.now();
+    const observer = new MutationObserver(() => {
+        if (destroyed) return;
+        const now = Date.now();
         if (now - lastMutate >= 1000) {
             checkVideo();
         } else {
@@ -1552,12 +1631,13 @@
     let proactiveHeartbeatTimeout = null;
     let heartbeatErrorCount = 0;
 
-    function sendHeartbeat() {
-        const video = findVideo();
+    function sendHeartbeat() {
+        if (destroyed) return;
+        const video = findVideo();
         if (!video) return;
 
         const mediaTitle = (navigator.mediaSession && navigator.mediaSession.metadata) ? navigator.mediaSession.metadata.title : null;
-        chrome.runtime.sendMessage({
+        runtimeMessage({
             type: 'HEARTBEAT',
             payload: {
                 playbackState: video.paused ? 'paused' : 'playing',
@@ -1579,18 +1659,22 @@
         });
     }
 
-    function schedulePeriodicHeartbeat() {
-        if (heartbeatTimeout) clearTimeout(heartbeatTimeout);
-        heartbeatTimeout = setTimeout(() => {
-            sendHeartbeat();
-            schedulePeriodicHeartbeat();
+    function schedulePeriodicHeartbeat() {
+        if (destroyed || pageSuspended) return;
+        if (heartbeatTimeout) clearTimeout(heartbeatTimeout);
+        heartbeatTimeout = setTimeout(() => {
+            if (destroyed || pageSuspended) return;
+            sendHeartbeat();
+            schedulePeriodicHeartbeat();
         }, HEARTBEAT_INTERVAL_VAL);
     }
 
-    function scheduleProactiveHeartbeat() {
-        if (proactiveHeartbeatTimeout) clearTimeout(proactiveHeartbeatTimeout);
-        proactiveHeartbeatTimeout = setTimeout(() => {
-            sendHeartbeat();
+    function scheduleProactiveHeartbeat() {
+        if (destroyed || pageSuspended) return;
+        if (proactiveHeartbeatTimeout) clearTimeout(proactiveHeartbeatTimeout);
+        proactiveHeartbeatTimeout = setTimeout(() => {
+            if (destroyed || pageSuspended) return;
+            sendHeartbeat();
             schedulePeriodicHeartbeat(); // Reschedules the next periodic check to be exactly 15s from now
         }, 500); // 500ms stabilization delay
     }
@@ -1599,30 +1683,104 @@
     setupListeners();
 
     // Maintain a persistent keep-alive port connection to prevent background SW suspension
-    let keepAlivePort = null;
-    function connectKeepAlivePort() {
-        try {
+    let keepAlivePort = null;
+    function connectKeepAlivePort() {
+        if (destroyed || pageSuspended) return;
+        try {
             if (chrome.runtime.id) {
                 keepAlivePort = chrome.runtime.connect({ name: 'keepAlive' });
-                keepAlivePort.onDisconnect.addListener(() => {
-                    keepAlivePort = null;
-                    setTimeout(connectKeepAlivePort, 1000);
-                });
+                keepAlivePort.onDisconnect.addListener(() => {
+                    keepAlivePort = null;
+                    if (!destroyed && !pageSuspended) scheduleLifecycleTimeout(connectKeepAlivePort, 1000);
+                });
             }
         } catch (_e) {
-            // Extension context invalidated or disabled
-        }
-    }
-    connectKeepAlivePort();
+            // Extension context invalidated or disabled
+        }
+    }
+
+    function destroyContentScript() {
+        if (destroyed) return;
+        destroyed = true;
+
+        try {
+            window.postMessage({ __koalaPageApiSeek: PAGE_API_SEEK_BRIDGE, kind: 'destroy' }, '*');
+        } catch (_e) { /* page is already tearing down */ }
+        window.KOALA_PAGE_API_SEEK_ENABLED = false;
+
+        for (const timer of Object.values(_suppressTimers)) clearTimeout(timer);
+        _suppressTimers = {};
+        for (const timer of lifecycleTimeouts) clearTimeout(timer);
+        lifecycleTimeouts.clear();
+        for (const timer of seekPollTimers) clearInterval(timer);
+        seekPollTimers.clear();
+
+        if (hcmDialogTimer) { clearTimeout(hcmDialogTimer); hcmDialogTimer = null; }
+        if (episodeTransitionDebounce) { clearTimeout(episodeTransitionDebounce); episodeTransitionDebounce = null; }
+        if (seekDebounceTimer) { clearTimeout(seekDebounceTimer); seekDebounceTimer = null; }
+        if (playPauseCoalesceTimer) { clearTimeout(playPauseCoalesceTimer); playPauseCoalesceTimer = null; }
+        if (observerTimeout) { clearTimeout(observerTimeout); observerTimeout = null; }
+        if (heartbeatTimeout) { clearTimeout(heartbeatTimeout); heartbeatTimeout = null; }
+        if (proactiveHeartbeatTimeout) { clearTimeout(proactiveHeartbeatTimeout); proactiveHeartbeatTimeout = null; }
+        stopLobbyPoll();
+        pendingPlayPauseAction = null;
+        hcmDeferredSnapPending = false;
+
+        observer.disconnect();
+        if (keepAlivePort) {
+            try { keepAlivePort.disconnect(); } catch (_e) { /* already disconnected */ }
+            keepAlivePort = null;
+        }
+
+        for (const video of attachedVideos) {
+            const handlers = video._koalaHandlers;
+            if (handlers) {
+                video.removeEventListener('play', handlers.play);
+                video.removeEventListener('pause', handlers.pause);
+                video.removeEventListener('seeked', handlers.seeked);
+                video.removeEventListener('loadeddata', handlers.loadeddata);
+                if (handlers.waiting) video.removeEventListener('waiting', handlers.waiting);
+                delete video._koalaHandlers;
+            }
+            delete video.dataset.koalaAttached;
+        }
+        attachedVideos.clear();
+
+        document.removeEventListener('keydown', _hcmGesture, true);
+        document.removeEventListener('pointerdown', _hcmGesture, true);
+        document.removeEventListener('visibilitychange', handleVisibilityChange);
+        window.removeEventListener('pagehide', handlePageHide);
+        window.removeEventListener('pageshow', handlePageShow);
+        window.removeEventListener('message', handlePageApiTime);
+        if (hcmBadgeDomReadyHandler) {
+            document.removeEventListener('DOMContentLoaded', hcmBadgeDomReadyHandler);
+            hcmBadgeDomReadyHandler = null;
+        }
+
+        hcmRemoveDialog();
+        hcmRemoveBadge();
+        bypassCurrentAudioProcessing();
+        closeAudioContext();
+        try { window.koalaSyncChatOverlay?.destroy?.(); } catch (_e) { /* invalidated chat context */ }
+
+        try { chrome.storage.onChanged.removeListener(handleStorageChanged); } catch (_e) { /* invalidated context */ }
+        try { chrome.runtime.onMessage.removeListener(handleRuntimeMessage); } catch (_e) { /* invalidated context */ }
+
+        window.koalaSyncInjected = false;
+        delete window.koalaSyncContentController;
+    }
+
+    window.koalaSyncContentController = { destroy: destroyContentScript };
+    connectKeepAlivePort();
 
     schedulePeriodicHeartbeat();
 
     // Immediate heartbeat on injection — populate peer data without waiting 15s
-    setTimeout(() => sendHeartbeat(), 300);
+    scheduleLifecycleTimeout(() => sendHeartbeat(), 300);
 
     // Episode Auto-Sync: Boot recovery — check if background has an active lobby
-    chrome.runtime.sendMessage({ type: 'CONTENT_BOOT' }, (res) => {
-        if (chrome.runtime.lastError) return;
+    runtimeMessage({ type: 'CONTENT_BOOT' }, (res) => {
+        if (destroyed || chrome.runtime.lastError) return;
         if (res && res.lobbyActive && res.expectedTitle) {
             reportLog(`Boot: Active lobby detected for "${res.expectedTitle}"`, 'info');
             startLobbyPoll(res.expectedTitle);
@@ -1631,8 +1789,8 @@
 
     // Host Control Mode: fetch current room mode/role on injection (we may have
     // been injected after ROOM_DATA already arrived, missing the broadcast).
-    chrome.runtime.sendMessage({ type: 'GET_CONTROL_MODE' }, (res) => {
-        if (chrome.runtime.lastError || !res) return;
+    runtimeMessage({ type: 'GET_CONTROL_MODE' }, (res) => {
+        if (destroyed || chrome.runtime.lastError || !res) return;
         hcmControlMode = res.controlMode || 'everyone';
         hcmAmController = !!res.amController;
         hcmHostPeerId = res.hostPeerId || null;
@@ -1647,8 +1805,8 @@
     });
 
     // Pull localized strings for the in-page dialog/badge (English fallback above).
-    chrome.runtime.sendMessage({ type: 'GET_HCM_STRINGS' }, (res) => {
-        if (chrome.runtime.lastError || !res) return;
+    runtimeMessage({ type: 'GET_HCM_STRINGS' }, (res) => {
+        if (destroyed || chrome.runtime.lastError || !res) return;
         Object.keys(hcmStrings).forEach(k => { if (res[k]) hcmStrings[k] = res[k]; });
         // If the badge is already showing (early desync), refresh its text in place.
         // Re-creating the host element nukes the click target mid-poll and can drop a

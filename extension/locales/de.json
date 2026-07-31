@@ -277,7 +277,7 @@
   "CHAT_PLACEHOLDER": "Nachricht schreiben...",
   "CHAT_SEND": "Senden",
   "CHAT_MISSING_KEY": "Chat ist nur über einen aktuellen Einladungslink verfügbar.",
-  "CHAT_TOO_LONG": "Maximal 500 Zeichen.",
+  "CHAT_TOO_LONG": "Maximal 5000 Zeichen.",
   "CHAT_SEND_FAILED": "Nachricht konnte nicht gesendet werden.",
   "CHAT_EMPTY": "Noch keine Nachrichten. Der Chat ist nur live.",
   "LABEL_CHAT_NOTIFICATIONS": "Chat-Benachrichtigungen",

@@ -1,5 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import vm from 'node:vm';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 
@@ -34,6 +35,15 @@ const chatKeys = [
 ];
 
 describe('chat overlay contract', () => {
+    it('skips SVG and other non-HTML documents before creating the overlay host', () => {
+        const documentGuard = "document.documentElement?.namespaceURI !== 'http://www.w3.org/1999/xhtml'";
+        expect(overlaySource).toContain(documentGuard);
+        expect(overlaySource.indexOf(documentGuard)).toBeLessThan(overlaySource.indexOf("document.createElement('div')"));
+        expect(() => vm.runInNewContext(overlaySource, {
+            document: { documentElement: { namespaceURI: 'http://www.w3.org/2000/svg' } }
+        })).not.toThrow();
+    });
+
     it('isolates the overlay and never renders markup as HTML', () => {
         expect(overlaySource).toContain("attachShadow({ mode: 'open' })");
         expect(overlaySource).not.toMatch(/\.innerHTML\s*=|insertAdjacentHTML|\.outerHTML\s*=/);
@@ -85,6 +95,7 @@ describe('chat overlay contract', () => {
         expect(overlaySource).toContain('margin-right: var(${PAGE_DOCK_WIDTH}) !important');
         expect(overlaySource).toContain('html[${PAGE_DOCK_ATTRIBUTE}] > body');
         expect(overlaySource).toContain('clip-path: inset(0) !important');
+        expect(overlaySource).toContain('contain: layout paint !important');
         expect(overlaySource).toContain('> :not(#koalasync-chat-overlay-host)');
         expect(overlaySource).toContain('const target = document.fullscreenElement || document.documentElement');
         expect(overlaySource).toContain('pageDockTarget = target');
@@ -100,7 +111,9 @@ describe('chat overlay contract', () => {
         expect(overlaySource).toContain("unreadBadge.classList.toggle('visible', unreadCount > 0)");
         expect(backgroundSource).toMatch(/received\.senderId !== peerId[\s\S]*showChatNotification\([\s\S]*senderPeer\.username[\s\S]*received\.senderId/);
         expect(backgroundSource).toContain("chrome.notifications.create(`chat_${Date.now()}`");
-        expect(backgroundSource).toContain("if (settings.chatNotifications === false) return");
+        expect(backgroundSource).toContain('getTabForNotification(targetTabId)');
+        expect(backgroundSource).toContain('getWindowForNotification(tab.windowId)');
+        expect(backgroundSource).toContain('shouldShowChatNotification({ enabled, targetTabId, tab, windowInfo })');
     });
 
     it('renders timestamped room activity and keeps activity notifications opt-in', () => {
@@ -125,10 +138,22 @@ describe('chat overlay contract', () => {
         expect(overlaySource).toContain('launcherIcon.src = LAUNCHER_ICON_DATA_URL');
         expect(manifestSource).not.toContain('web_accessible_resources');
         expect(overlaySource).toContain("const QUICK_REACTIONS = Object.freeze(['❤️', '😂', '😮', '😢', '👏', '🔥'])");
-        expect(overlaySource).toContain("messageRuntime({ type: 'CHAT_SEND', text })");
+        expect(overlaySource).toContain("messageRuntime({ type: 'CHAT_SEND', text: chunk })");
         expect(overlaySource).toContain("chatReactionDisplay !== 'video'");
         expect(overlaySource).toContain('MAX_REACTION_PARTICLES - reactionLayer.childElementCount');
         expect(overlaySource).toContain('reducedMotion.matches');
+    });
+
+    it('splits a 5000-codepoint composer value into at most ten acknowledged chat-v1 messages', () => {
+        expect(overlaySource).toContain('const MAX_MESSAGE_CODE_POINTS = 500');
+        expect(overlaySource).toContain('const MAX_CHAT_CHUNKS = 10');
+        expect(overlaySource).toContain('MAX_MESSAGE_CODE_POINTS * MAX_CHAT_CHUNKS');
+        expect(overlaySource).toContain('KoalaSyncChatFormat?.splitChatText(');
+        expect(overlaySource).toMatch(/for \(const chunk of chunks\)[\s\S]*messageRuntime\(\{ type: 'CHAT_SEND', text: chunk \}\)/);
+        expect(overlaySource).toContain("textarea.value = chunks.slice(completedChunks).join('\\n')");
+        expect(backgroundSource).toContain('const echoPromise = chatEchoTracker.waitFor(ciphertext)');
+        expect(backgroundSource).toContain('chatEchoTracker.acknowledge(received.ciphertext)');
+        expect(backgroundSource).toContain("status: acknowledged ? 'ok' : 'unconfirmed'");
     });
 
     it('excludes test-only modules from production extension artifacts', () => {
@@ -143,6 +168,9 @@ describe('chat overlay contract', () => {
         expect(overlaySource).toContain('setTimeout(() => finish(null), timeoutMs)');
         expect(backgroundSource).toContain('chatReceiveQueue = chatReceiveQueue.catch(() => {}).then');
         expect(backgroundSource).toContain("status: 'rate_limited'");
+        expect(overlaySource).toContain('function setLocalStorage(values)');
+        expect(overlaySource).toMatch(/chrome\.storage\.local\.get\([\s\S]*data => \{\s*if \(destroyed\) return;/);
+        expect(overlaySource).toContain("if (destroyed || area !== 'local') return");
     });
 
     it('keeps chat hidden by default without discarding the room chat key', () => {

@@ -277,7 +277,7 @@
   "CHAT_PLACEHOLDER": "Schrijf een bericht...",
   "CHAT_SEND": "Verzenden",
   "CHAT_MISSING_KEY": "Chat is alleen beschikbaar via een actuele uitnodigingslink.",
-  "CHAT_TOO_LONG": "Maximaal 500 tekens.",
+  "CHAT_TOO_LONG": "Maximaal 5000 tekens.",
   "CHAT_SEND_FAILED": "Bericht kon niet worden verzonden.",
   "CHAT_EMPTY": "Nog geen berichten. Chat is alleen live.",
   "LABEL_CHAT_NOTIFICATIONS": "Chatmeldingen",

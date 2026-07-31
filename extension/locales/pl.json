@@ -277,7 +277,7 @@
   "CHAT_PLACEHOLDER": "Napisz wiadomość...",
   "CHAT_SEND": "Wyślij",
   "CHAT_MISSING_KEY": "Czat jest dostępny tylko przez aktualny link zaproszenia.",
-  "CHAT_TOO_LONG": "Maksymalnie 500 znaków.",
+  "CHAT_TOO_LONG": "Maksymalnie 5000 znaków.",
   "CHAT_SEND_FAILED": "Nie udało się wysłać wiadomości.",
   "CHAT_EMPTY": "Brak wiadomości. Czat działa tylko na żywo.",
   "LABEL_CHAT_NOTIFICATIONS": "Powiadomienia czatu",

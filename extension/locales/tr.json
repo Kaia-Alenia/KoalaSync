@@ -277,7 +277,7 @@
   "CHAT_PLACEHOLDER": "Bir mesaj yazın...",
   "CHAT_SEND": "Gönder",
   "CHAT_MISSING_KEY": "Sohbet yalnızca güncel bir davet bağlantısıyla kullanılabilir.",
-  "CHAT_TOO_LONG": "En fazla 500 karakter.",
+  "CHAT_TOO_LONG": "En fazla 5000 karakter.",
   "CHAT_SEND_FAILED": "Mesaj gönderilemedi.",
   "CHAT_EMPTY": "Henüz mesaj yok. Sohbet yalnızca canlıdır.",
   "LABEL_CHAT_NOTIFICATIONS": "Sohbet bildirimleri",

@@ -277,7 +277,7 @@
   "CHAT_PLACEHOLDER": "Escribe un mensaje...",
   "CHAT_SEND": "Enviar",
   "CHAT_MISSING_KEY": "El chat solo está disponible mediante un enlace de invitación actual.",
-  "CHAT_TOO_LONG": "Máximo 500 caracteres.",
+  "CHAT_TOO_LONG": "Máximo 5000 caracteres.",
   "CHAT_SEND_FAILED": "No se pudo enviar el mensaje.",
   "CHAT_EMPTY": "Aún no hay mensajes. El chat solo es en directo.",
   "LABEL_CHAT_NOTIFICATIONS": "Notificaciones del chat",

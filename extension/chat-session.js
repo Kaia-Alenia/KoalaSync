@@ -1,6 +1,7 @@
 export const MAX_ROOM_ID_LENGTH = 64;
-export const CHAT_SEND_LIMIT = 9;
+export const CHAT_SEND_LIMIT = 10;
 export const CHAT_SEND_WINDOW_MS = 10000;
+export const CHAT_ECHO_TIMEOUT_MS = 4000;
 
 export function normalizeRoomId(value) {
     if (typeof value !== 'string') return '';
@@ -31,6 +32,58 @@ export function createChatSendLimiter({
             timestamps = [];
         }
     };
+}
+
+export function createChatEchoTracker({
+    timeoutMs = CHAT_ECHO_TIMEOUT_MS,
+    setTimer = globalThis.setTimeout,
+    clearTimer = globalThis.clearTimeout
+} = {}) {
+    const pending = new Map();
+
+    function settle(ciphertext, acknowledged) {
+        const entry = pending.get(ciphertext);
+        if (!entry) return false;
+        pending.delete(ciphertext);
+        clearTimer(entry.timer);
+        entry.resolve(acknowledged);
+        return true;
+    }
+
+    return {
+        waitFor(ciphertext) {
+            if (typeof ciphertext !== 'string' || !ciphertext) return Promise.resolve(false);
+            settle(ciphertext, false);
+            return new Promise(resolve => {
+                const timer = setTimer(() => {
+                    pending.delete(ciphertext);
+                    resolve(false);
+                }, timeoutMs);
+                pending.set(ciphertext, { resolve, timer });
+            });
+        },
+        acknowledge(ciphertext) {
+            return settle(ciphertext, true);
+        },
+        cancel(ciphertext) {
+            return settle(ciphertext, false);
+        },
+        reset() {
+            for (const ciphertext of [...pending.keys()]) settle(ciphertext, false);
+        }
+    };
+}
+
+export function shouldShowChatNotification({ enabled, targetTabId, tab, windowInfo }) {
+    if (!enabled) return false;
+    const normalizedTargetTabId = Number(targetTabId);
+    const targetIsFocused = Number.isInteger(normalizedTargetTabId)
+        && tab?.id === normalizedTargetTabId
+        && tab.active === true
+        && Number.isInteger(tab.windowId)
+        && windowInfo?.id === tab.windowId
+        && windowInfo.focused === true;
+    return !targetIsFocused;
 }
 
 export function createLatestTaskQueue() {

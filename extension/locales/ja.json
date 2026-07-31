@@ -277,7 +277,7 @@
   "CHAT_PLACEHOLDER": "メッセージを入力...",
   "CHAT_SEND": "送信",
   "CHAT_MISSING_KEY": "チャットは最新の招待リンクからのみ利用できます。",
-  "CHAT_TOO_LONG": "最大500文字です。",
+  "CHAT_TOO_LONG": "最大5000文字です。",
   "CHAT_SEND_FAILED": "メッセージを送信できませんでした。",
   "CHAT_EMPTY": "まだメッセージはありません。チャットはライブのみです。",
   "LABEL_CHAT_NOTIFICATIONS": "チャット通知",

@@ -277,7 +277,7 @@
   "CHAT_PLACEHOLDER": "输入消息...",
   "CHAT_SEND": "发送",
   "CHAT_MISSING_KEY": "聊天仅可通过当前邀请链接使用。",
-  "CHAT_TOO_LONG": "最多500个字符。",
+  "CHAT_TOO_LONG": "最多5000个字符。",
   "CHAT_SEND_FAILED": "无法发送消息。",
   "CHAT_EMPTY": "暂无消息。聊天仅实时显示。",
   "LABEL_CHAT_NOTIFICATIONS": "聊天通知",

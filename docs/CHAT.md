@@ -49,7 +49,9 @@ the stamped value as AAD.
 
 ## Client policy
 
-- Maximum plaintext length: 500 Unicode code points.
+- Maximum plaintext length per relay message: 500 Unicode code points.
+- The composer accepts up to 5000 Unicode code points and sends them sequentially
+  as at most ten independently encrypted `chat-v1` messages.
 - Decrypted text is untrusted. Escape HTML before applying the supported limited
   Markdown formatting.
 - Quick reactions use the same encrypted message path as text. They remain readable
@@ -84,6 +86,10 @@ the stamped value as AAD.
 - Chat display is a local option and defaults to off. Enabling or disabling it never
   deletes the room chat secret, so it can be enabled later without creating a room.
 - Without the relay `chat` capability, no chat control is shown.
+- System notifications are suppressed while the selected video tab and its browser
+  window are focused.
+- A send succeeds only after the relay echoes the authenticated ciphertext back to
+  the sender. Unconfirmed and remaining split messages stay in the composer.
 
 ## Mixed-version rollout
 

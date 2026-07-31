@@ -6,7 +6,7 @@ import { applyTitlePrivacyToPayload, sanitizeSharedTitle, sanitizeTabTitle, norm
 import { initTabManager } from './modules/tab-manager.js';
 import { clearChatKeyCache, decryptChatMessage, encryptChatMessage, generateChatSecret, validateChatSecret } from './chat-crypto.js';
 import { buildChatRelayPayload, encodeSocketEvent } from './chat-wire.js';
-import { createChatSendLimiter, createLatestTaskQueue, normalizeRoomId } from './chat-session.js';
+import { createChatEchoTracker, createChatSendLimiter, createLatestTaskQueue, normalizeRoomId, shouldShowChatNotification } from './chat-session.js';
 import { createChatActivityStore } from './chat-activity.js';
 import { HOST_ACCESS_REQUIRED_STATUS, normalizeTabId, inspectTabHostAccess, isHostAccessError, addTabHostAccessRequest, removeTabHostAccessRequest } from './host-access.js';
 import './page-api-seek-overrides.js';
@@ -90,6 +90,7 @@ let chatSecretGuard = '';
 let chatSessionGeneration = 0;
 let chatReceiveQueue = Promise.resolve();
 const chatSendLimiter = createChatSendLimiter();
+const chatEchoTracker = createChatEchoTracker();
 const chatActivityStore = createChatActivityStore();
 const webJoinCoordinator = createLatestTaskQueue();
 function serverSupports(cap) { return Array.isArray(serverCapabilities) && serverCapabilities.includes(cap); }
@@ -102,6 +103,7 @@ function invalidateChatSession() {
     chatSessionGeneration++;
     chatReceiveQueue = Promise.resolve();
     chatSendLimiter.reset();
+    chatEchoTracker.reset();
     clearChatKeyCache();
 }
 
@@ -589,7 +591,7 @@ function clearTargetTabForIdle(expectedTabId = null, expectedGeneration = null) 
     completeForceSyncBeforeTargetChange(null);
     invalidateTargetActivations();
     clearPendingTarget().catch(() => {});
-    if (currentTabId) chrome.tabs.sendMessage(Number(currentTabId), { type: 'CHAT_DESTROY' }).catch(() => {});
+    if (currentTabId) deactivateTargetTab(currentTabId).catch(() => {});
     currentTabId = null;
     currentTabTitle = null;
     lastContentHeartbeatAt = null;
@@ -625,7 +627,7 @@ async function leaveRoomAfterIdleGrace(reason) {
     // Notify content.js/popup BEFORE currentTabId is cleared so they can reset
     // any stale guest-side HCM state (dialog/badge/desync) — H-2.
     broadcastControlMode();
-    if (currentTabId) chrome.tabs.sendMessage(Number(currentTabId), { type: 'CHAT_DESTROY' }).catch(() => {});
+    if (currentTabId) await deactivateTargetTab(currentTabId);
     invalidateTargetActivations();
     currentTabId = null;
     currentTabTitle = null;
@@ -873,6 +875,21 @@ function broadcastConnectionStatus(status) {
     updateBadgeStatus();
 }
 
+async function broadcastJoinStatus(message, shouldSend = () => true) {
+    let websiteTabs = [];
+    try {
+        websiteTabs = await chrome.tabs.query({ url: 'https://sync.koalastuff.net/*' });
+    } catch (_) {
+        // The website bridge is optional and may be unavailable.
+    }
+    if (!shouldSend()) return false;
+    chrome.runtime.sendMessage(message).catch(() => {});
+    await Promise.all(websiteTabs.map(tab =>
+        chrome.tabs.sendMessage(tab.id, message).catch(() => {})
+    ));
+    return true;
+}
+
 function updateBadgeStatus() {
     const isConnected = socket && socket.readyState === WebSocket.OPEN && isNamespaceJoined;
     const isReconnecting = !isConnected && reconnectAttempts > 0;
@@ -934,9 +951,42 @@ function showNotification(senderName, action) {
     });
 }
 
+function getTabForNotification(tabId) {
+    return new Promise(resolve => {
+        try {
+            chrome.tabs.get(tabId, tab => {
+                if (chrome.runtime.lastError) resolve(null);
+                else resolve(tab || null);
+            });
+        } catch (_) {
+            resolve(null);
+        }
+    });
+}
+
+function getWindowForNotification(windowId) {
+    return new Promise(resolve => {
+        try {
+            chrome.windows.get(windowId, windowInfo => {
+                if (chrome.runtime.lastError) resolve(null);
+                else resolve(windowInfo || null);
+            });
+        } catch (_) {
+            resolve(null);
+        }
+    });
+}
+
 function showChatNotification(displayName, text) {
     chrome.storage.local.get(['chatNotifications', 'locale'], async (settings) => {
-        if (settings.chatNotifications === false) return;
+        const enabled = settings.chatNotifications !== false;
+        if (!enabled) return;
+        const targetTabId = normalizeTabId(currentTabId);
+        const tab = targetTabId === null ? null : await getTabForNotification(targetTabId);
+        const windowInfo = Number.isInteger(tab?.windowId)
+            ? await getWindowForNotification(tab.windowId)
+            : null;
+        if (!shouldShowChatNotification({ enabled, targetTabId, tab, windowInfo })) return;
 
         await loadLocale(settings.locale || getSystemLanguage());
         chrome.notifications.create(`chat_${Date.now()}`, {
@@ -1233,12 +1283,7 @@ async function handleServerEvent(event, data) {
                         
             // Inform Website Bridge & Popup
             const joinStatusMsg = { type: 'JOIN_STATUS', success: true, message: 'Joined' };
-            chrome.runtime.sendMessage(joinStatusMsg).catch(() => {});
-            chrome.tabs.query({}, (tabs) => {
-                tabs.forEach(tab => {
-                    chrome.tabs.sendMessage(tab.id, joinStatusMsg).catch(() => {});
-                });
-            });
+            await broadcastJoinStatus(joinStatusMsg);
             break;
         case EVENTS.CONTROL_MODE:
             // Host Control Mode changed (toggle or host-leave fallback).
@@ -1279,6 +1324,7 @@ async function handleServerEvent(event, data) {
                         secret: chatKey
                     });
                     if (!isCurrentSession() || chatSecretGuard !== chatKey) return;
+                    if (received.senderId === peerId) chatEchoTracker.acknowledge(received.ciphertext);
                     const senderPeer = currentRoom.peers?.find(candidate =>
                         (typeof candidate === 'object' ? candidate.peerId : candidate) === received.senderId
                     );
@@ -1333,12 +1379,7 @@ async function handleServerEvent(event, data) {
             });
             // Inform Website Bridge & Popup
             const errStatusMsg = { type: 'JOIN_STATUS', success: false, message: data.message };
-            chrome.runtime.sendMessage(errStatusMsg).catch(() => {});
-            chrome.tabs.query({}, (tabs) => {
-                tabs.forEach(tab => {
-                    chrome.tabs.sendMessage(tab.id, errStatusMsg).catch(() => {});
-                });
-            });
+            await broadcastJoinStatus(errStatusMsg);
             break;
         case EVENTS.PLAY:
         case EVENTS.PAUSE:
@@ -1896,8 +1937,12 @@ function shouldUsePageApiSeek(url) {
 }
 
 function installPageApiSeekBridge() {
-    if (window.__koalaPageApiSeekBridgeInstalled) return;
-    window.__koalaPageApiSeekBridgeInstalled = true;
+    if (window.__koalaPageApiSeekBridge?.activate) {
+        window.__koalaPageApiSeekBridge.activate();
+        return;
+    }
+
+    let active = true;
 
     function currentMatch() {
         return typeof window.koalaFindPageApiSeekProvider === 'function'
@@ -1933,17 +1978,23 @@ function installPageApiSeekBridge() {
         }
     }
 
-    window.addEventListener('message', (event) => {
+    function handleBridgeMessage(event) {
         if (event.source !== window) return;
         const data = event.data;
-        if (!data || data.__koalaPageApiSeek !== 1 || data.kind !== 'seek' || typeof data.time !== 'number') return;
+        if (!data || data.__koalaPageApiSeek !== 1) return;
+        if (data.kind === 'destroy') {
+            destroy();
+            return;
+        }
+        if (!active || data.kind !== 'seek' || typeof data.time !== 'number') return;
         seekWithPageApi(data.time);
-    });
+    }
 
     // Disney+'s <video> currentTime is blob-relative and its scrubber lags, so
     // the isolated-world content script can't read an accurate position. Push
     // the real playhead/duration (seconds) from the page's media player.
-    setInterval(() => {
+    const timelineInterval = setInterval(() => {
+        if (!active) return;
         try {
             const match = currentMatch();
             if (!match || match.provider !== 'disney') return;
@@ -1961,10 +2012,34 @@ function installPageApiSeekBridge() {
             // Ignore transient errors (player teardown / element swap).
         }
     }, 250);
+
+    function destroy() {
+        if (!active) return;
+        active = false;
+        clearInterval(timelineInterval);
+        window.removeEventListener('message', handleBridgeMessage);
+        delete window.__koalaPageApiSeekBridge;
+    }
+
+    window.addEventListener('message', handleBridgeMessage);
+    window.__koalaPageApiSeekBridge = {
+        activate() {
+            active = true;
+        },
+        destroy
+    };
 }
 
 function setPageApiSeekEnabled(enabled) {
     window.KOALA_PAGE_API_SEEK_ENABLED = enabled === true;
+}
+
+async function deactivateTargetTab(tabId) {
+    const normalizedTabId = normalizeTabId(tabId);
+    if (normalizedTabId === null) return;
+    resetAudioProcessingInTab(normalizedTabId);
+    await chrome.tabs.sendMessage(normalizedTabId, { type: 'TARGET_DEACTIVATE' }).catch(() => {});
+    await chrome.tabs.sendMessage(normalizedTabId, { type: 'CHAT_DESTROY' }).catch(() => {});
 }
 
 function createHostAccessRequiredError(access, requestAdded, cause) {
@@ -2226,10 +2301,19 @@ async function activateTargetTab(tabId, tabTitle, {
     const previousTabId = normalizeTabId(currentTabId);
 
     try {
+        if (previousTabId && previousTabId !== selectedTabId) {
+            await deactivateTargetTab(previousTabId);
+        }
+        if (activationGeneration !== targetActivationGeneration) {
+            return { status: 'superseded' };
+        }
         try {
             await injectContentScript(selectedTabId, { requestHostAccess });
         } catch (error) {
             if (activationGeneration !== targetActivationGeneration) {
+                if (normalizeTabId(currentTabId) !== selectedTabId) {
+                    await deactivateTargetTab(selectedTabId);
+                }
                 if (error?.code === HOST_ACCESS_REQUIRED_STATUS
                     && error.requestAdded === true
                     && activeTargetActivation?.tabId !== selectedTabId) {
@@ -2246,8 +2330,7 @@ async function activateTargetTab(tabId, tabTitle, {
             lastContentHeartbeatAt = null;
             if (currentRoom) roomIdleSince = Date.now();
             if (previousTabId) {
-                resetAudioProcessingInTab(previousTabId);
-                chrome.tabs.sendMessage(previousTabId, { type: 'CHAT_DESTROY' }).catch(() => {});
+                await deactivateTargetTab(previousTabId);
             }
             await chrome.storage.session.set({
                 currentTabId: null,
@@ -2285,33 +2368,29 @@ async function activateTargetTab(tabId, tabTitle, {
         }
 
         if (activationGeneration !== targetActivationGeneration) {
-            if (currentTabId !== selectedTabId) resetAudioProcessingInTab(selectedTabId);
+            if (currentTabId !== selectedTabId) await deactivateTargetTab(selectedTabId);
             return { status: 'superseded' };
         }
 
         await applyAudioSettingsToTab(selectedTabId);
         if (activationGeneration !== targetActivationGeneration) {
-            if (currentTabId !== selectedTabId) resetAudioProcessingInTab(selectedTabId);
+            if (currentTabId !== selectedTabId) await deactivateTargetTab(selectedTabId);
             return { status: 'superseded' };
         }
         await removeTabHostAccessRequest(chrome, selectedTabId);
         if (activationGeneration !== targetActivationGeneration) {
-            if (currentTabId !== selectedTabId) resetAudioProcessingInTab(selectedTabId);
+            if (currentTabId !== selectedTabId) await deactivateTargetTab(selectedTabId);
             return { status: 'superseded' };
         }
         await clearPendingTarget();
         if (activationGeneration !== targetActivationGeneration) {
-            if (currentTabId !== selectedTabId) resetAudioProcessingInTab(selectedTabId);
+            if (currentTabId !== selectedTabId) await deactivateTargetTab(selectedTabId);
             return { status: 'superseded' };
         }
         currentTabId = selectedTabId;
         currentTabTitle = typeof tabTitle === 'string' ? tabTitle : null;
         lastContentHeartbeatAt = null;
         if (currentRoom) roomIdleSince = Date.now();
-        if (previousTabId && previousTabId !== selectedTabId) {
-            resetAudioProcessingInTab(previousTabId);
-            chrome.tabs.sendMessage(previousTabId, { type: 'CHAT_DESTROY' }).catch(() => {});
-        }
         await chrome.storage.session.set({
             currentTabId,
             currentTabTitle,
@@ -2651,10 +2730,7 @@ async function handleAsyncMessage(message, sender, sendResponse) {
         if (settings.roomId && currentRoom && currentRoom.roomId === settings.roomId && socket && socket.readyState === WebSocket.OPEN && isNamespaceJoined && desiredUrl === currentServerUrl) {
             broadcastConnectionStatus('connected');
             if (currentTabId) chrome.tabs.sendMessage(Number(currentTabId), { type: 'CHAT_CONTEXT_UPDATE' }).catch(() => {});
-            const tabs = await new Promise(resolve => chrome.tabs.query({}, resolve));
-            for (const tab of tabs) {
-                chrome.tabs.sendMessage(tab.id, { type: 'JOIN_STATUS', success: true, message: 'Already in room' }).catch(() => {});
-            }
+            await broadcastJoinStatus({ type: 'JOIN_STATUS', success: true, message: 'Already in room' });
             if (typeof sendResponse === 'function') sendResponse({ status: 'ok' });
             return;
         }
@@ -2827,8 +2903,19 @@ async function handleAsyncMessage(message, sender, sendResponse) {
                 sendResponse({ status: 'session_changed' });
                 return;
             }
+            const echoPromise = chatEchoTracker.waitFor(ciphertext);
             const sent = emitLive(EVENTS.CHAT_MESSAGE, buildChatRelayPayload(ciphertext));
-            sendResponse({ status: sent ? 'ok' : 'disconnected' });
+            if (!sent) {
+                chatEchoTracker.cancel(ciphertext);
+                sendResponse({ status: 'disconnected' });
+                return;
+            }
+            const acknowledged = await echoPromise;
+            if (!isCurrentSession() || chatSecretGuard !== chatKey) {
+                sendResponse({ status: 'session_changed' });
+                return;
+            }
+            sendResponse({ status: acknowledged ? 'ok' : 'unconfirmed' });
         } catch (err) {
             sendResponse({ status: err instanceof RangeError ? 'too_long' : 'invalid_message' });
         }
@@ -2917,7 +3004,6 @@ async function handleAsyncMessage(message, sender, sendResponse) {
         reconnectFailed = false;
         reconnectAttempts = 0;
         chrome.storage.session.set({ reconnectFailed: false, reconnectAttempts: 0, reconnectStartTime: null });
-        resetAudioProcessingInTab(currentTabId);
         emit(EVENTS.LEAVE_ROOM, { peerId });
         currentRoom = null;
         clearChatActivity();
@@ -2929,7 +3015,7 @@ async function handleAsyncMessage(message, sender, sendResponse) {
         // Notify content.js/popup BEFORE currentTabId is cleared so they drop any
         // stale guest-side HCM state (dialog/badge/desync) — H-2/H-3.
         broadcastControlMode();
-        if (currentTabId) chrome.tabs.sendMessage(Number(currentTabId), { type: 'CHAT_DESTROY' }).catch(() => {});
+        if (currentTabId) await deactivateTargetTab(currentTabId);
         invalidateTargetActivations();
         currentTabId = null;
         currentTabTitle = null;
@@ -2984,10 +3070,7 @@ async function handleAsyncMessage(message, sender, sendResponse) {
         const chatKey = validateChatSecret(rawChatKey);
         if (!roomId) {
             const errMsg = { type: 'JOIN_STATUS', success: false, message: 'Invalid room ID' };
-            chrome.runtime.sendMessage(errMsg).catch(() => {});
-            chrome.tabs.query({}, (tabs) => {
-                tabs.forEach(tab => chrome.tabs.sendMessage(tab.id, errMsg).catch(() => {}));
-            });
+            await broadcastJoinStatus(errMsg);
             sendResponse({ status: 'invalid_room_id' });
             return;
         }
@@ -3021,13 +3104,13 @@ async function handleAsyncMessage(message, sender, sendResponse) {
                 if (roomId && currentRoom && currentRoom.roomId === roomId && socket && socket.readyState === WebSocket.OPEN && isNamespaceJoined && desiredUrl === currentServerUrl) {
                     broadcastConnectionStatus('connected');
                     if (currentTabId) chrome.tabs.sendMessage(Number(currentTabId), { type: 'CHAT_CONTEXT_UPDATE' }).catch(() => {});
-                    const tabs = await new Promise(resolve => chrome.tabs.query({}, resolve));
-                    if (!isCurrentJoin()) {
+                    const statusSent = await broadcastJoinStatus(
+                        { type: 'JOIN_STATUS', success: true, message: 'Already in room' },
+                        isCurrentJoin
+                    );
+                    if (!statusSent || !isCurrentJoin()) {
                         sendResponse({ status: 'superseded' });
                         return { status: 'superseded' };
-                    }
-                    for (const tab of tabs) {
-                        chrome.tabs.sendMessage(tab.id, { type: 'JOIN_STATUS', success: true, message: 'Already in room' }).catch(() => {});
                     }
                     sendResponse({ status: 'already_joined' });
                     return { status: 'already_joined' };
@@ -3382,8 +3465,7 @@ async function handleAsyncMessage(message, sender, sendResponse) {
             lastContentHeartbeatAt = null;
             if (currentRoom) roomIdleSince = Date.now();
             if (previousTabId) {
-                resetAudioProcessingInTab(previousTabId);
-                chrome.tabs.sendMessage(Number(previousTabId), { type: 'CHAT_DESTROY' }).catch(() => {});
+                await deactivateTargetTab(previousTabId);
             }
             await clearPendingTarget();
             await chrome.storage.session.set({

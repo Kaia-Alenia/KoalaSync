@@ -1,4 +1,6 @@
 (function initKoalaSyncChatOverlay() {
+    if (document.documentElement?.namespaceURI !== 'http://www.w3.org/1999/xhtml') return;
+
     if (window.koalaSyncChatOverlay?.refresh) {
         window.koalaSyncChatOverlay.refresh();
         return;
@@ -11,6 +13,9 @@
     const DEFAULT_HEIGHT = 520;
     const LAUNCHER_SIZE = 48;
     const EDGE_INSET = 8;
+    const MAX_MESSAGE_CODE_POINTS = 500;
+    const MAX_CHAT_CHUNKS = 10;
+    const MAX_COMPOSER_CODE_POINTS = MAX_MESSAGE_CODE_POINTS * MAX_CHAT_CHUNKS;
     const PAGE_DOCK_ATTRIBUTE = 'data-koalasync-chat-dock';
     const PAGE_DOCK_WIDTH = '--koalasync-chat-dock-width';
     const QUICK_REACTIONS = Object.freeze(['❤️', '😂', '😮', '😢', '👏', '🔥']);
@@ -268,7 +273,7 @@
     textarea.id = 'chat-composer-input';
     textarea.setAttribute('aria-describedby', 'chat-composer-count chat-composer-status');
     const composerRow = element('div', 'composer-row');
-    const count = element('span', 'count', '0/500');
+    const count = element('span', 'count', `0/${MAX_COMPOSER_CODE_POINTS}`);
     count.id = 'chat-composer-count';
     const sendButton = element('button', 'send');
     sendButton.type = 'submit';
@@ -306,6 +311,7 @@
             min-height: 100vh !important;
             overflow-x: clip !important;
             clip-path: inset(0) !important;
+            contain: layout paint !important;
         }
         [${PAGE_DOCK_ATTRIBUTE}]:not(html) > :not(#koalasync-chat-overlay-host) {
             box-sizing: border-box !important;
@@ -313,6 +319,7 @@
             max-width: calc(100% - var(${PAGE_DOCK_WIDTH})) !important;
             overflow-x: clip !important;
             clip-path: inset(0) !important;
+            contain: layout paint !important;
         }
         [${PAGE_DOCK_ATTRIBUTE}="left"]:not(html) > :not(#koalasync-chat-overlay-host) {
             margin-left: var(${PAGE_DOCK_WIDTH}) !important;
@@ -344,6 +351,16 @@
                 finish(null);
             }
         });
+    }
+
+    function setLocalStorage(values) {
+        if (destroyed) return;
+        try {
+            const result = chrome.storage.local.set(values);
+            if (result?.catch) result.catch(() => {});
+        } catch (_) {
+            // Extension context was invalidated while the page remained open.
+        }
     }
 
     function strings() {
@@ -477,11 +494,12 @@
         if (saveTimer) clearTimeout(saveTimer);
         saveTimer = setTimeout(() => {
             saveTimer = null;
-            chrome.storage.local.set({ [storageKey]: layout }).catch(() => {});
+            setLocalStorage({ [storageKey]: layout });
         }, 150);
     }
 
     function applyLayout() {
+        if (destroyed) return;
         applyingLayout = true;
         const size = preferredSize();
         launcher.classList.toggle('docked-left', layout.mode === 'left');
@@ -539,7 +557,7 @@
         layout.mode = mode;
         applyLayout();
         saveLayout();
-        if (persistPreference) chrome.storage.local.set({ chatPosition: mode }).catch(() => {});
+        if (persistPreference) setLocalStorage({ chatPosition: mode });
     }
 
     function setSize(size, persistPreference = true) {
@@ -555,7 +573,7 @@
         if (layout.mode === 'detached') clampDetached();
         applyLayout();
         saveLayout();
-        if (persistPreference) chrome.storage.local.set({ chatSize }).catch(() => {});
+        if (persistPreference) setLocalStorage({ chatSize });
     }
 
     function setOpened(next) {
@@ -699,12 +717,19 @@
         }
     }
 
+    function updateComposerState() {
+        const length = [...textarea.value].length;
+        count.textContent = `${length}/${MAX_COMPOSER_CODE_POINTS}`;
+        count.style.color = length > MAX_COMPOSER_CODE_POINTS ? 'var(--danger)' : '';
+        status.textContent = length > MAX_COMPOSER_CODE_POINTS ? (strings().tooLong || '') : '';
+        return length;
+    }
+
     function resetComposer() {
         sendGeneration++;
         sending = false;
         textarea.value = '';
-        count.textContent = '0/500';
-        count.style.color = '';
+        updateComposerState();
         status.textContent = '';
         sendButton.disabled = false;
         for (const button of reactionButtons) button.disabled = false;
@@ -758,12 +783,7 @@
     detachedButton.addEventListener('click', () => setMode('detached'));
     rightButton.addEventListener('click', () => setMode('right'));
 
-    textarea.addEventListener('input', () => {
-        const length = [...textarea.value].length;
-        count.textContent = `${length}/500`;
-        count.style.color = length > 500 ? 'var(--danger)' : '';
-        status.textContent = length > 500 ? (strings().tooLong || '') : '';
-    });
+    textarea.addEventListener('input', updateComposerState);
     const stopPageKeyboardShortcut = event => {
         const path = typeof event.composedPath === 'function' ? event.composedPath() : [];
         if (!path.includes(textarea) && !path.includes(composer)) return;
@@ -780,26 +800,48 @@
         if (sending || !context?.enabled) return;
         text = String(text || '').trim();
         if (!text) return;
-        if ([...text].length > 500) {
+        if ([...text].length > MAX_COMPOSER_CODE_POINTS) {
             status.textContent = strings().tooLong || '';
             return;
         }
+        let chunks;
+        try {
+            chunks = globalThis.KoalaSyncChatFormat?.splitChatText(
+                text,
+                MAX_MESSAGE_CODE_POINTS,
+                MAX_CHAT_CHUNKS
+            );
+        } catch (_) {
+            status.textContent = strings().tooLong || '';
+            return;
+        }
+        if (!Array.isArray(chunks) || chunks.length === 0) return;
         const generation = ++sendGeneration;
         sending = true;
         sendButton.disabled = true;
         for (const button of reactionButtons) button.disabled = true;
         status.textContent = '';
-        const response = await messageRuntime({ type: 'CHAT_SEND', text });
-        if (destroyed || generation !== sendGeneration) return;
+        let completedChunks = 0;
+        let response = null;
+        for (const chunk of chunks) {
+            response = await messageRuntime({ type: 'CHAT_SEND', text: chunk });
+            if (destroyed || generation !== sendGeneration) return;
+            if (response?.status !== 'ok') break;
+            completedChunks++;
+        }
         sending = false;
         sendButton.disabled = false;
         for (const button of reactionButtons) button.disabled = false;
-        if (response?.status === 'ok') {
+        if (completedChunks === chunks.length) {
             if (clearComposerValue && textarea.value.trim() === text) {
                 textarea.value = '';
-                count.textContent = '0/500';
+                updateComposerState();
             }
         } else {
+            if (clearComposerValue && textarea.value.trim() === text) {
+                textarea.value = chunks.slice(completedChunks).join('\n');
+                updateComposerState();
+            }
             status.textContent = response?.status === 'too_long' ? (strings().tooLong || '') : (strings().sendFailed || '');
         }
     }
@@ -841,7 +883,7 @@
         layout.customHeight = rect.height;
         if (chatSize !== 'custom') {
             chatSize = 'custom';
-            chrome.storage.local.set({ chatSize }).catch(() => {});
+            setLocalStorage({ chatSize });
         }
         clampDetached();
         saveLayout();
@@ -868,7 +910,7 @@
     }
 
     function handleStorage(changes, area) {
-        if (area !== 'local') return;
+        if (destroyed || area !== 'local') return;
         if (changes.themeMode) themeMode = changes.themeMode.newValue || 'system';
         if (changes.themePalette) themePalette = changes.themePalette.newValue || 'eucalyptus';
         if (changes.themeMode || changes.themePalette) applyTheme();
@@ -896,7 +938,7 @@
             resetComposer();
             refresh();
         }
-        if (message?.type === 'CHAT_DESTROY') destroy();
+        if (message?.type === 'CHAT_DESTROY' || message?.type === 'TARGET_DEACTIVATE') destroy();
     }
 
     function destroy() {
@@ -914,8 +956,8 @@
         document.removeEventListener('fullscreenchange', moveIntoFullscreen);
         window.removeEventListener('resize', handleResize);
         systemTheme.removeEventListener('change', handleSystemTheme);
-        chrome.storage.onChanged.removeListener(handleStorage);
-        chrome.runtime.onMessage.removeListener(handleRuntime);
+        try { chrome.storage.onChanged.removeListener(handleStorage); } catch (_) { /* invalidated context */ }
+        try { chrome.runtime.onMessage.removeListener(handleRuntime); } catch (_) { /* invalidated context */ }
         host.remove();
         window.koalaSyncChatOverlay = null;
     }
@@ -926,6 +968,7 @@
     chrome.storage.onChanged.addListener(handleStorage);
     chrome.runtime.onMessage.addListener(handleRuntime);
     chrome.storage.local.get([storageKey, 'themeMode', 'themePalette', 'chatPosition', 'chatSize', 'chatStartMode', 'chatReactionDisplay'], data => {
+        if (destroyed) return;
         const storedLayout = data[storageKey];
         if (storedLayout && typeof storedLayout === 'object') {
             layout = { ...layout, ...storedLayout };
