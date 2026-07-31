@@ -254,20 +254,20 @@
 .support-accordion > summary::after {
     grid-column: 2;
     grid-row: 1 / span 2;
-    content: "+";
-    display: grid;
+    content: "";
     width: 2rem;
     height: 2rem;
-    place-items: center;
     border: 1px solid color-mix(in oklch, var(--accent) 35%, var(--card-border));
     border-radius: 999px;
+    background:
+        linear-gradient(currentColor, currentColor) center / 10px 1px no-repeat,
+        linear-gradient(currentColor, currentColor) center / 1px 10px no-repeat;
     color: var(--accent);
-    font-size: 1.35rem;
-    line-height: 1;
 }
 
 .support-accordion[open] > summary::after {
-    content: "−";
+    background:
+        linear-gradient(currentColor, currentColor) center / 10px 1px no-repeat;
 }
 
 .support-accordion > summary .support-eyebrow {
