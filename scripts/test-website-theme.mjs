@@ -3,6 +3,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { load } from 'cheerio';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const template = fs.readFileSync(path.join(repoRoot, 'website', 'template.html'), 'utf8');
@@ -132,23 +133,21 @@ for (const metadata of requiredHelpMetadata) {
     throw new Error(`help.html is missing SEO/AEO metadata: ${metadata}`);
   }
 }
-const helpStructuredDataMatch = helpPage.match(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/);
-if (!helpStructuredDataMatch) {
+const helpDocument = load(helpPage);
+const helpStructuredDataScripts = helpDocument('script[type="application/ld+json"]');
+if (helpStructuredDataScripts.length !== 1) {
   throw new Error('help.html must contain JSON-LD structured data');
 }
-const helpStructuredData = JSON.parse(helpStructuredDataMatch[1]);
+const helpStructuredData = JSON.parse(helpStructuredDataScripts.html());
 const helpFaqPage = helpStructuredData['@graph'].find(item => (
   Array.isArray(item['@type']) && item['@type'].includes('FAQPage')
 ));
-const helpVisibleText = helpPage
-  .replace(/<script[\s\S]*?<\/script>/g, ' ')
-  .replace(/<[^>]+>/g, '')
-  .replaceAll('&amp;', '&')
-  .replaceAll('&quot;', '"')
-  .replaceAll('&#39;', "'")
-  .replaceAll('&lt;', '<')
-  .replaceAll('&gt;', '>')
-  .replaceAll('&nbsp;', ' ')
+const helpVisibleText = helpDocument('body')
+  .clone()
+  .find('script, style, noscript')
+  .remove()
+  .end()
+  .text()
   .replace(/\s+/g, ' ');
 for (const question of helpFaqPage?.mainEntity || []) {
   if (!helpVisibleText.includes(question.name) || !helpVisibleText.includes(question.acceptedAnswer?.text)) {

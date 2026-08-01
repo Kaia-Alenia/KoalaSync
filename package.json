@@ -22,6 +22,7 @@
     "@vitest/coverage-v8": "^4.1.10",
     "addons-linter": "^10.9.0",
     "archiver": "^8.0.0",
+    "cheerio": "^1.2.0",
     "esbuild": "^0.28.1",
     "eslint": "^10.8.0",
     "eslint-plugin-no-unsanitized": "^4.1.5",
