@@ -142,13 +142,37 @@ const helpStructuredData = JSON.parse(helpStructuredDataScripts.html());
 const helpFaqPage = helpStructuredData['@graph'].find(item => (
   Array.isArray(item['@type']) && item['@type'].includes('FAQPage')
 ));
-const helpVisibleText = helpDocument('body')
+const visibleTextFromDocument = document => document('body')
   .clone()
   .find('script, style, noscript')
   .remove()
   .end()
   .text()
   .replace(/\s+/g, ' ');
+const parserRegressionCases = [
+  [
+    'case-insensitive non-visible element filtering',
+    '<body><p>visible</p><SCRIPT>secret()</SCRIPT><style>hidden</style><noscript>hidden</noscript></body>',
+    'visible'
+  ],
+  [
+    'single-pass HTML entity decoding',
+    '<body><p>A &amp;amp; B</p></body>',
+    'A &amp; B'
+  ],
+  [
+    'visible text does not include attributes',
+    '<body><div data-faq="not visible">visible</div></body>',
+    'visible'
+  ]
+];
+for (const [label, html, expected] of parserRegressionCases) {
+  const actual = visibleTextFromDocument(load(html));
+  if (actual !== expected) {
+    throw new Error(`HTML parser regression: ${label}; expected ${JSON.stringify(expected)}, got ${JSON.stringify(actual)}`);
+  }
+}
+const helpVisibleText = visibleTextFromDocument(helpDocument);
 for (const question of helpFaqPage?.mainEntity || []) {
   if (!helpVisibleText.includes(question.name) || !helpVisibleText.includes(question.acceptedAnswer?.text)) {
     throw new Error(`help.html FAQ content must be visible and exact: ${question.name}`);
