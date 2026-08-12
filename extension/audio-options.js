@@ -10,12 +10,14 @@ const PRESETS = {
 
 const DEFAULT_AUDIO_SETTINGS = {
     enabled: false,
+    boostDb: 0,
     compressor: {
         enabled: false,
         preset: 'recommended',
         customParams: { ...PRESETS.custom }
     }
 };
+const BOOST_DB_LIMITS = { min: 0, max: 20 };
 const PARAM_LIMITS = {
     threshold: { min: -60, max: 0 },
     knee: { min: 0, max: 40 },
@@ -26,9 +28,11 @@ const PARAM_LIMITS = {
 
 const elements = {
     audioEnabled: document.getElementById('audioEnabled'),
+    boostRange: document.getElementById('boostRange'),
+    boostNumber: document.getElementById('boostNumber'),
     compressorEnabled: document.getElementById('compressorEnabled'),
     presetInputs: Array.from(document.querySelectorAll('input[name="preset"]')),
-    controlRows: Array.from(document.querySelectorAll('.control-row')),
+    controlRows: Array.from(document.querySelectorAll('.control-row[data-param]')),
     backLink: document.getElementById('backLink')
 };
 
@@ -41,12 +45,20 @@ function cloneDefaultSettings() {
 
 let currentSettings = cloneDefaultSettings();
 
+function normalizeBoostDb(value) {
+    const parsed = Number(value);
+    if (!Number.isFinite(parsed)) return DEFAULT_AUDIO_SETTINGS.boostDb;
+    const clamped = Math.min(BOOST_DB_LIMITS.max, Math.max(BOOST_DB_LIMITS.min, parsed));
+    return Math.round(clamped * 2) / 2;
+}
+
 function mergeAudioSettings(settings = {}) {
     const safeSettings = settings && typeof settings === 'object' ? settings : {};
     const defaults = cloneDefaultSettings();
     return {
         ...defaults,
         ...safeSettings,
+        boostDb: normalizeBoostDb(safeSettings.boostDb),
         compressor: {
             ...defaults.compressor,
             ...(safeSettings.compressor || {}),
@@ -61,8 +73,16 @@ function mergeAudioSettings(settings = {}) {
 function debounceSave() {
     if (saveTimer) clearTimeout(saveTimer);
     saveTimer = setTimeout(() => {
+        saveTimer = null;
         chrome.storage.local.set({ audioSettings: currentSettings });
     }, 40);
+}
+
+async function flushPendingSave() {
+    if (!saveTimer) return;
+    clearTimeout(saveTimer);
+    saveTimer = null;
+    await chrome.storage.local.set({ audioSettings: currentSettings });
 }
 
 function getParamValue(param, value, isMsInput = false) {
@@ -84,6 +104,9 @@ function formatNumber(value, param, isMsInput = false) {
 function render() {
     isRendering = true;
     elements.audioEnabled.checked = currentSettings.enabled === true;
+    const boostDb = normalizeBoostDb(currentSettings.boostDb);
+    elements.boostRange.value = boostDb;
+    elements.boostNumber.value = boostDb;
     elements.compressorEnabled.checked = currentSettings.compressor.enabled === true;
 
     const selectedPreset = currentSettings.compressor.preset || 'recommended';
@@ -104,6 +127,17 @@ function render() {
         number.value = formatNumber(value, param, number.dataset.msInput === 'true');
     });
     isRendering = false;
+}
+
+function setBoostDb(value) {
+    currentSettings.boostDb = normalizeBoostDb(value);
+    if (currentSettings.boostDb > 0) {
+        currentSettings.enabled = true;
+    } else if (!currentSettings.compressor.enabled) {
+        currentSettings.enabled = false;
+    }
+    render();
+    debounceSave();
 }
 
 function setPreset(preset) {
@@ -138,16 +172,27 @@ async function init() {
 
 elements.audioEnabled.addEventListener('change', () => {
     currentSettings.enabled = elements.audioEnabled.checked;
-    if (currentSettings.enabled && !currentSettings.compressor.enabled) {
+    if (currentSettings.enabled && !currentSettings.compressor.enabled && currentSettings.boostDb === 0) {
         currentSettings.compressor.enabled = true;
     }
     render();
     debounceSave();
 });
 
+[elements.boostRange, elements.boostNumber].forEach(input => {
+    input.addEventListener('input', () => {
+        if (isRendering) return;
+        setBoostDb(input.value);
+    });
+});
+
 elements.compressorEnabled.addEventListener('change', () => {
     currentSettings.compressor.enabled = elements.compressorEnabled.checked;
-    if (currentSettings.compressor.enabled) currentSettings.enabled = true;
+    if (currentSettings.compressor.enabled) {
+        currentSettings.enabled = true;
+    } else if (currentSettings.boostDb === 0) {
+        currentSettings.enabled = false;
+    }
     render();
     debounceSave();
 });
@@ -181,11 +226,16 @@ chrome.storage.onChanged.addListener((changes, area) => {
 });
 
 if (elements.backLink) {
-    elements.backLink.addEventListener('click', (e) => {
+    elements.backLink.addEventListener('click', async (e) => {
         e.preventDefault();
+        await flushPendingSave();
         window.close();
     });
 }
+
+window.addEventListener('pagehide', () => {
+    flushPendingSave().catch(() => {});
+});
 
 init().catch(err => {
     console.error('[AudioOptions] Failed to initialize:', err);

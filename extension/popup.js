@@ -1,5 +1,11 @@
 import { EVENTS, OFFICIAL_LANDING_PAGE_URL, SUPPORT_URL, getReviewUrl } from './shared/constants.js';
-import { BLACKLIST_DOMAINS } from './shared/blacklist.js';
+import {
+    CUSTOM_BLACKLIST_STORAGE_KEY,
+    MAX_BLACKLIST_DOMAINS,
+    getEffectiveBlacklistDomains,
+    isUrlBlacklisted,
+    parseBlacklistDomains
+} from './shared/blacklist.js';
 import { getAvatarForName, generateUsername, USERNAME_ADJECTIVES, USERNAME_NOUNS } from './shared/names.js';
 import { loadLocale, translateDOM, getMessage, getSystemLanguage } from './i18n.js';
 import { TITLE_PRIVACY_MODES, normalizeSendTabTitle, normalizeTabTitle } from './title-privacy.js';
@@ -43,6 +49,12 @@ const elements = {
     roomInfo: document.getElementById('roomInfo'),
     inviteLink: document.getElementById('inviteLink'),
     filterNoise: document.getElementById('filterNoise'),
+    blacklistEdit: document.getElementById('blacklistEdit'),
+    blacklistEditor: document.getElementById('blacklistEditor'),
+    blacklistDomains: document.getElementById('blacklistDomains'),
+    blacklistSave: document.getElementById('blacklistSave'),
+    blacklistReset: document.getElementById('blacklistReset'),
+    blacklistStatus: document.getElementById('blacklistStatus'),
     regenId: document.getElementById('regenId'),
     restartTourBtn: document.getElementById('restartTourBtn'),
     lastActionCard: document.getElementById('lastActionCard'),
@@ -343,7 +355,7 @@ function setRoomRefreshCooldown() {
 async function init() {
     // Local-only by design — settings and room credentials never come from
     // storage.sync (only onboardingComplete + dismissedHints live there).
-    const localData = await chrome.storage.local.get(['serverUrl', 'useCustomServer', 'roomId', 'password', 'chatKey', 'chatEnabled', 'chatNotifications', 'chatPosition', 'chatSize', 'chatStartMode', 'chatReactionDisplay', 'username', 'filterNoise', 'autoSyncNextEpisode', 'sendTabTitle', 'mediaTitlePrivacyMode', 'titlePrivacyMode', 'forceSyncMode', 'browserNotifications', 'autoCopyInvite', 'locale', 'audioSettings', 'activeTab', 'themeMode', 'themePalette']);
+    const localData = await chrome.storage.local.get(['serverUrl', 'useCustomServer', 'roomId', 'password', 'chatKey', 'chatEnabled', 'chatNotifications', 'chatPosition', 'chatSize', 'chatStartMode', 'chatReactionDisplay', 'username', 'filterNoise', CUSTOM_BLACKLIST_STORAGE_KEY, 'autoSyncNextEpisode', 'sendTabTitle', 'mediaTitlePrivacyMode', 'titlePrivacyMode', 'forceSyncMode', 'browserNotifications', 'autoCopyInvite', 'locale', 'audioSettings', 'activeTab', 'themeMode', 'themePalette']);
 
     let activeLang = localData.locale;
     if (!activeLang) {
@@ -373,6 +385,7 @@ async function init() {
     elements.username.value = username;
     syncDevToolsVisibility();
     if (elements.filterNoise) elements.filterNoise.checked = localData.filterNoise !== false;
+    renderBlacklistEditor(localData[CUSTOM_BLACKLIST_STORAGE_KEY]);
     if (elements.autoSyncNextEpisode) elements.autoSyncNextEpisode.checked = localData.autoSyncNextEpisode !== false;
     if (elements.chatEnabled) elements.chatEnabled.checked = localData.chatEnabled === true;
     if (elements.chatNotifications) elements.chatNotifications.checked = localData.chatNotifications !== false;
@@ -1115,11 +1128,57 @@ function detectPeerChanges(newPeers) {
     lastKnownPeers = newPeers;
 }
 
+function setBlacklistStatus(message = '', state = '') {
+    if (!elements.blacklistStatus) return;
+    elements.blacklistStatus.textContent = message;
+    elements.blacklistStatus.dataset.state = state;
+}
+
+function renderBlacklistEditor(storedDomains, preserveStatus = false) {
+    if (!elements.blacklistDomains) return;
+    const domains = getEffectiveBlacklistDomains(storedDomains);
+    elements.blacklistDomains.value = domains.join('\n');
+    if (!preserveStatus) setBlacklistStatus();
+}
+
+function setBlacklistEditorOpen(open) {
+    if (!elements.blacklistEditor || !elements.blacklistEdit) return;
+    elements.blacklistEditor.hidden = !open;
+    elements.blacklistEdit.setAttribute('aria-expanded', String(open));
+    if (open) elements.blacklistDomains?.focus();
+}
+
+async function saveBlacklistDomains() {
+    if (!elements.blacklistDomains) return;
+    const { domains, invalid } = parseBlacklistDomains(elements.blacklistDomains.value);
+    if (invalid.length > 0) {
+        setBlacklistStatus(getMessage('BLACKLIST_STATUS_INVALID', { domains: invalid.join(', ') }), 'error');
+        return;
+    }
+    if (domains.length > MAX_BLACKLIST_DOMAINS) {
+        setBlacklistStatus(getMessage('BLACKLIST_STATUS_LIMIT', { max: MAX_BLACKLIST_DOMAINS }), 'error');
+        return;
+    }
+
+    await chrome.storage.local.set({ [CUSTOM_BLACKLIST_STORAGE_KEY]: domains });
+    renderBlacklistEditor(domains);
+    setBlacklistStatus(getMessage('BLACKLIST_STATUS_SAVED', { count: domains.length }), 'success');
+    await populateTabs();
+}
+
+async function resetBlacklistDomains() {
+    await chrome.storage.local.remove(CUSTOM_BLACKLIST_STORAGE_KEY);
+    renderBlacklistEditor();
+    setBlacklistStatus(getMessage('BLACKLIST_STATUS_DEFAULTS'), 'success');
+    await populateTabs();
+}
+
 async function populateTabs(providedPeers = null, providedTargetTabId = null) {
     const token = {};
     populateTabsToken = token;
 
-    const data = await chrome.storage.local.get(['filterNoise']);
+    const data = await chrome.storage.local.get(['filterNoise', CUSTOM_BLACKLIST_STORAGE_KEY]);
+    const blacklistDomains = getEffectiveBlacklistDomains(data[CUSTOM_BLACKLIST_STORAGE_KEY]);
     const isFilterActive = data.filterNoise !== false;
     
     let currentTargetTabId = providedTargetTabId;
@@ -1161,18 +1220,7 @@ async function populateTabs(providedPeers = null, providedTargetTabId = null) {
     const filteredTabs = tabs.filter(tab => {
         if (!tab.url || tab.url.startsWith('chrome://')) return false;
         if (isFilterActive && tab.id !== parseInt(currentTargetTabId)) {
-            const urlStr = tab.url.toLowerCase();
-            if (BLACKLIST_DOMAINS.some(d => {
-                const domain = d.toLowerCase();
-                try {
-                    const hostname = new URL(tab.url).hostname.toLowerCase();
-                    if (domain.endsWith('.')) return hostname.startsWith(domain) || hostname.includes('.' + domain);
-                    if (domain.includes('.')) return hostname === domain || hostname.endsWith('.' + domain);
-                } catch {
-                    /* ignore invalid URLs */
-                }
-                return urlStr.includes(domain);
-            })) return false;
+            if (isUrlBlacklisted(tab.url, blacklistDomains)) return false;
         }
         return true;
     });
@@ -1465,6 +1513,24 @@ elements.filterNoise.addEventListener('change', () => {
     });
 });
 
+if (elements.blacklistEdit) {
+    elements.blacklistEdit.addEventListener('click', () => {
+        setBlacklistEditorOpen(elements.blacklistEditor?.hidden !== false);
+    });
+}
+
+if (elements.blacklistSave) {
+    elements.blacklistSave.addEventListener('click', () => {
+        saveBlacklistDomains().catch(error => setBlacklistStatus(error.message, 'error'));
+    });
+}
+
+if (elements.blacklistReset) {
+    elements.blacklistReset.addEventListener('click', () => {
+        resetBlacklistDomains().catch(error => setBlacklistStatus(error.message, 'error'));
+    });
+}
+
 elements.autoSyncNextEpisode.addEventListener('change', () => {
     chrome.storage.local.set({ autoSyncNextEpisode: elements.autoSyncNextEpisode.checked });
 });
@@ -1586,7 +1652,9 @@ if (elements.audioSettingsLink) {
 }
 
 chrome.storage.onChanged.addListener((changes, area) => {
-    if (area !== 'sync' || !changes.audioSettings) return;
+    if (area !== 'local' || !changes[CUSTOM_BLACKLIST_STORAGE_KEY]) return;
+    renderBlacklistEditor(changes[CUSTOM_BLACKLIST_STORAGE_KEY].newValue, true);
+    populateTabs();
 });
 
 elements.forceSyncMode.addEventListener('change', () => {

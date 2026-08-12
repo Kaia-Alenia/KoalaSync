@@ -465,7 +465,7 @@ function emitEpisodeLobbyForCurrentPrivacy() {
 const LEGACY_SYNC_KEYS = [
     'serverUrl', 'useCustomServer', 'roomId', 'password', 'chatKey',
     'chatEnabled', 'chatNotifications', 'chatPosition', 'chatSize', 'chatStartMode', 'chatReactionDisplay', 'username',
-    'filterNoise', 'autoSyncNextEpisode', 'forceSyncMode',
+    'filterNoise', 'customBlacklistDomains', 'autoSyncNextEpisode', 'forceSyncMode',
     'browserNotifications', 'autoCopyInvite', 'locale', 'audioSettings',
     'titlePrivacyMode', 'sendTabTitle', 'mediaTitlePrivacyMode'
 ];

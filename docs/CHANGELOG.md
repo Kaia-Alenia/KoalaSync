@@ -4,6 +4,12 @@ All notable changes to the KoalaSync browser extension and relay server.
 
 ---
 
+## Unreleased
+
+### Added
+- **Extension: Editable Hide-Clutter list** — Adds a validated, deduplicated domain editor in Settings, prefilled with the shipped blacklist, with a defaults reset and per-device persistence in `chrome.storage.local`.
+- **Extension: Independent default audio boost** — Adds a configurable `0–20 dB` output gain in half-decibel steps. The boost works with or without the compressor and applies live to the selected video tab.
+
 ## [v3.0.2] — 2026-07-31
 
 This release adds three focused chat improvements: encrypted quick-reaction emojis,

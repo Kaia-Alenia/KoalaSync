@@ -19,6 +19,7 @@ const checks = [
   ['names generator', 'node', ['scripts/test-names.mjs']],
   ['content video finder', 'node', ['scripts/test-content-video-finder.cjs']],
   ['audio settings', 'node', ['scripts/test-audio-settings.mjs']],
+  ['blacklist settings', 'node', ['scripts/test-blacklist-settings.mjs']],
   ['popup refresh cooldown', 'node', ['scripts/test-popup-refresh-cooldown.mjs']],
   ['chat settings', 'node', ['scripts/test-chat-settings.mjs']],
   ['host access recovery', 'node', ['scripts/test-host-access.mjs']],

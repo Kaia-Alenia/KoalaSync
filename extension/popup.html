@@ -1215,6 +1215,68 @@
             line-height: 1.45;
             text-align: left;
         }
+        .settings-inline-actions {
+            width: 154px;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 8px;
+        }
+        .settings-inline-actions .settings-action {
+            min-width: 0;
+        }
+        .settings-editor {
+            margin: 0 0 10px;
+            padding: 12px;
+            border: 1px solid var(--border-soft);
+            border-radius: 10px;
+            background: var(--surface-deep);
+        }
+        .settings-editor > label {
+            display: block;
+            margin: 0 0 4px;
+            color: var(--text);
+            font-size: 12px;
+            font-weight: 700;
+        }
+        .settings-editor textarea {
+            box-sizing: border-box;
+            width: 100%;
+            min-height: 150px;
+            margin: 10px 0;
+            padding: 10px;
+            resize: vertical;
+            border: 1px solid var(--border-strong);
+            border-radius: 9px;
+            background: var(--bg);
+            color: var(--text);
+            font: 11px/1.45 ui-monospace, SFMono-Regular, Consolas, monospace;
+        }
+        .settings-editor-actions {
+            display: flex;
+            gap: 8px;
+        }
+        .settings-editor-actions button {
+            flex: 1;
+            min-height: 36px;
+            margin: 0;
+            padding: 8px;
+            font-size: 11px;
+        }
+        .settings-editor-status {
+            margin: 8px 0 0;
+            font-size: 10px;
+            line-height: 1.4;
+        }
+        .settings-editor-status:empty {
+            display: none;
+        }
+        .settings-editor-status[data-state="success"] {
+            color: var(--accent);
+        }
+        .settings-editor-status[data-state="error"] {
+            color: var(--error);
+        }
         [data-chat-setting] {
             transition: opacity 0.2s;
         }
@@ -1693,10 +1755,23 @@
                 </div>
                 <div class="settings-row">
                     <label for="filterNoise" title="Filters out non-video tabs and unrelated domains to keep the list clean" data-i18n="LABEL_HIDE_CLUTTER" data-i18n-title="LABEL_HIDE_CLUTTER_TOOLTIP">Hide Clutter Tabs</label>
-                    <label class="toggle-switch">
-                        <input type="checkbox" id="filterNoise" checked>
-                        <span class="slider"></span>
-                    </label>
+                    <div class="settings-inline-actions">
+                        <button type="button" id="blacklistEdit" class="settings-action" aria-expanded="false" aria-controls="blacklistEditor" data-i18n="BLACKLIST_EDIT">Edit list</button>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="filterNoise" checked>
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                </div>
+                <div id="blacklistEditor" class="settings-editor" hidden>
+                    <label for="blacklistDomains" data-i18n="BLACKLIST_EDITOR_LABEL">Hidden domains</label>
+                    <p class="settings-note" data-i18n="BLACKLIST_EDITOR_HELP">One domain per line. URLs are reduced to their hostname. Stored only on this device.</p>
+                    <textarea id="blacklistDomains" rows="8" maxlength="20000" spellcheck="false"></textarea>
+                    <div class="settings-editor-actions">
+                        <button type="button" id="blacklistReset" class="secondary" data-i18n="BLACKLIST_RESET">Restore defaults</button>
+                        <button type="button" id="blacklistSave" class="primary" data-i18n="BLACKLIST_SAVE">Save list</button>
+                    </div>
+                    <p id="blacklistStatus" class="settings-editor-status" aria-live="polite"></p>
                 </div>
                 <div class="settings-row">
                     <label for="autoCopyInvite" title="Automatically copies the invite link to your clipboard when creating a new room." data-i18n="LABEL_AUTO_COPY_INVITE" data-i18n-title="LABEL_AUTO_COPY_INVITE_TOOLTIP">Auto-Copy Invite Link</label>

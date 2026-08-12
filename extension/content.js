@@ -250,6 +250,11 @@
         if (area === 'local' && changes.autoSyncNextEpisode) {
             _autoSyncEnabled = changes.autoSyncNextEpisode.newValue !== false;
         }
+        if (area === 'local' && changes.audioSettings) {
+            _audioSettings = mergeAudioSettings(changes.audioSettings.newValue);
+            const video = findVideo();
+            if (video && _audioProcessingAllowed) applyAudioSettings(video, _audioSettings);
+        }
     }
     chrome.storage.onChanged.addListener(handleStorageChanged);
 
@@ -605,24 +610,32 @@
         smooth: { threshold: -30, ratio: 1.5, attack: 0.030, release: 0.250, knee: 20 },
         custom: { threshold: -24, ratio: 12, attack: 0.003, release: 0.250, knee: 30 }
     };
-    const DEFAULT_AUDIO_SETTINGS = {
-        enabled: false,
-        compressor: {
+    const DEFAULT_AUDIO_SETTINGS = {
+        enabled: false,
+        boostDb: 0,
+        compressor: {
             enabled: false,
             preset: 'recommended',
             customParams: { ...AUDIO_PRESETS.custom }
         }
     };
     let audioCtx = null;
-    let audioChains = new WeakMap();
-    let currentAudioVideo = null;
+    let audioChains = new WeakMap();
+    let currentAudioVideo = null;
+
+    function normalizeBoostDb(value) {
+        const parsed = Number(value);
+        if (!Number.isFinite(parsed)) return DEFAULT_AUDIO_SETTINGS.boostDb;
+        return Math.min(20, Math.max(0, Math.round(parsed * 2) / 2));
+    }
 
     function mergeAudioSettings(settings = {}) {
         const safeSettings = settings && typeof settings === 'object' ? settings : {};
-        return {
-            ...DEFAULT_AUDIO_SETTINGS,
-            ...safeSettings,
-            compressor: {
+        return {
+            ...DEFAULT_AUDIO_SETTINGS,
+            ...safeSettings,
+            boostDb: normalizeBoostDb(safeSettings.boostDb),
+            compressor: {
                 ...DEFAULT_AUDIO_SETTINGS.compressor,
                 ...(safeSettings.compressor || {}),
                 customParams: {
@@ -665,21 +678,31 @@
         if (!ctx) return null;
 
         try {
-            const src = ctx.createMediaElementSource(videoEl);
-            const compressor = ctx.createDynamicsCompressor();
-            const dryGain = ctx.createGain();
-            const compGain = ctx.createGain();
-
-            src.connect(dryGain);
-            dryGain.connect(ctx.destination);
-            src.connect(compressor);
-            compressor.connect(compGain);
-            compGain.connect(ctx.destination);
-
-            dryGain.gain.value = 1;
-            compGain.gain.value = 0;
-
-            const chain = { compressor, dryGain, compGain, active: false };
+            const src = ctx.createMediaElementSource(videoEl);
+            const compressor = ctx.createDynamicsCompressor();
+            const dryGain = ctx.createGain();
+            const compGain = ctx.createGain();
+            const outputGain = ctx.createGain();
+            const limiter = ctx.createDynamicsCompressor();
+
+            src.connect(dryGain);
+            dryGain.connect(outputGain);
+            src.connect(compressor);
+            compressor.connect(compGain);
+            compGain.connect(outputGain);
+            outputGain.connect(limiter);
+            limiter.connect(ctx.destination);
+
+            dryGain.gain.value = 1;
+            compGain.gain.value = 0;
+            outputGain.gain.value = 1;
+            limiter.threshold.value = 0;
+            limiter.knee.value = 0;
+            limiter.ratio.value = 20;
+            limiter.attack.value = 0;
+            limiter.release.value = 0.1;
+
+            const chain = { compressor, dryGain, compGain, outputGain, limiter, active: false, signature: '' };
             audioChains.set(videoEl, chain);
             currentAudioVideo = videoEl;
             return chain;
@@ -699,46 +722,59 @@
     function applyAudioBypass(videoEl) {
         const chain = audioChains.get(videoEl);
         if (!chain || !chain.active) return;
-        const t = chain.dryGain.context.currentTime;
-        rampGain(chain.dryGain, 1, t);
-        rampGain(chain.compGain, 0, t);
-        chain.active = false;
-        reportLog('Audio compressor disabled', 'info');
+        const t = chain.dryGain.context.currentTime;
+        rampGain(chain.dryGain, 1, t);
+        rampGain(chain.compGain, 0, t);
+        rampGain(chain.outputGain, 1, t);
+        chain.limiter.threshold.setValueAtTime(0, t);
+        chain.active = false;
+        chain.signature = '';
+        reportLog('Audio processing disabled', 'info');
     }
 
     function bypassCurrentAudioProcessing() {
         if (currentAudioVideo) applyAudioBypass(currentAudioVideo);
     }
 
-    function applyAudioSettings(videoEl, settings) {
-        const mergedSettings = mergeAudioSettings(settings);
-        if (!mergedSettings.enabled || !mergedSettings.compressor?.enabled) {
-            applyAudioBypass(videoEl);
-            return;
-        }
+    function applyAudioSettings(videoEl, settings) {
+        const mergedSettings = mergeAudioSettings(settings);
+        const compressorEnabled = mergedSettings.compressor?.enabled === true;
+        const boostDb = normalizeBoostDb(mergedSettings.boostDb);
+        if (!mergedSettings.enabled || (!compressorEnabled && boostDb === 0)) {
+            applyAudioBypass(videoEl);
+            return;
+        }
 
         const chain = setupAudioChain(videoEl);
         if (!chain) return;
 
-        const cSettings = mergedSettings.compressor;
-        const params = cSettings.preset === 'custom'
-            ? cSettings.customParams
-            : AUDIO_PRESETS[cSettings.preset] || AUDIO_PRESETS.recommended;
-
-        chain.compressor.threshold.value = params.threshold ?? -24;
-        chain.compressor.knee.value = params.knee ?? 15;
-        chain.compressor.ratio.value = params.ratio ?? 8;
-        chain.compressor.attack.value = params.attack ?? 0.010;
-        chain.compressor.release.value = params.release ?? 0.300;
-
-        if (!chain.active) {
-            const t = chain.dryGain.context.currentTime;
-            rampGain(chain.dryGain, 0, t);
-            rampGain(chain.compGain, 1, t);
-            chain.active = true;
-            reportLog('Audio compressor enabled', 'info');
-        }
-    }
+        if (compressorEnabled) {
+            const cSettings = mergedSettings.compressor;
+            const params = cSettings.preset === 'custom'
+                ? cSettings.customParams
+                : AUDIO_PRESETS[cSettings.preset] || AUDIO_PRESETS.recommended;
+
+            chain.compressor.threshold.value = params.threshold ?? -24;
+            chain.compressor.knee.value = params.knee ?? 15;
+            chain.compressor.ratio.value = params.ratio ?? 8;
+            chain.compressor.attack.value = params.attack ?? 0.010;
+            chain.compressor.release.value = params.release ?? 0.300;
+        }
+
+        const t = chain.dryGain.context.currentTime;
+        rampGain(chain.dryGain, compressorEnabled ? 0 : 1, t);
+        rampGain(chain.compGain, compressorEnabled ? 1 : 0, t);
+        rampGain(chain.outputGain, Math.pow(10, boostDb / 20), t);
+        chain.limiter.threshold.setValueAtTime(boostDb > 0 ? -1 : 0, t);
+
+        const signature = `${compressorEnabled ? 'compressor' : 'dry'}:${boostDb}`;
+        if (chain.signature !== signature) {
+            const boostLabel = boostDb > 0 ? ` + ${boostDb} dB boost` : '';
+            reportLog(`Audio processing enabled (${compressorEnabled ? 'compressor' : 'boost only'}${boostLabel})`, 'info');
+        }
+        chain.signature = signature;
+        chain.active = true;
+    }
 
     // --- Episode Auto-Sync: Detection ---
     function getMediaTitle() {

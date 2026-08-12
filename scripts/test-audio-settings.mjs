@@ -8,6 +8,8 @@ import { fileURLToPath } from 'node:url';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const sourcePath = path.join(repoRoot, 'extension/audio-options.js');
+const contentPath = path.join(repoRoot, 'extension/content.js');
+const htmlPath = path.join(repoRoot, 'extension/audio-options.html');
 const source = fs.readFileSync(sourcePath, 'utf8')
     .replace("import { loadLocale, translateDOM, getSystemLanguage } from './i18n.js';", '')
     .replace(/init\(\)\.catch[\s\S]*?;\n?$/, '');
@@ -61,7 +63,11 @@ const sandbox = {
     },
     document: {
         getElementById: () => makeInput(),
-        querySelectorAll: (selector) => selector === '.control-row' ? rows : [makeInput({ value: 'recommended' })]
+        querySelectorAll: (selector) => selector === '.control-row[data-param]' ? rows : [makeInput({ value: 'recommended' })]
+    },
+    window: {
+        addEventListener: () => {},
+        close: () => {}
     },
     setTimeout,
     clearTimeout
@@ -71,7 +77,9 @@ vm.createContext(sandbox);
 vm.runInContext(`${source}
 globalThis.__audioSettingsTest = {
     mergeAudioSettings,
+    normalizeBoostDb,
     getParamValue,
+    setBoostDb,
     setCustomParam,
     get currentSettings() { return currentSettings; }
 };`, sandbox, { filename: sourcePath });
@@ -80,6 +88,11 @@ const helpers = sandbox.__audioSettingsTest;
 
 assert.doesNotThrow(() => helpers.mergeAudioSettings(null), 'mergeAudioSettings tolerates null storage values');
 assert.doesNotThrow(() => helpers.mergeAudioSettings('bad'), 'mergeAudioSettings tolerates non-object storage values');
+assert.equal(helpers.normalizeBoostDb(-5), 0, 'boost clamps to 0 dB minimum');
+assert.equal(helpers.normalizeBoostDb(99), 20, 'boost clamps to 20 dB maximum');
+assert.equal(helpers.normalizeBoostDb(7.26), 7.5, 'boost rounds to half-decibel steps');
+assert.equal(helpers.normalizeBoostDb('bad'), 0, 'invalid boost falls back to 0 dB');
+assert.equal(helpers.mergeAudioSettings({ boostDb: 8 }).boostDb, 8, 'boost persists independently of compressor');
 
 assert.equal(helpers.getParamValue('threshold', '-999'), -60, 'threshold clamps to minimum');
 assert.equal(helpers.getParamValue('threshold', '999'), 0, 'threshold clamps to maximum');
@@ -94,5 +107,25 @@ assert.equal(helpers.getParamValue('release', '5000', true), 1, 'release ms inpu
 
 helpers.setCustomParam('threshold', 999);
 assert.equal(helpers.currentSettings.compressor.customParams.threshold, 0, 'setCustomParam stores clamped values');
+
+helpers.setBoostDb(6);
+assert.equal(helpers.currentSettings.boostDb, 6, 'setBoostDb stores the normalized boost');
+assert.equal(helpers.currentSettings.enabled, true, 'positive boost enables audio processing');
+helpers.setBoostDb(0);
+assert.equal(helpers.currentSettings.enabled, false, 'zero boost disables processing when compressor is off');
+
+const contentSource = fs.readFileSync(contentPath, 'utf8');
+assert.match(contentSource, /const outputGain = ctx\.createGain\(\)/, 'content chain creates a shared output gain');
+assert.match(contentSource, /const limiter = ctx\.createDynamicsCompressor\(\)/, 'content chain creates a post-boost limiter');
+assert.match(contentSource, /outputGain\.connect\(limiter\)/, 'boost output feeds the limiter');
+assert.match(contentSource, /limiter\.connect\(ctx\.destination\)/, 'limiter feeds the audio destination');
+assert.match(contentSource, /chain\.limiter\.threshold\.setValueAtTime\(0, t\)/, 'audio bypass resets the limiter ceiling');
+assert.match(contentSource, /Math\.pow\(10, boostDb \/ 20\)/, 'content chain converts decibels to linear gain');
+assert.match(contentSource, /changes\.audioSettings\.newValue/, 'content updates active video when local audio settings change');
+assert.match(source, /querySelectorAll\('\.control-row\[data-param\]'\)/, 'boost row is excluded from compressor parameter handling');
+assert.match(source, /await flushPendingSave\(\);[\s\S]*?window\.close\(\)/, 'back navigation flushes the final audio setting');
+
+const htmlSource = fs.readFileSync(htmlPath, 'utf8');
+assert.match(htmlSource, /id="boostRange"[^>]+max="20"[^>]+step="0\.5"/, 'audio UI exposes a bounded half-decibel boost slider');
 
 console.log('audio settings tests passed');

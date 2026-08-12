@@ -178,3 +178,73 @@ export const BLACKLIST_DOMAINS = [
     'lichess.org',
     'skribbl.io'
 ];
+
+export const CUSTOM_BLACKLIST_STORAGE_KEY = 'customBlacklistDomains';
+export const MAX_BLACKLIST_DOMAINS = 500;
+
+/**
+ * Normalize a user-entered domain or URL to a hostname.
+ * Returns null when the value cannot safely be used as a hostname filter.
+ */
+export function normalizeBlacklistDomain(value) {
+    if (typeof value !== 'string') return null;
+    const input = value.trim().toLowerCase();
+    if (!input) return '';
+
+    try {
+        const parsed = new URL(input.includes('://') ? input : `https://${input}`);
+        const hostname = parsed.hostname.toLowerCase().replace(/^\.+|\.+$/g, '');
+        if (!hostname || hostname.length > 253) return null;
+
+        const labels = hostname.split('.');
+        const valid = labels.every(label => (
+            label.length > 0
+            && label.length <= 63
+            && /^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/.test(label)
+        ));
+        return valid ? hostname : null;
+    } catch {
+        return null;
+    }
+}
+
+export function parseBlacklistDomains(value) {
+    const entries = Array.isArray(value)
+        ? value
+        : String(value ?? '').split(/\r?\n/);
+    const domains = [];
+    const invalid = [];
+    const seen = new Set();
+
+    for (const entry of entries) {
+        const normalized = normalizeBlacklistDomain(entry);
+        if (normalized === '') continue;
+        if (normalized === null) {
+            invalid.push(String(entry).trim());
+            continue;
+        }
+        if (!seen.has(normalized)) {
+            seen.add(normalized);
+            domains.push(normalized);
+        }
+    }
+
+    return { domains, invalid };
+}
+
+export function getEffectiveBlacklistDomains(storedDomains) {
+    if (!Array.isArray(storedDomains)) return [...BLACKLIST_DOMAINS];
+    return parseBlacklistDomains(storedDomains).domains.slice(0, MAX_BLACKLIST_DOMAINS);
+}
+
+export function isUrlBlacklisted(rawUrl, domains = BLACKLIST_DOMAINS) {
+    if (typeof rawUrl !== 'string' || !rawUrl) return false;
+    let hostname;
+    try {
+        hostname = new URL(rawUrl).hostname.toLowerCase().replace(/\.$/, '');
+    } catch {
+        return false;
+    }
+
+    return domains.some(domain => hostname === domain || hostname.endsWith(`.${domain}`));
+}

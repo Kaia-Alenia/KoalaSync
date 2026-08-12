@@ -30,24 +30,6 @@
 
 *Prioritized for upcoming phases.*
 
-### Customizable Hide-Clutter Tab List
-
-- **Priority:** P2
-- **Category:** UX / Personalization
-- **Background:** The Hide Clutter tabs feature already has a blacklist. Users should be
-  able to extend that list with tabs they frequently keep open but never want included.
-- **Planned behavior:** Provide a custom editable list, prefilled with the existing
-  blacklist, so users can add and manage their own entries.
-
-### Default Audio Boost
-
-- **Priority:** P2
-- **Category:** Audio / Playback
-- **Background:** Extend the audio settings with a configurable default boost that raises
-  the level by a chosen amount in dB.
-- **Planned behavior:** Apply the default gain in addition to the existing compressor,
-  with the boost controlled independently in the audio settings.
-
 ### Invite link with target URL for auto-redirect
 
 - **Priority:** P2
