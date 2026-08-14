@@ -57,6 +57,30 @@
 - **Possible approach:** Add an opt-in frame bridge (`allFrames: true` injection) where child frames announce detected videos to the top frame, and the top frame routes remote play/pause/seek commands to the active child video. Needs a frame-election rule so ad frames cannot claim the session.
 - **Status:** Same-origin part completed; cross-origin frame bridge still open. Not needed for current Emby behavior.
 
+### Sticky player selection
+
+- **Priority:** P3
+- **Category:** Compatibility / Player Selection
+- **Background:** `findVideo()` is stateless and re-ranks on every call, including inside the 150 ms seek poll. On a page whose candidate set changes mid-session (an ad frame appearing, the player briefly losing its source between episodes) the ranking can in principle move to a different element and back.
+- **Possible approach:** Keep the attached element while it is still connected, still has a source and is not disqualified, and only switch when another candidate is playing and it is not. Belongs in the attach lifecycle rather than in the ranking.
+- **Status:** Deliberately left out of the v3.1.0 ranking rework. No observed flapping; the ordered signals are stable enough that this is prevention, not a fix. Needs its own fixtures for the episode-change case.
+
+### Firefox E2E coverage
+
+- **Priority:** P2
+- **Category:** Testing / Release Confidence
+- **Background:** The E2E suite drives the Chromium build only. The Firefox artifact is built and checked by `addons-linter` on every run, but no browser flow exercises it, so a Firefox-only regression in injection or frame handling would not be caught.
+- **Possible approach:** Playwright can launch Firefox with a temporary add-on; the detection specs are browser-agnostic already and would come along for free.
+- **Status:** Backlog. Recorded because the current suite reads as broader coverage than it is.
+
+### Two-peer relay E2E
+
+- **Priority:** P3
+- **Category:** Testing / Release Confidence
+- **Background:** The extension specs drive injection and `SERVER_COMMAND` directly, without a relay and without a second peer. The actual sync loop between two browsers is only ever verified by hand.
+- **Possible approach:** Start the local relay from `server/`, launch two extension contexts, join the same room and assert that a seek on one lands on the other.
+- **Status:** Backlog.
+
 ### Sync a second video source per room
 
 - **Priority:** P3
