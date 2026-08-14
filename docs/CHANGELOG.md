@@ -7,8 +7,13 @@ All notable changes to the KoalaSync browser extension and relay server.
 ## Unreleased
 
 ### Added
+- **Extension: Same-origin frame video detection** — Finds and controls players that live inside a first-party iframe instead of the top document, so sites that wrap their player in their own frame sync without site-specific workarounds. Frame documents are watched for late-loading players and re-scanned after a frame reload; cross-origin frames stay out of reach by design.
 - **Extension: Editable Hide-Clutter list** — Adds a validated, deduplicated domain editor in Settings, prefilled with the shipped blacklist, with a defaults reset and per-device persistence in `chrome.storage.local`.
 - **Extension: Independent default audio boost** — Adds a configurable `0–20 dB` output gain in half-decibel steps. The boost works with or without the compressor and applies live to the selected video tab.
+
+### Fixed
+- **Extension: Google Drive tab selection** — A broad parent domain in the Hide-Clutter list no longer hides a host that has its own supported player path, so Drive videos stay selectable while the filter is on. An exact entry for the host itself still filters it.
+- **Extension: Debug report frame visibility** — Video counts now include players inside same-origin frames and the report states whether the selected video sits in a frame.
 
 ## [v3.0.2] — 2026-07-31
 

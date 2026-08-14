@@ -49,13 +49,13 @@
 
 *Ideas and feature requests under evaluation.*
 
-### Cross-frame video detection and control
+### Cross-origin frame video detection and control
 
 - **Priority:** P3
 - **Category:** Compatibility / Embedded Players
-- **Background:** KoalaSync currently injects on demand into the selected tab's top frame. This works for normal top-frame players, including current Emby/Jellyfin usage, but does not cover cases where the real `<video>` lives inside a cross-origin iframe or an `about:blank`/`srcdoc` player frame.
-- **Possible approach:** Add an opt-in frame bridge where child frames announce detected videos to the top frame, and the top frame routes remote play/pause/seek commands to the active child video.
-- **Status:** Future compatibility work, not needed for current Emby behavior.
+- **Background:** KoalaSync injects on demand into the selected tab's top frame. Since the same-origin frame walk shipped, the top-frame script also reaches players inside first-party iframes (`jkanime.net`-style `/jkplayer/` frames, `srcdoc` and `about:blank` frames that inherit the parent origin). What remains uncovered is the real `<video>` living inside a **cross-origin** iframe, where `contentDocument` is unreachable by design.
+- **Possible approach:** Add an opt-in frame bridge (`allFrames: true` injection) where child frames announce detected videos to the top frame, and the top frame routes remote play/pause/seek commands to the active child video. Needs a frame-election rule so ad frames cannot claim the session.
+- **Status:** Same-origin part completed; cross-origin frame bridge still open. Not needed for current Emby behavior.
 
 ### Local extension E2E smoke tests
 

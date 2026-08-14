@@ -39,6 +39,13 @@ assert.match(popupSource, /chrome\.storage\.local\.set\(\{ \[CUSTOM_BLACKLIST_ST
 assert.doesNotMatch(popupSource, /chrome\.storage\.sync\.set\(\{ \[CUSTOM_BLACKLIST_STORAGE_KEY\]/, 'custom list is never synced');
 assert.match(popupSource, /isUrlBlacklisted\(tab\.url, blacklistDomains\)/, 'tab filtering uses the effective custom list');
 
+// A broad parent domain must not hide a host with a dedicated player path,
+// but an exact user entry for that host still filters it.
+assert.equal(isUrlBlacklisted('https://drive.google.com/file/d/x/view', BLACKLIST_DOMAINS), false);
+assert.equal(isUrlBlacklisted('https://drive.google.com/file/d/x/view', ['drive.google.com']), true);
+assert.equal(isUrlBlacklisted('https://docs.google.com/document/d/x', BLACKLIST_DOMAINS), true);
+assert.equal(isUrlBlacklisted('https://mail.google.com/mail/u/0', BLACKLIST_DOMAINS), true);
+
 const popupHtml = fs.readFileSync(path.join(repoRoot, 'extension/popup.html'), 'utf8');
 assert.match(popupHtml, /id="blacklistDomains"/, 'settings UI contains the editable domain list');
 assert.match(popupHtml, /id="blacklistReset"/, 'settings UI contains a defaults reset');

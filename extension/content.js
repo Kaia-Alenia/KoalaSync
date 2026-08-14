@@ -1697,23 +1697,37 @@
     const hookedFrames = new Set();
     function observeSameOriginFrames() {
         if (destroyed) return;
-        for (const doc of collectSameOriginDocuments()) {
+        const docs = collectSameOriginDocuments();
+        for (const doc of docs) {
             if (doc === document || observedDocs.has(doc)) continue;
             if (!doc.documentElement) continue;
             observedDocs.add(doc);
             observer.observe(doc.documentElement, { childList: true, subtree: true });
         }
-        for (const frame of document.querySelectorAll('iframe, frame')) {
-            if (hookedFrames.has(frame)) continue;
-            hookedFrames.add(frame);
-            frame.addEventListener('load', onFrameLoad);
+        // Ad and SPA frames get torn down and recreated constantly; drop the
+        // detached ones so the hook set doesn't grow for the page's lifetime.
+        for (const frame of hookedFrames) {
+            if (frame.isConnected) continue;
+            frame.removeEventListener('load', onFrameLoad);
+            hookedFrames.delete(frame);
+        }
+        for (const doc of docs) {
+            for (const frame of doc.querySelectorAll('iframe, frame')) {
+                if (hookedFrames.has(frame)) continue;
+                hookedFrames.add(frame);
+                frame.addEventListener('load', onFrameLoad);
+            }
         }
     }
 
     function onFrameLoad() {
         if (destroyed) return;
-        // A reload swaps in a fresh document, so re-register and re-scan.
+        // A reload swaps in a fresh document. Re-observe from scratch instead of
+        // only adding the new one, so the observer stops holding the dead
+        // document's tree.
+        observer.disconnect();
         observedDocs = new WeakSet();
+        observer.observe(document.documentElement, { childList: true, subtree: true });
         observeSameOriginFrames();
         checkVideo();
     }
@@ -1764,6 +1778,7 @@
                 if (heartbeatTimeout) clearTimeout(heartbeatTimeout);
                 if (proactiveHeartbeatTimeout) clearTimeout(proactiveHeartbeatTimeout);
                 observer.disconnect();
+                observedDocs = new WeakSet();
             }
         });
     }

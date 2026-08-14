@@ -179,6 +179,15 @@ export const BLACKLIST_DOMAINS = [
     'skribbl.io'
 ];
 
+/**
+ * Hosts KoalaSync supports through a site-specific player path. A broad parent
+ * domain in the list (e.g. 'google.com') must not hide them from tab selection.
+ * An exact entry for the host itself still filters it, so users stay in control.
+ */
+export const BLACKLIST_SUFFIX_EXCEPTIONS = [
+    'drive.google.com'
+];
+
 export const CUSTOM_BLACKLIST_STORAGE_KEY = 'customBlacklistDomains';
 export const MAX_BLACKLIST_DOMAINS = 500;
 
@@ -246,5 +255,9 @@ export function isUrlBlacklisted(rawUrl, domains = BLACKLIST_DOMAINS) {
         return false;
     }
 
-    return domains.some(domain => hostname === domain || hostname.endsWith(`.${domain}`));
+    return domains.some(domain => {
+        if (hostname === domain) return true;
+        if (!hostname.endsWith(`.${domain}`)) return false;
+        return !BLACKLIST_SUFFIX_EXCEPTIONS.includes(hostname);
+    });
 }
