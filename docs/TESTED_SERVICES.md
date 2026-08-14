@@ -25,6 +25,7 @@ This document tracks which streaming platforms and media servers are supported b
 | **Dailymotion** | Not tested | Not tested | Not tested | — | — | — | — |
 | **ARD / ZDF Mediathek** | Not tested | Not tested | Not tested | — | — | — | — |
 | **Vix** | ✅ Full | ✅ Full | ✅ Full | — | — | — | Everything works correctly. |
+| **JkAnime** | ✅ Full | ❌ | ❌ | 2026-08-14 | Shik3i | v3.1.0 | Player sits in a same-origin `/jkplayer/` iframe, so it needs the same-origin frame walk added in v3.1.0. No MediaSession metadata is exposed, and the page title carries no episode pattern (`… Futari 18 Sub Español …`). |
 
 ### Legend
 
@@ -62,5 +63,12 @@ Limited functionality on certain platforms is typically caused by:
 - **DRM/Copy Protection** (e.g., Widevine on Netflix) which restricts access to media metadata like title and playback state
 - **Shadow DOM encapsulation** that hides video elements from content scripts
 - **Strict Content Security Policies** (CSP) that block script injection
+- **Cross-origin player frames**, where the `<video>` lives on a different origin than the page (see below)
 
-Websites with heavily obfuscated custom players (e.g., complex Shadow DOM, iframe isolation) may require platform-specific workarounds in `content.js`.
+Websites with heavily obfuscated custom players may require platform-specific workarounds in `content.js`.
+
+### Player frames
+
+Since v3.1.0 the content script walks **same-origin** frames, so a player wrapped in the site's own iframe is found and controlled without a site-specific workaround. This also covers `srcdoc` and `about:blank` frames, which inherit the parent origin.
+
+Frames on a **different origin** remain out of reach, because the browser blocks `contentDocument` access by design. Note that a subdomain counts as a different origin: a player served from `player.example.com` inside `example.com` is *not* reachable. Sites that embed their player from an external host (common for anime and sports streaming mirrors) fall into this category. Tracked on the roadmap as the cross-origin frame bridge.
