@@ -567,7 +567,7 @@
 
     // --- Helper: find the best video element on the page ---
     // Prefers larger, visible videos over tiny preview/trailer elements.
-    function findVideo(root = document) {
+    function findVideo(root = document, depth = 0) {
         const candidates = Array.from(root.querySelectorAll('video'));
 
         // Scan likely media hosts even when light-DOM videos exist; many players
@@ -575,7 +575,21 @@
         const potentialHosts = root.querySelectorAll('[id*="player" i], [class*="player" i], [id*="video" i], [class*="video" i], [id*="media" i], [class*="media" i], [id*="stream" i], [class*="stream" i], ytd-player, netflix-player, emby-player, jellyfin-player, video-player');
         for (const el of potentialHosts) {
             if (el.shadowRoot) {
-                const found = findVideo(el.shadowRoot);
+                const found = findVideo(el.shadowRoot, depth);
+                if (found) candidates.push(found);
+            }
+        }
+
+        // Same-origin player frames (jkanime.net and similar) keep the real
+        // <video> inside a first-party iframe, so the top document has none.
+        // Cross-origin frames throw on contentDocument (or return null) and are
+        // unreachable from here, so they are skipped.
+        if (depth < 3) {
+            for (const frame of root.querySelectorAll('iframe, frame')) {
+                let frameDoc = null;
+                try { frameDoc = frame.contentDocument; } catch (_e) { frameDoc = null; }
+                if (!frameDoc || typeof frameDoc.querySelectorAll !== 'function') continue;
+                const found = findVideo(frameDoc, depth + 1);
                 if (found) candidates.push(found);
             }
         }
@@ -602,6 +616,29 @@
         return best;
     }
 
+    // Every document we can touch from here: this one plus same-origin frames.
+    function collectSameOriginDocuments(doc = document, depth = 0, out = []) {
+        out.push(doc);
+        if (depth >= 3 || typeof doc.querySelectorAll !== 'function') return out;
+        for (const frame of doc.querySelectorAll('iframe, frame')) {
+            let frameDoc = null;
+            try { frameDoc = frame.contentDocument; } catch (_e) { frameDoc = null; }
+            if (!frameDoc || typeof frameDoc.querySelectorAll !== 'function') continue;
+            collectSameOriginDocuments(frameDoc, depth + 1, out);
+        }
+        return out;
+    }
+
+    // Debug-report counterpart to findVideo(): every <video> we can reach,
+    // including the ones inside same-origin player frames.
+    function collectAllVideoElements() {
+        const videos = [];
+        for (const doc of collectSameOriginDocuments()) {
+            for (const v of doc.querySelectorAll('video')) videos.push(v);
+        }
+        return videos;
+    }
+
     // --- Audio Processing Module ---
     const AUDIO_PRESETS = {
         recommended: { threshold: -24, ratio: 8, attack: 0.010, release: 0.300, knee: 15 },
@@ -1239,7 +1276,9 @@
             const networkStates = ['NETWORK_EMPTY', 'NETWORK_IDLE', 'NETWORK_LOADING', 'NETWORK_NO_SOURCE'];
             const readyStates = ['HAVE_NOTHING', 'HAVE_METADATA', 'HAVE_CURRENT_DATA', 'HAVE_FUTURE_DATA', 'HAVE_ENOUGH_DATA'];
 
-            const videoCount = document.querySelectorAll('video').length;
+            const reachableVideos = collectAllVideoElements();
+            const videoCount = reachableVideos.length;
+            const inIframe = !!video && video.ownerDocument !== document;
             const inShadowDom = (() => {
                 let el = video;
                 while (el) {
@@ -1258,7 +1297,7 @@
 
             // Build multi-video summary for debug reports
             const allVideos = [];
-            const allVideoEls = document.querySelectorAll('video');
+            const allVideoEls = reachableVideos;
             for (let i = 0; i < allVideoEls.length; i++) {
                 const v = allVideoEls[i];
                 allVideos.push({
@@ -1330,6 +1369,7 @@
                     metadata,
                     videoCount,
                     inShadowDom,
+                    inIframe,
                     platform,
                     siteQuirk: getSiteQuirkDebug(video),
                     allVideos
@@ -1339,6 +1379,7 @@
                     found: false,
                     videoCount,
                     inShadowDom,
+                    inIframe,
                     platform,
                     allVideos,
                     url: window.location.href,
@@ -1502,6 +1543,7 @@
         // intentionally suppresses the teardown play/pause burst at the source.
         if (playPauseCoalesceTimer) { clearTimeout(playPauseCoalesceTimer); playPauseCoalesceTimer = null; pendingPlayPauseAction = null; }
         observer.disconnect();
+        observedDocs = new WeakSet();
     }
     function handlePageShow(event) {
         if (destroyed) return;
@@ -1511,6 +1553,7 @@
         pageVisible = !document.hidden;
         if (pageVisible) visibilityGraceUntil = Date.now() + VISIBILITY_GRACE_MS;
         observer.observe(document.documentElement, { childList: true, subtree: true });
+        observeSameOriginFrames();
         setupListeners();
         connectKeepAlivePort();
         schedulePeriodicHeartbeat();
@@ -1625,6 +1668,7 @@
     function checkVideo() {
         if (destroyed) return;
         lastMutate = Date.now();
+        observeSameOriginFrames();
         const video = findVideo();
 
         if (!video && lastVideoSrc !== undefined) {
@@ -1646,6 +1690,34 @@
         }
     }
 
+    // Frame documents get their own observer registration: mutations inside an
+    // iframe never bubble into the parent document's observer, so without this
+    // a late-loading player frame would go unnoticed.
+    let observedDocs = new WeakSet();
+    const hookedFrames = new Set();
+    function observeSameOriginFrames() {
+        if (destroyed) return;
+        for (const doc of collectSameOriginDocuments()) {
+            if (doc === document || observedDocs.has(doc)) continue;
+            if (!doc.documentElement) continue;
+            observedDocs.add(doc);
+            observer.observe(doc.documentElement, { childList: true, subtree: true });
+        }
+        for (const frame of document.querySelectorAll('iframe, frame')) {
+            if (hookedFrames.has(frame)) continue;
+            hookedFrames.add(frame);
+            frame.addEventListener('load', onFrameLoad);
+        }
+    }
+
+    function onFrameLoad() {
+        if (destroyed) return;
+        // A reload swaps in a fresh document, so re-register and re-scan.
+        observedDocs = new WeakSet();
+        observeSameOriginFrames();
+        checkVideo();
+    }
+
     const observer = new MutationObserver(() => {
         if (destroyed) return;
         const now = Date.now();
@@ -1657,6 +1729,7 @@
         }
     });
     observer.observe(document.documentElement, { childList: true, subtree: true });
+    observeSameOriginFrames();
 
     // --- SHARED_HEARTBEAT_INJECT_START ---
     const HEARTBEAT_INTERVAL_VAL = 15000;
@@ -1763,6 +1836,11 @@
         hcmDeferredSnapPending = false;
 
         observer.disconnect();
+        observedDocs = new WeakSet();
+        for (const frame of hookedFrames) {
+            try { frame.removeEventListener('load', onFrameLoad); } catch (_e) { /* frame is gone */ }
+        }
+        hookedFrames.clear();
         if (keepAlivePort) {
             try { keepAlivePort.disconnect(); } catch (_e) { /* already disconnected */ }
             keepAlivePort = null;

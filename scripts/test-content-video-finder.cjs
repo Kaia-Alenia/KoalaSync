@@ -71,6 +71,52 @@ assert.strictEqual(
   'findVideo should score Shadow DOM videos together with light DOM videos'
 );
 
+// Same-origin player iframe (jkanime.net): the top document has no <video>,
+// the real player lives inside the frame document.
+const framedPlayer = makeVideo('framed-player', 1280, 720, { muted: false, duration: 1400 });
+
+const frameDocument = {
+  querySelectorAll(selector) {
+    if (selector === 'video') return [framedPlayer];
+    return [];
+  }
+};
+
+const playerFrame = { contentDocument: frameDocument };
+
+const framedTopDocument = {
+  querySelectorAll(selector) {
+    if (selector === 'video') return [];
+    if (selector === 'iframe, frame') return [playerFrame];
+    return [];
+  }
+};
+
+assert.strictEqual(
+  findVideo(framedTopDocument),
+  framedPlayer,
+  'findVideo should descend into same-origin player iframes'
+);
+
+// A cross-origin frame throws on contentDocument and must not break the scan.
+const crossOriginFrame = {
+  get contentDocument() { throw new Error('blocked by same-origin policy'); }
+};
+
+const crossOriginTopDocument = {
+  querySelectorAll(selector) {
+    if (selector === 'video') return [lightPreview];
+    if (selector === 'iframe, frame') return [crossOriginFrame];
+    return [];
+  }
+};
+
+assert.strictEqual(
+  findVideo(crossOriginTopDocument),
+  lightPreview,
+  'findVideo should skip unreachable cross-origin frames'
+);
+
 function makeDocument(nodes = []) {
   return {
     querySelectorAll() { return nodes; }

@@ -2565,7 +2565,7 @@ elements.copyLogs.addEventListener('click', () => {
             if (vs.pageTitle) lines.push(`- **Title:** ${vs.pageTitle}`);
             if (vs.url) lines.push(`- **URL:** ${vs.url}`);
             if (vs.platform) lines.push(`- **Platform:** ${safe(vs.platform, '?')}`);
-            lines.push(`- **Video Count:** ${safe(vs.videoCount, 0)} | **Shadow DOM:** ${vs.inShadowDom ? 'YES' : 'NO'}`);
+            lines.push(`- **Video Count:** ${safe(vs.videoCount, 0)} | **Shadow DOM:** ${vs.inShadowDom ? 'YES' : 'NO'} | **In Iframe:** ${vs.inIframe ? 'YES' : 'NO'}`);
             lines.push('');
 
             // Multi-video overview
@@ -2616,6 +2616,7 @@ elements.copyLogs.addEventListener('click', () => {
             lines.push('- **Found:** \u274C NO VIDEO ELEMENT');
             if (vs.videoCount != null) lines.push(`- **Video Tags:** ${vs.videoCount}`);
             if (vs.inShadowDom != null) lines.push(`- **Shadow DOM:** ${vs.inShadowDom ? 'YES (checked)' : 'NO'}`);
+            if (vs.inIframe != null) lines.push(`- **In Iframe:** ${vs.inIframe ? 'YES' : 'NO'}`);
             if (vs.metadata) {
                 if (vs.metadata.title) lines.push(`- **MediaSession Title:** "${vs.metadata.title}"`);
                 if (vs.metadata.artist) lines.push(`- **MediaSession Artist:** "${vs.metadata.artist}"`);
