@@ -4,7 +4,12 @@ All notable changes to the KoalaSync browser extension and relay server.
 
 ---
 
-## Unreleased
+## [v3.1.0] — 2026-08-14
+
+This release teaches KoalaSync to find players that sites hide inside their own
+iframes, rebuilds how the right player is chosen when a page offers several, and
+turns the Hide-Clutter list into your changes on top of a list that keeps
+updating. A browser-level test suite now covers all of it.
 
 ### Added
 - **Extension: Same-origin frame video detection** — Finds and controls players that live inside a first-party iframe instead of the top document, so sites that wrap their player in their own frame sync without site-specific workarounds. Frame documents are watched for late-loading players and re-scanned after a frame reload; cross-origin frames stay out of reach by design.
