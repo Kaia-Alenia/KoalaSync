@@ -685,16 +685,6 @@
         return out;
     }
 
-    // Debug-report counterpart to findVideo(): every <video> we can reach,
-    // including the ones inside same-origin player frames.
-    function collectAllVideoElements() {
-        const videos = [];
-        for (const doc of collectSameOriginDocuments()) {
-            for (const v of doc.querySelectorAll('video')) videos.push(v);
-        }
-        return videos;
-    }
-
     // --- Audio Processing Module ---
     const AUDIO_PRESETS = {
         recommended: { threshold: -24, ratio: 8, attack: 0.010, release: 0.300, knee: 15 },
@@ -1332,7 +1322,9 @@
             const networkStates = ['NETWORK_EMPTY', 'NETWORK_IDLE', 'NETWORK_LOADING', 'NETWORK_NO_SOURCE'];
             const readyStates = ['HAVE_NOTHING', 'HAVE_METADATA', 'HAVE_CURRENT_DATA', 'HAVE_FUTURE_DATA', 'HAVE_ENOUGH_DATA'];
 
-            const reachableVideos = collectAllVideoElements();
+            // The exact set findVideo ranked, so the report explains the pick
+            // instead of describing a different population.
+            const reachableVideos = collectVideoCandidates();
             const videoCount = reachableVideos.length;
             const inIframe = !!video && video.ownerDocument !== document;
             const inShadowDom = (() => {

@@ -1,8 +1,4 @@
-import path from 'node:path';
-import fs from 'node:fs';
-import os from 'node:os';
-import { fileURLToPath } from 'node:url';
-import { test as base, expect, chromium } from '@playwright/test';
+import { test, expect } from './helpers/extension-fixture.mjs';
 
 /**
  * Drives the packed extension itself: real background service worker, real
@@ -10,37 +6,6 @@ import { test as base, expect, chromium } from '@playwright/test';
  * which element gets picked; this file covers whether the extension ever gets
  * far enough to pick one.
  */
-
-const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
-const extensionPath = path.join(repoRoot, 'dist/chrome');
-
-const test = base.extend({
-    context: async ({}, use) => {
-        if (!fs.existsSync(path.join(extensionPath, 'manifest.json'))) {
-            throw new Error('dist/chrome is missing. Run: npm run build:extension');
-        }
-        const userDataDir = fs.mkdtempSync(path.join(os.tmpdir(), 'koalasync-e2e-'));
-        const context = await chromium.launchPersistentContext(userDataDir, {
-            // The headless shell does not run MV3 service workers; the full
-            // Chromium build in new headless mode does.
-            channel: 'chromium',
-            headless: true,
-            args: [
-                `--disable-extensions-except=${extensionPath}`,
-                `--load-extension=${extensionPath}`,
-                '--autoplay-policy=no-user-gesture-required'
-            ]
-        });
-        await use(context);
-        await context.close();
-        fs.rmSync(userDataDir, { recursive: true, force: true });
-    },
-    extensionId: async ({ context }, use) => {
-        let [worker] = context.serviceWorkers();
-        if (!worker) worker = await context.waitForEvent('serviceworker');
-        await use(worker.url().split('/')[2]);
-    }
-});
 
 /** Runs code in an extension page, where the privileged chrome.* APIs exist. */
 async function withExtensionPage(context, extensionId, fn) {

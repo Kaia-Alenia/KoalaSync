@@ -97,6 +97,28 @@ assert.strictEqual(
   'findVideo should score Shadow DOM videos together with light DOM videos'
 );
 
+// Invariant that protects every already-working single-player site: with one
+// candidate the ranking is never consulted, so no signal can turn a page that
+// used to sync into "no video found".
+const lonelyBadCandidate = makeVideo('lonely', 0, 0, { muted: true, duration: 0 });
+lonelyBadCandidate.loop = true;
+lonelyBadCandidate.controls = false;
+lonelyBadCandidate.offsetWidth = 0;
+lonelyBadCandidate.offsetHeight = 0;
+
+const lonelyDocument = {
+  querySelectorAll(selector) {
+    if (selector === 'video') return [lonelyBadCandidate];
+    return [];
+  }
+};
+
+assert.strictEqual(
+  findVideo(lonelyDocument),
+  lonelyBadCandidate,
+  'a single candidate is returned even when every ranking signal is against it'
+);
+
 // Same-origin player iframe (jkanime.net): the top document has no <video>,
 // the real player lives inside the frame document.
 const framedPlayer = makeVideo('framed-player', 1280, 720, { muted: false, duration: 1400 });

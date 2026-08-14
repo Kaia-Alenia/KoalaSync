@@ -392,7 +392,7 @@ async function init() {
     elements.username.value = username;
     syncDevToolsVisibility();
     if (elements.filterNoise) elements.filterNoise.checked = localData.filterNoise !== false;
-    readBlacklistOverrides().then(overrides => renderBlacklistEditor(overrides));
+    renderBlacklistEditor(await readBlacklistOverrides());
     if (elements.autoSyncNextEpisode) elements.autoSyncNextEpisode.checked = localData.autoSyncNextEpisode !== false;
     if (elements.chatEnabled) elements.chatEnabled.checked = localData.chatEnabled === true;
     if (elements.chatNotifications) elements.chatNotifications.checked = localData.chatNotifications !== false;
