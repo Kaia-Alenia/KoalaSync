@@ -1,0 +1,9 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Reloading player frame</title>
+<h1>Player frame that swaps its document, like a server or quality switch</h1>
+<!-- Nothing in the top document changes when the frame navigates, so the top
+     document's MutationObserver never fires. Only a load hook on the frame can
+     notice, which is exactly what this fixture pins down. -->
+<iframe class="player_frame" width="860" height="490" src="frames/player-frame.html"></iframe>
+<script src="ready.js"></script>

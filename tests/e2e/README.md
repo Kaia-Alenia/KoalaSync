@@ -50,6 +50,21 @@ reads as a broken fixture instead of a scoring regression.
 | `background-loop.html` | Silent looping hero must lose despite being the largest |
 | `multi-player.html` | Between equal players, the playing one wins |
 | `sourceless.html` | A large `<video>` with no source can never be the player |
+| `nested-frame.html` | Player two frame levels down |
+| `reloading-frame.html` | Frame that swaps its document, with no mutation in the top one |
+
+## Benchmark
+
+`bench-finder.mjs` is not a spec, because timings are machine dependent and
+would only add noise to CI. Run it by hand when the finder changes:
+
+```bash
+node tests/e2e/fixture-server.mjs 4173 & node tests/e2e/bench-finder.mjs
+```
+
+It measures the shipped finder (lifted from `content.js`) against the
+pre-v3.1.0 formula, which is transcribed inside the script since that code no
+longer exists in the tree.
 
 ## Regenerating the media
 

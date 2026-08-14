@@ -103,6 +103,62 @@ test('reinjects after the target tab navigates', async ({ context, extensionId, 
     ).toBe('true');
 });
 
+test('re-attaches after the player frame swaps its document', async ({ context, extensionId, baseURL }) => {
+    const url = `${baseURL}/pages/reloading-frame.html`;
+    const page = await context.newPage();
+    await page.goto(url);
+    await page.waitForFunction(() => window.__fixtureReady === true);
+    await selectTargetTab(context, extensionId, url);
+
+    await expect.poll(() => page.evaluate(() => {
+        const video = document.querySelector('iframe').contentDocument.getElementById('framed-player');
+        return video ? video.dataset.koalaAttached : null;
+    })).toBe('true');
+
+    // Navigating the frame replaces its document without touching the top one,
+    // so nothing but a load hook on the frame can notice the new player.
+    await page.evaluate(() => {
+        document.querySelector('iframe').src = 'frames/player-frame-2.html';
+    });
+
+    await expect.poll(
+        () => page.evaluate(() => {
+            const video = document.querySelector('iframe').contentDocument.getElementById('framed-player-2');
+            return video ? video.dataset.koalaAttached : null;
+        }),
+        { message: 'the content script should follow the frame to its new document' }
+    ).toBe('true');
+});
+
+test('re-attaches when a nested player frame swaps its document', async ({ context, extensionId, baseURL }) => {
+    const url = `${baseURL}/pages/nested-frame.html`;
+    const page = await context.newPage();
+    await page.goto(url);
+    await page.waitForFunction(() => window.__fixtureReady === true);
+    await selectTargetTab(context, extensionId, url);
+
+    const innerVideo = (id) => page.evaluate((videoId) => {
+        const outer = document.querySelector('iframe').contentDocument;
+        const inner = outer.querySelector('iframe').contentDocument;
+        const video = inner.getElementById(videoId);
+        return video ? video.dataset.koalaAttached : null;
+    }, id);
+
+    await expect.poll(() => innerVideo('framed-player')).toBe('true');
+
+    // The reloading frame sits at depth two. A load hook that only covers
+    // top-level frames would never fire for it.
+    await page.evaluate(() => {
+        const outer = document.querySelector('iframe').contentDocument;
+        outer.querySelector('iframe').src = 'player-frame-2.html';
+    });
+
+    await expect.poll(
+        () => innerVideo('framed-player-2'),
+        { message: 'a frame two levels down should be watched for reloads too' }
+    ).toBe('true');
+});
+
 function FRAMED_VIDEO_PAUSED() {
     return document.querySelector('iframe').contentDocument.querySelector('video').paused;
 }

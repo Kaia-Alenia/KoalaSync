@@ -10,6 +10,7 @@ import { buildVideoFinderScript } from './helpers/content-source.mjs';
 const SCENARIOS = [
     { page: 'simple-player.html', expected: 'player', what: 'the only visible player' },
     { page: 'iframe-player.html', expected: 'framed-player', what: 'a player inside a same-origin frame' },
+    { page: 'nested-frame.html', expected: 'framed-player', what: 'a player two frame levels down' },
     { page: 'shadow-player.html', expected: 'shadow-player', what: 'a player inside a shadow root over a light-DOM teaser' },
     { page: 'muted-player.html', expected: 'player', what: 'the only player even when muted' },
     { page: 'hidden-preload.html', expected: 'player', what: 'the visible player over a hidden higher-resolution preload' },
