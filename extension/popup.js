@@ -1,9 +1,16 @@
 import { EVENTS, OFFICIAL_LANDING_PAGE_URL, SUPPORT_URL, getReviewUrl } from './shared/constants.js';
 import {
+    BLACKLIST_OVERRIDES_STORAGE_KEY,
+    BLACKLIST_SOURCE_DEFAULT,
+    BLACKLIST_SOURCE_USER,
     CUSTOM_BLACKLIST_STORAGE_KEY,
     MAX_BLACKLIST_DOMAINS,
+    createEmptyBlacklistOverrides,
+    deriveBlacklistOverrides,
+    getBlacklistEntries,
     getEffectiveBlacklistDomains,
     isUrlBlacklisted,
+    normalizeBlacklistOverrides,
     parseBlacklistDomains
 } from './shared/blacklist.js';
 import { getAvatarForName, generateUsername, USERNAME_ADJECTIVES, USERNAME_NOUNS } from './shared/names.js';
@@ -355,7 +362,7 @@ function setRoomRefreshCooldown() {
 async function init() {
     // Local-only by design — settings and room credentials never come from
     // storage.sync (only onboardingComplete + dismissedHints live there).
-    const localData = await chrome.storage.local.get(['serverUrl', 'useCustomServer', 'roomId', 'password', 'chatKey', 'chatEnabled', 'chatNotifications', 'chatPosition', 'chatSize', 'chatStartMode', 'chatReactionDisplay', 'username', 'filterNoise', CUSTOM_BLACKLIST_STORAGE_KEY, 'autoSyncNextEpisode', 'sendTabTitle', 'mediaTitlePrivacyMode', 'titlePrivacyMode', 'forceSyncMode', 'browserNotifications', 'autoCopyInvite', 'locale', 'audioSettings', 'activeTab', 'themeMode', 'themePalette']);
+    const localData = await chrome.storage.local.get(['serverUrl', 'useCustomServer', 'roomId', 'password', 'chatKey', 'chatEnabled', 'chatNotifications', 'chatPosition', 'chatSize', 'chatStartMode', 'chatReactionDisplay', 'username', 'filterNoise', 'autoSyncNextEpisode', 'sendTabTitle', 'mediaTitlePrivacyMode', 'titlePrivacyMode', 'forceSyncMode', 'browserNotifications', 'autoCopyInvite', 'locale', 'audioSettings', 'activeTab', 'themeMode', 'themePalette']);
 
     let activeLang = localData.locale;
     if (!activeLang) {
@@ -385,7 +392,7 @@ async function init() {
     elements.username.value = username;
     syncDevToolsVisibility();
     if (elements.filterNoise) elements.filterNoise.checked = localData.filterNoise !== false;
-    renderBlacklistEditor(localData[CUSTOM_BLACKLIST_STORAGE_KEY]);
+    readBlacklistOverrides().then(overrides => renderBlacklistEditor(overrides));
     if (elements.autoSyncNextEpisode) elements.autoSyncNextEpisode.checked = localData.autoSyncNextEpisode !== false;
     if (elements.chatEnabled) elements.chatEnabled.checked = localData.chatEnabled === true;
     if (elements.chatNotifications) elements.chatNotifications.checked = localData.chatNotifications !== false;
@@ -1134,10 +1141,39 @@ function setBlacklistStatus(message = '', state = '') {
     elements.blacklistStatus.dataset.state = state;
 }
 
-function renderBlacklistEditor(storedDomains, preserveStatus = false) {
+// Reads the delta, transparently migrating a legacy full-list snapshot so users
+// who saved before v3.1.0 start receiving newly shipped defaults again.
+async function readBlacklistOverrides() {
+    const data = await chrome.storage.local.get([BLACKLIST_OVERRIDES_STORAGE_KEY, CUSTOM_BLACKLIST_STORAGE_KEY]);
+    const stored = data[BLACKLIST_OVERRIDES_STORAGE_KEY];
+    if (stored && typeof stored === 'object' && !Array.isArray(stored)) {
+        return normalizeBlacklistOverrides(stored);
+    }
+
+    const legacy = data[CUSTOM_BLACKLIST_STORAGE_KEY];
+    if (Array.isArray(legacy)) {
+        const migrated = deriveBlacklistOverrides(legacy);
+        await chrome.storage.local.set({ [BLACKLIST_OVERRIDES_STORAGE_KEY]: migrated });
+        await chrome.storage.local.remove(CUSTOM_BLACKLIST_STORAGE_KEY);
+        return migrated;
+    }
+
+    return createEmptyBlacklistOverrides();
+}
+
+// Groups the editor into "yours" and "shipped" with comment headers. The
+// grouping is cosmetic: on save each line is classified by whether it is a
+// shipped default, not by the section it was typed under.
+function renderBlacklistEditor(overrides, preserveStatus = false) {
     if (!elements.blacklistDomains) return;
-    const domains = getEffectiveBlacklistDomains(storedDomains);
-    elements.blacklistDomains.value = domains.join('\n');
+    const entries = getBlacklistEntries(overrides);
+    const userDomains = entries.filter(e => e.source === BLACKLIST_SOURCE_USER).map(e => e.domain);
+    const defaultDomains = entries.filter(e => e.source === BLACKLIST_SOURCE_DEFAULT).map(e => e.domain);
+
+    const lines = [`# ${getMessage('BLACKLIST_SECTION_USER')}`, ...userDomains, ''];
+    lines.push(`# ${getMessage('BLACKLIST_SECTION_DEFAULT')}`, ...defaultDomains);
+
+    elements.blacklistDomains.value = lines.join('\n');
     if (!preserveStatus) setBlacklistStatus();
 }
 
@@ -1160,15 +1196,17 @@ async function saveBlacklistDomains() {
         return;
     }
 
-    await chrome.storage.local.set({ [CUSTOM_BLACKLIST_STORAGE_KEY]: domains });
-    renderBlacklistEditor(domains);
+    const previous = await readBlacklistOverrides();
+    const overrides = deriveBlacklistOverrides(domains, previous);
+    await chrome.storage.local.set({ [BLACKLIST_OVERRIDES_STORAGE_KEY]: overrides });
+    renderBlacklistEditor(overrides);
     setBlacklistStatus(getMessage('BLACKLIST_STATUS_SAVED', { count: domains.length }), 'success');
     await populateTabs();
 }
 
 async function resetBlacklistDomains() {
-    await chrome.storage.local.remove(CUSTOM_BLACKLIST_STORAGE_KEY);
-    renderBlacklistEditor();
+    await chrome.storage.local.remove([BLACKLIST_OVERRIDES_STORAGE_KEY, CUSTOM_BLACKLIST_STORAGE_KEY]);
+    renderBlacklistEditor(createEmptyBlacklistOverrides());
     setBlacklistStatus(getMessage('BLACKLIST_STATUS_DEFAULTS'), 'success');
     await populateTabs();
 }
@@ -1177,8 +1215,8 @@ async function populateTabs(providedPeers = null, providedTargetTabId = null) {
     const token = {};
     populateTabsToken = token;
 
-    const data = await chrome.storage.local.get(['filterNoise', CUSTOM_BLACKLIST_STORAGE_KEY]);
-    const blacklistDomains = getEffectiveBlacklistDomains(data[CUSTOM_BLACKLIST_STORAGE_KEY]);
+    const data = await chrome.storage.local.get(['filterNoise']);
+    const blacklistDomains = getEffectiveBlacklistDomains(await readBlacklistOverrides());
     const isFilterActive = data.filterNoise !== false;
     
     let currentTargetTabId = providedTargetTabId;
@@ -1652,8 +1690,8 @@ if (elements.audioSettingsLink) {
 }
 
 chrome.storage.onChanged.addListener((changes, area) => {
-    if (area !== 'local' || !changes[CUSTOM_BLACKLIST_STORAGE_KEY]) return;
-    renderBlacklistEditor(changes[CUSTOM_BLACKLIST_STORAGE_KEY].newValue, true);
+    if (area !== 'local' || !changes[BLACKLIST_OVERRIDES_STORAGE_KEY]) return;
+    renderBlacklistEditor(normalizeBlacklistOverrides(changes[BLACKLIST_OVERRIDES_STORAGE_KEY].newValue), true);
     populateTabs();
 });
 

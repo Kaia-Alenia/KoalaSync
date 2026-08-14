@@ -188,8 +188,28 @@ export const BLACKLIST_SUFFIX_EXCEPTIONS = [
     'drive.google.com'
 ];
 
+/**
+ * Legacy key (<= v3.0.x): held a full snapshot of the effective list, which
+ * froze the shipped defaults at the moment the user first saved. Read once for
+ * migration, then replaced by BLACKLIST_OVERRIDES_STORAGE_KEY.
+ */
 export const CUSTOM_BLACKLIST_STORAGE_KEY = 'customBlacklistDomains';
+
+/**
+ * Current key. Stores only the delta against the shipped list:
+ * { removedDefaults: string[], addedDomains: string[] }
+ * so newly shipped defaults reach existing users without touching the
+ * defaults they removed or the domains they added themselves.
+ */
+export const BLACKLIST_OVERRIDES_STORAGE_KEY = 'blacklistOverrides';
+
 export const MAX_BLACKLIST_DOMAINS = 500;
+
+export const BLACKLIST_SOURCE_DEFAULT = 'default';
+export const BLACKLIST_SOURCE_USER = 'user';
+
+/** Lines starting with this marker are editor notes, not domains. */
+export const BLACKLIST_COMMENT_PREFIX = '#';
 
 /**
  * Normalize a user-entered domain or URL to a hostname.
@@ -226,6 +246,7 @@ export function parseBlacklistDomains(value) {
     const seen = new Set();
 
     for (const entry of entries) {
+        if (typeof entry === 'string' && entry.trim().startsWith(BLACKLIST_COMMENT_PREFIX)) continue;
         const normalized = normalizeBlacklistDomain(entry);
         if (normalized === '') continue;
         if (normalized === null) {
@@ -241,9 +262,81 @@ export function parseBlacklistDomains(value) {
     return { domains, invalid };
 }
 
-export function getEffectiveBlacklistDomains(storedDomains) {
-    if (!Array.isArray(storedDomains)) return [...BLACKLIST_DOMAINS];
-    return parseBlacklistDomains(storedDomains).domains.slice(0, MAX_BLACKLIST_DOMAINS);
+export function createEmptyBlacklistOverrides() {
+    return { removedDefaults: [], addedDomains: [] };
+}
+
+export function normalizeBlacklistOverrides(raw) {
+    if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return createEmptyBlacklistOverrides();
+
+    const addedDomains = parseBlacklistDomains(Array.isArray(raw.addedDomains) ? raw.addedDomains : []).domains;
+    const added = new Set(addedDomains);
+    // A domain cannot be removed and added at the same time; the addition wins
+    // so a re-added default is never filtered out by a stale removal entry.
+    const removedDefaults = parseBlacklistDomains(Array.isArray(raw.removedDefaults) ? raw.removedDefaults : [])
+        .domains.filter(domain => !added.has(domain));
+
+    return { removedDefaults, addedDomains };
+}
+
+/**
+ * Turn a fully edited list back into a delta.
+ *
+ * `previous` keeps an explicit user addition tagged as such even after the same
+ * domain later ships as a default, so dropping it from the defaults does not
+ * silently drop it from that user's list.
+ */
+export function deriveBlacklistOverrides(submittedDomains, previous = null) {
+    const { domains } = parseBlacklistDomains(submittedDomains);
+    const kept = new Set(domains);
+    const shipped = new Set(BLACKLIST_DOMAINS);
+    const previouslyAdded = new Set(normalizeBlacklistOverrides(previous).addedDomains);
+
+    return {
+        removedDefaults: BLACKLIST_DOMAINS.filter(domain => !kept.has(domain)),
+        addedDomains: domains.filter(domain => !shipped.has(domain) || previouslyAdded.has(domain))
+    };
+}
+
+/**
+ * Accepts the current delta object, a legacy full-list array, or nothing.
+ */
+export function toBlacklistOverrides(stored) {
+    if (Array.isArray(stored)) return deriveBlacklistOverrides(stored);
+    if (stored && typeof stored === 'object') return normalizeBlacklistOverrides(stored);
+    return createEmptyBlacklistOverrides();
+}
+
+export function getEffectiveBlacklistDomains(stored) {
+    const { removedDefaults, addedDomains } = toBlacklistOverrides(stored);
+    const removed = new Set(removedDefaults);
+    const domains = [];
+    const seen = new Set();
+
+    for (const domain of BLACKLIST_DOMAINS) {
+        if (removed.has(domain) || seen.has(domain)) continue;
+        seen.add(domain);
+        domains.push(domain);
+    }
+    for (const domain of addedDomains) {
+        if (seen.has(domain)) continue;
+        seen.add(domain);
+        domains.push(domain);
+    }
+
+    return domains.slice(0, MAX_BLACKLIST_DOMAINS);
+}
+
+/**
+ * The effective list tagged by origin, for an editor that shows the user which
+ * entries are theirs and which arrive with the extension.
+ */
+export function getBlacklistEntries(stored) {
+    const added = new Set(toBlacklistOverrides(stored).addedDomains);
+    return getEffectiveBlacklistDomains(stored).map(domain => ({
+        domain,
+        source: added.has(domain) ? BLACKLIST_SOURCE_USER : BLACKLIST_SOURCE_DEFAULT
+    }));
 }
 
 export function isUrlBlacklisted(rawUrl, domains = BLACKLIST_DOMAINS) {
