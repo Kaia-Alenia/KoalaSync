@@ -566,18 +566,21 @@
     }
 
     // --- Helper: find the best video element on the page ---
-    // Prefers larger, visible videos over tiny preview/trailer elements.
+    // Ranks candidates by a fixed order of signals rather than a weighted sum,
+    // so a disqualifying trait (no source, not rendered) can never be outvoted
+    // by sheer size. See pickBestVideo for the order and the reasoning.
     function findVideo(root = document, depth = 0) {
-        const candidates = Array.from(root.querySelectorAll('video'));
+        return pickBestVideo(collectVideoCandidates(root, depth));
+    }
+
+    function collectVideoCandidates(root = document, depth = 0, out = []) {
+        for (const video of root.querySelectorAll('video')) out.push(video);
 
         // Scan likely media hosts even when light-DOM videos exist; many players
         // expose a tiny preview/ad video outside Shadow DOM and the real player inside.
         const potentialHosts = root.querySelectorAll('[id*="player" i], [class*="player" i], [id*="video" i], [class*="video" i], [id*="media" i], [class*="media" i], [id*="stream" i], [class*="stream" i], ytd-player, netflix-player, emby-player, jellyfin-player, video-player');
         for (const el of potentialHosts) {
-            if (el.shadowRoot) {
-                const found = findVideo(el.shadowRoot, depth);
-                if (found) candidates.push(found);
-            }
+            if (el.shadowRoot) collectVideoCandidates(el.shadowRoot, depth, out);
         }
 
         // Same-origin player frames (jkanime.net and similar) keep the real
@@ -589,28 +592,81 @@
                 let frameDoc = null;
                 try { frameDoc = frame.contentDocument; } catch (_e) { frameDoc = null; }
                 if (!frameDoc || typeof frameDoc.querySelectorAll !== 'function') continue;
-                const found = findVideo(frameDoc, depth + 1);
-                if (found) candidates.push(found);
+                collectVideoCandidates(frameDoc, depth + 1, out);
             }
         }
 
-        if (candidates.length === 0) return null;
+        return out;
+    }
 
-        // Multiple videos found → pick the best one
-        if (candidates.length === 1) return candidates[0];
+    // Rendered size in CSS pixels. Intrinsic resolution (videoWidth) is
+    // deliberately not used here: a display:none element still reports its full
+    // intrinsic size, which let hidden preloads outrank the visible player.
+    function getRenderedVideoArea(video) {
+        return (video.offsetWidth || 0) * (video.offsetHeight || 0);
+    }
 
+    // Coarse size steps, so two players of roughly the same size tie and the
+    // playback signal decides between them instead of a few stray pixels.
+    function getVideoSizeBucket(video) {
+        return Math.round(Math.sqrt(getRenderedVideoArea(video)) / 40);
+    }
+
+    function isVideoRendered(video) {
+        // A non-zero box is proof enough, and it also covers position:fixed
+        // players, whose offsetParent is null even though they are on screen.
+        if (getRenderedVideoArea(video) > 0) return true;
+        return video.offsetParent !== null && video.offsetParent !== undefined;
+    }
+
+    function hasPlayableVideoSource(video) {
+        if (video.currentSrc || video.src || video.srcObject) return true;
+        // <source> children count before the browser has committed to one.
+        return typeof video.querySelector === 'function' && !!video.querySelector('source[src]');
+    }
+
+    // Marketing hero pattern: silent, endlessly looping, no controls. Often the
+    // largest video on the page and never the one two people sit down to watch.
+    function isBackgroundVideo(video) {
+        return !!video.loop && !!video.muted && !video.controls;
+    }
+
+    function isVideoPlaying(video) {
+        return video.paused === false && video.ended !== true;
+    }
+
+    // Highest priority first. Every signal is a plain number and they are
+    // compared one after another, so an earlier signal is never traded off
+    // against a later one. Mute state is intentionally absent: it is a viewer
+    // preference, not evidence about which element is the real player.
+    const VIDEO_RANKING_SIGNALS = [
+        video => (hasPlayableVideoSource(video) ? 1 : 0),
+        video => (isVideoRendered(video) ? 1 : 0),
+        video => (isBackgroundVideo(video) ? 0 : 1),
+        video => getVideoSizeBucket(video),
+        video => (isVideoPlaying(video) ? 1 : 0),
+        video => (video.controls ? 1 : 0),
+        video => (video.duration && isFinite(video.duration) ? video.duration : 0)
+    ];
+
+    function compareVideoRanks(a, b) {
+        for (let i = 0; i < a.length; i++) {
+            if (a[i] !== b[i]) return a[i] > b[i] ? 1 : -1;
+        }
+        return 0;
+    }
+
+    // Ranking, not filtering: even an all-bad candidate set still yields the
+    // least bad element, so this never returns null where a video exists.
+    function pickBestVideo(candidates) {
         let best = null;
-        let bestScore = -1;
-        for (const v of candidates) {
-            if (v.tagName !== 'VIDEO') continue;
-            // Score: visible area + bonus for unmuted + bonus for longer duration
-            const area = (v.videoWidth || v.offsetWidth || 0) * (v.videoHeight || v.offsetHeight || 0);
-            const unmutedBonus = v.muted ? 0 : 100000;
-            const durationBonus = (v.duration && isFinite(v.duration) ? v.duration : 0) * 100;
-            const score = area + unmutedBonus + durationBonus;
-            if (score > bestScore) {
-                bestScore = score;
-                best = v;
+        let bestRank = null;
+        for (const video of candidates) {
+            if (!video || video.tagName !== 'VIDEO') continue;
+            const rank = VIDEO_RANKING_SIGNALS.map(signal => signal(video));
+            if (!best || compareVideoRanks(rank, bestRank) > 0) {
+                best = video;
+                bestRank = rank;
             }
         }
         return best;

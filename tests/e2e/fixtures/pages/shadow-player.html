@@ -1,0 +1,19 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Shadow DOM player</title>
+<h1>Tiny light-DOM teaser, real player inside a shadow root</h1>
+<video id="teaser" width="160" height="90" muted src="../media/ad-360p-5s.mp4"></video>
+<div id="player-host"></div>
+<script>
+    const host = document.getElementById('player-host');
+    const root = host.attachShadow({ mode: 'open' });
+    const video = document.createElement('video');
+    video.id = 'shadow-player';
+    video.setAttribute('data-expected', '');
+    video.width = 854;
+    video.height = 480;
+    video.controls = true;
+    video.src = '../media/player-480p-12s.mp4';
+    root.appendChild(video);
+</script>
+<script src="ready.js"></script>

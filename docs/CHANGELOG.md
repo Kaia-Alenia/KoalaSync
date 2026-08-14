@@ -11,6 +11,11 @@ All notable changes to the KoalaSync browser extension and relay server.
 - **Extension: Editable Hide-Clutter list** — Adds a validated, deduplicated domain editor in Settings, prefilled with the shipped blacklist, with a defaults reset and per-device persistence in `chrome.storage.local`. The editor groups entries into your own and the shipped defaults, and only your changes are stored, so domains added to the shipped list in later versions still reach you without overriding what you removed or added. Lists saved by an earlier version are migrated automatically.
 - **Extension: Independent default audio boost** — Adds a configurable `0–20 dB` output gain in half-decibel steps. The boost works with or without the compressor and applies live to the selected video tab.
 
+- **Testing: Browser E2E smoke suite** — Adds a local Playwright suite (`npm run test:e2e`) that runs the shipped video finder against real fixture pages and drives the packed extension end to end: injection into the target tab, reinjection after navigation, and remote play, pause and seek applied to a player inside a first-party frame. Runs as its own CI job so `npm run verify` stays browser-free.
+
+### Changed
+- **Extension: Rebuilt player selection** — Replaces the weighted score with an ordered list of signals, so a video that cannot be the player (no source, not rendered) is never picked just for being large. Rendered size now decides instead of intrinsic resolution, a video that is actually playing wins between equally sized players, silent looping background videos are demoted, and mute state no longer influences the choice at all.
+
 ### Fixed
 - **Extension: Google Drive tab selection** — A broad parent domain in the Hide-Clutter list no longer hides a host that has its own supported player path, so Drive videos stay selectable while the filter is on. An exact entry for the host itself still filters it.
 - **Extension: Debug report frame visibility** — Video counts now include players inside same-origin frames and the report states whether the selected video sits in a frame.

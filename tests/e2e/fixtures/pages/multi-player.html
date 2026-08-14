@@ -1,0 +1,11 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Two players, one playing</title>
+<h1>Identical players, the second one is the one being watched</h1>
+<!-- Same size, same asset, same mute state. Playback is the only signal that
+     tells the two apart, so a scorer that ignores it picks by DOM order. -->
+<!-- The longer asset gives the watched player enough runway that it cannot
+     reach its end while the test is still looking at it. -->
+<video id="idle" width="854" height="480" controls src="../media/player-1080p-30s.mp4"></video>
+<video id="watched" data-expected width="854" height="480" controls data-autoplay src="../media/player-1080p-30s.mp4"></video>
+<script src="ready.js"></script>

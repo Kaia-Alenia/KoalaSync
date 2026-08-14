@@ -45,6 +45,11 @@ extension/shared/
 website/www/
 website/.avif-cache.json
 
+# Playwright E2E artifacts (the fixtures themselves are committed)
+test-results/
+playwright-report/
+blob-report/
+
 # Temporary scratch files
 scratch/
 

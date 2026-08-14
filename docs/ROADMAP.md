@@ -57,13 +57,12 @@
 - **Possible approach:** Add an opt-in frame bridge (`allFrames: true` injection) where child frames announce detected videos to the top frame, and the top frame routes remote play/pause/seek commands to the active child video. Needs a frame-election rule so ad frames cannot claim the session.
 - **Status:** Same-origin part completed; cross-origin frame bridge still open. Not needed for current Emby behavior.
 
-### Local extension E2E smoke tests
+### Sync a second video source per room
 
-- **Priority:** P2
-- **Category:** Testing / Release Confidence
-- **Background:** The release verification covers unit tests, server integration, syntax, lint, audits, and builds, but it does not currently run a real browser extension flow. A small local E2E smoke suite would catch regressions in content-script injection, tab navigation reinjection, remote seek handling, and iframe player support.
-- **Possible approach:** Add a separate local-only Playwright smoke command that loads the unpacked extension, opens two controlled video pages, and verifies play/pause/seek through the actual extension path. Keep it outside `npm run verify` until it is stable enough for CI.
-- **Status:** Backlog, recommended before larger content-script or frame-bridge changes.
+- **Priority:** P3
+- **Category:** Compatibility / Player Selection
+- **Background:** Detection picks exactly one `<video>` per tab. Pages that legitimately show two players side by side (a lecture feed plus slides, a multi-camera stream) can only ever sync one of them.
+- **Status:** Backlog, no demand yet. Listed so the single-player assumption in the ranking is a recorded decision rather than an accident.
 
 ---
 

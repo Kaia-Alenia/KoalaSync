@@ -1,0 +1,9 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Sourceless placeholder</title>
+<h1>Large empty placeholder next to the real player</h1>
+<!-- No src at all: readyState stays 0 and it can never be synchronized, but it
+     occupies a big layout box. -->
+<video id="placeholder" data-sourceless style="width:1280px;height:720px"></video>
+<video id="player" data-expected width="640" height="360" controls src="../media/player-480p-12s.mp4"></video>
+<script src="ready.js"></script>

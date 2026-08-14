@@ -61,7 +61,33 @@ const fakeDocument = {
   }
 };
 
-const fnSource = extractFunction('findVideo', source);
+// findVideo delegates to a small set of ranking helpers; they have to be lifted
+// together or this would silently test a stale shape of the finder.
+const VIDEO_FINDER_PARTS = [
+  'findVideo',
+  'collectVideoCandidates',
+  'getRenderedVideoArea',
+  'getVideoSizeBucket',
+  'isVideoRendered',
+  'hasPlayableVideoSource',
+  'isBackgroundVideo',
+  'isVideoPlaying',
+  'compareVideoRanks',
+  'pickBestVideo'
+];
+
+function extractRankingTable(text) {
+  const start = text.indexOf('const VIDEO_RANKING_SIGNALS');
+  assert.notStrictEqual(start, -1, 'VIDEO_RANKING_SIGNALS not found');
+  const end = text.indexOf('];', start);
+  assert.notStrictEqual(end, -1, 'VIDEO_RANKING_SIGNALS did not terminate');
+  return text.slice(start, end + 2);
+}
+
+const fnSource = [
+  ...VIDEO_FINDER_PARTS.map(name => extractFunction(name, source)),
+  extractRankingTable(source)
+].join('\n');
 const findVideo = Function('document', `${fnSource}; return findVideo;`)(fakeDocument);
 
 const selected = findVideo(fakeDocument);

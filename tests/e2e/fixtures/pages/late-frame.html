@@ -1,0 +1,16 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Late loading player frame</title>
+<h1>The player frame is attached after the page has settled</h1>
+<div id="slot"></div>
+<script>
+    // Mirrors sites that build the player frame from script once the episode
+    // data arrives, well after the content script was injected.
+    setTimeout(() => {
+        const frame = document.createElement('iframe');
+        frame.width = 860;
+        frame.height = 490;
+        frame.src = 'frames/player-frame.html';
+        document.getElementById('slot').appendChild(frame);
+    }, 400);
+</script>

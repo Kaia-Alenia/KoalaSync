@@ -1,0 +1,9 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Hidden preload</title>
+<h1>Visible 480p player next to a hidden 1080p preload</h1>
+<!-- The hidden element reports its full intrinsic resolution even though it is
+     not rendered at all, so any scoring based on videoWidth prefers it. -->
+<video id="preload" style="display:none" muted src="../media/player-1080p-30s.mp4"></video>
+<video id="player" data-expected width="854" height="480" controls src="../media/player-480p-12s.mp4"></video>
+<script src="ready.js"></script>
