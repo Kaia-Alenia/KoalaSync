@@ -55,8 +55,9 @@ assert.deepEqual(overrides.removedDefaults, ['reddit.com', 'imgur.com'], 'only t
 assert.deepEqual(overrides.addedDomains, ['videos.example'], 'only the added domains are stored');
 
 const effective = getEffectiveBlacklistDomains(overrides);
-assert.equal(effective.includes('reddit.com'), false, 'a removed default stays removed');
-assert.equal(effective.includes('videos.example'), true, 'an added domain stays added');
+const effectiveDomains = new Set(effective);
+assert.equal(effectiveDomains.has('reddit.com'), false, 'a removed default stays removed');
+assert.equal(effectiveDomains.has('videos.example'), true, 'an added domain stays added');
 
 // The property that makes newly shipped defaults reach existing users: every
 // shipped domain the user did not explicitly remove is part of the result, so a
@@ -64,7 +65,7 @@ assert.equal(effective.includes('videos.example'), true, 'an added domain stays 
 const removedSet = new Set(overrides.removedDefaults);
 for (const domain of BLACKLIST_DOMAINS) {
     assert.equal(
-        effective.includes(domain) || removedSet.has(domain),
+        effectiveDomains.has(domain) || removedSet.has(domain),
         true,
         `shipped default ${domain} must be present unless explicitly removed`
     );
@@ -81,7 +82,8 @@ assert.deepEqual(getEffectiveBlacklistDomains([]), [], 'a legacy empty snapshot 
 
 // Re-adding a removed default clears the removal instead of stacking state.
 const readded = deriveBlacklistOverrides(effective.concat(['reddit.com']), overrides);
-assert.equal(readded.removedDefaults.includes('reddit.com'), false, 're-adding a default clears its removal');
+const readdedRemovedDefaults = new Set(readded.removedDefaults);
+assert.equal(readdedRemovedDefaults.has('reddit.com'), false, 're-adding a default clears its removal');
 
 // A domain the user added explicitly stays tagged as theirs even once the same
 // domain ships as a default, so dropping the default does not drop their entry.
