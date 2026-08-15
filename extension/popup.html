@@ -1297,9 +1297,14 @@
         .settings-issue-link a:hover {
             color: var(--accent);
         }
-        #section-join > .info-card,
-        #section-active > .info-card,
-        #tab-sync .info-card {
+        /* Every card clips horizontally. The popup body is a fixed 360px, but
+           Chrome sizes the popup window to whatever the content claims it needs
+           — and it never shrinks that window back for the rest of the session.
+           So a single unclipped card (the room tab's peer list used to be one,
+           because it sits in a wrapper div and the child combinator missed it)
+           is enough to leave the popup stuck at double width. Cards that scroll
+           vertically keep their own overflow-y via inline styles. */
+        .info-card {
             position: relative;
             overflow: hidden;
         }
@@ -1462,9 +1467,9 @@
         <!-- ACTIVE SECTION: Visible when in a room -->
         <div id="section-active" style="display:none;">
             <div class="info-card" style="margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; border-left: 4px solid var(--accent);">
-                <div>
+                <div style="min-width: 0;">
                     <label style="margin-bottom: 0;" title="The room you are currently connected to" data-i18n="LABEL_ACTIVE_ROOM" data-i18n-title="LABEL_ACTIVE_ROOM_TOOLTIP">Active Room</label>
-                    <div id="activeRoomId" style="font-weight: 700; color: var(--accent); font-size: 16px; letter-spacing: 1px;">NONE</div>
+                    <div id="activeRoomId" style="font-weight: 700; color: var(--accent); font-size: 16px; letter-spacing: 1px; overflow-wrap: anywhere;">NONE</div>
                 </div>
                 <div id="activeServer" style="font-size: 10px; color: var(--text-muted); text-align: right; max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">Official Server</div>
             </div>
@@ -1524,8 +1529,8 @@
             </div>
         </div>
         
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
-            <label style="margin: 0;" data-i18n="LABEL_REMOTE_CONTROL">Remote Control</label>
+        <div style="display: flex; flex-wrap: wrap; gap: 6px; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+            <label style="margin: 0; min-width: 0;" data-i18n="LABEL_REMOTE_CONTROL">Remote Control</label>
             <button id="syncTabCopyInvite" title="Copy Invite Link" style="background:transparent; border: 1px solid var(--border-strong); border-radius: 6px; padding: 4px 8px; font-size: 11px; cursor:pointer; opacity:0.8; transition: opacity 0.2s; color: var(--text-muted); display: flex; align-items: center; gap: 4px; white-space: nowrap;" data-i18n="BTN_COPY_INVITE" data-i18n-title="BTN_COPY_INVITE_TOOLTIP">📋 Invite Link</button>
         </div>
         <div class="transport-actions">
@@ -1813,7 +1818,7 @@
         <div id="connStatus" class="info-card" style="display:flex; align-items:center; gap: 10px;">
             <span id="connDot" class="status-dot status-offline"></span>
             <span style="flex:1; display:flex; align-items:center; gap:6px; min-width:0;">
-                <span id="connText">Disconnected</span>
+                <span id="connText" style="overflow-wrap: anywhere;">Disconnected</span>
                 <span id="connInfo" data-i18n-title="STATUS_IDLE_TOOLTIP" title="KoalaSync is ready. Join or create a room to connect and start syncing." style="display:none; cursor:help; flex:none; width:15px; height:15px; line-height:14px; text-align:center; border-radius:50%; border:1px solid var(--text-muted); color:var(--text-muted); font-size:10px; font-weight:700; font-style:normal;">i</span>
             </span>
             <span id="connPing" class="conn-ping"></span>
@@ -1826,15 +1831,15 @@
             <span data-i18n="VIDEO_DEBUG_EMPTY">No tab selected or video detected.</span>
         </div>
 
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 8px;">
-            <label title="Chronological log of all sync commands in the room" data-i18n="LABEL_HISTORY" data-i18n-title="LABEL_HISTORY_TOOLTIP">Full Action History</label>
+        <div style="display:flex; flex-wrap:wrap; gap:6px; justify-content:space-between; align-items:center; margin-bottom: 8px;">
+            <label style="min-width: 0;" title="Chronological log of all sync commands in the room" data-i18n="LABEL_HISTORY" data-i18n-title="LABEL_HISTORY_TOOLTIP">Full Action History</label>
         </div>
         <div id="historyList" class="info-card" style="max-height: 120px; overflow-y: auto; font-size: 10px; margin-bottom: 15px;">
             <div style="text-align:center; color: var(--text-muted); font-size: 11px;" data-i18n="HISTORY_EMPTY">No activity yet</div>
         </div>
 
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 8px;">
-            <label title="Technical connection logs for debugging" data-i18n="LABEL_LOGS" data-i18n-title="LABEL_LOGS_TOOLTIP">Logs (Last 50)</label>
+        <div style="display:flex; flex-wrap:wrap; gap:6px; justify-content:space-between; align-items:center; margin-bottom: 8px;">
+            <label style="min-width: 0;" title="Technical connection logs for debugging" data-i18n="LABEL_LOGS" data-i18n-title="LABEL_LOGS_TOOLTIP">Logs (Last 50)</label>
             <button id="clearLogs" style="background:transparent; border:none; color:var(--accent); font-size:10px; cursor:pointer;" title="Clear log output" data-i18n="BTN_CLEAR" data-i18n-title="BTN_CLEAR_TOOLTIP">CLEAR</button>
         </div>
         <div id="logList"></div>

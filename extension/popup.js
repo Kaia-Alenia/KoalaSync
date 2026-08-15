@@ -958,7 +958,7 @@ function updatePeerList(peers) {
             peerItem.style.cssText = 'position:relative; display:block; padding: 8px 0; border-bottom: 1px solid var(--border-soft);';
 
             const header = document.createElement('div');
-            header.style.cssText = 'display:flex; justify-content:space-between; align-items:center; padding-right: 24px;';
+            header.style.cssText = 'display:flex; justify-content:space-between; align-items:center; gap:6px; padding-right: 24px;';
 
             const nameSpan = document.createElement('span');
             nameSpan.style.cssText = 'display: inline-flex; align-items: center; max-width: 200px; overflow: hidden; white-space: nowrap;';
@@ -982,8 +982,11 @@ function updatePeerList(peers) {
 
             // Right-side badges + actions, kept in one group so they sit together
             // on the right instead of being scattered by the header's space-between.
+            // They wrap onto a second line when the row runs out of room — badges
+            // and the co-host button are nowrap, so without this a busy row (Solo +
+            // role badge + "give control") would push past the card instead.
             const rightGroup = document.createElement('div');
-            rightGroup.style.cssText = 'display:flex; align-items:center; gap:6px; flex-shrink:0;';
+            rightGroup.style.cssText = 'display:flex; align-items:center; justify-content:flex-end; flex-wrap:wrap; gap:6px; min-width:0;';
 
             // Volume Icon (Top Right)
             if (p.volume !== undefined && p.volume !== null) {
