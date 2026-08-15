@@ -4,6 +4,14 @@ All notable changes to the KoalaSync browser extension and relay server.
 
 ---
 
+## [v3.1.1] — 2026-08-15
+
+A single fix: the popup could get stuck at double width for the rest of a
+browsing session.
+
+### Fixed
+- **Extension: Popup width in the Room tab** — Opening the Room tab while in a room could stretch the popup to roughly double its width, and it stayed that way after switching back to the other tabs. Every card in the popup now clips horizontally instead of only some of them, the participant list's badges and buttons wrap onto a second line rather than pushing the popup wider, long room IDs wrap instead of being cut off, and the label rows in Sync and Status hold their width with longer translations.
+
 ## [v3.1.0] — 2026-08-14
 
 This release teaches KoalaSync to find players that sites hide inside their own
