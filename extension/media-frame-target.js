@@ -61,10 +61,14 @@ export function inspectMediaFrame(expectedVisibilityToken = null) {
             && !element.checkVisibility({ checkOpacity: true, checkVisibilityCSS: true })) {
             return false;
         }
-        return rect.bottom > 0
-            && rect.right > 0
-            && rect.top < view.innerHeight
-            && rect.left < view.innerWidth;
+        const layoutWidth = Math.max(view.innerWidth, element.ownerDocument?.documentElement?.scrollWidth || 0);
+        const layoutHeight = Math.max(view.innerHeight, element.ownerDocument?.documentElement?.scrollHeight || 0);
+        const scrollX = Number(view.scrollX) || 0;
+        const scrollY = Number(view.scrollY) || 0;
+        return rect.bottom + scrollY > 0
+            && rect.right + scrollX > 0
+            && rect.top + scrollY < layoutHeight
+            && rect.left + scrollX < layoutWidth;
     };
 
     const collectVideos = (doc, depth = 0, ancestorVisible = true, videos = [], seen = new Set()) => {
@@ -252,15 +256,19 @@ export function dispatchParentFrameVisibilityProbe(token) {
             const rect = frame.getBoundingClientRect();
             const style = window.getComputedStyle(frame);
             const area = Math.max(0, rect.width) * Math.max(0, rect.height);
-            const intersectsViewport = rect.bottom > 0
-                && rect.right > 0
-                && rect.top < window.innerHeight
-                && rect.left < window.innerWidth;
+            const layoutWidth = Math.max(window.innerWidth, document.documentElement?.scrollWidth || 0);
+            const layoutHeight = Math.max(window.innerHeight, document.documentElement?.scrollHeight || 0);
+            const scrollX = Number(window.scrollX) || 0;
+            const scrollY = Number(window.scrollY) || 0;
+            const intersectsLayout = rect.bottom + scrollY > 0
+                && rect.right + scrollX > 0
+                && rect.top + scrollY < layoutHeight
+                && rect.left + scrollX < layoutWidth;
             const browserReportsVisible = typeof frame.checkVisibility === 'function'
                 ? frame.checkVisibility({ checkOpacity: true, checkVisibilityCSS: true })
                 : true;
             const directlyVisible = area > 0
-                && intersectsViewport
+                && intersectsLayout
                 && browserReportsVisible
                 && style.display !== 'none'
                 && style.visibility !== 'hidden'

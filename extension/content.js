@@ -681,12 +681,22 @@
         const view = element.ownerDocument?.defaultView;
         const viewportWidth = Number(view?.innerWidth);
         const viewportHeight = Number(view?.innerHeight);
+        const scrollX = Number(view?.scrollX) || 0;
+        const scrollY = Number(view?.scrollY) || 0;
+        const scrollWidth = Number(element.ownerDocument?.documentElement?.scrollWidth);
+        const scrollHeight = Number(element.ownerDocument?.documentElement?.scrollHeight);
         if (Number.isFinite(viewportWidth) && Number.isFinite(viewportHeight)
             && viewportWidth > 0 && viewportHeight > 0) {
-            return rect.bottom > 0
-                && rect.right > 0
-                && rect.top < viewportHeight
-                && rect.left < viewportWidth;
+            const layoutWidth = Number.isFinite(scrollWidth) && scrollWidth > 0
+                ? Math.max(viewportWidth, scrollWidth)
+                : viewportWidth;
+            const layoutHeight = Number.isFinite(scrollHeight) && scrollHeight > 0
+                ? Math.max(viewportHeight, scrollHeight)
+                : viewportHeight;
+            return rect.bottom + scrollY > 0
+                && rect.right + scrollX > 0
+                && rect.top + scrollY < layoutHeight
+                && rect.left + scrollX < layoutWidth;
         }
         return true;
     }

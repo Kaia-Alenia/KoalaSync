@@ -44,12 +44,16 @@
                 const browserReportsVisible = typeof element.checkVisibility === 'function'
                     ? element.checkVisibility({ checkOpacity: true, checkVisibilityCSS: true })
                     : true;
+                const layoutWidth = Math.max(window.innerWidth, document.documentElement?.scrollWidth || 0);
+                const layoutHeight = Math.max(window.innerHeight, document.documentElement?.scrollHeight || 0);
+                const scrollX = Number(window.scrollX) || 0;
+                const scrollY = Number(window.scrollY) || 0;
                 const visible = rect.width > 0
                     && rect.height > 0
-                    && rect.bottom > 0
-                    && rect.right > 0
-                    && rect.top < window.innerHeight
-                    && rect.left < window.innerWidth
+                    && rect.bottom + scrollY > 0
+                    && rect.right + scrollX > 0
+                    && rect.top + scrollY < layoutHeight
+                    && rect.left + scrollX < layoutWidth
                     && browserReportsVisible
                     && elementStylesAllowRendering(element)
                     && style.display !== 'none'

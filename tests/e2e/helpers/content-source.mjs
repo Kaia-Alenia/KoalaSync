@@ -35,12 +35,16 @@ export function extractFunction(name, source = fs.readFileSync(contentPath, 'utf
 export const VIDEO_FINDER_EXPORTS = [
     'findVideo',
     'collectVideoCandidates',
+    'getElementRenderBox',
+    'elementStylesAllowRendering',
+    'isElementRendered',
     'getRenderedVideoArea',
     'getVideoSizeBucket',
     'isVideoRendered',
     'hasPlayableVideoSource',
     'isBackgroundVideo',
     'isVideoPlaying',
+    'isShortUncontrolledVideo',
     'compareVideoRanks',
     'pickBestVideo'
 ];

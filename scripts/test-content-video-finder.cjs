@@ -127,16 +127,25 @@ assert.strictEqual(
   'a hidden single candidate is not returned as an active player'
 );
 
-function attachRenderEnvironment(documentNode, elements, { frameElement = null } = {}) {
+function attachRenderEnvironment(documentNode, elements, {
+  frameElement = null,
+  scrollWidth = 1000,
+  scrollHeight = 700,
+  scrollX = 0,
+  scrollY = 0
+} = {}) {
   const view = {
     innerWidth: 1000,
     innerHeight: 700,
+    scrollX,
+    scrollY,
     frameElement,
     getComputedStyle(element) {
       return element._style || { display: 'block', visibility: 'visible', opacity: '1' };
     }
   };
   documentNode.defaultView = view;
+  documentNode.documentElement = { scrollWidth, scrollHeight };
   for (const element of elements) {
     element.ownerDocument = documentNode;
     element.getBoundingClientRect = () => element._rect || {
@@ -173,6 +182,57 @@ assert.strictEqual(
   findVideo(visibilityDocument),
   visiblePausedVideo,
   'a hidden playing preload must not outrank the visible paused player'
+);
+
+const belowFoldPlayer = makeVideo('below-fold-player', 800, 450, {
+  controls: true,
+  duration: 1200
+});
+belowFoldPlayer._rect = {
+  width: 800, height: 450, top: 900, left: 0, right: 800, bottom: 1350
+};
+const offscreenDecoy = makeVideo('offscreen-decoy', 900, 506, {
+  controls: true,
+  paused: false,
+  duration: 1200
+});
+offscreenDecoy._rect = {
+  width: 900, height: 506, top: 0, left: -2000, right: -1100, bottom: 506
+};
+const scrollableDocument = {
+  querySelectorAll(selector) {
+    if (selector === 'video') return [offscreenDecoy, belowFoldPlayer];
+    return [];
+  }
+};
+attachRenderEnvironment(scrollableDocument, [offscreenDecoy, belowFoldPlayer], { scrollHeight: 1500 });
+assert.strictEqual(
+  findVideo(scrollableDocument),
+  belowFoldPlayer,
+  'a player below the fold remains eligible while a positioned offscreen decoy does not'
+);
+
+const scrolledPastPlayer = makeVideo('scrolled-past-player', 800, 450, {
+  controls: true,
+  duration: 1200
+});
+scrolledPastPlayer._rect = {
+  width: 800, height: 450, top: -800, left: 0, right: 800, bottom: -350
+};
+const scrolledDocument = {
+  querySelectorAll(selector) {
+    if (selector === 'video') return [scrolledPastPlayer];
+    return [];
+  }
+};
+attachRenderEnvironment(scrolledDocument, [scrolledPastPlayer], {
+  scrollHeight: 1500,
+  scrollY: 900
+});
+assert.strictEqual(
+  findVideo(scrolledDocument),
+  scrolledPastPlayer,
+  'a player above the current viewport remains eligible when it is inside the document layout'
 );
 
 const framedHiddenVideo = makeVideo('framed-hidden', 900, 506, {
