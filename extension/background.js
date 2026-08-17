@@ -72,6 +72,14 @@ let peerId = null; // initialized via getPeerId()
 let currentRoom = null;
 let currentTabId = null;
 let currentTabTitle = null; // New: for Smart Matching
+// The tab the user picked, kept separately from the tab we managed to inject
+// into. A failed or refused activation is a state of the selection, not a
+// reason to silently discard it: dropping it here is what made the popup show
+// no target again as soon as it was reopened.
+let userSelectedTabId = null;
+let userSelectedTabTitle = null;
+let userSelectionErrorTabId = null;
+let userSelectionErrorMessage = null;
 let currentTargetFrameId = 0;
 let currentTargetDocumentId = null;
 let currentTargetHasVideo = false;
@@ -217,12 +225,22 @@ function ensureState() {
                 'eventQueue', 'isForceSyncInitiator', 'forceSyncAcks', 
                 'forceSyncDeadline', 'reconnectFailed', 'reconnectStartTime', 'reconnectAttempts', 'currentTabId', 'currentTabTitle',
                 'currentTargetFrameId', 'currentTargetDocumentId', 'currentTargetHasVideo',
+                'selectedTabId', 'selectedTabTitle', 'selectionErrorTabId', 'selectionErrorMessage',
                 'episodeLobby', 'localSeq', 'lastSeqBySender', 'expectedAcksCount', 'roomIdleSince', 'lastContentHeartbeatAt',
                 'hcmDesynced', 'chatActivityTimeline'
             ], (data) => {
                 clearTimeout(storageTimeout);
                 if (data.expectedAcksCount !== undefined) expectedAcksCount = data.expectedAcksCount;
                 if (data.currentTabId !== undefined) currentTabId = normalizeTabId(data.currentTabId);
+                userSelectedTabId = normalizeTabId(data.selectedTabId);
+                userSelectedTabTitle = userSelectedTabId !== null && typeof data.selectedTabTitle === 'string'
+                    ? data.selectedTabTitle
+                    : null;
+                userSelectionErrorTabId = normalizeTabId(data.selectionErrorTabId);
+                userSelectionErrorMessage = userSelectionErrorTabId !== null
+                    && typeof data.selectionErrorMessage === 'string'
+                    ? data.selectionErrorMessage
+                    : null;
                 currentTargetFrameId = currentTabId !== null
                     && Number.isInteger(data.currentTargetFrameId)
                     && data.currentTargetFrameId >= 0
@@ -2658,6 +2676,61 @@ async function clearPendingTarget({ expectedRequestId = null, expectedTabId = nu
     });
 }
 
+async function rememberUserSelection(tabId, tabTitle) {
+    const normalizedTabId = normalizeTabId(tabId);
+    if (normalizedTabId === null) return false;
+    userSelectedTabId = normalizedTabId;
+    userSelectedTabTitle = typeof tabTitle === 'string' ? tabTitle : null;
+    userSelectionErrorTabId = null;
+    userSelectionErrorMessage = null;
+    await chrome.storage.session.set({
+        selectedTabId: userSelectedTabId,
+        selectedTabTitle: userSelectedTabTitle,
+        selectionErrorTabId: null,
+        selectionErrorMessage: null
+    });
+    return true;
+}
+
+/**
+ * Records why a selection could not be activated, without discarding it. The
+ * popup keeps showing the chosen tab and can explain the problem or offer the
+ * host-access grant; nothing retries on its own.
+ */
+async function recordUserSelectionFailure(tabId, error) {
+    const normalizedTabId = normalizeTabId(tabId);
+    if (normalizedTabId === null || normalizeTabId(userSelectedTabId) !== normalizedTabId) {
+        return false;
+    }
+    userSelectionErrorTabId = normalizedTabId;
+    userSelectionErrorMessage = error?.code === HOST_ACCESS_REQUIRED_STATUS
+        ? null
+        : (error?.message || 'Script injection failed');
+    await chrome.storage.session.set({
+        selectionErrorTabId: userSelectionErrorTabId,
+        selectionErrorMessage: userSelectionErrorMessage
+    });
+    return true;
+}
+
+async function clearUserSelection(expectedTabId = null) {
+    if (expectedTabId !== null
+        && normalizeTabId(userSelectedTabId) !== normalizeTabId(expectedTabId)) {
+        return false;
+    }
+    userSelectedTabId = null;
+    userSelectedTabTitle = null;
+    userSelectionErrorTabId = null;
+    userSelectionErrorMessage = null;
+    await chrome.storage.session.set({
+        selectedTabId: null,
+        selectedTabTitle: null,
+        selectionErrorTabId: null,
+        selectionErrorMessage: null
+    });
+    return true;
+}
+
 async function activateTargetTab(tabId, tabTitle, {
     requestHostAccess = true,
     expectedGeneration = null,
@@ -2791,6 +2864,9 @@ async function activateTargetTab(tabId, tabTitle, {
         }
         currentTabId = selectedTabId;
         currentTabTitle = typeof tabTitle === 'string' ? tabTitle : null;
+        // Activation can also start from the pending host-access flow, so keep
+        // the user-facing selection in step with what actually got injected.
+        await rememberUserSelection(selectedTabId, currentTabTitle);
         currentTargetFrameId = normalizeFrameId(injectedContentTarget.frameId);
         currentTargetDocumentId = typeof injectedContentTarget.documentId === 'string'
             ? injectedContentTarget.documentId
@@ -3010,6 +3086,8 @@ if (chrome.tabs?.onRemoved?.addListener) {
             const isCurrent = normalizeTabId(currentTabId) === tabId;
             const isPending = pending?.tabId === tabId;
             const isActivating = activeTargetActivation?.tabId === tabId;
+            const isSelected = normalizeTabId(userSelectedTabId) === tabId;
+            if (isSelected) await clearUserSelection(tabId);
             if (!isCurrent && !isPending && !isActivating) return;
 
             const hasReplacementActivation = activeTargetActivation
@@ -3360,26 +3438,36 @@ async function handleAsyncMessage(message, sender, sendResponse) {
         let status = isConnected ? 'connected' : (isConnecting || (socket && socket.readyState === WebSocket.CONNECTING) ? 'connecting' : (isReconnecting ? 'reconnecting' : 'disconnected'));
         // Distinguish the normal "not in a room" resting state from a real drop.
         if (status === 'disconnected' && !currentRoom && !connectIntent) status = 'idle';
-        // One public selection, one derived state. Activation is always terminal:
-        // it settles in ready or access_required, never in an open-ended
-        // "activating" that the popup keeps retrying on every open.
-        const selectedTargetTabId = normalizeTabId(currentTabId);
-        const targetReady = selectedTargetTabId !== null && !activeTargetActivation;
-        const targetActivationState = targetReady
-            ? 'ready'
-            : activeTargetActivation
-                ? 'activating'
-                : pendingTarget
-                    ? 'access_required'
-                    : 'none';
+        // One public selection, one derived state. The selection is whatever the
+        // user picked; readiness is whether we managed to inject into it. The
+        // state is terminal — nothing here retries on its own.
+        const publicTargetTabId = normalizeTabId(userSelectedTabId) ?? normalizeTabId(currentTabId);
+        const targetReady = publicTargetTabId !== null
+            && normalizeTabId(currentTabId) === publicTargetTabId
+            && !activeTargetActivation;
+        const targetActivationState = publicTargetTabId === null
+            ? 'none'
+            : targetReady
+                ? 'ready'
+                : activeTargetActivation
+                    ? 'activating'
+                    : pendingTarget?.tabId === publicTargetTabId
+                        ? 'access_required'
+                        : normalizeTabId(userSelectionErrorTabId) === publicTargetTabId
+                            ? 'error'
+                            : 'activating';
         sendResponse({
             status,
             peerId,
             peers: currentRoom ? currentRoom.peers : [],
             lastActionState,
-            targetTabId: currentTabId,
+            targetTabId: publicTargetTabId,
+            targetTabTitle: userSelectedTabTitle ?? currentTabTitle,
             targetReady,
             targetActivationState,
+            targetActivationError: normalizeTabId(userSelectionErrorTabId) === publicTargetTabId
+                ? userSelectionErrorMessage
+                : null,
             targetFrameId: currentTargetFrameId,
             targetDocumentId: currentTargetDocumentId,
             targetHasVideo: currentTargetHasVideo,
@@ -4062,6 +4150,7 @@ async function handleAsyncMessage(message, sender, sendResponse) {
             if (previousTabId) {
                 await deactivateTargetTab(previousTabId, previousContentTarget);
             }
+            await clearUserSelection();
             await clearPendingTarget();
             await chrome.storage.session.set({
                 currentTabId: null,
@@ -4077,6 +4166,10 @@ async function handleAsyncMessage(message, sender, sendResponse) {
             return;
         }
 
+        // Persist the choice before activating. Injection can fail for reasons
+        // the user can act on (a player frame needing host access, a page still
+        // loading), and none of them mean they stopped wanting this tab.
+        await rememberUserSelection(message.tabId, message.tabTitle);
         try {
             const response = await activateTargetTab(message.tabId, message.tabTitle);
             if (response?.status === 'ok') {
@@ -4084,10 +4177,15 @@ async function handleAsyncMessage(message, sender, sendResponse) {
                     type: 'TARGET_TAB_READY',
                     tabId: response.tabId
                 }).catch(() => {});
+            } else if (response?.status !== 'superseded') {
+                await recordUserSelectionFailure(message.tabId, {
+                    message: `Activation returned ${response?.status || 'no result'}`
+                });
             }
             sendResponse(response);
         } catch (error) {
             addLog(`Failed to select tab: ${error.message}`, 'warn');
+            await recordUserSelectionFailure(message.tabId, error);
             sendResponse(injectionFailureResponse(error));
         }
     } else if (message.type === 'LOG') {

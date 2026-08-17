@@ -607,6 +607,55 @@ test('rejects a hidden cross-origin player after its iframe URL redirects', asyn
     expect(await redirectedFrame.locator('video').getAttribute('data-koala-attached')).toBeNull();
 });
 
+test('keeps the tab selected when its activation fails', async ({ context, extensionId }) => {
+    // A page the extension is not allowed to script stands in for any activation
+    // failure the user can act on. Losing the selection here is what made the
+    // popup come back empty after it was closed and reopened.
+    const page = await context.newPage();
+    await page.goto('chrome://version');
+
+    const { tabId, response } = await selectTargetTab(context, extensionId, 'chrome://version/*');
+    expect(response?.status).not.toBe('ok');
+
+    const status = await getExtensionState(context, extensionId, { type: 'GET_STATUS' });
+    expect(status).toMatchObject({
+        targetTabId: tabId,
+        targetReady: false,
+        targetActivationState: 'error'
+    });
+    expect(status.targetActivationError).toBeTruthy();
+
+    // Reopening the popup must not quietly retry and must not lose the choice.
+    const second = await getExtensionState(context, extensionId, { type: 'GET_STATUS' });
+    expect(second).toMatchObject({ targetTabId: tabId, targetActivationState: 'error' });
+});
+
+test('drops the selection only when the user clears it', async ({ context, extensionId, baseURL }) => {
+    const url = `${baseURL}/pages/simple-player.html`;
+    const page = await context.newPage();
+    await page.goto(url);
+    await page.waitForFunction(() => window.__fixtureReady === true);
+
+    const { tabId } = await selectTargetTab(context, extensionId, url);
+    await expect
+        .poll(() => getExtensionState(context, extensionId, { type: 'GET_STATUS' })
+            .then(state => state.targetTabId))
+        .toBe(tabId);
+
+    const cleared = await getExtensionState(context, extensionId, {
+        type: 'SET_TARGET_TAB',
+        tabId: null
+    });
+    expect(cleared).toMatchObject({ status: 'ok', tabId: null });
+
+    const status = await getExtensionState(context, extensionId, { type: 'GET_STATUS' });
+    expect(status).toMatchObject({
+        targetTabId: null,
+        targetReady: false,
+        targetActivationState: 'none'
+    });
+});
+
 /**
  * Reads one global from the top document and from the player frame separately,
  * so a test can prove which frame a script was installed in.
