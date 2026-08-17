@@ -663,6 +663,14 @@ function sendMessageToContentTab(tabId, message, callback = null) {
     return chrome.tabs.sendMessage(tabId, message);
 }
 
+function isMissingContentReceiverError(error) {
+    const message = String(error?.message || error || '');
+    return message.includes('Receiving end does not exist')
+        || message.includes('Could not establish connection')
+        || message.includes('No document with id')
+        || message.includes('No document with ID');
+}
+
 function isCurrentContentSender(sender) {
     if (!sender?.tab) return false;
     const senderTabId = normalizeTabId(sender.tab.id);
@@ -1128,6 +1136,48 @@ function chatActivityDisplayName(senderId) {
     return typeof peer === 'object' ? peer.username || senderId : senderId;
 }
 
+async function deliverChatActivity(entry) {
+    const tabId = normalizeTabId(currentTabId);
+    if (tabId === null) return;
+
+    const generation = targetActivationGeneration;
+    try {
+        await sendMessageToCurrentContent({
+            type: 'CHAT_EVENT',
+            event: entry
+        });
+        return;
+    } catch (error) {
+        if (!isMissingContentReceiverError(error)) {
+            addLog(`Chat activity delivery failed: ${error.message}`, 'warn');
+            return;
+        }
+        if (!isCurrentTargetIdentity(tabId, generation)) return;
+    }
+
+    for (let attempt = 0; attempt < 3; attempt++) {
+        try {
+            const activation = await refreshCurrentMediaTarget(tabId, { queueIfRunning: true });
+            if (activation?.status === 'activation_in_progress') {
+                await new Promise(resolve => setTimeout(resolve, 150));
+                continue;
+            }
+            if (activation?.status !== 'ok') return;
+            if (!isCurrentTargetIdentity(tabId, activation.generation)) return;
+            await sendMessageToCurrentContent({
+                type: 'CHAT_EVENT',
+                event: entry
+            });
+            return;
+        } catch (error) {
+            if (!isMissingContentReceiverError(error) || isCurrentTargetIdentity(tabId, generation)) {
+                addLog(`Chat activity delivery failed after target recovery: ${error.message}`, 'warn');
+            }
+            return;
+        }
+    }
+}
+
 function sendChatActivity(action, senderId, timestamp = Date.now()) {
     if (!currentRoom || !serverSupportsChat()) return;
     if (![EVENTS.PLAY, EVENTS.PAUSE, EVENTS.SEEK, EVENTS.FORCE_SYNC_PREPARE, EVENTS.FORCE_SYNC_EXECUTE, 'joined', 'left'].includes(action)) return;
@@ -1140,10 +1190,9 @@ function sendChatActivity(action, senderId, timestamp = Date.now()) {
     if (!entry) return;
     if (storageInitialized) chrome.storage.session.set({ chatActivityTimeline: chatActivityStore.snapshot() }).catch(() => {});
     if (!currentTabId) return;
-    sendMessageToCurrentContent({
-        type: 'CHAT_EVENT',
-        event: entry
-    }).catch(error => addLog(`Chat activity delivery failed: ${error.message}`, 'warn'));
+    deliverChatActivity(entry).catch(error => {
+        addLog(`Chat activity delivery failed: ${error.message}`, 'warn');
+    });
 }
 
 function scheduleReconnect() {
@@ -2029,20 +2078,32 @@ async function getReadyTabVideoState(tabId, expectedGeneration = targetActivatio
     if (!isCurrentTargetIdentity(tabId, expectedGeneration)) {
         return { error: 'Target tab changed before video state could be read' };
     }
-    let state = await getTabVideoState(tabId);
-    if (!state || state.error || state.found === false) {
-        const activation = await refreshCurrentMediaTarget(tabId);
+    let state = null;
+    let targetGeneration = expectedGeneration;
+    for (let attempt = 0; attempt < 3; attempt++) {
+        state = await getTabVideoState(tabId);
+        if (state && !state.error && state.found !== false) break;
+        if (!isCurrentTargetIdentity(tabId, targetGeneration)) {
+            return { error: 'Target tab changed before video state could be read' };
+        }
+
+        const activation = await refreshCurrentMediaTarget(tabId, { queueIfRunning: true });
+        if (activation?.status === 'activation_in_progress') {
+            await new Promise(resolve => setTimeout(resolve, 150));
+            if (normalizeTabId(currentTabId) !== tabId) {
+                return { error: 'Target tab changed before video state could be read' };
+            }
+            targetGeneration = targetActivationGeneration;
+            continue;
+        }
         if (activation?.status !== 'ok') {
             return { error: 'Target tab changed before content script recovery completed' };
         }
-        await new Promise(resolve => setTimeout(resolve, 250));
-        if (!isCurrentTargetIdentity(tabId, activation.generation)) {
+        targetGeneration = activation.generation;
+        if (!isCurrentTargetIdentity(tabId, targetGeneration)) {
             return { error: 'Target tab changed before video state could be read' };
         }
-        state = await getTabVideoState(tabId);
-        if (!isCurrentTargetIdentity(tabId, activation.generation)) {
-            return { error: 'Target tab changed while video state was being read' };
-        }
+        await new Promise(resolve => setTimeout(resolve, 150));
     }
     return decorateVideoState(tabId, state);
 }
@@ -2189,38 +2250,43 @@ function setPageApiSeekEnabled(enabled) {
     window.KOALA_PAGE_API_SEEK_ENABLED = enabled === true;
 }
 
-async function deactivateMediaFrameMonitors(tabId) {
-    const targets = listMediaFrameScriptTargets(tabId);
-    await Promise.all(targets.map(async target => {
-        const documentId = target.documentIds?.[0];
-        const frameId = target.frameIds?.[0];
+function uniqueScriptTargets(targets) {
+    const seen = new Set();
+    return targets.filter(target => {
+        const key = JSON.stringify(target);
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+    });
+}
+
+function deactivateMediaFrameMonitor() {
+    try { window.__koalaMediaFrameMonitorCleanup?.(); } catch { /* detached frame */ }
+}
+
+async function deactivateMediaFrameMonitors(tabId, contentTarget = null) {
+    const targets = uniqueScriptTargets([
+        contentTarget?.scriptTarget,
+        { tabId },
+        ...listMediaFrameScriptTargets(tabId)
+    ].filter(Boolean));
+    for (const target of targets) {
         try {
-            if (typeof documentId === 'string') {
-                await chrome.tabs.sendMessage(
-                    tabId,
-                    { type: 'MEDIA_MONITOR_DEACTIVATE' },
-                    { documentId }
-                );
-            } else if (Number.isInteger(frameId)) {
-                await chrome.tabs.sendMessage(
-                    tabId,
-                    { type: 'MEDIA_MONITOR_DEACTIVATE' },
-                    { frameId }
-                );
-            } else {
-                await chrome.tabs.sendMessage(tabId, { type: 'MEDIA_MONITOR_DEACTIVATE' });
-            }
+            await chrome.scripting.executeScript({
+                target,
+                func: deactivateMediaFrameMonitor
+            });
         } catch {
             // Denied or already-navigated frames have no installed monitor.
         }
-    }));
+    }
 }
 
 async function deactivateTargetTab(tabId, contentTarget = null, { deactivateMonitor = true } = {}) {
     const normalizedTabId = normalizeTabId(tabId);
     if (normalizedTabId === null) return;
     if (deactivateMonitor) {
-        await deactivateMediaFrameMonitors(normalizedTabId);
+        await deactivateMediaFrameMonitors(normalizedTabId, contentTarget);
     }
     const target = contentTarget
         || (normalizedTabId === normalizeTabId(currentTabId) ? currentContentTarget() : null)
@@ -2293,9 +2359,16 @@ function createTargetActivationSupersededError() {
 }
 
 async function injectMediaFrameMonitors(tabId, contentTarget) {
-    const targets = listMediaFrameScriptTargets(tabId);
+    // The all-frames target is only a best-effort sweep: one inaccessible
+    // frame can make Chromium reject the entire sweep. Always include the
+    // selected document explicitly so its lifecycle monitor is guaranteed.
+    const targets = uniqueScriptTargets([
+        contentTarget?.scriptTarget,
+        { tabId },
+        ...listMediaFrameScriptTargets(tabId)
+    ].filter(Boolean));
     let injectedCount = 0;
-    await Promise.all(targets.map(async target => {
+    for (const target of targets) {
         try {
             await chrome.scripting.executeScript({
                 target,
@@ -2305,25 +2378,8 @@ async function injectMediaFrameMonitors(tabId, contentTarget) {
         } catch {
             // One denied widget frame must not block the selected player.
         }
-    }));
-    if (injectedCount > 0) return;
-
-    const fallbackTargets = [{ tabId }, contentTarget.scriptTarget];
-    const seen = new Set();
-    for (const target of fallbackTargets) {
-        const key = JSON.stringify(target);
-        if (seen.has(key)) continue;
-        seen.add(key);
-        try {
-            await chrome.scripting.executeScript({
-                target,
-                files: ['media-frame-monitor.js']
-            });
-            injectedCount++;
-        } catch {
-            // Main injection below reports a real selected-target failure.
-        }
     }
+    return injectedCount;
 }
 
 async function injectContentScript(tabId, {

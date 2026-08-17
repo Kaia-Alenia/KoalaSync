@@ -46,12 +46,11 @@ describe('target tab lifecycle', () => {
 
     it('uses all-frame probing for cross-origin targets without navigation permissions', () => {
         expect(backgroundSource).toContain("files: ['media-frame-monitor.js']");
-        expect(backgroundSource).toContain('const targets = listMediaFrameScriptTargets(tabId)');
+        expect(backgroundSource).toContain('...listMediaFrameScriptTargets(tabId)');
         expect(backgroundSource).toContain('One denied widget frame must not block the selected player');
         expect(backgroundSource).toContain("navigationError.code = 'media_target_navigated'");
-        expect(backgroundSource).toContain("{ type: 'MEDIA_MONITOR_DEACTIVATE' }");
-        expect(backgroundSource).toContain('async function deactivateMediaFrameMonitors(tabId)');
-        expect(backgroundSource).toContain('{ documentId }');
+        expect(backgroundSource).toContain('async function deactivateMediaFrameMonitors(tabId, contentTarget');
+        expect(backgroundSource).toContain('func: deactivateMediaFrameMonitor');
         expect(monitorSource).toContain("type: 'MEDIA_FRAME_CANDIDATE_CHANGED'");
         expect(monitorSource).toContain("attributeFilter: ['class', 'style', 'hidden', 'src', 'controls']");
         expect(monitorSource).toContain('if (!force && nextSignature === lastCandidateSignature) return');
@@ -66,6 +65,16 @@ describe('target tab lifecycle', () => {
             'notifications'
         ]);
         expect(backgroundSource).not.toMatch(/chrome\.(?:web)?Navigation/);
+    });
+
+    it('keeps the selected frame recoverable when an all-frame sweep is rejected', () => {
+        expect(backgroundSource).toContain('contentTarget?.scriptTarget');
+        expect(backgroundSource).toContain('function uniqueScriptTargets(targets)');
+        expect(backgroundSource).toContain('function deactivateMediaFrameMonitor()');
+        expect(backgroundSource).toContain('func: deactivateMediaFrameMonitor');
+        expect(backgroundSource).toContain('isMissingContentReceiverError(error)');
+        expect(backgroundSource).toContain('await refreshCurrentMediaTarget(tabId, { queueIfRunning: true })');
+        expect(backgroundSource).toContain("activation?.status === 'activation_in_progress'");
     });
 
     it('serializes content commands and coalesces target refreshes', () => {
