@@ -26,8 +26,8 @@ This document tracks which streaming platforms and media servers are supported b
 | **ARD / ZDF Mediathek** | Not tested | Not tested | Not tested | — | — | — | — |
 | **Vix** | ✅ Full | ✅ Full | ✅ Full | — | — | — | Everything works correctly. |
 | **JkAnime** | ✅ Full | ❌ | ❌ | 2026-08-14 | Shik3i | v3.1.0 | Player sits in a same-origin `/jkplayer/` iframe, so it needs the same-origin frame walk added in v3.1.0. No MediaSession metadata is exposed, and the page title carries no episode pattern (`… Futari 18 Sub Español …`). |
-| **Google Drive** | ⚠️ Partial | ✅ Full | ❌ N/A | 2026-08-17 | Shik3i / Codex | v3.1.2 | Live inspection confirms the visible `youtube.googleapis.com/embed` child topology; packed-Chromium fixtures cover exact-document control and recovery. A live two-peer Drive relay run is still pending. |
-| **YummyAnime** | ⚠️ Partial | ⚠️ Partial | ❌ | 2026-08-17 | Shik3i / Codex | v3.1.2 | Live inspection confirms the same-origin wrapper plus external `thealloha.club` player topology; packed-Chromium fixtures cover nested control and recovery. A live two-peer site run is still pending, and the page title lacks the selected episode. |
+| **Google Drive** (`drive.google.com`) | ✅ Full | ✅ Full | ❌ N/A | 2026-08-17 | Shik3i | v3.1.2 | Manual testing on the live service confirmed playback synchronization through the visible `youtube.googleapis.com/embed` player. KoalaSync controls the exact child document while preserving the top-level Drive title and URL; packed-Chromium tests cover control, reloads, visibility changes, and cleanup. |
+| **YummyAnime** (`yummyanime.tv`) | ✅ Full | ⚠️ Partial | ❌ | 2026-08-17 | Shik3i | v3.1.2 | Manual testing on the live service confirmed playback synchronization through the site's same-origin wrapper and current external `thealloha.club` player. The page title identifies the series but not the selected episode; packed-Chromium tests cover nested control, hidden duplicate rejection, reloads, and cleanup. |
 
 ### Legend
 
@@ -74,3 +74,10 @@ Websites with heavily obfuscated custom players may require platform-specific wo
 Since v3.1.0 the content script walks **same-origin** frames, so a player wrapped in the site's own iframe is found and controlled without a site-specific workaround. This also covers `srcdoc` and `about:blank` frames, which inherit the parent origin.
 
 Since v3.1.2 the background can also inspect accessible **cross-origin** frames and inject KoalaSync into the exact frame/document containing the visible player. Frame election uses visibility and media signals so hidden preloads, trailers and ad players do not win accidentally. When browser site access for the external player origin is withheld, KoalaSync uses the existing website-access recovery flow instead of bypassing the browser permission.
+
+The currently verified cross-origin service topologies are:
+
+- **Google Drive:** `drive.google.com` top page → `youtube.googleapis.com/embed` player.
+- **YummyAnime:** `yummyanime.tv` top page → same-origin wrapper → `thealloha.club` player.
+
+These embedded origins are implementation details of the services and may change independently. If the browser withholds access to a newly used player origin, KoalaSync asks for that origin through its normal site-access flow.

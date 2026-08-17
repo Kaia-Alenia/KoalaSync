@@ -89,7 +89,7 @@
 - **Priority:** P3
 - **Category:** Compatibility / Embedded Players
 - **Completed:** v3.1.2
-- **Outcome:** The background probes accessible frames, elects the visible HTML5 player without trusting child-frame claims, and routes injection, ordered commands, state, chat, audio and teardown to the selected document. Hidden equal candidates without visibility evidence are rejected. A tab-wide frame sentinel plus subframe-navigation events recover CSS visibility switches, document reloads, lazy video insertion and failed delivery. Google Drive and YummyAnime-style nested external players are covered by live topology inspection plus packed-Chromium E2E fixtures; live two-peer service runs remain tracked separately.
+- **Outcome:** The background probes accessible frames, elects the visible HTML5 player without trusting child-frame claims, and routes injection, ordered commands, state, chat, audio and teardown to the selected document. Hidden equal candidates without visibility evidence are rejected. A tab-wide frame sentinel plus subframe-navigation events recover CSS visibility switches, document reloads, lazy video insertion and failed delivery. Google Drive and YummyAnime were manually verified on their live services with v3.1.2 and are also covered by packed-Chromium E2E fixtures. Automated two-peer relay E2E remains tracked separately under Testing / Release Confidence.
 
 ---
 
