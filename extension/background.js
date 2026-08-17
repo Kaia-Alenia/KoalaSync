@@ -11,7 +11,6 @@ import { createChatActivityStore } from './chat-activity.js';
 import { HOST_ACCESS_REQUIRED_STATUS, normalizeTabId, inspectTabHostAccess, isHostAccessError, addTabHostAccessRequest, removeTabHostAccessRequest } from './host-access.js';
 import {
     MEDIA_FRAME_ACCESS_REQUIRED,
-    MEDIA_FRAME_AMBIGUOUS,
     listMediaFrameScriptTargets,
     resolveMediaContentTarget
 } from './media-frame-target.js';
@@ -2404,7 +2403,8 @@ async function injectContentScript(tabId, {
                 originPattern: error.originPattern
             }, requestAdded, error);
         }
-        if (error?.code === MEDIA_FRAME_AMBIGUOUS) throw error;
+        // MEDIA_FRAME_AMBIGUOUS is no longer fatal: the resolver falls back to
+        // the top frame and the monitor promotes the player that starts playing.
         addLog(`Media frame probe fell back to the top frame: ${error.message}`, 'warn');
     }
 
@@ -2933,20 +2933,25 @@ async function reactivateCurrentTarget(tabId, { expectedGeneration = targetActiv
  * like Drive and YouTube produce while simply playing.
  */
 async function selectedMediaTargetMoved(tabId) {
+    let resolved;
     try {
-        const resolved = await resolveMediaContentTarget(chrome, tabId, { attempts: 1 });
-        if (normalizeTabId(currentTabId) !== normalizeTabId(tabId)) return false;
-        const frameMoved = normalizeFrameId(resolved.frameId) !== normalizeFrameId(currentTargetFrameId);
-        const documentMoved = typeof resolved.documentId === 'string'
-            && typeof currentTargetDocumentId === 'string'
-            && resolved.documentId !== currentTargetDocumentId;
-        const gainedVideo = resolved.hasVideo === true && currentTargetHasVideo !== true;
-        return frameMoved || documentMoved || gainedVideo;
+        resolved = await resolveMediaContentTarget(chrome, tabId, { attempts: 1 });
     } catch {
-        // Access-required and ambiguity errors must reach the full activation
-        // path so the popup can surface them.
+        // An access-required error must reach the full activation path so the
+        // popup can surface it.
         return true;
     }
+    if (normalizeTabId(currentTabId) !== normalizeTabId(tabId)) return false;
+    // An inconclusive probe is not a reason to move. A page whose players are
+    // still loading, or that offers several equally-ranked mirrors, resolves
+    // differently from one moment to the next; acting on that flips the target
+    // back and forth and leaves activation running forever.
+    if (resolved.hasVideo !== true) return false;
+    if (currentTargetHasVideo !== true) return true;
+    return normalizeFrameId(resolved.frameId) !== normalizeFrameId(currentTargetFrameId)
+        || (typeof resolved.documentId === 'string'
+            && typeof currentTargetDocumentId === 'string'
+            && resolved.documentId !== currentTargetDocumentId);
 }
 
 function refreshCurrentMediaTarget(tabId, { queueIfRunning = false, onlyIfTargetMoved = false } = {}) {
@@ -3461,9 +3466,11 @@ async function handleAsyncMessage(message, sender, sendResponse) {
                     ? 'activating'
                     : pendingTarget?.tabId === publicTargetTabId
                         ? 'access_required'
-                        : normalizeTabId(userSelectionErrorTabId) === publicTargetTabId
-                            ? 'error'
-                            : 'activating';
+                        // Nothing is in flight and the target is not live, so
+                        // this is a settled failure. Reporting it as
+                        // "activating" is what left the popup spinning forever
+                        // with no way to tell that it had already given up.
+                        : 'error';
         sendResponse({
             status,
             peerId,

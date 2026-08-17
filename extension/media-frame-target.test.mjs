@@ -1,7 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import {
     MEDIA_FRAME_ACCESS_REQUIRED,
-    MEDIA_FRAME_AMBIGUOUS,
     inspectMediaFrame,
     resolveMediaContentTarget,
     selectMediaFrame
@@ -432,17 +431,25 @@ describe('cross-origin media-frame targeting', () => {
         )).resolves.toMatchObject({ frameId: 0, scriptTarget: { tabId: 44 } });
     });
 
-    it('reports ambiguity rather than controlling an arbitrary equal player', async () => {
+    it('holds the top frame instead of guessing between equal players', async () => {
         const results = [
             frame(3, { parentFrameVisible: null }),
             frame(4, { parentFrameVisible: null })
         ];
         const executeScript = vi.fn().mockResolvedValue(results);
+        // Equally-ranked mirrors are an ordinary anime-site layout. Refusing to
+        // activate made those pages unusable; the tab stays selected on its top
+        // frame until one of the players starts and breaks the tie.
         await expect(resolveMediaContentTarget(
             { scripting: { executeScript } },
             45,
             { attempts: 1, probeDelayMs: 0 }
-        )).rejects.toMatchObject({ code: MEDIA_FRAME_AMBIGUOUS });
+        )).resolves.toMatchObject({
+            frameId: 0,
+            hasVideo: false,
+            ambiguous: true,
+            scriptTarget: { tabId: 45 }
+        });
     });
 });
 

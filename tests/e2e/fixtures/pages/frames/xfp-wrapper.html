@@ -1,0 +1,19 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>xfp wrapper</title>
+<style>
+  html, body { margin: 0; height: 100%; }
+  iframe { border: 0; display: block; }
+</style>
+<!--
+  Same-origin shell the anime site puts between the page and the real player.
+  It holds no video itself; the playable element lives one more level down in a
+  cross-origin frame.
+-->
+<iframe id="inner" width="830" height="498" allowfullscreen></iframe>
+<script>
+  const inner = document.getElementById('inner');
+  const params = new URLSearchParams(location.search);
+  const target = params.get('player') || 'player-frame.html';
+  inner.src = `http://127.0.0.1:${location.port}/pages/frames/${target}`;
+</script>

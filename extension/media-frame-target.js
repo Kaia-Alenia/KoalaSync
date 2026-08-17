@@ -1,5 +1,4 @@
 export const MEDIA_FRAME_ACCESS_REQUIRED = 'media_frame_access_required';
-export const MEDIA_FRAME_AMBIGUOUS = 'media_frame_ambiguous';
 export const MEDIA_FRAME_PROBE_TIMEOUT = 'media_frame_probe_timeout';
 
 const MIN_PLAYER_FRAME_AREA = 320 * 180;
@@ -246,7 +245,12 @@ export function installParentFrameVisibilityProbe(token) {
         };
     };
     window.addEventListener('message', handler);
-    timeout = setTimeout(cleanup, 1000);
+    // The listener has to outlive the whole probe sequence: install, four
+    // dispatch passes and the final inspection, each a separate executeScript
+    // round trip. On a heavy page those add up well past a second, and a
+    // listener that expired first left every frame's visibility unknown — which
+    // is exactly the state that makes two players look equally ranked.
+    timeout = setTimeout(cleanup, 15000);
     window.__koalaFrameVisibilityCleanup = cleanup;
 }
 
@@ -412,12 +416,6 @@ function accessRequiredError(access) {
     error.code = MEDIA_FRAME_ACCESS_REQUIRED;
     error.host = access.host;
     error.originPattern = access.originPattern;
-    return error;
-}
-
-function ambiguousFrameError() {
-    const error = new Error('The active embedded video frame could not be identified safely');
-    error.code = MEDIA_FRAME_AMBIGUOUS;
     return error;
 }
 
@@ -619,6 +617,11 @@ export async function resolveMediaContentTarget(chromeApi, tabId, {
     // frame so the injected monitor can promote the real player once it loads,
     // instead of failing the activation or prompting for nothing.
     if (unresolvedGrantedHost) return contentTarget(tabId, null);
-    if (ambiguous) throw ambiguousFrameError();
+    // Several equally-ranked players — anime mirrors, alternative dubs — are a
+    // normal page layout, not an error. Refusing to activate made those pages
+    // unusable, and flipping between candidates restarted the target forever.
+    // Hold the top frame and let the monitor promote the one that starts
+    // playing, which is the signal that breaks the tie.
+    if (ambiguous) return { ...contentTarget(tabId, null), ambiguous: true };
     return contentTarget(tabId, null);
 }

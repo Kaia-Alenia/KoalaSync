@@ -607,6 +607,73 @@ test('rejects a hidden cross-origin player after its iframe URL redirects', asyn
     expect(await redirectedFrame.locator('video').getAttribute('data-koala-attached')).toBeNull();
 });
 
+test('selects the visible anime player nested behind a same-origin wrapper', async ({ context, extensionId, baseURL }) => {
+    const url = `${baseURL}/pages/yummy-style-player.html`;
+    const page = await context.newPage();
+    await page.goto(url);
+    await page.waitForFunction(() => window.__fixtureReady === true);
+
+    const { tabId, response } = await selectTargetTab(context, extensionId, url);
+    expect(response).toMatchObject({ status: 'ok', hasVideo: true });
+    expect(response.frameId).not.toBe(0);
+
+    // The playable element is the one inside the visible wrapper. The two
+    // zero-sized mirrors must be ignored, not treated as equal candidates.
+    const playerFrame = suffix => page.frames()
+        .find(frame => frame.url().endsWith(`/frames/${suffix}`));
+    await expect
+        .poll(() => playerFrame('player-frame.html').locator('video').getAttribute('data-koala-attached'))
+        .toBe('true');
+    expect(await playerFrame('player-frame-2.html').locator('video')
+        .getAttribute('data-koala-attached')).toBeNull();
+
+    // And the selection has to settle, not keep re-resolving.
+    await page.waitForTimeout(1500);
+    const status = await getExtensionState(context, extensionId, { type: 'GET_STATUS' });
+    expect(status).toMatchObject({
+        targetTabId: tabId,
+        targetReady: true,
+        targetActivationState: 'ready'
+    });
+});
+
+test('selects an anime tab before playback and promotes the player once it appears', async ({ context, extensionId, baseURL }) => {
+    // The live case: at selection time the page has no video anywhere, because
+    // the host only builds the player when the viewer presses play.
+    const url = `${baseURL}/pages/yummy-deferred-player.html`;
+    const page = await context.newPage();
+    await page.goto(url);
+    await page.waitForFunction(() => window.__fixtureReady === true);
+
+    const { tabId, response } = await selectTargetTab(context, extensionId, url);
+    // Selecting must succeed and settle even with nothing to control yet.
+    expect(response).toMatchObject({ status: 'ok', frameId: 0, hasVideo: false });
+
+    await page.waitForTimeout(1200);
+    const idle = await getExtensionState(context, extensionId, { type: 'GET_STATUS' });
+    expect(idle).toMatchObject({
+        targetTabId: tabId,
+        targetReady: true,
+        targetActivationState: 'ready'
+    });
+
+    const deferred = page.frames().find(frame => frame.url().endsWith('/frames/deferred-player-frame.html'));
+    await deferred.locator('#poster').click();
+
+    // The monitor has to hand the target over to the frame that now owns the
+    // video, without the user touching the popup again.
+    await expect
+        .poll(() => deferred.locator('video').getAttribute('data-koala-attached'), { timeout: 15000 })
+        .toBe('true');
+    await expect
+        .poll(() => getExtensionState(context, extensionId, { type: 'GET_STATUS' })
+            .then(state => ({ ready: state.targetReady, frame: state.targetFrameId })), { timeout: 15000 })
+        .toMatchObject({ ready: true });
+    const promoted = await getExtensionState(context, extensionId, { type: 'GET_STATUS' });
+    expect(promoted.targetFrameId).not.toBe(0);
+    expect(promoted).toMatchObject({ targetTabId: tabId, targetActivationState: 'ready' });
+});
+
 test('keeps the tab selected when its activation fails', async ({ context, extensionId }) => {
     // A page the extension is not allowed to script stands in for any activation
     // failure the user can act on. Losing the selection here is what made the
