@@ -15,6 +15,10 @@ recovery, failed tab switches and short connection interruptions.
   failed selection cannot leave the room without a target.
 - **Extension: Target recovery** — Keeps the selected tab recoverable when a
   transient content-script or embedded-player refresh fails.
+- **Extension: Dynamic-frame target persistence** — Keeps the user's selected
+  tab visible across popup close/reopen and retries activation after a dynamic
+  player frame changes, without restoring the removed `webNavigation`
+  permission.
 - **Extension: Chat visibility persistence** — Remembers the user's manual
   open/closed state across popup reopen, content refresh and reconnect cycles.
 
@@ -22,7 +26,9 @@ recovery, failed tab switches and short connection interruptions.
 - **Release gate** — Unit, server/WebSocket, locale, theme, lint, production
   dependency audit, Chrome/Firefox build, AMO validation and website build
   pass locally.
-- **Browser E2E** — 35 extension and player lifecycle scenarios pass.
+- **Browser E2E** — 36 extension and player lifecycle scenarios pass locally,
+  including popup close/reopen persistence and repeated cross-origin frame
+  switching.
 
 ---
 

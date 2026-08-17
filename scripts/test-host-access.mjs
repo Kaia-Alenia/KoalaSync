@@ -128,7 +128,7 @@ const popup = fs.readFileSync(path.join(cwd(), 'extension', 'popup.js'), 'utf8')
 const popupHtml = fs.readFileSync(path.join(cwd(), 'extension', 'popup.html'), 'utf8');
 const tabManager = fs.readFileSync(path.join(cwd(), 'extension', 'modules', 'tab-manager.js'), 'utf8');
 
-assert.match(background, /await activateTargetTab\(message\.tabId, message\.tabTitle\)/,
+assert.match(background, /await activateTargetTab\((?:message\.tabId|selectedTabId), message\.tabTitle\)/,
     'SET_TARGET_TAB must await successful activation before acknowledging it');
 assert.match(background, /addTabHostAccessRequest\(chrome, tabId, access\.originPattern\)/,
     'failed injection must register Chrome host-access request');

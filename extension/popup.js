@@ -468,12 +468,12 @@ async function init() {
 
             // Keep a denied selection visible while Chrome waits for the user
             // to grant access; it becomes active automatically after approval.
-            await populateTabs(res.peers, res.targetTabId || res.pendingTargetTabId);
+            await populateTabs(res.peers, getSelectedTargetTabId(res));
 
             // Render lobby status if active
             if (res.episodeLobby) updateLobbyUI(res.episodeLobby, res.peers);
 
-            if (res.status === 'connected' && !res.targetTabId && !res.pendingTargetTabId && localData.roomId) {
+            if (res.status === 'connected' && !getSelectedTargetTabId(res) && localData.roomId) {
                 const syncTabBtn = document.querySelector('.tab-btn[data-tab="tab-sync"]');
                 if (syncTabBtn) syncTabBtn.click();
                 showSelectVideoHint();
@@ -647,6 +647,15 @@ function handleTargetTabResponse(response) {
     return false;
 }
 
+function getSelectedTargetTabId(status) {
+    return status?.selectedTargetTabId
+        ?? status?.requestedTargetTabId
+        ?? status?.targetTabId
+        ?? status?.pendingTargetTabId
+        ?? status?.activatingTargetTabId
+        ?? null;
+}
+
 function selectTargetTab(tabId, tabTitle) {
     return new Promise(resolve => {
         chrome.runtime.sendMessage({ type: 'SET_TARGET_TAB', tabId, tabTitle }, response => {
@@ -682,7 +691,7 @@ async function refreshTargetAccessState() {
     }
     await populateTabs(
         status.peers,
-        status.targetTabId ?? status.pendingTargetTabId ?? null
+        getSelectedTargetTabId(status)
     );
 }
 
@@ -1229,7 +1238,7 @@ async function populateTabs(providedPeers = null, providedTargetTabId = null) {
             if (populateTabsToken !== token) return;
             currentTargetTabId = null;
         } else {
-            currentTargetTabId = status?.targetTabId || status?.pendingTargetTabId;
+            currentTargetTabId = getSelectedTargetTabId(status);
         }
     }
  
@@ -1311,7 +1320,7 @@ async function populateTabs(providedPeers = null, providedTargetTabId = null) {
     // Sort: 1. Current tab first, 2. Matches, 3. Rest alphabetically
     const options = Array.from(elements.targetTab.options);
     const placeholder = options.shift();
-    const currentTabId = providedTargetTabId ? parseInt(providedTargetTabId) : null;
+    const currentTabId = currentTargetTabId ? parseInt(currentTargetTabId) : null;
 
     options.sort((a, b) => {
         const aId = parseInt(a.value);
@@ -1745,7 +1754,7 @@ if (elements.langSelector) {
                 } else {
                     hideSiteAccessNotice();
                 }
-                await populateTabs(res.peers, res.targetTabId || res.pendingTargetTabId);
+                await populateTabs(res.peers, getSelectedTargetTabId(res));
                 if (res.episodeLobby) updateLobbyUI(res.episodeLobby, res.peers);
             } else {
                 applyConnectionStatus('disconnected');

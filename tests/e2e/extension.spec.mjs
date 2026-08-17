@@ -93,6 +93,23 @@ test('injects into the target tab and attaches to a same-origin frame player', a
     ).toBe('true');
 });
 
+test('keeps the selected tab after the popup page closes and reopens', async ({ context, extensionId, baseURL }) => {
+    const url = `${baseURL}/pages/simple-player.html`;
+    const page = await context.newPage();
+    await page.goto(url);
+    await page.waitForFunction(() => window.__fixtureReady === true);
+
+    const { tabId, response } = await selectTargetTab(context, extensionId, url);
+    expect(response).toMatchObject({ status: 'ok' });
+
+    const status = await getExtensionState(context, extensionId, { type: 'GET_STATUS' });
+    expect(status).toMatchObject({
+        targetTabId: tabId,
+        selectedTargetTabId: tabId,
+        requestedTargetTabId: null
+    });
+});
+
 test('applies remote play, pause and seek to the framed player', async ({ context, extensionId, baseURL }) => {
     const url = `${baseURL}/pages/iframe-player.html`;
     const page = await context.newPage();

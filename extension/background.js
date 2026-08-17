@@ -75,6 +75,13 @@ let currentTabTitle = null; // New: for Smart Matching
 let currentTargetFrameId = 0;
 let currentTargetDocumentId = null;
 let currentTargetHasVideo = false;
+// The user's selection is kept separately from the currently injected media
+// target.  Dynamic player pages can be between frame documents while the
+// popup is closed; losing the selection in that window makes reopening the
+// popup look as if the user never selected a tab.
+let requestedTargetTabId = null;
+let requestedTargetTitle = null;
+let pendingRequestedActivationCount = 0;
 let targetActivationGeneration = 0;
 let activeTargetActivation = null;
 let mediaTargetRefreshTask = null;
@@ -217,6 +224,7 @@ function ensureState() {
                 'eventQueue', 'isForceSyncInitiator', 'forceSyncAcks', 
                 'forceSyncDeadline', 'reconnectFailed', 'reconnectStartTime', 'reconnectAttempts', 'currentTabId', 'currentTabTitle',
                 'currentTargetFrameId', 'currentTargetDocumentId', 'currentTargetHasVideo',
+                'requestedTargetTabId', 'requestedTargetTitle',
                 'episodeLobby', 'localSeq', 'lastSeqBySender', 'expectedAcksCount', 'roomIdleSince', 'lastContentHeartbeatAt',
                 'hcmDesynced', 'chatActivityTimeline'
             ], (data) => {
@@ -234,6 +242,11 @@ function ensureState() {
                     ? data.currentTargetDocumentId
                     : null;
                 currentTargetHasVideo = currentTabId !== null && data.currentTargetHasVideo === true;
+                requestedTargetTabId = normalizeTabId(data.requestedTargetTabId);
+                requestedTargetTitle = requestedTargetTabId !== null
+                    && typeof data.requestedTargetTitle === 'string'
+                    ? data.requestedTargetTitle
+                    : null;
                 if (data.currentTabTitle !== undefined) {
                     currentTabTitle = currentTabId !== null && typeof data.currentTabTitle === 'string'
                         ? data.currentTabTitle
@@ -722,6 +735,7 @@ async function leaveRoomAfterIdleGrace(reason) {
     broadcastControlMode();
     if (currentTabId) await deactivateTargetTab(currentTabId);
     invalidateTargetActivations();
+    await clearRequestedTarget();
     currentTabId = null;
     currentTabTitle = null;
     clearCurrentContentTarget();
@@ -2633,6 +2647,66 @@ async function clearPendingTarget({ expectedRequestId = null, expectedTabId = nu
     });
 }
 
+async function rememberRequestedTarget(tabId, tabTitle) {
+    const normalizedTabId = normalizeTabId(tabId);
+    if (normalizedTabId === null) return false;
+    requestedTargetTabId = normalizedTabId;
+    requestedTargetTitle = typeof tabTitle === 'string' ? tabTitle : null;
+    await chrome.storage.session.set({
+        requestedTargetTabId,
+        requestedTargetTitle
+    });
+    return true;
+}
+
+async function clearRequestedTarget(expectedTabId = null) {
+    if (expectedTabId !== null
+        && normalizeTabId(requestedTargetTabId) !== normalizeTabId(expectedTabId)) {
+        return false;
+    }
+    requestedTargetTabId = null;
+    requestedTargetTitle = null;
+    await chrome.storage.session.set({
+        requestedTargetTabId: null,
+        requestedTargetTitle: null
+    });
+    return true;
+}
+
+async function retryRequestedTarget() {
+    const selectedTabId = normalizeTabId(requestedTargetTabId);
+    if (selectedTabId === null
+        || normalizeTabId(currentTabId) === selectedTabId
+        || pendingRequestedActivationCount > 0
+        || activeTargetActivation) {
+        return null;
+    }
+
+    const pending = await readPendingTarget();
+    if (pending) return null;
+
+    try {
+        await chrome.tabs.get(selectedTabId);
+    } catch {
+        await clearRequestedTarget(selectedTabId);
+        return { status: 'target_closed' };
+    }
+
+    try {
+        const response = await activateTargetTab(selectedTabId, requestedTargetTitle, {
+            requestHostAccess: true,
+            expectedGeneration: targetActivationGeneration
+        });
+        if (response?.status === 'ok') {
+            await clearRequestedTarget(selectedTabId);
+        }
+        return response;
+    } catch (error) {
+        addLog(`Requested target retry failed: ${error.message}`, 'warn');
+        return injectionFailureResponse(error);
+    }
+}
+
 async function activateTargetTab(tabId, tabTitle, {
     requestHostAccess = true,
     expectedGeneration = null,
@@ -2786,6 +2860,7 @@ async function activateTargetTab(tabId, tabTitle, {
             roomIdleSince,
             lastContentHeartbeatAt
         });
+        await clearRequestedTarget(selectedTabId);
         if (activationGeneration !== targetActivationGeneration) {
             return { status: 'superseded' };
         }
@@ -2960,7 +3035,8 @@ if (chrome.tabs?.onRemoved?.addListener) {
             const isCurrent = normalizeTabId(currentTabId) === tabId;
             const isPending = pending?.tabId === tabId;
             const isActivating = activeTargetActivation?.tabId === tabId;
-            if (!isCurrent && !isPending && !isActivating) return;
+            const isRequested = normalizeTabId(requestedTargetTabId) === tabId;
+            if (!isCurrent && !isPending && !isActivating && !isRequested) return;
 
             const hasReplacementActivation = activeTargetActivation
                 && activeTargetActivation.tabId !== tabId;
@@ -2981,6 +3057,7 @@ if (chrome.tabs?.onRemoved?.addListener) {
                     expectedTabId: tabId
                 });
             }
+            if (isRequested) await clearRequestedTarget(tabId);
             await chrome.storage.session.set({
                 currentTabId,
                 currentTabTitle,
@@ -3294,6 +3371,7 @@ async function handleAsyncMessage(message, sender, sendResponse) {
         if (message.retryPendingTarget === true) {
             await retryPendingTarget();
         }
+        await retryRequestedTarget();
         const pendingTarget = await readPendingTarget();
         const settings = await getSettings();
         const isConnected = socket && socket.readyState === WebSocket.OPEN && isNamespaceJoined;
@@ -3301,6 +3379,8 @@ async function handleAsyncMessage(message, sender, sendResponse) {
         let status = isConnected ? 'connected' : (isConnecting || (socket && socket.readyState === WebSocket.CONNECTING) ? 'connecting' : (isReconnecting ? 'reconnecting' : 'disconnected'));
         // Distinguish the normal "not in a room" resting state from a real drop.
         if (status === 'disconnected' && !currentRoom && !connectIntent) status = 'idle';
+        const requestedTarget = normalizeTabId(requestedTargetTabId);
+        const activatingTarget = normalizeTabId(activeTargetActivation?.tabId);
         sendResponse({ 
             status, 
             peerId, 
@@ -3310,6 +3390,10 @@ async function handleAsyncMessage(message, sender, sendResponse) {
             targetFrameId: currentTargetFrameId,
             targetDocumentId: currentTargetDocumentId,
             targetHasVideo: currentTargetHasVideo,
+            selectedTargetTabId: requestedTarget ?? activatingTarget ?? normalizeTabId(currentTabId),
+            requestedTargetTabId: requestedTarget,
+            requestedTargetTitle,
+            activatingTargetTabId: activatingTarget,
             pendingTargetTabId: pendingTarget?.tabId ?? null,
             pendingTargetHost: pendingTarget?.host ?? null,
             pendingTargetOriginPattern: pendingTarget?.originPattern ?? null,
@@ -3540,6 +3624,7 @@ async function handleAsyncMessage(message, sender, sendResponse) {
         broadcastControlMode();
         if (currentTabId) await deactivateTargetTab(currentTabId, currentContentTarget());
         invalidateTargetActivations();
+        await clearRequestedTarget();
         currentTabId = null;
         currentTabTitle = null;
         clearCurrentContentTarget();
@@ -3981,6 +4066,7 @@ async function handleAsyncMessage(message, sender, sendResponse) {
             const previousContentTarget = currentContentTarget();
             completeForceSyncBeforeTargetChange(null);
             invalidateTargetActivations();
+            await clearRequestedTarget();
             currentTabId = null;
             currentTabTitle = null;
             clearCurrentContentTarget();
@@ -4005,7 +4091,19 @@ async function handleAsyncMessage(message, sender, sendResponse) {
         }
 
         try {
-            const response = await activateTargetTab(message.tabId, message.tabTitle);
+            const selectedTabId = normalizeTabId(message.tabId);
+            if (selectedTabId === null) {
+                sendResponse({ status: 'invalid_tab' });
+                return;
+            }
+            pendingRequestedActivationCount++;
+            let response;
+            try {
+                await rememberRequestedTarget(selectedTabId, message.tabTitle);
+                response = await activateTargetTab(selectedTabId, message.tabTitle);
+            } finally {
+                pendingRequestedActivationCount = Math.max(0, pendingRequestedActivationCount - 1);
+            }
             if (response?.status === 'ok') {
                 chrome.runtime.sendMessage({
                     type: 'TARGET_TAB_READY',

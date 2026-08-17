@@ -8,6 +8,7 @@ const backgroundSource = fs.readFileSync(path.join(extensionDir, 'background.js'
 const contentSource = fs.readFileSync(path.join(extensionDir, 'content.js'), 'utf8');
 const overlaySource = fs.readFileSync(path.join(extensionDir, 'chat-overlay.js'), 'utf8');
 const monitorSource = fs.readFileSync(path.join(extensionDir, 'media-frame-monitor.js'), 'utf8');
+const popupSource = fs.readFileSync(path.join(extensionDir, 'popup.js'), 'utf8');
 const manifest = JSON.parse(fs.readFileSync(path.join(extensionDir, 'manifest.base.json'), 'utf8'));
 
 describe('target tab lifecycle', () => {
@@ -92,6 +93,18 @@ describe('target tab lifecycle', () => {
         );
         expect(routeSource).toContain('keeping the selected target for recovery');
         expect(routeSource).not.toContain('clearTargetTabForIdle(tabId, targetGeneration)');
+    });
+
+    it('persists the user target while dynamic-frame activation is still retrying', () => {
+        expect(backgroundSource).toContain('let requestedTargetTabId = null;');
+        expect(backgroundSource).toContain('let pendingRequestedActivationCount = 0;');
+        expect(backgroundSource).toContain('await rememberRequestedTarget(selectedTabId, message.tabTitle);');
+        expect(backgroundSource).toContain('pendingRequestedActivationCount > 0');
+        expect(backgroundSource).toContain('await retryRequestedTarget();');
+        expect(backgroundSource).toContain('selectedTargetTabId: requestedTarget ?? activatingTarget ?? normalizeTabId(currentTabId)');
+        expect(backgroundSource).toContain('await clearRequestedTarget(selectedTabId);');
+        expect(popupSource).toContain('function getSelectedTargetTabId(status)');
+        expect(popupSource).toContain('await populateTabs(res.peers, getSelectedTargetTabId(res));');
     });
 
     it('serializes content commands and coalesces target refreshes', () => {
