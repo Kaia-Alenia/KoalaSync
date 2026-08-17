@@ -8,7 +8,6 @@ const backgroundSource = fs.readFileSync(path.join(extensionDir, 'background.js'
 const contentSource = fs.readFileSync(path.join(extensionDir, 'content.js'), 'utf8');
 const overlaySource = fs.readFileSync(path.join(extensionDir, 'chat-overlay.js'), 'utf8');
 const monitorSource = fs.readFileSync(path.join(extensionDir, 'media-frame-monitor.js'), 'utf8');
-const popupSource = fs.readFileSync(path.join(extensionDir, 'popup.js'), 'utf8');
 const manifest = JSON.parse(fs.readFileSync(path.join(extensionDir, 'manifest.base.json'), 'utf8'));
 
 describe('target tab lifecycle', () => {
@@ -23,10 +22,9 @@ describe('target tab lifecycle', () => {
         const activationStart = backgroundSource.indexOf('async function activateTargetTab');
         const activationEnd = backgroundSource.indexOf('async function reactivateCurrentTarget', activationStart);
         const activationSource = backgroundSource.slice(activationStart, activationEnd);
-        expect(activationSource.indexOf('await injectContentScript(selectedTabId'))
-            .toBeLessThan(activationSource.indexOf('await deactivateTargetTab(previousTabId, previousContentTarget)'));
+        expect(activationSource.indexOf('await deactivateTargetTab(previousTabId)'))
+            .toBeLessThan(activationSource.indexOf('await injectContentScript(selectedTabId'));
         expect(activationSource).toContain('previousTabId !== selectedTabId');
-        expect(activationSource).toContain('keeping tab ${previousTabId} selected');
         expect(contentSource).toContain('if (window.koalaSyncInjected && chrome.runtime.id)');
         expect(overlaySource).toContain('if (window.koalaSyncChatOverlay?.refresh)');
     });
@@ -34,12 +32,8 @@ describe('target tab lifecycle', () => {
     it('fully deactivates old and superseded target injections', () => {
         expect(backgroundSource).toContain("{ type: 'TARGET_DEACTIVATE' }");
         expect(backgroundSource).toContain('target.documentId');
-        expect(backgroundSource).toContain('await resetAudioProcessingInTab(normalizedTabId, target);');
-        expect(backgroundSource).toContain("{ action: 'RESET_AUDIO_PROCESSING' }");
         expect(backgroundSource.match(/await deactivateTargetTab\(selectedTabId,/g)?.length).toBeGreaterThanOrEqual(6);
         expect(contentSource).toContain("if (message.type === 'TARGET_DEACTIVATE')");
-        expect(contentSource).toContain('destroyContentScript({ preserveAudioRoute: true });');
-        expect(contentSource).toContain('window.__koalaSyncAudioRoute');
         expect(overlaySource).toContain("message?.type === 'TARGET_DEACTIVATE'");
     });
 
@@ -52,11 +46,12 @@ describe('target tab lifecycle', () => {
 
     it('uses all-frame probing for cross-origin targets without navigation permissions', () => {
         expect(backgroundSource).toContain("files: ['media-frame-monitor.js']");
-        expect(backgroundSource).toContain('...listMediaFrameScriptTargets(tabId)');
+        expect(backgroundSource).toContain('const targets = listMediaFrameScriptTargets(tabId)');
         expect(backgroundSource).toContain('One denied widget frame must not block the selected player');
         expect(backgroundSource).toContain("navigationError.code = 'media_target_navigated'");
-        expect(backgroundSource).toContain('async function deactivateMediaFrameMonitors(tabId, contentTarget');
-        expect(backgroundSource).toContain('func: deactivateMediaFrameMonitor');
+        expect(backgroundSource).toContain("{ type: 'MEDIA_MONITOR_DEACTIVATE' }");
+        expect(backgroundSource).toContain('async function deactivateMediaFrameMonitors(tabId)');
+        expect(backgroundSource).toContain('{ documentId }');
         expect(monitorSource).toContain("type: 'MEDIA_FRAME_CANDIDATE_CHANGED'");
         expect(monitorSource).toContain("attributeFilter: ['class', 'style', 'hidden', 'src', 'controls']");
         expect(monitorSource).toContain('if (!force && nextSignature === lastCandidateSignature) return');
@@ -73,49 +68,6 @@ describe('target tab lifecycle', () => {
         expect(backgroundSource).not.toMatch(/chrome\.(?:web)?Navigation/);
     });
 
-    it('keeps the selected frame recoverable when an all-frame sweep is rejected', () => {
-        expect(backgroundSource).toContain('contentTarget?.scriptTarget');
-        expect(backgroundSource).toContain('...(contentTarget?.monitorTargets || [])');
-        expect(backgroundSource).toContain('function uniqueScriptTargets(targets)');
-        expect(backgroundSource).toContain('function deactivateMediaFrameMonitor()');
-        expect(backgroundSource).toContain('func: deactivateMediaFrameMonitor');
-        expect(backgroundSource).toContain('isMissingContentReceiverError(error)');
-        expect(backgroundSource).toContain('await refreshCurrentMediaTarget(tabId, { queueIfRunning: true })');
-        expect(backgroundSource).toContain("activation?.status === 'activation_in_progress'");
-        expect(backgroundSource).not.toContain('Media frame probe fell back to the top frame');
-    });
-
-    it('does not discard a selected tab when its media frame refresh is transiently unavailable', () => {
-        const refreshFailureGuard = backgroundSource.slice(
-            backgroundSource.indexOf('const isCurrentTargetRefresh'),
-            backgroundSource.indexOf('currentTabId = null', backgroundSource.indexOf('const isCurrentTargetRefresh'))
-        );
-        expect(refreshFailureGuard).toContain('keeping the selected target for recovery');
-        expect(refreshFailureGuard).not.toContain('currentTabId = null');
-
-        const routeSource = backgroundSource.slice(
-            backgroundSource.indexOf('async function _routeToContentInternal'),
-            backgroundSource.indexOf('// --- Keep-Alive Mechanism ---')
-        );
-        expect(routeSource).toContain('keeping the selected target for recovery');
-        expect(routeSource).not.toContain('clearTargetTabForIdle(tabId, targetGeneration)');
-    });
-
-    it('persists the user target while dynamic-frame activation is still retrying', () => {
-        expect(backgroundSource).toContain('let requestedTargetTabId = null;');
-        expect(backgroundSource).toContain('let pendingRequestedActivationCount = 0;');
-        expect(backgroundSource).toContain('await rememberRequestedTarget(selectedTabId, message.tabTitle);');
-        expect(backgroundSource).toContain('pendingRequestedActivationCount > 0');
-        expect(backgroundSource).toContain('await retryRequestedTarget();');
-        expect(backgroundSource).toContain('targetTabId,');
-        expect(backgroundSource).toContain('targetReady');
-        expect(backgroundSource).toContain("targetActivationState");
-        expect(backgroundSource).toContain('await clearRequestedTarget(selectedTabId);');
-        expect(popupSource).not.toContain('getSelectedTargetTabId');
-        expect(popupSource).toContain('await populateTabs(res.peers, res.targetTabId);');
-        expect(popupSource).toContain('res.targetReady !== true');
-    });
-
     it('serializes content commands and coalesces target refreshes', () => {
         expect(backgroundSource).toContain('contentCommandQueue.catch(() => {}).then(deliver)');
         expect(backgroundSource).toContain('if (mediaTargetRefreshTask && mediaTargetRefreshTabId === selectedTabId)');
@@ -127,7 +79,7 @@ describe('target tab lifecycle', () => {
     });
 
     it('tears down every persistent content-script resource', () => {
-        expect(contentSource).toContain('function destroyContentScript({ preserveAudioRoute = false } = {})');
+        expect(contentSource).toContain('function destroyContentScript()');
         expect(contentSource).toContain('observer.disconnect()');
         expect(contentSource).toContain('keepAlivePort.disconnect()');
         expect(contentSource).toContain('for (const video of [...attachedVideos]) detachVideoListeners(video);');

@@ -867,30 +867,19 @@
         return audioCtx;
     }
 
-    function closeAudioContext() {
-        const closingContext = audioCtx;
-        if (audioCtx) {
-            audioCtx.close().catch(() => {});
-            audioCtx = null;
-        }
-        if (window.__koalaSyncAudioRoute?.audioCtx === closingContext) {
-            delete window.__koalaSyncAudioRoute;
-        }
-        audioChains = new WeakMap();
-        currentAudioVideo = null;
-    }
+    function closeAudioContext() {
+        if (audioCtx) {
+            audioCtx.close().catch(() => {});
+            audioCtx = null;
+        }
+        audioChains = new WeakMap();
+        currentAudioVideo = null;
+    }
 
-    function setupAudioChain(videoEl) {
-        if (audioChains.has(videoEl)) return audioChains.get(videoEl);
-        const retainedRoute = window.__koalaSyncAudioRoute;
-        if (retainedRoute?.video === videoEl && retainedRoute.audioCtx && retainedRoute.chain) {
-            audioCtx = retainedRoute.audioCtx;
-            audioChains.set(videoEl, retainedRoute.chain);
-            currentAudioVideo = videoEl;
-            return retainedRoute.chain;
-        }
-        const ctx = initAudioContext();
-        if (!ctx) return null;
+    function setupAudioChain(videoEl) {
+        if (audioChains.has(videoEl)) return audioChains.get(videoEl);
+        const ctx = initAudioContext();
+        if (!ctx) return null;
 
         try {
             const src = ctx.createMediaElementSource(videoEl);
@@ -918,9 +907,8 @@
             limiter.release.value = 0.1;
 
             const chain = { compressor, dryGain, compGain, outputGain, limiter, active: false, signature: '' };
-            audioChains.set(videoEl, chain);
-            currentAudioVideo = videoEl;
-            window.__koalaSyncAudioRoute = { video: videoEl, audioCtx: ctx, chain };
+            audioChains.set(videoEl, chain);
+            currentAudioVideo = videoEl;
             return chain;
         } catch (e) {
             reportLog(`Audio Processing setup failed: ${e.message}`, 'warn');
@@ -1250,7 +1238,7 @@
     function handleRuntimeMessage(message, sender, sendResponse) {
         if (!message) return;
         if (message.type === 'TARGET_DEACTIVATE') {
-            destroyContentScript({ preserveAudioRoute: true });
+            destroyContentScript();
             sendResponse({ ok: true });
             return true;
         }
@@ -2074,7 +2062,7 @@
         }
     }
 
-    function destroyContentScript({ preserveAudioRoute = false } = {}) {
+    function destroyContentScript() {
         if (destroyed) return;
         destroyed = true;
 
@@ -2129,7 +2117,7 @@
         hcmRemoveDialog();
         hcmRemoveBadge();
         bypassCurrentAudioProcessing();
-        if (!preserveAudioRoute) closeAudioContext();
+        closeAudioContext();
         try { window.koalaSyncChatOverlay?.destroy?.(); } catch (_e) { /* invalidated chat context */ }
 
         try { chrome.storage.onChanged.removeListener(handleStorageChanged); } catch (_e) { /* invalidated context */ }

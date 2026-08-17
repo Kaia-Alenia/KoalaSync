@@ -1,8 +1,9 @@
 export const MEDIA_FRAME_ACCESS_REQUIRED = 'media_frame_access_required';
+export const MEDIA_FRAME_AMBIGUOUS = 'media_frame_ambiguous';
+
 const MIN_PLAYER_FRAME_AREA = 320 * 180;
 const MIN_PLAYER_ASPECT_RATIO = 1.15;
 const MAX_PLAYER_ASPECT_RATIO = 2.6;
-const DEFAULT_PROBE_TIMEOUT_MS = 1500;
 
 function normalizeFrameId(value) {
     return Number.isInteger(value) && value >= 0 ? value : 0;
@@ -406,10 +407,16 @@ function accessRequiredError(access) {
     return error;
 }
 
-function contentTarget(tabId, selected, monitorTargets = null) {
+function ambiguousFrameError() {
+    const error = new Error('The active embedded video frame could not be identified safely');
+    error.code = MEDIA_FRAME_AMBIGUOUS;
+    return error;
+}
+
+function contentTarget(tabId, selected) {
     const frameId = normalizeFrameId(selected?.frameId);
     const documentId = typeof selected?.documentId === 'string' ? selected.documentId : null;
-    const target = {
+    return {
         frameId,
         documentId,
         frameUrl: typeof selected?.result?.href === 'string' ? selected.result.href : null,
@@ -418,76 +425,16 @@ function contentTarget(tabId, selected, monitorTargets = null) {
             ? { tabId, documentIds: [documentId] }
             : (frameId === 0 ? { tabId } : { tabId, frameIds: [frameId] })
     };
-    if (Array.isArray(monitorTargets) && monitorTargets.length > 0) {
-        target.monitorTargets = monitorTargets;
-    }
-    return target;
 }
 
 export function listMediaFrameScriptTargets(tabId) {
     return [{ tabId, allFrames: true }];
 }
 
-function listFrameProbeTargets(tabId, embeddedFrameCount = 0) {
-    // Chromium can reject one all-frames executeScript call when a single
-    // child frame is browser-owned or temporarily unavailable. Frame IDs are
-    // not exposed without webNavigation, so probe a bounded range individually
-    // after the top frame tells us that embedded frames exist. Each rejected
-    // probe is isolated and cannot hide the other frames.
-    const maxFrameId = Math.min(64, Math.max(8, (embeddedFrameCount * 4) + 4));
-    return Array.from({ length: maxFrameId }, (_, frameId) => ({
-        tabId,
-        frameIds: [frameId]
-    }));
-}
-
-function frameScriptTarget(tabId, entry) {
-    const frameId = normalizeFrameId(entry?.frameId);
-    return typeof entry?.documentId === 'string' && entry.documentId
-        ? { tabId, documentIds: [entry.documentId] }
-        : (frameId === 0 ? { tabId, frameIds: [0] } : { tabId, frameIds: [frameId] });
-}
-
-function mergeFrameResults(...groups) {
-    const merged = new Map();
-    for (const group of groups) {
-        for (const entry of Array.isArray(group) ? group : []) {
-            if (!Number.isInteger(entry?.frameId)) continue;
-            // A frame ID identifies the current slot. If its document changed
-            // between the broad probe and the exact probe, the exact result
-            // must replace the stale document rather than create a duplicate
-            // candidate that can trigger a false ambiguity.
-            const key = `frame:${entry.frameId}`;
-            merged.set(key, entry);
-        }
-    }
-    return Array.from(merged.values());
-}
-
-function executeWithTimeout(task, timeoutMs, label) {
-    if (!Number.isFinite(timeoutMs) || timeoutMs <= 0) return task();
-    let timeoutId = null;
-    const timeout = new Promise((_, reject) => {
-        timeoutId = setTimeout(() => {
-            const error = new Error(`${label} timed out after ${timeoutMs}ms`);
-            error.code = 'media_frame_probe_timeout';
-            reject(error);
-        }, timeoutMs);
-    });
-    return Promise.race([task(), timeout]).finally(() => {
-        if (timeoutId !== null) clearTimeout(timeoutId);
-    });
-}
-
-async function executeInAccessibleFrames(chromeApi, targets, func, args, timeoutMs = DEFAULT_PROBE_TIMEOUT_MS) {
+async function executeInAccessibleFrames(chromeApi, targets, func, args) {
     const settled = await Promise.all(targets.map(async target => {
         try {
-            const result = await executeWithTimeout(
-                () => chromeApi.scripting.executeScript({ target, func, args }),
-                timeoutMs,
-                `Frame probe for ${JSON.stringify(target)}`
-            );
-            return Array.isArray(result) ? result : [];
+            return await chromeApi.scripting.executeScript({ target, func, args });
         } catch {
             return [];
         }
@@ -498,93 +445,76 @@ async function executeInAccessibleFrames(chromeApi, targets, func, args, timeout
 export async function resolveMediaContentTarget(chromeApi, tabId, {
     attempts = 8,
     retryDelayMs = 200,
-    probeDelayMs = 60,
-    probeTimeoutMs = DEFAULT_PROBE_TIMEOUT_MS
+    probeDelayMs = 60
 } = {}) {
     let fallback = null;
     let missingAccess = null;
-    let monitorTargets = [];
+    let ambiguous = false;
 
     for (let attempt = 0; attempt < attempts; attempt++) {
-        const topResults = await executeInAccessibleFrames(
+        const scriptTargets = listMediaFrameScriptTargets(tabId);
+        let results = await executeInAccessibleFrames(
             chromeApi,
-            [{ tabId, frameIds: [0] }],
+            scriptTargets,
             inspectMediaFrame,
-            [null],
-            probeTimeoutMs
+            [null]
         );
-        const allFrameResults = await executeInAccessibleFrames(
-            chromeApi,
-            listMediaFrameScriptTargets(tabId),
-            inspectMediaFrame,
-            [null],
-            probeTimeoutMs
-        );
-        let results = mergeFrameResults(topResults, allFrameResults);
-        const embeddedFrameCount = topResults.reduce(
-            (count, entry) => Math.max(count, entry?.result?.embeddedFrames?.length || 0),
-            0
-        );
-        if (embeddedFrameCount > 0) {
-            const individuallyProbed = await executeInAccessibleFrames(
-                chromeApi,
-                listFrameProbeTargets(tabId, embeddedFrameCount),
-                inspectMediaFrame,
-                [null],
-                probeTimeoutMs
-            );
-            results = mergeFrameResults(results, individuallyProbed);
+        if (results.length === 0) {
+            try {
+                results = await chromeApi.scripting.executeScript({
+                    target: { tabId },
+                    func: inspectMediaFrame,
+                    args: [null]
+                });
+            } catch {
+                return contentTarget(tabId, null);
+            }
         }
-        if (results.length === 0) return contentTarget(tabId, null);
 
         if (results.length > 1) {
             const token = `${tabId}:${attempt}:${Date.now()}:${Math.random()}`;
-            const frameTargets = results.map(entry => frameScriptTarget(tabId, entry));
             try {
                 await executeInAccessibleFrames(
                     chromeApi,
-                    frameTargets,
+                    scriptTargets,
                     installParentFrameVisibilityProbe,
-                    [token],
-                    probeTimeoutMs
+                    [token]
                 );
                 // Four passes match the maximum same-origin recursion depth.
                 for (let pass = 0; pass < 4; pass++) {
                     await executeInAccessibleFrames(
                         chromeApi,
-                        frameTargets,
+                        scriptTargets,
                         dispatchParentFrameVisibilityProbe,
-                        [token],
-                        probeTimeoutMs
+                        [token]
                     );
                     await new Promise(resolve => setTimeout(resolve, probeDelayMs));
                 }
                 const inspected = await executeInAccessibleFrames(
                     chromeApi,
-                    frameTargets,
+                    scriptTargets,
                     inspectMediaFrame,
-                    [token],
-                    probeTimeoutMs
+                    [token]
                 );
-                if (inspected.length > 0) results = mergeFrameResults(results, inspected);
+                if (inspected.length > 0) results = inspected;
             } catch {
                 // Initial results remain usable, but equally-ranked unknown
                 // frames will be rejected below rather than guessed.
             }
         }
-        // Rebuild these after the visibility refresh so a frame navigation that
-        // replaced its document ID cannot leave a stale monitor target behind.
-        monitorTargets = results.map(entry => frameScriptTarget(tabId, entry));
 
         const selected = selectMediaFrame(results);
+        const videoCandidates = results.filter(entry => entry?.result?.bestVideo?.rendered === true
+            && entry.result.parentFrameVisible !== false);
         const currentMissingAccess = findMissingPlayerAccess(results);
         missingAccess = currentMissingAccess;
         fallback = selected;
+        ambiguous = !selected && videoCandidates.length > 1;
         if (selected) {
             if (selected.result.bestVideo.hasSource
                 && selected.result.bestVideo.rendered
                 && !shouldPreferMissingAccess(currentMissingAccess, selected)) {
-                return contentTarget(tabId, selected, monitorTargets);
+                return contentTarget(tabId, selected);
             }
         }
 
@@ -594,10 +524,7 @@ export async function resolveMediaContentTarget(chromeApi, tabId, {
     }
 
     if (missingAccess) throw accessRequiredError(missingAccess);
-    if (fallback) return contentTarget(tabId, fallback, monitorTargets);
-    // Selecting a tab must not depend on video detection. A page can be a
-    // valid target before its player exists, and an ambiguous frame layout is
-    // recoverable through the injected lifecycle monitor. Keep the top-frame
-    // target active instead of discarding the user's selection.
-    return contentTarget(tabId, null, monitorTargets);
+    if (fallback) return contentTarget(tabId, fallback);
+    if (ambiguous) throw ambiguousFrameError();
+    return contentTarget(tabId, null);
 }

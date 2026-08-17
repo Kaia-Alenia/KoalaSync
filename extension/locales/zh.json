@@ -190,7 +190,6 @@
   "NOTIF_FORCE_PREPARE": "开始强制同步",
   "NOTIF_FORCE_EXECUTE": "同步所有人",
   "DEBUG_NO_TAB": "未选择目标选项卡。",
-  "DEBUG_TARGET_ACTIVATING": "已选择目标标签页；正在准备注入视频脚本。",
   "DEBUG_COMM_FAIL": "无法与标签视频通信。",
   "EMPTY_PEERS_TITLE": "还没有同行",
   "EMPTY_PEERS_HINT": "分享您的邀请链接以开始使用",

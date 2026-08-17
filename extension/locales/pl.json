@@ -190,7 +190,6 @@
   "NOTIF_FORCE_PREPARE": "wymusił synchronizację",
   "NOTIF_FORCE_EXECUTE": "zsynchronizował wszystkich",
   "DEBUG_NO_TAB": "Nie wybrano karty docelowej.",
-  "DEBUG_TARGET_ACTIVATING": "Wybrano kartę docelową; przygotowywanie wstrzyknięcia wideo.",
   "DEBUG_COMM_FAIL": "Nie można skomunikować się z wideo w karcie.",
   "EMPTY_PEERS_TITLE": "Brak uczestników",
   "EMPTY_PEERS_HINT": "Udostępnij link zaproszenia, aby rozpocząć",

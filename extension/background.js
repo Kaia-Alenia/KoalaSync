@@ -11,6 +11,7 @@ import { createChatActivityStore } from './chat-activity.js';
 import { HOST_ACCESS_REQUIRED_STATUS, normalizeTabId, inspectTabHostAccess, isHostAccessError, addTabHostAccessRequest, removeTabHostAccessRequest } from './host-access.js';
 import {
     MEDIA_FRAME_ACCESS_REQUIRED,
+    MEDIA_FRAME_AMBIGUOUS,
     listMediaFrameScriptTargets,
     resolveMediaContentTarget
 } from './media-frame-target.js';
@@ -74,15 +75,6 @@ let currentTabTitle = null; // New: for Smart Matching
 let currentTargetFrameId = 0;
 let currentTargetDocumentId = null;
 let currentTargetHasVideo = false;
-// The user's selection is kept separately from the currently injected media
-// target.  Dynamic player pages can be between frame documents while the
-// popup is closed; losing the selection in that window makes reopening the
-// popup look as if the user never selected a tab.
-let requestedTargetTabId = null;
-let requestedTargetTitle = null;
-let requestedTargetRetryBlockedTabId = null;
-let requestedTargetRetryBlockedMessage = null;
-let pendingRequestedActivationCount = 0;
 let targetActivationGeneration = 0;
 let activeTargetActivation = null;
 let mediaTargetRefreshTask = null;
@@ -225,8 +217,6 @@ function ensureState() {
                 'eventQueue', 'isForceSyncInitiator', 'forceSyncAcks', 
                 'forceSyncDeadline', 'reconnectFailed', 'reconnectStartTime', 'reconnectAttempts', 'currentTabId', 'currentTabTitle',
                 'currentTargetFrameId', 'currentTargetDocumentId', 'currentTargetHasVideo',
-                'requestedTargetTabId', 'requestedTargetTitle',
-                'requestedTargetRetryBlockedTabId', 'requestedTargetRetryBlockedMessage',
                 'episodeLobby', 'localSeq', 'lastSeqBySender', 'expectedAcksCount', 'roomIdleSince', 'lastContentHeartbeatAt',
                 'hcmDesynced', 'chatActivityTimeline'
             ], (data) => {
@@ -244,16 +234,6 @@ function ensureState() {
                     ? data.currentTargetDocumentId
                     : null;
                 currentTargetHasVideo = currentTabId !== null && data.currentTargetHasVideo === true;
-                requestedTargetTabId = normalizeTabId(data.requestedTargetTabId);
-                requestedTargetTitle = requestedTargetTabId !== null
-                    && typeof data.requestedTargetTitle === 'string'
-                    ? data.requestedTargetTitle
-                    : null;
-                requestedTargetRetryBlockedTabId = normalizeTabId(data.requestedTargetRetryBlockedTabId);
-                requestedTargetRetryBlockedMessage = requestedTargetRetryBlockedTabId !== null
-                    && typeof data.requestedTargetRetryBlockedMessage === 'string'
-                    ? data.requestedTargetRetryBlockedMessage
-                    : null;
                 if (data.currentTabTitle !== undefined) {
                     currentTabTitle = currentTabId !== null && typeof data.currentTabTitle === 'string'
                         ? data.currentTabTitle
@@ -683,14 +663,6 @@ function sendMessageToContentTab(tabId, message, callback = null) {
     return chrome.tabs.sendMessage(tabId, message);
 }
 
-function isMissingContentReceiverError(error) {
-    const message = String(error?.message || error || '');
-    return message.includes('Receiving end does not exist')
-        || message.includes('Could not establish connection')
-        || message.includes('No document with id')
-        || message.includes('No document with ID');
-}
-
 function isCurrentContentSender(sender) {
     if (!sender?.tab) return false;
     const senderTabId = normalizeTabId(sender.tab.id);
@@ -721,6 +693,38 @@ function clearCurrentContentTarget() {
     currentTargetHasVideo = false;
 }
 
+function clearTargetTabForIdle(expectedTabId = null, expectedGeneration = null) {
+    if (expectedTabId !== null && normalizeTabId(currentTabId) !== normalizeTabId(expectedTabId)) {
+        return false;
+    }
+    if (expectedGeneration !== null && targetActivationGeneration !== expectedGeneration) {
+        return false;
+    }
+
+    completeForceSyncBeforeTargetChange(null);
+    invalidateTargetActivations();
+    clearPendingTarget().catch(() => {});
+    if (currentTabId) deactivateTargetTab(currentTabId).catch(() => {});
+    currentTabId = null;
+    currentTabTitle = null;
+    clearCurrentContentTarget();
+    lastContentHeartbeatAt = null;
+    if (currentRoom) {
+        roomIdleSince = Date.now();
+    }
+    chrome.storage.session.set({
+        currentTabId,
+        currentTabTitle,
+        currentTargetFrameId,
+        currentTargetDocumentId,
+        currentTargetHasVideo,
+        roomIdleSince,
+        lastContentHeartbeatAt
+    }).catch(() => {});
+    updateBadgeStatus();
+    return true;
+}
+
 async function leaveRoomAfterIdleGrace(reason) {
     if (!currentRoom) return;
     connectIntent = false;
@@ -742,7 +746,6 @@ async function leaveRoomAfterIdleGrace(reason) {
     broadcastControlMode();
     if (currentTabId) await deactivateTargetTab(currentTabId);
     invalidateTargetActivations();
-    await clearRequestedTarget();
     currentTabId = null;
     currentTabTitle = null;
     clearCurrentContentTarget();
@@ -1125,48 +1128,6 @@ function chatActivityDisplayName(senderId) {
     return typeof peer === 'object' ? peer.username || senderId : senderId;
 }
 
-async function deliverChatActivity(entry) {
-    const tabId = normalizeTabId(currentTabId);
-    if (tabId === null) return;
-
-    const generation = targetActivationGeneration;
-    try {
-        await sendMessageToCurrentContent({
-            type: 'CHAT_EVENT',
-            event: entry
-        });
-        return;
-    } catch (error) {
-        if (!isMissingContentReceiverError(error)) {
-            addLog(`Chat activity delivery failed: ${error.message}`, 'warn');
-            return;
-        }
-        if (!isCurrentTargetIdentity(tabId, generation)) return;
-    }
-
-    for (let attempt = 0; attempt < 3; attempt++) {
-        try {
-            const activation = await refreshCurrentMediaTarget(tabId, { queueIfRunning: true });
-            if (activation?.status === 'activation_in_progress') {
-                await new Promise(resolve => setTimeout(resolve, 150));
-                continue;
-            }
-            if (activation?.status !== 'ok') return;
-            if (!isCurrentTargetIdentity(tabId, activation.generation)) return;
-            await sendMessageToCurrentContent({
-                type: 'CHAT_EVENT',
-                event: entry
-            });
-            return;
-        } catch (error) {
-            if (!isMissingContentReceiverError(error) || isCurrentTargetIdentity(tabId, generation)) {
-                addLog(`Chat activity delivery failed after target recovery: ${error.message}`, 'warn');
-            }
-            return;
-        }
-    }
-}
-
 function sendChatActivity(action, senderId, timestamp = Date.now()) {
     if (!currentRoom || !serverSupportsChat()) return;
     if (![EVENTS.PLAY, EVENTS.PAUSE, EVENTS.SEEK, EVENTS.FORCE_SYNC_PREPARE, EVENTS.FORCE_SYNC_EXECUTE, 'joined', 'left'].includes(action)) return;
@@ -1179,9 +1140,10 @@ function sendChatActivity(action, senderId, timestamp = Date.now()) {
     if (!entry) return;
     if (storageInitialized) chrome.storage.session.set({ chatActivityTimeline: chatActivityStore.snapshot() }).catch(() => {});
     if (!currentTabId) return;
-    deliverChatActivity(entry).catch(error => {
-        addLog(`Chat activity delivery failed: ${error.message}`, 'warn');
-    });
+    sendMessageToCurrentContent({
+        type: 'CHAT_EVENT',
+        event: entry
+    }).catch(error => addLog(`Chat activity delivery failed: ${error.message}`, 'warn'));
 }
 
 function scheduleReconnect() {
@@ -2067,32 +2029,20 @@ async function getReadyTabVideoState(tabId, expectedGeneration = targetActivatio
     if (!isCurrentTargetIdentity(tabId, expectedGeneration)) {
         return { error: 'Target tab changed before video state could be read' };
     }
-    let state = null;
-    let targetGeneration = expectedGeneration;
-    for (let attempt = 0; attempt < 3; attempt++) {
-        state = await getTabVideoState(tabId);
-        if (state && !state.error && state.found !== false) break;
-        if (!isCurrentTargetIdentity(tabId, targetGeneration)) {
-            return { error: 'Target tab changed before video state could be read' };
-        }
-
-        const activation = await refreshCurrentMediaTarget(tabId, { queueIfRunning: true });
-        if (activation?.status === 'activation_in_progress') {
-            await new Promise(resolve => setTimeout(resolve, 150));
-            if (normalizeTabId(currentTabId) !== tabId) {
-                return { error: 'Target tab changed before video state could be read' };
-            }
-            targetGeneration = targetActivationGeneration;
-            continue;
-        }
+    let state = await getTabVideoState(tabId);
+    if (!state || state.error || state.found === false) {
+        const activation = await refreshCurrentMediaTarget(tabId);
         if (activation?.status !== 'ok') {
             return { error: 'Target tab changed before content script recovery completed' };
         }
-        targetGeneration = activation.generation;
-        if (!isCurrentTargetIdentity(tabId, targetGeneration)) {
+        await new Promise(resolve => setTimeout(resolve, 250));
+        if (!isCurrentTargetIdentity(tabId, activation.generation)) {
             return { error: 'Target tab changed before video state could be read' };
         }
-        await new Promise(resolve => setTimeout(resolve, 150));
+        state = await getTabVideoState(tabId);
+        if (!isCurrentTargetIdentity(tabId, activation.generation)) {
+            return { error: 'Target tab changed while video state was being read' };
+        }
     }
     return decorateVideoState(tabId, state);
 }
@@ -2239,44 +2189,38 @@ function setPageApiSeekEnabled(enabled) {
     window.KOALA_PAGE_API_SEEK_ENABLED = enabled === true;
 }
 
-function uniqueScriptTargets(targets) {
-    const seen = new Set();
-    return targets.filter(target => {
-        const key = JSON.stringify(target);
-        if (seen.has(key)) return false;
-        seen.add(key);
-        return true;
-    });
-}
-
-function deactivateMediaFrameMonitor() {
-    try { window.__koalaMediaFrameMonitorCleanup?.(); } catch { /* detached frame */ }
-}
-
-async function deactivateMediaFrameMonitors(tabId, contentTarget = null) {
-    const targets = uniqueScriptTargets([
-        contentTarget?.scriptTarget,
-        ...(contentTarget?.monitorTargets || []),
-        { tabId },
-        ...listMediaFrameScriptTargets(tabId)
-    ].filter(Boolean));
-    for (const target of targets) {
+async function deactivateMediaFrameMonitors(tabId) {
+    const targets = listMediaFrameScriptTargets(tabId);
+    await Promise.all(targets.map(async target => {
+        const documentId = target.documentIds?.[0];
+        const frameId = target.frameIds?.[0];
         try {
-            await chrome.scripting.executeScript({
-                target,
-                func: deactivateMediaFrameMonitor
-            });
+            if (typeof documentId === 'string') {
+                await chrome.tabs.sendMessage(
+                    tabId,
+                    { type: 'MEDIA_MONITOR_DEACTIVATE' },
+                    { documentId }
+                );
+            } else if (Number.isInteger(frameId)) {
+                await chrome.tabs.sendMessage(
+                    tabId,
+                    { type: 'MEDIA_MONITOR_DEACTIVATE' },
+                    { frameId }
+                );
+            } else {
+                await chrome.tabs.sendMessage(tabId, { type: 'MEDIA_MONITOR_DEACTIVATE' });
+            }
         } catch {
             // Denied or already-navigated frames have no installed monitor.
         }
-    }
+    }));
 }
 
 async function deactivateTargetTab(tabId, contentTarget = null, { deactivateMonitor = true } = {}) {
     const normalizedTabId = normalizeTabId(tabId);
     if (normalizedTabId === null) return;
     if (deactivateMonitor) {
-        await deactivateMediaFrameMonitors(normalizedTabId, contentTarget);
+        await deactivateMediaFrameMonitors(normalizedTabId);
     }
     const target = contentTarget
         || (normalizedTabId === normalizeTabId(currentTabId) ? currentContentTarget() : null)
@@ -2287,7 +2231,7 @@ async function deactivateTargetTab(tabId, contentTarget = null, { deactivateMoni
             }
             : null)
         || { frameId: 0, documentId: null };
-    await resetAudioProcessingInTab(normalizedTabId, target);
+    resetAudioProcessingInTab(normalizedTabId, target);
     await sendMessageToFrame(
         normalizedTabId,
         target.frameId,
@@ -2348,57 +2292,38 @@ function createTargetActivationSupersededError() {
     return error;
 }
 
-const SCRIPT_INJECTION_TIMEOUT_MS = 5000;
-
-function executeScriptWithTimeout(options, timeoutMs = SCRIPT_INJECTION_TIMEOUT_MS) {
-    if (!Number.isFinite(timeoutMs) || timeoutMs <= 0) {
-        return chrome.scripting.executeScript(options);
-    }
-    let timeoutId = null;
-    const label = Array.isArray(options?.files) && options.files.length > 0
-        ? options.files.join(', ')
-        : 'function injection';
-    const timeout = new Promise((_, reject) => {
-        timeoutId = setTimeout(() => {
-            const error = new Error(`Script injection timed out after ${timeoutMs}ms (${label})`);
-            error.code = 'script_injection_timeout';
-            reject(error);
-        }, timeoutMs);
-    });
-    return Promise.race([
-        chrome.scripting.executeScript(options),
-        timeout
-    ]).finally(() => {
-        if (timeoutId !== null) clearTimeout(timeoutId);
-    });
-}
-
 async function injectMediaFrameMonitors(tabId, contentTarget) {
-    // The all-frames target is only a best-effort sweep: one inaccessible
-    // frame can make Chromium reject the entire sweep. Always include the
-    // selected document explicitly so its lifecycle monitor is guaranteed.
-    const targets = uniqueScriptTargets([
-        contentTarget?.scriptTarget,
-        ...(contentTarget?.monitorTargets || []),
-        { tabId },
-        ...listMediaFrameScriptTargets(tabId)
-    ].filter(Boolean));
+    const targets = listMediaFrameScriptTargets(tabId);
     let injectedCount = 0;
-    for (const target of targets) {
+    await Promise.all(targets.map(async target => {
         try {
-            await executeScriptWithTimeout({
+            await chrome.scripting.executeScript({
                 target,
                 files: ['media-frame-monitor.js']
-            }, 2000);
+            });
             injectedCount++;
-        } catch (error) {
-            if (error?.code === 'script_injection_timeout') {
-                addLog(`Media-frame monitor injection timed out for ${JSON.stringify(target)}`, 'warn');
-            }
+        } catch {
             // One denied widget frame must not block the selected player.
         }
+    }));
+    if (injectedCount > 0) return;
+
+    const fallbackTargets = [{ tabId }, contentTarget.scriptTarget];
+    const seen = new Set();
+    for (const target of fallbackTargets) {
+        const key = JSON.stringify(target);
+        if (seen.has(key)) continue;
+        seen.add(key);
+        try {
+            await chrome.scripting.executeScript({
+                target,
+                files: ['media-frame-monitor.js']
+            });
+            injectedCount++;
+        } catch {
+            // Main injection below reports a real selected-target failure.
+        }
     }
-    return injectedCount;
 }
 
 async function injectContentScript(tabId, {
@@ -2440,7 +2365,8 @@ async function injectContentScript(tabId, {
                 originPattern: error.originPattern
             }, requestAdded, error);
         }
-        throw error;
+        if (error?.code === MEDIA_FRAME_AMBIGUOUS) throw error;
+        addLog(`Media frame probe fell back to the top frame: ${error.message}`, 'warn');
     }
 
     const scriptTarget = contentTarget.scriptTarget;
@@ -2460,12 +2386,12 @@ async function injectContentScript(tabId, {
         }
         if (needsPageApiSeek) {
             try {
-                await executeScriptWithTimeout({
+                await chrome.scripting.executeScript({
                     target: scriptTarget,
                     world: 'MAIN',
                     files: ['page-api-seek-overrides.js']
                 });
-                await executeScriptWithTimeout({
+                await chrome.scripting.executeScript({
                     target: scriptTarget,
                     world: 'MAIN',
                     func: installPageApiSeekBridge
@@ -2476,16 +2402,16 @@ async function injectContentScript(tabId, {
             }
         }
 
-        await executeScriptWithTimeout({
+        await chrome.scripting.executeScript({
             target: scriptTarget,
             files: ['page-api-seek-overrides.js']
         });
-        await executeScriptWithTimeout({
+        await chrome.scripting.executeScript({
             target: scriptTarget,
             func: setPageApiSeekEnabled,
             args: [pageApiSeekReady]
         });
-        const injectionResults = await executeScriptWithTimeout({
+        const injectionResults = await chrome.scripting.executeScript({
             target: scriptTarget,
             files: ['chat-format.js', 'chat-overlay.js', 'content.js']
         });
@@ -2683,83 +2609,6 @@ async function clearPendingTarget({ expectedRequestId = null, expectedTabId = nu
     });
 }
 
-async function rememberRequestedTarget(tabId, tabTitle) {
-    const normalizedTabId = normalizeTabId(tabId);
-    if (normalizedTabId === null) return false;
-    requestedTargetTabId = normalizedTabId;
-    requestedTargetTitle = typeof tabTitle === 'string' ? tabTitle : null;
-    requestedTargetRetryBlockedTabId = null;
-    requestedTargetRetryBlockedMessage = null;
-    await chrome.storage.session.set({
-        requestedTargetTabId,
-        requestedTargetTitle,
-        requestedTargetRetryBlockedTabId: null,
-        requestedTargetRetryBlockedMessage: null
-    });
-    return true;
-}
-
-async function clearRequestedTarget(expectedTabId = null) {
-    if (expectedTabId !== null
-        && normalizeTabId(requestedTargetTabId) !== normalizeTabId(expectedTabId)) {
-        return false;
-    }
-    requestedTargetTabId = null;
-    requestedTargetTitle = null;
-    requestedTargetRetryBlockedTabId = null;
-    requestedTargetRetryBlockedMessage = null;
-    await chrome.storage.session.set({
-        requestedTargetTabId: null,
-        requestedTargetTitle: null,
-        requestedTargetRetryBlockedTabId: null,
-        requestedTargetRetryBlockedMessage: null
-    });
-    return true;
-}
-
-async function retryRequestedTarget() {
-    const selectedTabId = normalizeTabId(requestedTargetTabId);
-    if (selectedTabId === null
-        || normalizeTabId(currentTabId) === selectedTabId
-        || pendingRequestedActivationCount > 0
-        || activeTargetActivation
-        || normalizeTabId(requestedTargetRetryBlockedTabId) === selectedTabId) {
-        return null;
-    }
-
-    const pending = await readPendingTarget();
-    if (pending) return null;
-
-    try {
-        await chrome.tabs.get(selectedTabId);
-    } catch {
-        await clearRequestedTarget(selectedTabId);
-        return { status: 'target_closed' };
-    }
-
-    try {
-        const response = await activateTargetTab(selectedTabId, requestedTargetTitle, {
-            requestHostAccess: true,
-            expectedGeneration: targetActivationGeneration
-        });
-        if (response?.status === 'ok') {
-            await clearRequestedTarget(selectedTabId);
-        }
-        return response;
-    } catch (error) {
-        if (error?.code !== HOST_ACCESS_REQUIRED_STATUS) {
-            requestedTargetRetryBlockedTabId = selectedTabId;
-            requestedTargetRetryBlockedMessage = error?.message || 'Script injection failed';
-            await chrome.storage.session.set({
-                requestedTargetRetryBlockedTabId,
-                requestedTargetRetryBlockedMessage
-            });
-        }
-        addLog(`Requested target retry failed: ${error.message}`, 'warn');
-        return injectionFailureResponse(error);
-    }
-}
-
 async function activateTargetTab(tabId, tabTitle, {
     requestHostAccess = true,
     expectedGeneration = null,
@@ -2785,6 +2634,9 @@ async function activateTargetTab(tabId, tabTitle, {
     let injectedContentTarget = { frameId: 0, documentId: null, hasVideo: false };
 
     try {
+        if (previousTabId && previousTabId !== selectedTabId) {
+            await deactivateTargetTab(previousTabId);
+        }
         if (activationGeneration !== targetActivationGeneration) {
             return { status: 'superseded' };
         }
@@ -2809,37 +2661,32 @@ async function activateTargetTab(tabId, tabTitle, {
                 }
                 return { status: 'superseded' };
             }
-            const isCurrentTargetRefresh = previousTabId === selectedTabId
-                && expectedCurrentTabId === selectedTabId;
-            if (isCurrentTargetRefresh) {
-                addLog(
-                    isMediaTargetNavigationError(error)
-                        ? 'Media document changed during refresh; keeping the previous target until navigation completes'
-                        : `Media target refresh failed (${error.message}); keeping the selected target for recovery`,
-                    'warn'
-                );
+            if (previousTabId === selectedTabId
+                && expectedCurrentTabId === selectedTabId
+                && isMediaTargetNavigationError(error)) {
+                addLog('Media document changed during refresh; keeping the previous target until navigation completes', 'warn');
                 throw error;
             }
+            currentTabId = null;
+            currentTabTitle = null;
+            clearCurrentContentTarget();
+            lastContentHeartbeatAt = null;
+            if (currentRoom) roomIdleSince = Date.now();
             const failedContentTarget = error?.contentTarget || injectedContentTarget;
             await deactivateTargetTab(selectedTabId, failedContentTarget);
-            if (previousTabId === null) {
-                currentTabId = null;
-                currentTabTitle = null;
-                clearCurrentContentTarget();
-                lastContentHeartbeatAt = null;
-                if (currentRoom) roomIdleSince = Date.now();
-                await chrome.storage.session.set({
-                    currentTabId: null,
-                    currentTabTitle: null,
-                    currentTargetFrameId: 0,
-                    currentTargetDocumentId: null,
-                    currentTargetHasVideo: false,
-                    roomIdleSince,
-                    lastContentHeartbeatAt: null
-                });
-            } else {
-                addLog(`Target switch to tab ${selectedTabId} failed; keeping tab ${previousTabId} selected`, 'warn');
+            if (previousTabId && (previousTabId !== selectedTabId
+                || !sameContentTarget(previousContentTarget, failedContentTarget))) {
+                await deactivateTargetTab(previousTabId, previousContentTarget);
             }
+            await chrome.storage.session.set({
+                currentTabId: null,
+                currentTabTitle: null,
+                currentTargetFrameId: 0,
+                currentTargetDocumentId: null,
+                currentTargetHasVideo: false,
+                roomIdleSince,
+                lastContentHeartbeatAt: null
+            });
             if (activationGeneration !== targetActivationGeneration) {
                 return { status: 'superseded' };
             }
@@ -2889,9 +2736,7 @@ async function activateTargetTab(tabId, tabTitle, {
             if (currentTabId !== selectedTabId) await deactivateTargetTab(selectedTabId, injectedContentTarget);
             return { status: 'superseded' };
         }
-        if (previousTabId && previousTabId !== selectedTabId) {
-            await deactivateTargetTab(previousTabId, previousContentTarget);
-        } else if (previousTabId === selectedTabId
+        if (previousTabId === selectedTabId
             && !sameContentTarget(previousContentTarget, injectedContentTarget)) {
             await deactivateTargetTab(previousTabId, previousContentTarget, { deactivateMonitor: false });
         }
@@ -2913,7 +2758,6 @@ async function activateTargetTab(tabId, tabTitle, {
             roomIdleSince,
             lastContentHeartbeatAt
         });
-        await clearRequestedTarget(selectedTabId);
         if (activationGeneration !== targetActivationGeneration) {
             return { status: 'superseded' };
         }
@@ -3088,8 +2932,7 @@ if (chrome.tabs?.onRemoved?.addListener) {
             const isCurrent = normalizeTabId(currentTabId) === tabId;
             const isPending = pending?.tabId === tabId;
             const isActivating = activeTargetActivation?.tabId === tabId;
-            const isRequested = normalizeTabId(requestedTargetTabId) === tabId;
-            if (!isCurrent && !isPending && !isActivating && !isRequested) return;
+            if (!isCurrent && !isPending && !isActivating) return;
 
             const hasReplacementActivation = activeTargetActivation
                 && activeTargetActivation.tabId !== tabId;
@@ -3110,7 +2953,6 @@ if (chrome.tabs?.onRemoved?.addListener) {
                     expectedTabId: tabId
                 });
             }
-            if (isRequested) await clearRequestedTarget(tabId);
             await chrome.storage.session.set({
                 currentTabId,
                 currentTabTitle,
@@ -3189,12 +3031,16 @@ async function _routeToContentInternal(tabId, action, payload, actionTimestamp, 
             return;
         }
         if (retries >= 3) {
-            addLog(`Content Script not responding in tab ${tabId} after ${retries} retries; keeping the selected target for recovery`, 'warn');
+            addLog(`Content Script not responding in tab ${tabId} after ${retries} retries`, 'warn');
+            clearTargetTabForIdle(tabId, targetGeneration);
             return;
         }
 
         const message = String(error?.message || '');
-        if (isMissingContentReceiverError(error) || message.includes('Extension context invalidated')) {
+        if (message.includes('Receiving end does not exist')
+            || message.includes('Extension context invalidated')
+            || message.includes('No document with id')
+            || message.includes('No document with ID')) {
             try {
                 const response = await refreshCurrentMediaTarget(tabId);
                 if (response?.status !== 'ok' && response?.status !== 'activation_in_progress') return;
@@ -3214,6 +3060,7 @@ async function _routeToContentInternal(tabId, action, payload, actionTimestamp, 
         }
 
         addLog(`Content Script not responding in tab ${tabId}`, 'warn');
+        clearTargetTabForIdle(tabId, targetGeneration);
     }
 }
 
@@ -3291,27 +3138,27 @@ function leaveOldRoomIfSwitching(newRoomId) {
     }
 }
 
-async function resetAudioProcessingInTab(tabId, contentTarget = null) {
-    const normalizedTabId = normalizeTabId(tabId);
-    if (normalizedTabId === null) return null;
+function resetAudioProcessingInTab(tabId, contentTarget = null) {
+    if (!tabId) return;
     if (contentTarget) {
-        return sendMessageToFrame(
-            normalizedTabId,
+        sendMessageToFrame(
+            tabId,
             contentTarget.frameId,
             { action: 'RESET_AUDIO_PROCESSING' },
             null,
             contentTarget.documentId
-        ).catch(() => null);
+        ).catch(() => {});
+        return;
     }
-    if (normalizedTabId === normalizeTabId(currentTabId)) {
-        return sendMessageToCurrentContent({ action: 'RESET_AUDIO_PROCESSING' }).catch(() => null);
+    if (normalizeTabId(tabId) === normalizeTabId(currentTabId)) {
+        sendMessageToCurrentContent({ action: 'RESET_AUDIO_PROCESSING' }).catch(() => {});
+        return;
     }
-    return chrome.tabs.sendMessage(normalizedTabId, { action: 'RESET_AUDIO_PROCESSING' }).catch(() => null);
+    chrome.tabs.sendMessage(tabId, { action: 'RESET_AUDIO_PROCESSING' }).catch(() => {});
 }
 
 async function applyAudioSettingsToTab(tabId, contentTarget = null) {
-    const normalizedTabId = normalizeTabId(tabId);
-    if (normalizedTabId === null) return;
+    if (!tabId) return;
     // Local-only: audioSettings are never read from storage.sync.
     const data = await chrome.storage.local.get(['audioSettings']);
     const message = {
@@ -3319,20 +3166,20 @@ async function applyAudioSettingsToTab(tabId, contentTarget = null) {
         settings: data.audioSettings
     };
     if (contentTarget) {
-        await sendMessageToFrame(
-            normalizedTabId,
+        sendMessageToFrame(
+            tabId,
             contentTarget.frameId,
             message,
             null,
             contentTarget.documentId
-        ).catch(() => null);
+        ).catch(() => {});
         return;
     }
-    if (normalizedTabId === normalizeTabId(currentTabId)) {
-        await sendMessageToCurrentContent(message).catch(() => null);
+    if (normalizeTabId(tabId) === normalizeTabId(currentTabId)) {
+        sendMessageToCurrentContent(message).catch(() => {});
         return;
     }
-    await chrome.tabs.sendMessage(normalizedTabId, message).catch(() => null);
+    chrome.tabs.sendMessage(tabId, message).catch(() => {});
 }
 
 // --- Extension Message Listeners ---
@@ -3424,7 +3271,6 @@ async function handleAsyncMessage(message, sender, sendResponse) {
         if (message.retryPendingTarget === true) {
             await retryPendingTarget();
         }
-        await retryRequestedTarget();
         const pendingTarget = await readPendingTarget();
         const settings = await getSettings();
         const isConnected = socket && socket.readyState === WebSocket.OPEN && isNamespaceJoined;
@@ -3432,36 +3278,15 @@ async function handleAsyncMessage(message, sender, sendResponse) {
         let status = isConnected ? 'connected' : (isConnecting || (socket && socket.readyState === WebSocket.CONNECTING) ? 'connecting' : (isReconnecting ? 'reconnecting' : 'disconnected'));
         // Distinguish the normal "not in a room" resting state from a real drop.
         if (status === 'disconnected' && !currentRoom && !connectIntent) status = 'idle';
-        const targetTabId = normalizeTabId(requestedTargetTabId)
-            ?? normalizeTabId(activeTargetActivation?.tabId)
-            ?? normalizeTabId(currentTabId);
-        const targetReady = targetTabId !== null
-            && normalizeTabId(currentTabId) === targetTabId
-            && !activeTargetActivation;
-        const targetActivationState = targetTabId === null
-            ? 'none'
-            : targetReady
-                ? 'ready'
-                : pendingTarget?.tabId === targetTabId
-                    ? 'access_required'
-                    : normalizeTabId(requestedTargetRetryBlockedTabId) === targetTabId
-                        ? 'error'
-                    : 'activating';
-        const targetActivationError = normalizeTabId(requestedTargetRetryBlockedTabId) === targetTabId
-            ? requestedTargetRetryBlockedMessage
-            : null;
         sendResponse({ 
             status, 
             peerId, 
             peers: currentRoom ? currentRoom.peers : [],
             lastActionState,
-            targetTabId,
+            targetTabId: currentTabId,
             targetFrameId: currentTargetFrameId,
             targetDocumentId: currentTargetDocumentId,
             targetHasVideo: currentTargetHasVideo,
-            targetReady,
-            targetActivationState,
-            targetActivationError,
             pendingTargetTabId: pendingTarget?.tabId ?? null,
             pendingTargetHost: pendingTarget?.host ?? null,
             pendingTargetOriginPattern: pendingTarget?.originPattern ?? null,
@@ -3692,7 +3517,6 @@ async function handleAsyncMessage(message, sender, sendResponse) {
         broadcastControlMode();
         if (currentTabId) await deactivateTargetTab(currentTabId, currentContentTarget());
         invalidateTargetActivations();
-        await clearRequestedTarget();
         currentTabId = null;
         currentTabTitle = null;
         clearCurrentContentTarget();
@@ -4134,7 +3958,6 @@ async function handleAsyncMessage(message, sender, sendResponse) {
             const previousContentTarget = currentContentTarget();
             completeForceSyncBeforeTargetChange(null);
             invalidateTargetActivations();
-            await clearRequestedTarget();
             currentTabId = null;
             currentTabTitle = null;
             clearCurrentContentTarget();
@@ -4159,19 +3982,7 @@ async function handleAsyncMessage(message, sender, sendResponse) {
         }
 
         try {
-            const selectedTabId = normalizeTabId(message.tabId);
-            if (selectedTabId === null) {
-                sendResponse({ status: 'invalid_tab' });
-                return;
-            }
-            pendingRequestedActivationCount++;
-            let response;
-            try {
-                await rememberRequestedTarget(selectedTabId, message.tabTitle);
-                response = await activateTargetTab(selectedTabId, message.tabTitle);
-            } finally {
-                pendingRequestedActivationCount = Math.max(0, pendingRequestedActivationCount - 1);
-            }
+            const response = await activateTargetTab(message.tabId, message.tabTitle);
             if (response?.status === 'ok') {
                 chrome.runtime.sendMessage({
                     type: 'TARGET_TAB_READY',

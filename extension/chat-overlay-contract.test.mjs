@@ -173,18 +173,6 @@ describe('chat overlay contract', () => {
         expect(overlaySource).toContain("if (destroyed || area !== 'local') return");
     });
 
-    it('persists the last manual open/closed state across context refreshes', () => {
-        expect(overlaySource).toContain('const openStateKey = `chatOverlayOpen:${location.origin}`');
-        expect(overlaySource).toContain('let lastUserOpenState = null');
-        expect(overlaySource).toContain('function setOpened(next, persistPreference = true)');
-        expect(overlaySource).toContain('setLocalStorage({ [openStateKey]: opened })');
-        expect(overlaySource).toContain('setOpened(false, false)');
-        expect(overlaySource).toContain('setOpened(lastUserOpenState ?? (chatStartMode === \'open\'), false)');
-        expect(overlaySource).toContain('typeof data[openStateKey] === \'boolean\'');
-        expect(overlaySource).toContain('const previousEnabled = context?.enabled === true');
-        expect(overlaySource).toContain('(!startStateApplied || !previousEnabled)');
-    });
-
     it('keeps chat hidden by default without discarding the room chat key', () => {
         expect(popupSource).toContain('localData.chatEnabled === true');
         expect(backgroundSource).toContain('chatEnabled: data.chatEnabled === true');

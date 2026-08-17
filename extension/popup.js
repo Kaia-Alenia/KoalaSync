@@ -468,12 +468,12 @@ async function init() {
 
             // Keep a denied selection visible while Chrome waits for the user
             // to grant access; it becomes active automatically after approval.
-            await populateTabs(res.peers, res.targetTabId);
+            await populateTabs(res.peers, res.targetTabId || res.pendingTargetTabId);
 
             // Render lobby status if active
             if (res.episodeLobby) updateLobbyUI(res.episodeLobby, res.peers);
 
-            if (res.status === 'connected' && normalizeTabId(res.targetTabId) === null && localData.roomId) {
+            if (res.status === 'connected' && !res.targetTabId && !res.pendingTargetTabId && localData.roomId) {
                 const syncTabBtn = document.querySelector('.tab-btn[data-tab="tab-sync"]');
                 if (syncTabBtn) syncTabBtn.click();
                 showSelectVideoHint();
@@ -682,7 +682,7 @@ async function refreshTargetAccessState() {
     }
     await populateTabs(
         status.peers,
-        status.targetTabId
+        status.targetTabId ?? status.pendingTargetTabId ?? null
     );
 }
 
@@ -1222,14 +1222,14 @@ async function populateTabs(providedPeers = null, providedTargetTabId = null) {
     const blacklistDomains = getEffectiveBlacklistDomains(await readBlacklistOverrides());
     const isFilterActive = data.filterNoise !== false;
     
-    let currentTargetTabId = normalizeTabId(providedTargetTabId);
+    let currentTargetTabId = providedTargetTabId;
     if (currentTargetTabId === null) {
         const status = await new Promise(r => chrome.runtime.sendMessage({ type: 'GET_STATUS' }, r));
         if (chrome.runtime.lastError) {
             if (populateTabsToken !== token) return;
             currentTargetTabId = null;
         } else {
-            currentTargetTabId = status?.targetTabId ?? null;
+            currentTargetTabId = status?.targetTabId || status?.pendingTargetTabId;
         }
     }
  
@@ -1260,7 +1260,7 @@ async function populateTabs(providedPeers = null, providedTargetTabId = null) {
 
     const filteredTabs = tabs.filter(tab => {
         if (!tab.url || tab.url.startsWith('chrome://')) return false;
-        if (isFilterActive && currentTargetTabId !== null && tab.id !== currentTargetTabId) {
+        if (isFilterActive && tab.id !== parseInt(currentTargetTabId)) {
             if (isUrlBlacklisted(tab.url, blacklistDomains)) return false;
         }
         return true;
@@ -1311,7 +1311,7 @@ async function populateTabs(providedPeers = null, providedTargetTabId = null) {
     // Sort: 1. Current tab first, 2. Matches, 3. Rest alphabetically
     const options = Array.from(elements.targetTab.options);
     const placeholder = options.shift();
-    const currentTabId = currentTargetTabId;
+    const currentTabId = providedTargetTabId ? parseInt(providedTargetTabId) : null;
 
     options.sort((a, b) => {
         const aId = parseInt(a.value);
@@ -1331,7 +1331,7 @@ async function populateTabs(providedPeers = null, providedTargetTabId = null) {
     elements.targetTab.appendChild(placeholder);
     options.forEach(opt => elements.targetTab.appendChild(opt));
 
-    if (currentTargetTabId !== null) {
+    if (currentTargetTabId) {
         elements.targetTab.value = currentTargetTabId;
     } else {
         const matchOpt = options.find(o => o.textContent.includes('⭐ MATCH:'));
@@ -1745,7 +1745,7 @@ if (elements.langSelector) {
                 } else {
                     hideSiteAccessNotice();
                 }
-                await populateTabs(res.peers, res.targetTabId);
+                await populateTabs(res.peers, res.targetTabId || res.pendingTargetTabId);
                 if (res.episodeLobby) updateLobbyUI(res.episodeLobby, res.peers);
             } else {
                 applyConnectionStatus('disconnected');
@@ -2094,7 +2094,7 @@ elements.forceSyncBtn.addEventListener('click', async () => {
     elements.forceSyncBtn.disabled = true;
 
     const status = await new Promise(r => chrome.runtime.sendMessage({ type: 'GET_STATUS' }, r));
-    if (chrome.runtime.lastError || !status || status.targetReady !== true || normalizeTabId(status.targetTabId) === null) {
+    if (chrome.runtime.lastError || !status || !status.targetTabId) {
         elements.forceSyncBtn.disabled = false;
         return;
     }
@@ -2160,8 +2160,7 @@ elements.forceSyncBtn.addEventListener('click', async () => {
                 resolve(false);
                 return;
             }
-            resolve(currentStatus?.targetReady === true
-                && normalizeTabId(currentStatus?.targetTabId) === tabId);
+            resolve(normalizeTabId(currentStatus?.targetTabId) === tabId);
         });
     });
 
@@ -2580,9 +2579,8 @@ elements.copyLogs.addEventListener('click', () => {
         logs = logs || [];
         history = history || [];
 
-        const targetTabId = normalizeTabId(status.targetTabId);
-        const videoPromise = (targetTabId !== null && status.targetReady === true)
-            ? new Promise(resolve => chrome.runtime.sendMessage({ type: 'GET_VIDEO_STATE', tabId: targetTabId }, resolve))
+        const videoPromise = (status && status.targetTabId)
+            ? new Promise(resolve => chrome.runtime.sendMessage({ type: 'GET_VIDEO_STATE', tabId: status.targetTabId }, resolve))
             : Promise.resolve(null);
 
         videoPromise.then(rawVideo => {
@@ -2600,11 +2598,6 @@ elements.copyLogs.addEventListener('click', () => {
         lines.push(`- **Protocol:** ${safe(status.protocolVersion, '?')}`);
         lines.push(`- **Peer ID:** \`${safe(status.peerId, '?')}\``);
         lines.push(`- **User Agent:** ${userAgent}`);
-        lines.push('');
-
-        lines.push('## Target');
-        lines.push(`- **Target Tab ID:** ${targetTabId ?? 'none'}`);
-        lines.push(`- **Activation:** ${safe(status.targetActivationState, 'unknown')}`);
         lines.push('');
 
         // ── Tab ──
@@ -2659,9 +2652,7 @@ elements.copyLogs.addEventListener('click', () => {
         // ── Video ──
         lines.push('## Video');
         if (!rawVideo) {
-            lines.push(targetTabId !== null
-                ? '- *Target tab selected; video communication is not ready yet*'
-                : '- *No tab selected / communication failed*');
+            lines.push('- *No tab selected / communication failed*');
         } else if (!vs.found) {
             lines.push('- **Found:** \u274C NO VIDEO ELEMENT');
             if (vs.videoCount != null) lines.push(`- **Video Tags:** ${vs.videoCount}`);
@@ -2801,31 +2792,8 @@ function refreshDebugInfo() {
     if (!devTab || devTab.style.display === 'none') return;
 
     chrome.runtime.sendMessage({ type: 'GET_STATUS' }, (res) => {
-        if (!res || normalizeTabId(res.targetTabId) === null) {
-            if (res?.targetActivationState === 'activating' || res?.targetActivationState === 'access_required') {
-                if (elements.videoDebug) {
-                    elements.videoDebug.textContent = getMessage('DEBUG_TARGET_ACTIVATING');
-                }
-                return;
-            }
-            if (res?.targetActivationState === 'error') {
-                if (elements.videoDebug) {
-                    elements.videoDebug.textContent = res.targetActivationError
-                        ? `Injection fehlgeschlagen: ${res.targetActivationError}`
-                        : 'Video-Injection fehlgeschlagen.';
-                }
-                return;
-            }
+        if (!res || !res.targetTabId) {
             if (elements.videoDebug) elements.videoDebug.textContent = getMessage('DEBUG_NO_TAB');
-            return;
-        }
-
-        if (res.targetReady !== true) {
-            if (elements.videoDebug) {
-                elements.videoDebug.textContent = res.targetActivationState === 'error'
-                    ? `Injection fehlgeschlagen: ${res.targetActivationError || 'unbekannter Fehler'}`
-                    : getMessage('DEBUG_TARGET_ACTIVATING');
-            }
             return;
         }
 
