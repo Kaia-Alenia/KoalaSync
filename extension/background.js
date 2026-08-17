@@ -2504,6 +2504,14 @@ async function injectContentScript(tabId, {
             try { error.contentTarget = contentTarget; } catch { /* immutable browser error */ }
             throw error;
         }
+        // Name the frame the injection was aimed at. Without it every failure
+        // reads the same in the log and there is no way to tell a denied player
+        // frame from a document that navigated mid-injection.
+        addLog(
+            `Content injection failed in frame ${contentTarget.frameId}`
+            + `${contentTarget.frameUrl ? ` (${contentTarget.frameUrl})` : ''}: ${error?.message}`,
+            'warn'
+        );
         if (navigationRetries > 0 && isMediaTargetNavigationError(error)) {
             return injectContentScript(tabId, {
                 requestHostAccess,

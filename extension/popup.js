@@ -2797,10 +2797,28 @@ function refreshDebugInfo() {
             return;
         }
 
+        // A target that never finished activating has no content script to talk
+        // to. Reporting that as a communication failure hides the actual reason,
+        // which is the only thing that makes the problem fixable.
+        if (res.targetReady === false && elements.videoDebug) {
+            const reason = res.targetActivationError
+                || (res.targetActivationState === 'access_required'
+                    ? `Website access required${res.pendingTargetHost ? ` for ${res.pendingTargetHost}` : ''}`
+                    : null);
+            elements.videoDebug.textContent = reason
+                ? `${res.targetActivationState}: ${reason}`
+                : `${res.targetActivationState}…`;
+            return;
+        }
+
         // Request direct state from the content script via background
         chrome.runtime.sendMessage({ type: 'GET_VIDEO_STATE', tabId: res.targetTabId }, (state) => {
             if (!state || (!state.found && state.error)) {
-                if (elements.videoDebug) elements.videoDebug.textContent = getMessage('DEBUG_COMM_FAIL');
+                if (elements.videoDebug) {
+                    elements.videoDebug.textContent = state?.error
+                        ? `${getMessage('DEBUG_COMM_FAIL')} (${state.error})`
+                        : getMessage('DEBUG_COMM_FAIL');
+                }
                 return;
             }
 
