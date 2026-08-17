@@ -2279,6 +2279,19 @@ function isMediaTargetNavigationError(error) {
         || message.includes('No document with ID');
 }
 
+function isTargetActivationSuperseded(tabId, activationGeneration) {
+    if (!Number.isInteger(activationGeneration)) return false;
+    return targetActivationGeneration !== activationGeneration
+        || activeTargetActivation?.generation !== activationGeneration
+        || normalizeTabId(activeTargetActivation?.tabId) !== normalizeTabId(tabId);
+}
+
+function createTargetActivationSupersededError() {
+    const error = new Error('Target activation was superseded');
+    error.code = 'target_activation_superseded';
+    return error;
+}
+
 async function injectMediaFrameMonitors(tabId, contentTarget) {
     const targets = await listMediaFrameScriptTargets(chrome, tabId);
     let injectedCount = 0;
@@ -2315,7 +2328,8 @@ async function injectMediaFrameMonitors(tabId, contentTarget) {
 
 async function injectContentScript(tabId, {
     requestHostAccess = true,
-    navigationRetries = 2
+    navigationRetries = 2,
+    activationGeneration = null
 } = {}) {
     const normalizedTabId = normalizeTabId(tabId);
     if (normalizedTabId === null) throw new Error('Invalid tab ID');
@@ -2335,7 +2349,8 @@ async function injectContentScript(tabId, {
         const url = access.url || '';
         needsPageApiSeek = shouldUsePageApiSeek(url);
         contentTarget = await resolveMediaContentTarget(chrome, tabId);
-        if (activeTargetActivation?.tabId === tabId) {
+        if (!isTargetActivationSuperseded(tabId, activationGeneration)
+            && activeTargetActivation?.tabId === tabId) {
             activeTargetActivation.frameId = contentTarget.frameId;
             activeTargetActivation.documentId = contentTarget.documentId;
         }
@@ -2358,7 +2373,17 @@ async function injectContentScript(tabId, {
     const selectedDocumentId = contentTarget.documentId;
 
     try {
+        if (isTargetActivationSuperseded(tabId, activationGeneration)) {
+            throw createTargetActivationSupersededError();
+        }
         await injectMediaFrameMonitors(tabId, contentTarget);
+        if (isTargetActivationSuperseded(tabId, activationGeneration)) {
+            const replacementTabId = normalizeTabId(activeTargetActivation?.tabId);
+            if (replacementTabId !== tabId) {
+                await deactivateMediaFrameMonitors(tabId);
+            }
+            throw createTargetActivationSupersededError();
+        }
         if (needsPageApiSeek) {
             try {
                 await chrome.scripting.executeScript({
@@ -2401,16 +2426,22 @@ async function injectContentScript(tabId, {
         contentTarget.documentId = typeof frameResult?.documentId === 'string'
             ? frameResult.documentId
             : contentTarget.documentId;
-        if (activeTargetActivation?.tabId === tabId) {
+        if (!isTargetActivationSuperseded(tabId, activationGeneration)
+            && activeTargetActivation?.tabId === tabId) {
             activeTargetActivation.frameId = contentTarget.frameId;
             activeTargetActivation.documentId = contentTarget.documentId;
         }
         return contentTarget;
     } catch (error) {
+        if (error?.code === 'target_activation_superseded') {
+            try { error.contentTarget = contentTarget; } catch { /* immutable browser error */ }
+            throw error;
+        }
         if (navigationRetries > 0 && isMediaTargetNavigationError(error)) {
             return injectContentScript(tabId, {
                 requestHostAccess,
-                navigationRetries: navigationRetries - 1
+                navigationRetries: navigationRetries - 1,
+                activationGeneration
             });
         }
         try { error.contentTarget = contentTarget; } catch { /* immutable browser error */ }
@@ -2610,7 +2641,10 @@ async function activateTargetTab(tabId, tabTitle, {
             return { status: 'superseded' };
         }
         try {
-            injectedContentTarget = await injectContentScript(selectedTabId, { requestHostAccess });
+            injectedContentTarget = await injectContentScript(selectedTabId, {
+                requestHostAccess,
+                activationGeneration
+            });
         } catch (error) {
             if (activationGeneration !== targetActivationGeneration) {
                 if (normalizeTabId(currentTabId) !== selectedTabId) {

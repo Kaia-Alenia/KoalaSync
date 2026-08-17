@@ -37,6 +37,13 @@ describe('target tab lifecycle', () => {
         expect(overlaySource).toContain("message?.type === 'TARGET_DEACTIVATE'");
     });
 
+    it('removes monitors injected by a superseded cross-tab activation', () => {
+        expect(backgroundSource).toContain('function isTargetActivationSuperseded(tabId, activationGeneration)');
+        expect(backgroundSource).toContain('activationGeneration\n            });');
+        expect(backgroundSource).toMatch(/await injectMediaFrameMonitors\(tabId, contentTarget\);[\s\S]*if \(isTargetActivationSuperseded\(tabId, activationGeneration\)\)[\s\S]*await deactivateMediaFrameMonitors\(tabId\);/);
+        expect(backgroundSource).toContain("error.code = 'target_activation_superseded'");
+    });
+
     it('binds cross-origin targets to an exact document and monitors every accessible frame', () => {
         expect(backgroundSource).toContain("files: ['media-frame-monitor.js']");
         expect(backgroundSource).toContain('const targets = await listMediaFrameScriptTargets(chrome, tabId)');
