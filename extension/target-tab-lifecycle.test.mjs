@@ -29,6 +29,43 @@ describe('target tab lifecycle', () => {
         expect(overlaySource).toContain('if (window.koalaSyncChatOverlay?.refresh)');
     });
 
+    it('keeps the chat overlay in the top document when the player is nested', () => {
+        expect(backgroundSource).toContain('function sendMessageToChatOverlay(message)');
+        expect(backgroundSource).toContain('return sendMessageToFrame(tabId, 0, message)');
+        // Every chat-facing message must reach the overlay's frame, not the
+        // player's. A stray sendMessageToCurrentContent here renders the chat
+        // inside the video on Drive.
+        expect(backgroundSource).not.toMatch(/sendMessageToCurrentContent\(\{\s*type: 'CHAT/);
+        expect(backgroundSource).toMatch(
+            /target: \{ tabId, frameIds: \[0\] \},\s*files: \['chat-format\.js', 'chat-overlay\.js'\]/
+        );
+        expect(backgroundSource).toContain("files: ['content.js']");
+        expect(backgroundSource).toContain('if (normalizeFrameId(target.frameId) !== 0)');
+    });
+
+    it('does not reactivate the target for ordinary playback churn', () => {
+        expect(backgroundSource).toContain('async function selectedMediaTargetMoved(tabId)');
+        expect(backgroundSource).toContain('onlyIfTargetMoved = false');
+        expect(backgroundSource.match(/onlyIfTargetMoved: true/g)?.length).toBe(4);
+        // Playback state must stay out of the candidate signature, otherwise
+        // every play/pause looks like a frame layout change.
+        expect(monitorSource).not.toContain('element.paused ? 0 : 1');
+        expect(monitorSource).toContain('element.readyState > 0 ? 1 : 0');
+    });
+
+    it('bounds every frame probe and verifies withheld origins', () => {
+        const resolverSource = fs.readFileSync(
+            path.join(extensionDir, 'media-frame-target.js'),
+            'utf8'
+        );
+        expect(resolverSource).toContain('async function originAccessIsWithheld(chromeApi, originPattern)');
+        expect(resolverSource).toContain('probeTimeoutMs = DEFAULT_PROBE_TIMEOUT_MS');
+        expect(resolverSource).toContain('attempts = 3');
+        // A swallowed probe error is what turned a slow player frame into a
+        // permission prompt for an origin the extension already held.
+        expect(resolverSource).toContain('errors.push({ target, error })');
+    });
+
     it('fully deactivates old and superseded target injections', () => {
         expect(backgroundSource).toContain("{ type: 'TARGET_DEACTIVATE' }");
         expect(backgroundSource).toContain('target.documentId');
@@ -79,7 +116,10 @@ describe('target tab lifecycle', () => {
     });
 
     it('tears down every persistent content-script resource', () => {
-        expect(contentSource).toContain('function destroyContentScript()');
+        expect(contentSource).toContain('function destroyContentScript({ preserveAudioRoute = false } = {})');
+        // Deselecting a tab hands the page back to itself; it must not go mute.
+        expect(contentSource).toContain('destroyContentScript({ preserveAudioRoute: true });');
+        expect(contentSource).toContain('if (!preserveAudioRoute) closeAudioContext();');
         expect(contentSource).toContain('observer.disconnect()');
         expect(contentSource).toContain('keepAlivePort.disconnect()');
         expect(contentSource).toContain('for (const video of [...attachedVideos]) detachVideoListeners(video);');

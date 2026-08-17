@@ -1,0 +1,23 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Drive-style embedded player</title>
+<style>
+  body { margin: 0; font: 14px sans-serif; }
+  #shell { padding: 24px; }
+  iframe { border: 0; }
+</style>
+<!--
+  Mirrors the Google Drive / YummyAnime layout: the top document owns the page
+  chrome and hosts no video at all, while the only player lives in a visible
+  cross-origin iframe. Playback control belongs in that frame; the chat overlay
+  must stay in this document.
+-->
+<div id="shell">
+  <h1>Shared file</h1>
+  <iframe id="player-frame" width="854" height="480" allowfullscreen></iframe>
+</div>
+<script>
+  const frame = document.getElementById('player-frame');
+  frame.src = `http://127.0.0.1:${location.port}/pages/frames/player-frame.html`;
+  frame.addEventListener('load', () => { window.__fixtureReady = true; }, { once: true });
+</script>

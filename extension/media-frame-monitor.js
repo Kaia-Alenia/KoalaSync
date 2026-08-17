@@ -62,12 +62,15 @@
                 const source = element.tagName === 'VIDEO'
                     ? (element.currentSrc || element.src || element.querySelector?.('source[src]')?.src || '')
                     : (element.src || '');
+                // Deliberately coarse. This signature answers "which frame is a
+                // candidate", not "what is it doing". Including paused/readyState
+                // /duration made every play, pause and buffering tick look like a
+                // layout change, so ordinary playback retriggered a full target
+                // reactivation and re-injected the content script under the user.
                 const mediaState = element.tagName === 'VIDEO'
                     ? [
-                        element.paused ? 0 : 1,
-                        element.controls ? 1 : 0,
-                        Number.isInteger(element.readyState) ? element.readyState : 0,
-                        Number.isFinite(element.duration) ? Math.round(element.duration) : 0
+                        element.readyState > 0 ? 1 : 0,
+                        Number.isFinite(element.duration) && element.duration > 0 ? 1 : 0
                     ].join(',')
                     : '';
                 parts.push([

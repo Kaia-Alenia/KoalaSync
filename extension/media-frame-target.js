@@ -1,9 +1,11 @@
 export const MEDIA_FRAME_ACCESS_REQUIRED = 'media_frame_access_required';
 export const MEDIA_FRAME_AMBIGUOUS = 'media_frame_ambiguous';
+export const MEDIA_FRAME_PROBE_TIMEOUT = 'media_frame_probe_timeout';
 
 const MIN_PLAYER_FRAME_AREA = 320 * 180;
 const MIN_PLAYER_ASPECT_RATIO = 1.15;
 const MAX_PLAYER_ASPECT_RATIO = 2.6;
+const DEFAULT_PROBE_TIMEOUT_MS = 2000;
 
 function normalizeFrameId(value) {
     return Number.isInteger(value) && value >= 0 ? value : 0;
@@ -388,13 +390,19 @@ function findMissingPlayerAccess(results) {
 
 function shouldPreferMissingAccess(access, selected) {
     if (!access) return false;
-    if (access.drivePlayer || !selected?.result?.bestVideo) return true;
+    if (!selected?.result?.bestVideo) return true;
     const video = selected.result.bestVideo;
     if (!video.hasSource || !video.rendered || video.background) return true;
     const selectedArea = Number.isFinite(video.renderedArea) ? video.renderedArea : 0;
     const weakAccessibleCandidate = !video.controls
         && video.duration > 0
         && video.duration < 300;
+    // Drive never plays the file in its own document, so its embedded player
+    // outranks a weak local candidate. It must not outrank a real one: a Drive
+    // tab can host an ordinary accessible video next to a file preview.
+    if (access.drivePlayer) {
+        return weakAccessibleCandidate || selectedArea < MIN_PLAYER_FRAME_AREA;
+    }
     return weakAccessibleCandidate
         && access.area >= Math.max(MIN_PLAYER_FRAME_AREA, selectedArea * 1.5);
 }
@@ -431,41 +439,106 @@ export function listMediaFrameScriptTargets(tabId) {
     return [{ tabId, allFrames: true }];
 }
 
-async function executeInAccessibleFrames(chromeApi, targets, func, args) {
+function probeTimeoutError(label, timeoutMs) {
+    const error = new Error(`${label} timed out after ${timeoutMs}ms`);
+    error.code = MEDIA_FRAME_PROBE_TIMEOUT;
+    return error;
+}
+
+function executeWithTimeout(task, timeoutMs, label) {
+    if (!Number.isFinite(timeoutMs) || timeoutMs <= 0) return task();
+    let timeoutId = null;
+    const timeout = new Promise((_, reject) => {
+        timeoutId = setTimeout(() => reject(probeTimeoutError(label, timeoutMs)), timeoutMs);
+    });
+    return Promise.race([task(), timeout]).finally(() => {
+        if (timeoutId !== null) clearTimeout(timeoutId);
+    });
+}
+
+async function executeInAccessibleFrames(chromeApi, targets, func, args, timeoutMs) {
+    const errors = [];
     const settled = await Promise.all(targets.map(async target => {
         try {
-            return await chromeApi.scripting.executeScript({ target, func, args });
-        } catch {
+            const result = await executeWithTimeout(
+                () => chromeApi.scripting.executeScript({ target, func, args }),
+                timeoutMs,
+                `Frame probe ${JSON.stringify(target)}`
+            );
+            return Array.isArray(result) ? result : [];
+        } catch (error) {
+            // A failed probe is recorded, never silently dropped. Only the
+            // caller can tell "withheld origin" from "frame is still loading",
+            // and guessing that difference is what produced false permission
+            // prompts for players the extension was already allowed to touch.
+            errors.push({ target, error });
             return [];
         }
     }));
-    return settled.flat();
+    return { results: settled.flat(), errors };
+}
+
+/**
+ * Asks the browser whether an origin is genuinely withheld.
+ *
+ * Returns true when the grant is missing, false when it is held, and null when
+ * the browser cannot answer. A frame that did not respond to a probe is not
+ * evidence of a missing grant: that inference is what made Drive and
+ * YummyAnime demand access for an origin the extension already had.
+ */
+async function originAccessIsWithheld(chromeApi, originPattern) {
+    if (typeof originPattern !== 'string' || !originPattern) return null;
+    if (typeof chromeApi?.permissions?.contains !== 'function') return null;
+    try {
+        const granted = await executeWithTimeout(
+            () => Promise.resolve(chromeApi.permissions.contains({ origins: [originPattern] })),
+            1000,
+            `Permission check for ${originPattern}`
+        );
+        if (granted === true) return false;
+        if (granted === false) return true;
+        return null;
+    } catch {
+        return null;
+    }
 }
 
 export async function resolveMediaContentTarget(chromeApi, tabId, {
-    attempts = 8,
+    attempts = 3,
     retryDelayMs = 200,
-    probeDelayMs = 60
+    probeDelayMs = 60,
+    probeTimeoutMs = DEFAULT_PROBE_TIMEOUT_MS
 } = {}) {
     let fallback = null;
     let missingAccess = null;
     let ambiguous = false;
+    let unresolvedGrantedHost = null;
 
     for (let attempt = 0; attempt < attempts; attempt++) {
         const scriptTargets = listMediaFrameScriptTargets(tabId);
-        let results = await executeInAccessibleFrames(
+        let { results } = await executeInAccessibleFrames(
             chromeApi,
             scriptTargets,
             inspectMediaFrame,
-            [null]
+            [null],
+            probeTimeoutMs
         );
         if (results.length === 0) {
+            // The all-frames sweep answered for nothing at all, so fall back to
+            // the top document alone. Every probe is time-boxed: an unreachable
+            // player frame must never stall the whole activation.
             try {
-                results = await chromeApi.scripting.executeScript({
-                    target: { tabId },
-                    func: inspectMediaFrame,
-                    args: [null]
-                });
+                const topResults = await executeWithTimeout(
+                    () => chromeApi.scripting.executeScript({
+                        target: { tabId },
+                        func: inspectMediaFrame,
+                        args: [null]
+                    }),
+                    probeTimeoutMs,
+                    'Top-frame probe'
+                );
+                results = Array.isArray(topResults) ? topResults : [];
+                if (results.length === 0) return contentTarget(tabId, null);
             } catch {
                 return contentTarget(tabId, null);
             }
@@ -478,7 +551,8 @@ export async function resolveMediaContentTarget(chromeApi, tabId, {
                     chromeApi,
                     scriptTargets,
                     installParentFrameVisibilityProbe,
-                    [token]
+                    [token],
+                    probeTimeoutMs
                 );
                 // Four passes match the maximum same-origin recursion depth.
                 for (let pass = 0; pass < 4; pass++) {
@@ -486,15 +560,17 @@ export async function resolveMediaContentTarget(chromeApi, tabId, {
                         chromeApi,
                         scriptTargets,
                         dispatchParentFrameVisibilityProbe,
-                        [token]
+                        [token],
+                        probeTimeoutMs
                     );
                     await new Promise(resolve => setTimeout(resolve, probeDelayMs));
                 }
-                const inspected = await executeInAccessibleFrames(
+                const { results: inspected } = await executeInAccessibleFrames(
                     chromeApi,
                     scriptTargets,
                     inspectMediaFrame,
-                    [token]
+                    [token],
+                    probeTimeoutMs
                 );
                 if (inspected.length > 0) results = inspected;
             } catch {
@@ -506,7 +582,20 @@ export async function resolveMediaContentTarget(chromeApi, tabId, {
         const selected = selectMediaFrame(results);
         const videoCandidates = results.filter(entry => entry?.result?.bestVideo?.rendered === true
             && entry.result.parentFrameVisible !== false);
-        const currentMissingAccess = findMissingPlayerAccess(results);
+        let currentMissingAccess = findMissingPlayerAccess(results);
+        if (currentMissingAccess) {
+            const withheld = await originAccessIsWithheld(
+                chromeApi,
+                currentMissingAccess.originPattern
+            );
+            if (withheld === false) {
+                // The grant is already held, so the player frame is merely slow,
+                // still navigating, or gone. Retrying is correct here; prompting
+                // for a permission the user already gave is not.
+                unresolvedGrantedHost = currentMissingAccess.host;
+                currentMissingAccess = null;
+            }
+        }
         missingAccess = currentMissingAccess;
         fallback = selected;
         ambiguous = !selected && videoCandidates.length > 1;
@@ -525,6 +614,11 @@ export async function resolveMediaContentTarget(chromeApi, tabId, {
 
     if (missingAccess) throw accessRequiredError(missingAccess);
     if (fallback) return contentTarget(tabId, fallback);
+    // A player whose origin is already granted but which never answered is a
+    // timing problem, not a user decision. Keep the tab selected on its top
+    // frame so the injected monitor can promote the real player once it loads,
+    // instead of failing the activation or prompting for nothing.
+    if (unresolvedGrantedHost) return contentTarget(tabId, null);
     if (ambiguous) throw ambiguousFrameError();
     return contentTarget(tabId, null);
 }

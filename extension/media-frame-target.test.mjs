@@ -445,3 +445,110 @@ describe('cross-origin media-frame targeting', () => {
         )).rejects.toMatchObject({ code: MEDIA_FRAME_AMBIGUOUS });
     });
 });
+
+describe('embedded player access diagnosis', () => {
+    function driveTop() {
+        return frame(0, {
+            href: 'https://drive.google.com/file/d/abc/view',
+            origin: 'https://drive.google.com',
+            bestVideo: null,
+            videoCount: 0,
+            embeddedFrames: [{
+                href: 'https://youtube.googleapis.com/embed/abc?origin=https%3A%2F%2Fdrive.google.com',
+                origin: 'https://youtube.googleapis.com',
+                area: 640 * 360,
+                width: 640,
+                height: 360,
+                visible: true,
+                depth: 1,
+                mediaHint: true
+            }]
+        });
+    }
+
+    it('does not demand access for a player origin the extension already holds', async () => {
+        const executeScript = vi.fn().mockResolvedValue([driveTop()]);
+        const contains = vi.fn().mockResolvedValue(true);
+
+        // The player frame never answered the probe, but the grant exists. That
+        // is a loading race, not a user decision, so the tab stays selected on
+        // its top frame instead of raising a permission prompt.
+        await expect(resolveMediaContentTarget(
+            { scripting: { executeScript }, permissions: { contains } },
+            42,
+            { attempts: 1, probeDelayMs: 0 }
+        )).resolves.toEqual({
+            frameId: 0,
+            documentId: null,
+            frameUrl: null,
+            hasVideo: false,
+            scriptTarget: { tabId: 42 }
+        });
+        expect(contains).toHaveBeenCalledWith({
+            origins: ['https://youtube.googleapis.com/*']
+        });
+    });
+
+    it('demands access only when the browser confirms the origin is withheld', async () => {
+        const executeScript = vi.fn().mockResolvedValue([driveTop()]);
+        const contains = vi.fn().mockResolvedValue(false);
+
+        await expect(resolveMediaContentTarget(
+            { scripting: { executeScript }, permissions: { contains } },
+            42,
+            { attempts: 1, probeDelayMs: 0 }
+        )).rejects.toMatchObject({
+            code: MEDIA_FRAME_ACCESS_REQUIRED,
+            host: 'youtube.googleapis.com'
+        });
+    });
+
+    it('keeps demanding access when the browser cannot answer', async () => {
+        const executeScript = vi.fn().mockResolvedValue([driveTop()]);
+        const contains = vi.fn().mockRejectedValue(new Error('unavailable'));
+
+        await expect(resolveMediaContentTarget(
+            { scripting: { executeScript }, permissions: { contains } },
+            42,
+            { attempts: 1, probeDelayMs: 0 }
+        )).rejects.toMatchObject({ code: MEDIA_FRAME_ACCESS_REQUIRED });
+    });
+
+    it('resolves instead of hanging when a frame probe never settles', async () => {
+        const executeScript = vi.fn()
+            .mockImplementationOnce(() => new Promise(() => {}))
+            .mockResolvedValue([frame(0, { bestVideo: null, videoCount: 0 })]);
+
+        await expect(resolveMediaContentTarget(
+            { scripting: { executeScript } },
+            42,
+            { attempts: 1, probeDelayMs: 0, probeTimeoutMs: 20 }
+        )).resolves.toMatchObject({ frameId: 0, scriptTarget: { tabId: 42 } });
+    });
+
+    it('prefers a real accessible player over a Drive embed', async () => {
+        const top = frame(0, {
+            href: 'https://drive.google.com/file/d/abc/view',
+            origin: 'https://drive.google.com',
+            bestVideo: video({ controls: true, duration: 2400, renderedArea: 900 * 506 }),
+            embeddedFrames: [{
+                href: 'https://youtube.googleapis.com/embed/abc?origin=https%3A%2F%2Fdrive.google.com',
+                origin: 'https://youtube.googleapis.com',
+                area: 320 * 180,
+                width: 320,
+                height: 180,
+                visible: true,
+                depth: 1,
+                mediaHint: true
+            }]
+        });
+        const executeScript = vi.fn().mockResolvedValue([top]);
+        const contains = vi.fn().mockResolvedValue(false);
+
+        await expect(resolveMediaContentTarget(
+            { scripting: { executeScript }, permissions: { contains } },
+            42,
+            { attempts: 1, probeDelayMs: 0 }
+        )).resolves.toMatchObject({ frameId: 0, hasVideo: true });
+    });
+});

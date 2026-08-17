@@ -653,6 +653,18 @@ function sendMessageToCurrentContent(message, callback = null) {
     );
 }
 
+/**
+ * Chat is page UI, not player UI. The controlled video can live in a nested
+ * cross-origin frame (Drive, YummyAnime), but the overlay always belongs to the
+ * tab's top document: inside the player frame it renders on top of the video,
+ * and closing or minimizing it only affects that frame.
+ */
+function sendMessageToChatOverlay(message) {
+    const tabId = normalizeTabId(currentTabId);
+    if (tabId === null) return Promise.reject(new Error('No target tab selected'));
+    return sendMessageToFrame(tabId, 0, message);
+}
+
 function sendMessageToContentTab(tabId, message, callback = null) {
     if (normalizeTabId(tabId) === normalizeTabId(currentTabId)) {
         return sendMessageToCurrentContent(message, callback);
@@ -1140,7 +1152,7 @@ function sendChatActivity(action, senderId, timestamp = Date.now()) {
     if (!entry) return;
     if (storageInitialized) chrome.storage.session.set({ chatActivityTimeline: chatActivityStore.snapshot() }).catch(() => {});
     if (!currentTabId) return;
-    sendMessageToCurrentContent({
+    sendMessageToChatOverlay({
         type: 'CHAT_EVENT',
         event: entry
     }).catch(error => addLog(`Chat activity delivery failed: ${error.message}`, 'warn'));
@@ -1351,7 +1363,7 @@ async function handleServerEvent(event, data) {
             hostPeerId = data.hostPeerId || null;
             controllers = Array.isArray(data.controllers) ? data.controllers : [];
             serverCapabilities = Array.isArray(data.capabilities) ? data.capabilities : [];
-            if (currentTabId) sendMessageToCurrentContent({ type: 'CHAT_CONTEXT_UPDATE' }).catch(() => {});
+            if (currentTabId) sendMessageToChatOverlay({ type: 'CHAT_CONTEXT_UPDATE' }).catch(() => {});
             hcmEnforceDesyncInvariant();
             broadcastControlMode();
             markRoomPotentiallyIdle();
@@ -1450,7 +1462,7 @@ async function handleServerEvent(event, data) {
                         (typeof candidate === 'object' ? candidate.peerId : candidate) === received.senderId
                     );
                     if (Number.isInteger(tabId)) {
-                        sendMessageToCurrentContent({
+                        sendMessageToChatOverlay({
                             type: 'CHAT_MESSAGE',
                             message: {
                                 id: received.id,
@@ -2246,6 +2258,15 @@ async function deactivateTargetTab(tabId, contentTarget = null, { deactivateMoni
         null,
         target.documentId
     ).catch(() => {});
+    // The overlay lives in the top document whenever the player is nested, so
+    // clearing only the media frame would leave a stale chat behind on Drive.
+    if (normalizeFrameId(target.frameId) !== 0) {
+        await sendMessageToFrame(
+            normalizedTabId,
+            0,
+            { type: 'CHAT_DESTROY' }
+        ).catch(() => {});
+    }
 }
 
 function createHostAccessRequiredError(access, requestAdded, cause) {
@@ -2411,10 +2432,38 @@ async function injectContentScript(tabId, {
             func: setPageApiSeekEnabled,
             args: [pageApiSeekReady]
         });
-        const injectionResults = await chrome.scripting.executeScript({
-            target: scriptTarget,
-            files: ['chat-format.js', 'chat-overlay.js', 'content.js']
-        });
+        // The chat overlay is standalone page UI and carries its own runtime
+        // message listener, so it is installed in the top document regardless of
+        // where the player lives. Only the playback controller goes into the
+        // selected media frame.
+        let injectionResults;
+        if (contentTarget.frameId === 0) {
+            injectionResults = await chrome.scripting.executeScript({
+                target: scriptTarget,
+                files: ['chat-format.js', 'chat-overlay.js', 'content.js']
+            });
+        } else {
+            try {
+                await chrome.scripting.executeScript({
+                    target: { tabId, frameIds: [0] },
+                    files: ['chat-format.js', 'chat-overlay.js']
+                });
+            } catch (err) {
+                addLog(`Chat overlay injection failed in the top frame: ${err.message}`, 'warn');
+            }
+            // A pre-3.1.3 build may have left an overlay inside the player.
+            await sendMessageToFrame(
+                tabId,
+                contentTarget.frameId,
+                { type: 'CHAT_DESTROY' },
+                null,
+                contentTarget.documentId
+            ).catch(() => {});
+            injectionResults = await chrome.scripting.executeScript({
+                target: scriptTarget,
+                files: ['content.js']
+            });
+        }
         const frameResult = Array.isArray(injectionResults)
             ? injectionResults.find(result => normalizeFrameId(result?.frameId) === contentTarget.frameId)
             : null;
@@ -2791,7 +2840,32 @@ async function reactivateCurrentTarget(tabId, { expectedGeneration = targetActiv
     });
 }
 
-function refreshCurrentMediaTarget(tabId, { queueIfRunning = false } = {}) {
+/**
+ * Cheap pre-check for lifecycle-driven refreshes.
+ *
+ * Reactivation tears down and re-injects the content script, which interrupts
+ * playback and audio routing. That price is only worth paying when the selected
+ * frame or document actually moved — not for the constant DOM churn that pages
+ * like Drive and YouTube produce while simply playing.
+ */
+async function selectedMediaTargetMoved(tabId) {
+    try {
+        const resolved = await resolveMediaContentTarget(chrome, tabId, { attempts: 1 });
+        if (normalizeTabId(currentTabId) !== normalizeTabId(tabId)) return false;
+        const frameMoved = normalizeFrameId(resolved.frameId) !== normalizeFrameId(currentTargetFrameId);
+        const documentMoved = typeof resolved.documentId === 'string'
+            && typeof currentTargetDocumentId === 'string'
+            && resolved.documentId !== currentTargetDocumentId;
+        const gainedVideo = resolved.hasVideo === true && currentTargetHasVideo !== true;
+        return frameMoved || documentMoved || gainedVideo;
+    } catch {
+        // Access-required and ambiguity errors must reach the full activation
+        // path so the popup can surface them.
+        return true;
+    }
+}
+
+function refreshCurrentMediaTarget(tabId, { queueIfRunning = false, onlyIfTargetMoved = false } = {}) {
     const selectedTabId = normalizeTabId(tabId);
     if (selectedTabId === null || normalizeTabId(currentTabId) !== selectedTabId) {
         return Promise.resolve({ status: 'superseded' });
@@ -2810,6 +2884,10 @@ function refreshCurrentMediaTarget(tabId, { queueIfRunning = false } = {}) {
         do {
             pass++;
             mediaTargetRefreshDirty = false;
+            if (onlyIfTargetMoved && !(await selectedMediaTargetMoved(selectedTabId))) {
+                result = { status: 'unchanged' };
+                break;
+            }
             const expectedGeneration = targetActivationGeneration;
             result = await reactivateCurrentTarget(selectedTabId, { expectedGeneration });
             // Let lifecycle messages queued during the final probe/injection
@@ -3104,7 +3182,7 @@ chrome.alarms.onAlarm.addListener(async (alarm) => {
 
 function leaveOldRoomIfSwitching(newRoomId) {
     if (currentRoom && currentRoom.roomId !== newRoomId) {
-        if (currentTabId) sendMessageToCurrentContent({ type: 'CHAT_RESET' }).catch(() => {});
+        if (currentTabId) sendMessageToChatOverlay({ type: 'CHAT_RESET' }).catch(() => {});
         addLog(`Switching rooms: leaving ${currentRoom.roomId} to join ${newRoomId}`, 'info');
         forceDisconnect();
         currentRoom = null;
@@ -3194,12 +3272,12 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 chrome.storage.onChanged.addListener((changes, area) => {
     if (area !== 'local') return;
     if (changes.browserNotifications && currentTabId) {
-        sendMessageToCurrentContent({ type: 'CHAT_CONTEXT_UPDATE' }).catch(() => {});
+        sendMessageToChatOverlay({ type: 'CHAT_CONTEXT_UPDATE' }).catch(() => {});
     }
     if (!changes.roomId && !changes.chatKey && !changes.chatEnabled) return;
     if (changes.chatKey) chatSecretGuard = validateChatSecret(changes.chatKey.newValue);
     invalidateChatSession();
-    if (currentTabId) sendMessageToCurrentContent({ type: 'CHAT_CONTEXT_UPDATE' }).catch(() => {});
+    if (currentTabId) sendMessageToChatOverlay({ type: 'CHAT_CONTEXT_UPDATE' }).catch(() => {});
 });
 
 async function handleAsyncMessage(message, sender, sendResponse) {
@@ -3217,7 +3295,11 @@ async function handleAsyncMessage(message, sender, sendResponse) {
         && isCurrentContentSender(sender)
         && (message.type === 'CONTENT_EVENT' || message.type === 'HEARTBEAT');
     if (mustRevalidateEmbeddedSender) {
-        await refreshCurrentMediaTarget(senderTabId).catch(() => {});
+        // Heartbeats and content events arrive continuously. Revalidating a
+        // nested target is only about confirming the frame still holds the
+        // player, so it must not reinject the content script every time: that
+        // put Drive- and anime-style targets into a permanent activation loop.
+        await refreshCurrentMediaTarget(senderTabId, { onlyIfTargetMoved: true }).catch(() => {});
     }
 
     if (message.type === 'CONNECT') {
@@ -3228,7 +3310,7 @@ async function handleAsyncMessage(message, sender, sendResponse) {
 
         if (settings.roomId && currentRoom && currentRoom.roomId === settings.roomId && socket && socket.readyState === WebSocket.OPEN && isNamespaceJoined && desiredUrl === currentServerUrl) {
             broadcastConnectionStatus('connected');
-            if (currentTabId) sendMessageToCurrentContent({ type: 'CHAT_CONTEXT_UPDATE' }).catch(() => {});
+            if (currentTabId) sendMessageToChatOverlay({ type: 'CHAT_CONTEXT_UPDATE' }).catch(() => {});
             await broadcastJoinStatus({ type: 'JOIN_STATUS', success: true, message: 'Already in room' });
             if (typeof sendResponse === 'function') sendResponse({ status: 'ok' });
             return;
@@ -3278,12 +3360,26 @@ async function handleAsyncMessage(message, sender, sendResponse) {
         let status = isConnected ? 'connected' : (isConnecting || (socket && socket.readyState === WebSocket.CONNECTING) ? 'connecting' : (isReconnecting ? 'reconnecting' : 'disconnected'));
         // Distinguish the normal "not in a room" resting state from a real drop.
         if (status === 'disconnected' && !currentRoom && !connectIntent) status = 'idle';
-        sendResponse({ 
-            status, 
-            peerId, 
+        // One public selection, one derived state. Activation is always terminal:
+        // it settles in ready or access_required, never in an open-ended
+        // "activating" that the popup keeps retrying on every open.
+        const selectedTargetTabId = normalizeTabId(currentTabId);
+        const targetReady = selectedTargetTabId !== null && !activeTargetActivation;
+        const targetActivationState = targetReady
+            ? 'ready'
+            : activeTargetActivation
+                ? 'activating'
+                : pendingTarget
+                    ? 'access_required'
+                    : 'none';
+        sendResponse({
+            status,
+            peerId,
             peers: currentRoom ? currentRoom.peers : [],
             lastActionState,
             targetTabId: currentTabId,
+            targetReady,
+            targetActivationState,
             targetFrameId: currentTargetFrameId,
             targetDocumentId: currentTargetDocumentId,
             targetHasVideo: currentTargetHasVideo,
@@ -3607,7 +3703,7 @@ async function handleAsyncMessage(message, sender, sendResponse) {
 
                 if (roomId && currentRoom && currentRoom.roomId === roomId && socket && socket.readyState === WebSocket.OPEN && isNamespaceJoined && desiredUrl === currentServerUrl) {
                     broadcastConnectionStatus('connected');
-                    if (currentTabId) sendMessageToCurrentContent({ type: 'CHAT_CONTEXT_UPDATE' }).catch(() => {});
+                    if (currentTabId) sendMessageToChatOverlay({ type: 'CHAT_CONTEXT_UPDATE' }).catch(() => {});
                     const statusSent = await broadcastJoinStatus(
                         { type: 'JOIN_STATUS', success: true, message: 'Already in room' },
                         isCurrentJoin
@@ -4151,7 +4247,16 @@ async function handleAsyncMessage(message, sender, sendResponse) {
             sendResponse({ status: 'ignored_stale_tab' });
             return;
         }
-        const activation = await refreshCurrentMediaTarget(tabId, { queueIfRunning: true });
+        // A page-driven notification must never surface as a handler failure.
+        // Reporting it that way turned one unreachable player frame into an
+        // endless error cascade in the popup.
+        const activation = await refreshCurrentMediaTarget(tabId, {
+            queueIfRunning: true,
+            onlyIfTargetMoved: true
+        }).catch(error => {
+            addLog(`Media frame candidate refresh failed: ${error.message}`, 'warn');
+            return { status: 'error', message: error.message };
+        });
         sendResponse(activation || { status: 'invalid_tab' });
     } else if (message.type === 'MEDIA_FRAME_VISIBILITY') {
         if (!isCurrentContentSender(sender)) {
@@ -4165,7 +4270,13 @@ async function handleAsyncMessage(message, sender, sendResponse) {
         const tabId = normalizeTabId(sender.tab?.id);
         const activation = tabId === null
             ? null
-            : await refreshCurrentMediaTarget(tabId, { queueIfRunning: true });
+            : await refreshCurrentMediaTarget(tabId, {
+                queueIfRunning: true,
+                onlyIfTargetMoved: true
+            }).catch(error => {
+                addLog(`Media frame visibility refresh failed: ${error.message}`, 'warn');
+                return { status: 'error', message: error.message };
+            });
         sendResponse(activation || { status: 'invalid_tab' });
     } else if (message.type === 'MEDIA_TARGET_REFRESH') {
         if (!isCurrentContentSender(sender)) {
@@ -4175,7 +4286,13 @@ async function handleAsyncMessage(message, sender, sendResponse) {
         const tabId = normalizeTabId(sender.tab?.id);
         const activation = tabId === null
             ? null
-            : await refreshCurrentMediaTarget(tabId, { queueIfRunning: true });
+            : await refreshCurrentMediaTarget(tabId, {
+                queueIfRunning: true,
+                onlyIfTargetMoved: true
+            }).catch(error => {
+                addLog(`Media target refresh failed: ${error.message}`, 'warn');
+                return { status: 'error', message: error.message };
+            });
         sendResponse(activation || { status: 'invalid_tab' });
     } else if (message.type === 'CONTENT_BOOT') {
         if (sender.tab) {

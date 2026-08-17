@@ -607,6 +607,89 @@ test('rejects a hidden cross-origin player after its iframe URL redirects', asyn
     expect(await redirectedFrame.locator('video').getAttribute('data-koala-attached')).toBeNull();
 });
 
+/**
+ * Reads one global from the top document and from the player frame separately,
+ * so a test can prove which frame a script was installed in.
+ */
+async function readPerFrameGlobal(context, extensionId, pageUrl, globalName) {
+    return withExtensionPage(context, extensionId, page => page.evaluate(async ({ pageUrl, globalName }) => {
+        const [tab] = await chrome.tabs.query({ url: pageUrl });
+        if (!tab) throw new Error(`no tab matched ${pageUrl}`);
+        const results = await chrome.scripting.executeScript({
+            target: { tabId: tab.id, allFrames: true },
+            func: name => ({
+                href: location.href,
+                isTop: window.top === window,
+                present: typeof window[name] !== 'undefined' && window[name] !== null
+            }),
+            args: [globalName]
+        });
+        const entries = results.map(entry => entry.result).filter(Boolean);
+        return {
+            top: entries.find(entry => entry.isTop)?.present ?? null,
+            player: entries.find(entry => !entry.isTop && entry.href.includes('player-frame'))?.present ?? null
+        };
+    }, { pageUrl, globalName }));
+}
+
+test('controls a Drive-style cross-origin player without moving the chat into it', async ({ context, extensionId, baseURL }) => {
+    const url = `${baseURL}/pages/drive-style-player.html`;
+    const page = await context.newPage();
+    await page.goto(url);
+    await page.waitForFunction(() => window.__fixtureReady === true);
+
+    const { response } = await selectTargetTab(context, extensionId, url);
+    // The top document hosts no video, so the target must be the player frame.
+    expect(response).toMatchObject({ status: 'ok', hasVideo: true });
+    expect(response.frameId).not.toBe(0);
+
+    const playerFrame = page.frames().find(frame => frame.url().includes('player-frame'));
+    await expect
+        .poll(() => playerFrame.locator('video').getAttribute('data-koala-attached'))
+        .toBe('true');
+
+    // The controller belongs in the player frame...
+    await expect
+        .poll(() => readPerFrameGlobal(context, extensionId, url, 'koalaSyncInjected'))
+        .toMatchObject({ player: true });
+    // ...and the chat overlay belongs in the top document, never inside the
+    // video. Installing it in the player frame is what rendered the chat on top
+    // of the picture and made closing it affect only that frame.
+    await expect
+        .poll(() => readPerFrameGlobal(context, extensionId, url, 'koalaSyncChatOverlay'))
+        .toMatchObject({ top: true, player: false });
+});
+
+test('keeps controlling a Drive-style player across an ordinary play and pause', async ({ context, extensionId, baseURL }) => {
+    const url = `${baseURL}/pages/drive-style-player.html`;
+    const page = await context.newPage();
+    await page.goto(url);
+    await page.waitForFunction(() => window.__fixtureReady === true);
+
+    const { tabId, response } = await selectTargetTab(context, extensionId, url);
+    expect(response).toMatchObject({ status: 'ok' });
+    const selectedFrameId = response.frameId;
+
+    const playerFrame = page.frames().find(frame => frame.url().includes('player-frame'));
+    await playerFrame.locator('video').evaluate(video => video.play());
+    await playerFrame.locator('video').evaluate(video => video.pause());
+    await page.waitForTimeout(750);
+
+    // Playback state changes are not frame layout changes. If they were treated
+    // as such, the target would be torn down and re-injected mid-playback.
+    const status = await getExtensionState(context, extensionId, { type: 'GET_STATUS' });
+    expect(status).toMatchObject({
+        targetTabId: tabId,
+        targetReady: true,
+        targetActivationState: 'ready',
+        targetFrameId: selectedFrameId
+    });
+
+    const command = await sendServerCommand(context, extensionId, tabId, 'play', { time: 1 });
+    expect(command).toMatchObject({ status: 'ok_solo' });
+    await expect.poll(() => playerFrame.locator('video').evaluate(video => video.paused)).toBe(false);
+});
+
 function FRAMED_VIDEO_PAUSED() {
     return document.querySelector('iframe').contentDocument.querySelector('video').paused;
 }
