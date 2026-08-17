@@ -701,38 +701,6 @@ function clearCurrentContentTarget() {
     currentTargetHasVideo = false;
 }
 
-function clearTargetTabForIdle(expectedTabId = null, expectedGeneration = null) {
-    if (expectedTabId !== null && normalizeTabId(currentTabId) !== normalizeTabId(expectedTabId)) {
-        return false;
-    }
-    if (expectedGeneration !== null && targetActivationGeneration !== expectedGeneration) {
-        return false;
-    }
-
-    completeForceSyncBeforeTargetChange(null);
-    invalidateTargetActivations();
-    clearPendingTarget().catch(() => {});
-    if (currentTabId) deactivateTargetTab(currentTabId).catch(() => {});
-    currentTabId = null;
-    currentTabTitle = null;
-    clearCurrentContentTarget();
-    lastContentHeartbeatAt = null;
-    if (currentRoom) {
-        roomIdleSince = Date.now();
-    }
-    chrome.storage.session.set({
-        currentTabId,
-        currentTabTitle,
-        currentTargetFrameId,
-        currentTargetDocumentId,
-        currentTargetHasVideo,
-        roomIdleSince,
-        lastContentHeartbeatAt
-    }).catch(() => {});
-    updateBadgeStatus();
-    return true;
-}
-
 async function leaveRoomAfterIdleGrace(reason) {
     if (!currentRoom) return;
     connectIntent = false;
@@ -2717,10 +2685,15 @@ async function activateTargetTab(tabId, tabTitle, {
                 }
                 return { status: 'superseded' };
             }
-            if (previousTabId === selectedTabId
-                && expectedCurrentTabId === selectedTabId
-                && isMediaTargetNavigationError(error)) {
-                addLog('Media document changed during refresh; keeping the previous target until navigation completes', 'warn');
+            const isCurrentTargetRefresh = previousTabId === selectedTabId
+                && expectedCurrentTabId === selectedTabId;
+            if (isCurrentTargetRefresh) {
+                addLog(
+                    isMediaTargetNavigationError(error)
+                        ? 'Media document changed during refresh; keeping the previous target until navigation completes'
+                        : `Media target refresh failed (${error.message}); keeping the selected target for recovery`,
+                    'warn'
+                );
                 throw error;
             }
             currentTabId = null;
@@ -3087,16 +3060,12 @@ async function _routeToContentInternal(tabId, action, payload, actionTimestamp, 
             return;
         }
         if (retries >= 3) {
-            addLog(`Content Script not responding in tab ${tabId} after ${retries} retries`, 'warn');
-            clearTargetTabForIdle(tabId, targetGeneration);
+            addLog(`Content Script not responding in tab ${tabId} after ${retries} retries; keeping the selected target for recovery`, 'warn');
             return;
         }
 
         const message = String(error?.message || '');
-        if (message.includes('Receiving end does not exist')
-            || message.includes('Extension context invalidated')
-            || message.includes('No document with id')
-            || message.includes('No document with ID')) {
+        if (isMissingContentReceiverError(error) || message.includes('Extension context invalidated')) {
             try {
                 const response = await refreshCurrentMediaTarget(tabId);
                 if (response?.status !== 'ok' && response?.status !== 'activation_in_progress') return;
@@ -3116,7 +3085,6 @@ async function _routeToContentInternal(tabId, action, payload, actionTimestamp, 
         }
 
         addLog(`Content Script not responding in tab ${tabId}`, 'warn');
-        clearTargetTabForIdle(tabId, targetGeneration);
     }
 }
 

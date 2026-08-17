@@ -28,6 +28,7 @@
         large: Object.freeze({ width: 440, height: 640 })
     });
     const storageKey = `chatOverlayLayout:${location.origin}`;
+    const openStateKey = `chatOverlayOpen:${location.origin}`;
     const systemTheme = window.matchMedia('(prefers-color-scheme: light)');
     let context = null;
     let opened = false;
@@ -57,6 +58,7 @@
     let chatSize = 'standard';
     let chatStartMode = 'bubble';
     let chatReactionDisplay = 'chat';
+    let lastUserOpenState = null;
     let themeMode = 'system';
     let themePalette = 'eucalyptus';
     let pageDockTarget = null;
@@ -576,8 +578,12 @@
         if (persistPreference) setLocalStorage({ chatSize });
     }
 
-    function setOpened(next) {
+    function setOpened(next, persistPreference = true) {
         opened = !!next && !!context?.enabled;
+        if (persistPreference) {
+            lastUserOpenState = opened;
+            setLocalStorage({ [openStateKey]: opened });
+        }
         panel.classList.toggle('open', opened);
         launcher.style.display = opened ? 'none' : '';
         if (opened) {
@@ -604,10 +610,10 @@
         launcher.setAttribute('aria-disabled', String(!context?.enabled));
         if (!optedIn) startStateApplied = false;
         if (!context?.enabled) {
-            setOpened(false);
+            setOpened(false, false);
         } else if (preferencesLoaded && !startStateApplied) {
             startStateApplied = true;
-            setOpened(chatStartMode === 'open');
+            setOpened(lastUserOpenState ?? (chatStartMode === 'open'), false);
         }
         applyStrings();
         applyLayout();
@@ -967,7 +973,7 @@
     systemTheme.addEventListener('change', handleSystemTheme);
     chrome.storage.onChanged.addListener(handleStorage);
     chrome.runtime.onMessage.addListener(handleRuntime);
-    chrome.storage.local.get([storageKey, 'themeMode', 'themePalette', 'chatPosition', 'chatSize', 'chatStartMode', 'chatReactionDisplay'], data => {
+    chrome.storage.local.get([storageKey, openStateKey, 'themeMode', 'themePalette', 'chatPosition', 'chatSize', 'chatStartMode', 'chatReactionDisplay'], data => {
         if (destroyed) return;
         const storedLayout = data[storageKey];
         if (storedLayout && typeof storedLayout === 'object') {
@@ -978,6 +984,7 @@
         chatPosition = normalizePosition(data.chatPosition);
         chatSize = normalizeSize(data.chatSize);
         chatStartMode = data.chatStartMode === 'open' ? 'open' : 'bubble';
+        lastUserOpenState = typeof data[openStateKey] === 'boolean' ? data[openStateKey] : null;
         chatReactionDisplay = data.chatReactionDisplay === 'video' ? 'video' : 'chat';
         layout.mode = chatPosition;
         if (layout.mode === 'detached') layout.detachedInitialized = true;

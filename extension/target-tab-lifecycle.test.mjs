@@ -77,6 +77,22 @@ describe('target tab lifecycle', () => {
         expect(backgroundSource).toContain("activation?.status === 'activation_in_progress'");
     });
 
+    it('does not discard a selected tab when its media frame refresh is transiently unavailable', () => {
+        const refreshFailureGuard = backgroundSource.slice(
+            backgroundSource.indexOf('const isCurrentTargetRefresh'),
+            backgroundSource.indexOf('currentTabId = null', backgroundSource.indexOf('const isCurrentTargetRefresh'))
+        );
+        expect(refreshFailureGuard).toContain('keeping the selected target for recovery');
+        expect(refreshFailureGuard).not.toContain('currentTabId = null');
+
+        const routeSource = backgroundSource.slice(
+            backgroundSource.indexOf('async function _routeToContentInternal'),
+            backgroundSource.indexOf('// --- Keep-Alive Mechanism ---')
+        );
+        expect(routeSource).toContain('keeping the selected target for recovery');
+        expect(routeSource).not.toContain('clearTargetTabForIdle(tabId, targetGeneration)');
+    });
+
     it('serializes content commands and coalesces target refreshes', () => {
         expect(backgroundSource).toContain('contentCommandQueue.catch(() => {}).then(deliver)');
         expect(backgroundSource).toContain('if (mediaTargetRefreshTask && mediaTargetRefreshTabId === selectedTabId)');
