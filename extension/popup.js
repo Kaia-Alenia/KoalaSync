@@ -2808,13 +2808,23 @@ function refreshDebugInfo() {
                 }
                 return;
             }
+            if (res?.targetActivationState === 'error') {
+                if (elements.videoDebug) {
+                    elements.videoDebug.textContent = res.targetActivationError
+                        ? `Injection fehlgeschlagen: ${res.targetActivationError}`
+                        : 'Video-Injection fehlgeschlagen.';
+                }
+                return;
+            }
             if (elements.videoDebug) elements.videoDebug.textContent = getMessage('DEBUG_NO_TAB');
             return;
         }
 
         if (res.targetReady !== true) {
             if (elements.videoDebug) {
-                elements.videoDebug.textContent = getMessage('DEBUG_TARGET_ACTIVATING');
+                elements.videoDebug.textContent = res.targetActivationState === 'error'
+                    ? `Injection fehlgeschlagen: ${res.targetActivationError || 'unbekannter Fehler'}`
+                    : getMessage('DEBUG_TARGET_ACTIVATING');
             }
             return;
         }

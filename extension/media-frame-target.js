@@ -2,6 +2,7 @@ export const MEDIA_FRAME_ACCESS_REQUIRED = 'media_frame_access_required';
 const MIN_PLAYER_FRAME_AREA = 320 * 180;
 const MIN_PLAYER_ASPECT_RATIO = 1.15;
 const MAX_PLAYER_ASPECT_RATIO = 2.6;
+const DEFAULT_PROBE_TIMEOUT_MS = 1500;
 
 function normalizeFrameId(value) {
     return Number.isInteger(value) && value >= 0 ? value : 0;
@@ -463,10 +464,29 @@ function mergeFrameResults(...groups) {
     return Array.from(merged.values());
 }
 
-async function executeInAccessibleFrames(chromeApi, targets, func, args) {
+function executeWithTimeout(task, timeoutMs, label) {
+    if (!Number.isFinite(timeoutMs) || timeoutMs <= 0) return task();
+    let timeoutId = null;
+    const timeout = new Promise((_, reject) => {
+        timeoutId = setTimeout(() => {
+            const error = new Error(`${label} timed out after ${timeoutMs}ms`);
+            error.code = 'media_frame_probe_timeout';
+            reject(error);
+        }, timeoutMs);
+    });
+    return Promise.race([task(), timeout]).finally(() => {
+        if (timeoutId !== null) clearTimeout(timeoutId);
+    });
+}
+
+async function executeInAccessibleFrames(chromeApi, targets, func, args, timeoutMs = DEFAULT_PROBE_TIMEOUT_MS) {
     const settled = await Promise.all(targets.map(async target => {
         try {
-            const result = await chromeApi.scripting.executeScript({ target, func, args });
+            const result = await executeWithTimeout(
+                () => chromeApi.scripting.executeScript({ target, func, args }),
+                timeoutMs,
+                `Frame probe for ${JSON.stringify(target)}`
+            );
             return Array.isArray(result) ? result : [];
         } catch {
             return [];
@@ -478,7 +498,8 @@ async function executeInAccessibleFrames(chromeApi, targets, func, args) {
 export async function resolveMediaContentTarget(chromeApi, tabId, {
     attempts = 8,
     retryDelayMs = 200,
-    probeDelayMs = 60
+    probeDelayMs = 60,
+    probeTimeoutMs = DEFAULT_PROBE_TIMEOUT_MS
 } = {}) {
     let fallback = null;
     let missingAccess = null;
@@ -489,13 +510,15 @@ export async function resolveMediaContentTarget(chromeApi, tabId, {
             chromeApi,
             [{ tabId, frameIds: [0] }],
             inspectMediaFrame,
-            [null]
+            [null],
+            probeTimeoutMs
         );
         const allFrameResults = await executeInAccessibleFrames(
             chromeApi,
             listMediaFrameScriptTargets(tabId),
             inspectMediaFrame,
-            [null]
+            [null],
+            probeTimeoutMs
         );
         let results = mergeFrameResults(topResults, allFrameResults);
         const embeddedFrameCount = topResults.reduce(
@@ -507,7 +530,8 @@ export async function resolveMediaContentTarget(chromeApi, tabId, {
                 chromeApi,
                 listFrameProbeTargets(tabId, embeddedFrameCount),
                 inspectMediaFrame,
-                [null]
+                [null],
+                probeTimeoutMs
             );
             results = mergeFrameResults(results, individuallyProbed);
         }
@@ -521,7 +545,8 @@ export async function resolveMediaContentTarget(chromeApi, tabId, {
                     chromeApi,
                     frameTargets,
                     installParentFrameVisibilityProbe,
-                    [token]
+                    [token],
+                    probeTimeoutMs
                 );
                 // Four passes match the maximum same-origin recursion depth.
                 for (let pass = 0; pass < 4; pass++) {
@@ -529,7 +554,8 @@ export async function resolveMediaContentTarget(chromeApi, tabId, {
                         chromeApi,
                         frameTargets,
                         dispatchParentFrameVisibilityProbe,
-                        [token]
+                        [token],
+                        probeTimeoutMs
                     );
                     await new Promise(resolve => setTimeout(resolve, probeDelayMs));
                 }
@@ -537,7 +563,8 @@ export async function resolveMediaContentTarget(chromeApi, tabId, {
                     chromeApi,
                     frameTargets,
                     inspectMediaFrame,
-                    [token]
+                    [token],
+                    probeTimeoutMs
                 );
                 if (inspected.length > 0) results = mergeFrameResults(results, inspected);
             } catch {

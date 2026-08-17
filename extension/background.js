@@ -80,6 +80,8 @@ let currentTargetHasVideo = false;
 // popup look as if the user never selected a tab.
 let requestedTargetTabId = null;
 let requestedTargetTitle = null;
+let requestedTargetRetryBlockedTabId = null;
+let requestedTargetRetryBlockedMessage = null;
 let pendingRequestedActivationCount = 0;
 let targetActivationGeneration = 0;
 let activeTargetActivation = null;
@@ -224,6 +226,7 @@ function ensureState() {
                 'forceSyncDeadline', 'reconnectFailed', 'reconnectStartTime', 'reconnectAttempts', 'currentTabId', 'currentTabTitle',
                 'currentTargetFrameId', 'currentTargetDocumentId', 'currentTargetHasVideo',
                 'requestedTargetTabId', 'requestedTargetTitle',
+                'requestedTargetRetryBlockedTabId', 'requestedTargetRetryBlockedMessage',
                 'episodeLobby', 'localSeq', 'lastSeqBySender', 'expectedAcksCount', 'roomIdleSince', 'lastContentHeartbeatAt',
                 'hcmDesynced', 'chatActivityTimeline'
             ], (data) => {
@@ -245,6 +248,11 @@ function ensureState() {
                 requestedTargetTitle = requestedTargetTabId !== null
                     && typeof data.requestedTargetTitle === 'string'
                     ? data.requestedTargetTitle
+                    : null;
+                requestedTargetRetryBlockedTabId = normalizeTabId(data.requestedTargetRetryBlockedTabId);
+                requestedTargetRetryBlockedMessage = requestedTargetRetryBlockedTabId !== null
+                    && typeof data.requestedTargetRetryBlockedMessage === 'string'
+                    ? data.requestedTargetRetryBlockedMessage
                     : null;
                 if (data.currentTabTitle !== undefined) {
                     currentTabTitle = currentTabId !== null && typeof data.currentTabTitle === 'string'
@@ -2340,6 +2348,31 @@ function createTargetActivationSupersededError() {
     return error;
 }
 
+const SCRIPT_INJECTION_TIMEOUT_MS = 5000;
+
+function executeScriptWithTimeout(options, timeoutMs = SCRIPT_INJECTION_TIMEOUT_MS) {
+    if (!Number.isFinite(timeoutMs) || timeoutMs <= 0) {
+        return chrome.scripting.executeScript(options);
+    }
+    let timeoutId = null;
+    const label = Array.isArray(options?.files) && options.files.length > 0
+        ? options.files.join(', ')
+        : 'function injection';
+    const timeout = new Promise((_, reject) => {
+        timeoutId = setTimeout(() => {
+            const error = new Error(`Script injection timed out after ${timeoutMs}ms (${label})`);
+            error.code = 'script_injection_timeout';
+            reject(error);
+        }, timeoutMs);
+    });
+    return Promise.race([
+        chrome.scripting.executeScript(options),
+        timeout
+    ]).finally(() => {
+        if (timeoutId !== null) clearTimeout(timeoutId);
+    });
+}
+
 async function injectMediaFrameMonitors(tabId, contentTarget) {
     // The all-frames target is only a best-effort sweep: one inaccessible
     // frame can make Chromium reject the entire sweep. Always include the
@@ -2353,12 +2386,15 @@ async function injectMediaFrameMonitors(tabId, contentTarget) {
     let injectedCount = 0;
     for (const target of targets) {
         try {
-            await chrome.scripting.executeScript({
+            await executeScriptWithTimeout({
                 target,
                 files: ['media-frame-monitor.js']
-            });
+            }, 2000);
             injectedCount++;
-        } catch {
+        } catch (error) {
+            if (error?.code === 'script_injection_timeout') {
+                addLog(`Media-frame monitor injection timed out for ${JSON.stringify(target)}`, 'warn');
+            }
             // One denied widget frame must not block the selected player.
         }
     }
@@ -2424,12 +2460,12 @@ async function injectContentScript(tabId, {
         }
         if (needsPageApiSeek) {
             try {
-                await chrome.scripting.executeScript({
+                await executeScriptWithTimeout({
                     target: scriptTarget,
                     world: 'MAIN',
                     files: ['page-api-seek-overrides.js']
                 });
-                await chrome.scripting.executeScript({
+                await executeScriptWithTimeout({
                     target: scriptTarget,
                     world: 'MAIN',
                     func: installPageApiSeekBridge
@@ -2440,16 +2476,16 @@ async function injectContentScript(tabId, {
             }
         }
 
-        await chrome.scripting.executeScript({
+        await executeScriptWithTimeout({
             target: scriptTarget,
             files: ['page-api-seek-overrides.js']
         });
-        await chrome.scripting.executeScript({
+        await executeScriptWithTimeout({
             target: scriptTarget,
             func: setPageApiSeekEnabled,
             args: [pageApiSeekReady]
         });
-        const injectionResults = await chrome.scripting.executeScript({
+        const injectionResults = await executeScriptWithTimeout({
             target: scriptTarget,
             files: ['chat-format.js', 'chat-overlay.js', 'content.js']
         });
@@ -2652,9 +2688,13 @@ async function rememberRequestedTarget(tabId, tabTitle) {
     if (normalizedTabId === null) return false;
     requestedTargetTabId = normalizedTabId;
     requestedTargetTitle = typeof tabTitle === 'string' ? tabTitle : null;
+    requestedTargetRetryBlockedTabId = null;
+    requestedTargetRetryBlockedMessage = null;
     await chrome.storage.session.set({
         requestedTargetTabId,
-        requestedTargetTitle
+        requestedTargetTitle,
+        requestedTargetRetryBlockedTabId: null,
+        requestedTargetRetryBlockedMessage: null
     });
     return true;
 }
@@ -2666,9 +2706,13 @@ async function clearRequestedTarget(expectedTabId = null) {
     }
     requestedTargetTabId = null;
     requestedTargetTitle = null;
+    requestedTargetRetryBlockedTabId = null;
+    requestedTargetRetryBlockedMessage = null;
     await chrome.storage.session.set({
         requestedTargetTabId: null,
-        requestedTargetTitle: null
+        requestedTargetTitle: null,
+        requestedTargetRetryBlockedTabId: null,
+        requestedTargetRetryBlockedMessage: null
     });
     return true;
 }
@@ -2678,7 +2722,8 @@ async function retryRequestedTarget() {
     if (selectedTabId === null
         || normalizeTabId(currentTabId) === selectedTabId
         || pendingRequestedActivationCount > 0
-        || activeTargetActivation) {
+        || activeTargetActivation
+        || normalizeTabId(requestedTargetRetryBlockedTabId) === selectedTabId) {
         return null;
     }
 
@@ -2702,6 +2747,14 @@ async function retryRequestedTarget() {
         }
         return response;
     } catch (error) {
+        if (error?.code !== HOST_ACCESS_REQUIRED_STATUS) {
+            requestedTargetRetryBlockedTabId = selectedTabId;
+            requestedTargetRetryBlockedMessage = error?.message || 'Script injection failed';
+            await chrome.storage.session.set({
+                requestedTargetRetryBlockedTabId,
+                requestedTargetRetryBlockedMessage
+            });
+        }
         addLog(`Requested target retry failed: ${error.message}`, 'warn');
         return injectionFailureResponse(error);
     }
@@ -3391,7 +3444,12 @@ async function handleAsyncMessage(message, sender, sendResponse) {
                 ? 'ready'
                 : pendingTarget?.tabId === targetTabId
                     ? 'access_required'
+                    : normalizeTabId(requestedTargetRetryBlockedTabId) === targetTabId
+                        ? 'error'
                     : 'activating';
+        const targetActivationError = normalizeTabId(requestedTargetRetryBlockedTabId) === targetTabId
+            ? requestedTargetRetryBlockedMessage
+            : null;
         sendResponse({ 
             status, 
             peerId, 
@@ -3403,6 +3461,7 @@ async function handleAsyncMessage(message, sender, sendResponse) {
             targetHasVideo: currentTargetHasVideo,
             targetReady,
             targetActivationState,
+            targetActivationError,
             pendingTargetTabId: pendingTarget?.tabId ?? null,
             pendingTargetHost: pendingTarget?.host ?? null,
             pendingTargetOriginPattern: pendingTarget?.originPattern ?? null,
