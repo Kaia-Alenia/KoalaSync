@@ -46,7 +46,7 @@ describe('target tab lifecycle', () => {
     it('does not reactivate the target for ordinary playback churn', () => {
         expect(backgroundSource).toContain('async function selectedMediaTargetMoved(tabId)');
         expect(backgroundSource).toContain('onlyIfTargetMoved = false');
-        expect(backgroundSource.match(/onlyIfTargetMoved: true/g)?.length).toBe(4);
+        expect(backgroundSource.match(/onlyIfTargetMoved: true/g)?.length).toBe(5);
         // Playback state must stay out of the candidate signature, otherwise
         // every play/pause looks like a frame layout change.
         expect(monitorSource).not.toContain('element.paused ? 0 : 1');
@@ -60,7 +60,8 @@ describe('target tab lifecycle', () => {
         );
         expect(resolverSource).toContain('async function originAccessIsWithheld(chromeApi, originPattern)');
         expect(resolverSource).toContain('probeTimeoutMs = DEFAULT_PROBE_TIMEOUT_MS');
-        expect(resolverSource).toContain('attempts = 3');
+        expect(resolverSource).toContain('attempts = 8');
+        expect(resolverSource).toContain('deadlineMs = 12000');
         // A swallowed probe error is what turned a slow player frame into a
         // permission prompt for an origin the extension already held.
         expect(resolverSource).toContain('errors.push({ target, error })');

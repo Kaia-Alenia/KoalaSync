@@ -2059,17 +2059,26 @@ async function getReadyTabVideoState(tabId, expectedGeneration = targetActivatio
         return { error: 'Target tab changed before video state could be read' };
     }
     let state = await getTabVideoState(tabId);
-    if (!state || state.error || state.found === false) {
-        const activation = await refreshCurrentMediaTarget(tabId);
-        if (activation?.status !== 'ok') {
+    // "No video" is a legitimate answer, not a broken injection: an anime or
+    // Drive page has no video element until the viewer starts playback. Forcing
+    // a reactivation for it made every poll of this function tear the content
+    // script down and reinject it, which kept the target permanently activating.
+    // Only an unreachable content script justifies recovery.
+    if (!state || state.error) {
+        const activation = await refreshCurrentMediaTarget(tabId, { onlyIfTargetMoved: true });
+        if (activation?.status !== 'ok' && activation?.status !== 'unchanged') {
             return { error: 'Target tab changed before content script recovery completed' };
         }
+        // An unchanged target reports no generation of its own.
+        const generation = Number.isInteger(activation.generation)
+            ? activation.generation
+            : targetActivationGeneration;
         await new Promise(resolve => setTimeout(resolve, 250));
-        if (!isCurrentTargetIdentity(tabId, activation.generation)) {
+        if (!isCurrentTargetIdentity(tabId, generation)) {
             return { error: 'Target tab changed before video state could be read' };
         }
         state = await getTabVideoState(tabId);
-        if (!isCurrentTargetIdentity(tabId, activation.generation)) {
+        if (!isCurrentTargetIdentity(tabId, generation)) {
             return { error: 'Target tab changed while video state was being read' };
         }
     }

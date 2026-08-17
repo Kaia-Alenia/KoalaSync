@@ -674,6 +674,38 @@ test('selects an anime tab before playback and promotes the player once it appea
     expect(promoted).toMatchObject({ targetTabId: tabId, targetActivationState: 'ready' });
 });
 
+test('polling video state on a page with no video does not restart the target', async ({ context, extensionId, baseURL }) => {
+    // The dev panel polls GET_VIDEO_STATE on a timer. On an anime page the
+    // answer is legitimately "no video" until playback starts, and treating
+    // that as a broken injection reactivated the target on every poll — which
+    // is what pinned the popup on "activating" forever.
+    const url = `${baseURL}/pages/yummy-deferred-player.html`;
+    const page = await context.newPage();
+    await page.goto(url);
+    await page.waitForFunction(() => window.__fixtureReady === true);
+
+    const { tabId } = await selectTargetTab(context, extensionId, url);
+
+    for (let poll = 0; poll < 6; poll++) {
+        const state = await getExtensionState(context, extensionId, { type: 'GET_VIDEO_STATE', tabId });
+        expect(state?.error, 'reading video state must not report a target change').toBeFalsy();
+        expect(state).toMatchObject({ found: false });
+        const status = await getExtensionState(context, extensionId, { type: 'GET_STATUS' });
+        expect(status, `poll ${poll} must leave the target ready`).toMatchObject({
+            targetTabId: tabId,
+            targetReady: true,
+            targetActivationState: 'ready'
+        });
+    }
+
+    // And the player is still picked up once it exists.
+    const deferred = page.frames().find(frame => frame.url().endsWith('/frames/deferred-player-frame.html'));
+    await deferred.locator('#poster').click();
+    await expect
+        .poll(() => deferred.locator('video').getAttribute('data-koala-attached'), { timeout: 15000 })
+        .toBe('true');
+});
+
 test('keeps the tab selected when its activation fails', async ({ context, extensionId }) => {
     // A page the extension is not allowed to script stands in for any activation
     // failure the user can act on. Losing the selection here is what made the

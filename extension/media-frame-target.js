@@ -526,11 +526,17 @@ async function originAccessIsWithheld(chromeApi, originPattern) {
 }
 
 export async function resolveMediaContentTarget(chromeApi, tabId, {
-    attempts = 3,
+    // v3.1.2's retry budget: a player frame can take several seconds to appear,
+    // and giving up early is what turns a slow page into "no video found".
+    attempts = 8,
     retryDelayMs = 200,
     probeDelayMs = 60,
-    probeTimeoutMs = DEFAULT_PROBE_TIMEOUT_MS
+    probeTimeoutMs = DEFAULT_PROBE_TIMEOUT_MS,
+    // ...but the budget is now wall-clock bounded, so a page whose frames all
+    // time out cannot hold the activation open for minutes.
+    deadlineMs = 12000
 } = {}) {
+    const startedAt = Date.now();
     let fallback = null;
     let missingAccess = null;
     let ambiguous = false;
@@ -636,6 +642,9 @@ export async function resolveMediaContentTarget(chromeApi, tabId, {
             }
         }
 
+        if (Number.isFinite(deadlineMs) && deadlineMs > 0 && Date.now() - startedAt >= deadlineMs) {
+            break;
+        }
         if (attempt < attempts - 1) {
             await new Promise(resolve => setTimeout(resolve, retryDelayMs));
         }
