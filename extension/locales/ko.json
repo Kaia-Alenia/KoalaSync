@@ -190,6 +190,7 @@
   "NOTIF_FORCE_PREPARE": "강제 동기화를 시작했습니다",
   "NOTIF_FORCE_EXECUTE": "모든 사용자를 동기화했습니다",
   "DEBUG_NO_TAB": "대상 탭이 선택되지 않았습니다.",
+  "DEBUG_TARGET_ACTIVATING": "대상 탭이 선택되었습니다. 동영상 주입을 준비하는 중입니다.",
   "DEBUG_COMM_FAIL": "탭 비디오와 통신할 수 없습니다.",
   "EMPTY_PEERS_TITLE": "참여자 없음",
   "EMPTY_PEERS_HINT": "시작하려면 초대 링크를 공유하세요",

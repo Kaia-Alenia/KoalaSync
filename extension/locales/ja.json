@@ -190,6 +190,7 @@
   "NOTIF_FORCE_PREPARE": "強制同期を開始しました",
   "NOTIF_FORCE_EXECUTE": "全員を同期しました",
   "DEBUG_NO_TAB": "対象のタブが選択されていません。",
+  "DEBUG_TARGET_ACTIVATING": "対象のタブを選択しました。動画スクリプトを準備しています。",
   "DEBUG_COMM_FAIL": "タブのビデオと通信できませんでした。",
   "EMPTY_PEERS_TITLE": "メンバーはまだいません",
   "EMPTY_PEERS_HINT": "招待リンクを共有して始めましょう",

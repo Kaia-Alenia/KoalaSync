@@ -190,6 +190,7 @@
   "NOTIF_FORCE_PREPARE": "eine erzwungene Synchronisation gestartet",
   "NOTIF_FORCE_EXECUTE": "alle Teilnehmer synchronisiert",
   "DEBUG_NO_TAB": "Kein Ziel-Tab ausgewählt.",
+  "DEBUG_TARGET_ACTIVATING": "Ziel-Tab ausgewählt; Video-Injection wird vorbereitet.",
   "DEBUG_COMM_FAIL": "Kommunikation mit dem Tab-Video fehlgeschlagen.",
   "EMPTY_PEERS_TITLE": "Noch keine Teilnehmer",
   "EMPTY_PEERS_HINT": "Teile deinen Einladungslink, um loszulegen",

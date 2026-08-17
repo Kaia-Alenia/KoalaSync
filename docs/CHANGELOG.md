@@ -19,6 +19,14 @@ recovery, failed tab switches and short connection interruptions.
   tab visible across popup close/reopen and retries activation after a dynamic
   player frame changes, without restoring the removed `webNavigation`
   permission.
+- **Extension: Target selection independent of video detection** — Exposes one
+  public `targetTabId`, keeps a selected no-video page active, and reports
+  activation readiness separately instead of treating a missing or ambiguous
+  player frame as a lost tab.
+- **Extension: Defensive frame probing without `webNavigation`** — Isolates
+  rejected embedded-frame probes, retries known frame IDs individually, and
+  keeps visible-player discovery working when one child frame blocks an
+  `allFrames` sweep.
 - **Extension: Chat visibility persistence** — Remembers the user's manual
   open/closed state across popup reopen, content refresh and reconnect cycles.
 
@@ -26,9 +34,9 @@ recovery, failed tab switches and short connection interruptions.
 - **Release gate** — Unit, server/WebSocket, locale, theme, lint, production
   dependency audit, Chrome/Firefox build, AMO validation and website build
   pass locally.
-- **Browser E2E** — 36 extension and player lifecycle scenarios pass locally,
-  including popup close/reopen persistence and repeated cross-origin frame
-  switching.
+- **Browser E2E** — 38 extension and player lifecycle scenarios pass locally,
+  including popup close/reopen persistence, selectable no-video pages,
+  rejected all-frame recovery and repeated cross-origin frame switching.
 
 ---
 

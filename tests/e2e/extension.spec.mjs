@@ -54,6 +54,62 @@ async function getExtensionState(context, extensionId, message) {
     ));
 }
 
+async function setAudioSettings(context, extensionId, settings) {
+    return withExtensionPage(context, extensionId, page => page.evaluate(
+        value => chrome.storage.local.set({ audioSettings: value }),
+        settings
+    ));
+}
+
+async function getAudioRouteState(context, extensionId, pageUrl) {
+    return withExtensionPage(context, extensionId, page => page.evaluate(async url => {
+        const [tab] = await chrome.tabs.query({ url });
+        if (!tab) throw new Error(`no tab matched ${url}`);
+        const [result] = await chrome.scripting.executeScript({
+            target: { tabId: tab.id },
+            func: () => {
+                const route = window.__koalaSyncAudioRoute;
+                if (!route) {
+                    return {
+                        hasRoute: false,
+                        contextState: null,
+                        chainActive: null,
+                        hasVideo: false,
+                        signalLevel: 0
+                    };
+                }
+                let analyser = route.testAnalyser;
+                if (!analyser) {
+                    analyser = route.audioCtx.createAnalyser();
+                    analyser.fftSize = 32;
+                    route.chain.limiter.connect(analyser);
+                    route.testAnalyser = analyser;
+                }
+                if (!route.testSignal) {
+                    const oscillator = route.audioCtx.createOscillator();
+                    const gain = route.audioCtx.createGain();
+                    gain.gain.value = 0.05;
+                    oscillator.frequency.value = 440;
+                    oscillator.connect(gain);
+                    gain.connect(route.chain.limiter);
+                    oscillator.start();
+                    route.testSignal = { oscillator, gain };
+                }
+                const samples = new Uint8Array(analyser.fftSize);
+                analyser.getByteTimeDomainData(samples);
+                return {
+                    hasRoute: true,
+                    contextState: route.audioCtx?.state || null,
+                    chainActive: route.chain?.active ?? null,
+                    hasVideo: !!route.video,
+                    signalLevel: Math.max(...Array.from(samples, sample => Math.abs(sample - 128)))
+                };
+            }
+        });
+        return result?.result || null;
+    }, pageUrl));
+}
+
 async function getFrameMonitorState(context, extensionId, pageUrl, frameUrlPart) {
     return withExtensionPage(context, extensionId, page => page.evaluate(async ({ pageUrl, frameUrlPart }) => {
         const [tab] = await chrome.tabs.query({ url: pageUrl });
@@ -105,9 +161,80 @@ test('keeps the selected tab after the popup page closes and reopens', async ({ 
     const status = await getExtensionState(context, extensionId, { type: 'GET_STATUS' });
     expect(status).toMatchObject({
         targetTabId: tabId,
-        selectedTargetTabId: tabId,
-        requestedTargetTabId: null
+        targetReady: true,
+        targetActivationState: 'ready'
     });
+});
+
+test('keeps a selected target even when the page has no video element', async ({ context, extensionId, baseURL }) => {
+    const url = `${baseURL}/pages/no-video.html`;
+    const page = await context.newPage();
+    await page.goto(url);
+    await page.waitForFunction(() => window.__fixtureReady === true);
+
+    const { tabId, response } = await selectTargetTab(context, extensionId, url);
+    expect(response).toMatchObject({ status: 'ok', tabId });
+
+    const status = await getExtensionState(context, extensionId, { type: 'GET_STATUS' });
+    expect(status).toMatchObject({
+        targetTabId: tabId,
+        targetReady: true,
+        targetActivationState: 'ready',
+        targetHasVideo: false
+    });
+});
+
+test('keeps a previously selected player audible after switching targets', async ({ context, extensionId, baseURL }) => {
+    const firstUrl = `${baseURL}/pages/simple-player.html`;
+    const secondUrl = `${baseURL}/pages/no-video.html`;
+    const first = await context.newPage();
+    const second = await context.newPage();
+    await first.goto(firstUrl);
+    await first.waitForFunction(() => window.__fixtureReady === true);
+    await second.goto(secondUrl);
+    await second.waitForFunction(() => window.__fixtureReady === true);
+
+    await setAudioSettings(context, extensionId, {
+        enabled: true,
+        boostDb: 1,
+        compressor: { enabled: false, preset: 'recommended', customParams: {} }
+    });
+    const { tabId: firstTabId } = await selectTargetTab(context, extensionId, firstUrl);
+    await first.evaluate(() => document.getElementById('player').play());
+    await expect.poll(
+        () => getAudioRouteState(context, extensionId, firstUrl),
+        { message: 'the selected player must have a live audio route' }
+    ).toMatchObject({ hasRoute: true, contextState: 'running', hasVideo: true });
+    await expect.poll(
+        () => getAudioRouteState(context, extensionId, firstUrl).then(state => state?.signalLevel || 0),
+        { message: 'the selected player must produce a signal through the audio route' }
+    ).toBeGreaterThan(1);
+
+    const { response } = await selectTargetTab(context, extensionId, secondUrl);
+    expect(response).toMatchObject({ status: 'ok' });
+    await first.evaluate(() => document.getElementById('player').play());
+    await expect.poll(() => first.locator('#player').evaluate(video => ({
+        paused: video.paused,
+        muted: video.muted,
+        volume: video.volume
+    }))).toMatchObject({ paused: false, muted: false });
+    await expect.poll(
+        () => getAudioRouteState(context, extensionId, firstUrl).then(state => state?.signalLevel || 0),
+        { message: 'switching targets must not mute the previous audio route' }
+    ).toBeGreaterThan(1);
+
+    await selectTargetTab(context, extensionId, firstUrl);
+    await expect.poll(
+        () => getAudioRouteState(context, extensionId, firstUrl),
+        { message: 'reselecting the player must reuse its live audio route' }
+    ).toMatchObject({ hasRoute: true, contextState: 'running', hasVideo: true });
+    await expect.poll(
+        () => getAudioRouteState(context, extensionId, firstUrl).then(state => state?.signalLevel || 0),
+        { message: 'reselecting the player must keep the audio signal alive' }
+    ).toBeGreaterThan(1);
+    const playResponse = await sendServerCommand(context, extensionId, firstTabId, 'play');
+    expect(playResponse).toMatchObject({ status: 'ok_solo' });
+    await expect.poll(() => first.locator('#player').evaluate(video => video.paused)).toBe(false);
 });
 
 test('applies remote play, pause and seek to the framed player', async ({ context, extensionId, baseURL }) => {

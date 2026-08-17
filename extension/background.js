@@ -11,7 +11,6 @@ import { createChatActivityStore } from './chat-activity.js';
 import { HOST_ACCESS_REQUIRED_STATUS, normalizeTabId, inspectTabHostAccess, isHostAccessError, addTabHostAccessRequest, removeTabHostAccessRequest } from './host-access.js';
 import {
     MEDIA_FRAME_ACCESS_REQUIRED,
-    MEDIA_FRAME_AMBIGUOUS,
     listMediaFrameScriptTargets,
     resolveMediaContentTarget
 } from './media-frame-target.js';
@@ -2249,6 +2248,7 @@ function deactivateMediaFrameMonitor() {
 async function deactivateMediaFrameMonitors(tabId, contentTarget = null) {
     const targets = uniqueScriptTargets([
         contentTarget?.scriptTarget,
+        ...(contentTarget?.monitorTargets || []),
         { tabId },
         ...listMediaFrameScriptTargets(tabId)
     ].filter(Boolean));
@@ -2279,7 +2279,7 @@ async function deactivateTargetTab(tabId, contentTarget = null, { deactivateMoni
             }
             : null)
         || { frameId: 0, documentId: null };
-    resetAudioProcessingInTab(normalizedTabId, target);
+    await resetAudioProcessingInTab(normalizedTabId, target);
     await sendMessageToFrame(
         normalizedTabId,
         target.frameId,
@@ -2346,6 +2346,7 @@ async function injectMediaFrameMonitors(tabId, contentTarget) {
     // selected document explicitly so its lifecycle monitor is guaranteed.
     const targets = uniqueScriptTargets([
         contentTarget?.scriptTarget,
+        ...(contentTarget?.monitorTargets || []),
         { tabId },
         ...listMediaFrameScriptTargets(tabId)
     ].filter(Boolean));
@@ -2403,8 +2404,7 @@ async function injectContentScript(tabId, {
                 originPattern: error.originPattern
             }, requestAdded, error);
         }
-        if (error?.code === MEDIA_FRAME_AMBIGUOUS) throw error;
-        addLog(`Media frame probe fell back to the top frame: ${error.message}`, 'warn');
+        throw error;
     }
 
     const scriptTarget = contentTarget.scriptTarget;
@@ -3238,27 +3238,27 @@ function leaveOldRoomIfSwitching(newRoomId) {
     }
 }
 
-function resetAudioProcessingInTab(tabId, contentTarget = null) {
-    if (!tabId) return;
+async function resetAudioProcessingInTab(tabId, contentTarget = null) {
+    const normalizedTabId = normalizeTabId(tabId);
+    if (normalizedTabId === null) return null;
     if (contentTarget) {
-        sendMessageToFrame(
-            tabId,
+        return sendMessageToFrame(
+            normalizedTabId,
             contentTarget.frameId,
             { action: 'RESET_AUDIO_PROCESSING' },
             null,
             contentTarget.documentId
-        ).catch(() => {});
-        return;
+        ).catch(() => null);
     }
-    if (normalizeTabId(tabId) === normalizeTabId(currentTabId)) {
-        sendMessageToCurrentContent({ action: 'RESET_AUDIO_PROCESSING' }).catch(() => {});
-        return;
+    if (normalizedTabId === normalizeTabId(currentTabId)) {
+        return sendMessageToCurrentContent({ action: 'RESET_AUDIO_PROCESSING' }).catch(() => null);
     }
-    chrome.tabs.sendMessage(tabId, { action: 'RESET_AUDIO_PROCESSING' }).catch(() => {});
+    return chrome.tabs.sendMessage(normalizedTabId, { action: 'RESET_AUDIO_PROCESSING' }).catch(() => null);
 }
 
 async function applyAudioSettingsToTab(tabId, contentTarget = null) {
-    if (!tabId) return;
+    const normalizedTabId = normalizeTabId(tabId);
+    if (normalizedTabId === null) return;
     // Local-only: audioSettings are never read from storage.sync.
     const data = await chrome.storage.local.get(['audioSettings']);
     const message = {
@@ -3266,20 +3266,20 @@ async function applyAudioSettingsToTab(tabId, contentTarget = null) {
         settings: data.audioSettings
     };
     if (contentTarget) {
-        sendMessageToFrame(
-            tabId,
+        await sendMessageToFrame(
+            normalizedTabId,
             contentTarget.frameId,
             message,
             null,
             contentTarget.documentId
-        ).catch(() => {});
+        ).catch(() => null);
         return;
     }
-    if (normalizeTabId(tabId) === normalizeTabId(currentTabId)) {
-        sendMessageToCurrentContent(message).catch(() => {});
+    if (normalizedTabId === normalizeTabId(currentTabId)) {
+        await sendMessageToCurrentContent(message).catch(() => null);
         return;
     }
-    chrome.tabs.sendMessage(tabId, message).catch(() => {});
+    await chrome.tabs.sendMessage(normalizedTabId, message).catch(() => null);
 }
 
 // --- Extension Message Listeners ---
@@ -3379,21 +3379,30 @@ async function handleAsyncMessage(message, sender, sendResponse) {
         let status = isConnected ? 'connected' : (isConnecting || (socket && socket.readyState === WebSocket.CONNECTING) ? 'connecting' : (isReconnecting ? 'reconnecting' : 'disconnected'));
         // Distinguish the normal "not in a room" resting state from a real drop.
         if (status === 'disconnected' && !currentRoom && !connectIntent) status = 'idle';
-        const requestedTarget = normalizeTabId(requestedTargetTabId);
-        const activatingTarget = normalizeTabId(activeTargetActivation?.tabId);
+        const targetTabId = normalizeTabId(requestedTargetTabId)
+            ?? normalizeTabId(activeTargetActivation?.tabId)
+            ?? normalizeTabId(currentTabId);
+        const targetReady = targetTabId !== null
+            && normalizeTabId(currentTabId) === targetTabId
+            && !activeTargetActivation;
+        const targetActivationState = targetTabId === null
+            ? 'none'
+            : targetReady
+                ? 'ready'
+                : pendingTarget?.tabId === targetTabId
+                    ? 'access_required'
+                    : 'activating';
         sendResponse({ 
             status, 
             peerId, 
             peers: currentRoom ? currentRoom.peers : [],
             lastActionState,
-            targetTabId: currentTabId,
+            targetTabId,
             targetFrameId: currentTargetFrameId,
             targetDocumentId: currentTargetDocumentId,
             targetHasVideo: currentTargetHasVideo,
-            selectedTargetTabId: requestedTarget ?? activatingTarget ?? normalizeTabId(currentTabId),
-            requestedTargetTabId: requestedTarget,
-            requestedTargetTitle,
-            activatingTargetTabId: activatingTarget,
+            targetReady,
+            targetActivationState,
             pendingTargetTabId: pendingTarget?.tabId ?? null,
             pendingTargetHost: pendingTarget?.host ?? null,
             pendingTargetOriginPattern: pendingTarget?.originPattern ?? null,

@@ -190,6 +190,7 @@
   "NOTIF_FORCE_PREPARE": "started force sync",
   "NOTIF_FORCE_EXECUTE": "synchronized everyone",
   "DEBUG_NO_TAB": "No target tab selected.",
+  "DEBUG_TARGET_ACTIVATING": "Target tab selected; preparing video injection.",
   "DEBUG_COMM_FAIL": "Could not communicate with tab video.",
   "EMPTY_PEERS_TITLE": "No peers yet",
   "EMPTY_PEERS_HINT": "Share your invite link to get started",

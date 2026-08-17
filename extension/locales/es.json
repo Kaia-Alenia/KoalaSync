@@ -190,6 +190,7 @@
   "NOTIF_FORCE_PREPARE": "ha iniciado una sincronización forzada",
   "NOTIF_FORCE_EXECUTE": "ha sincronizado a todos",
   "DEBUG_NO_TAB": "No hay pestaña objetivo seleccionada.",
+  "DEBUG_TARGET_ACTIVATING": "Pestaña objetivo seleccionada; preparando la inyección de vídeo.",
   "DEBUG_COMM_FAIL": "No se pudo comunicar con el video de la pestaña.",
   "EMPTY_PEERS_TITLE": "Sin participantes aún",
   "EMPTY_PEERS_HINT": "Comparte tu enlace de invitación para comenzar",

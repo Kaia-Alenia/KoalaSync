@@ -190,6 +190,7 @@
   "NOTIF_FORCE_PREPARE": "is een geforceerde sync gestart",
   "NOTIF_FORCE_EXECUTE": "heeft iedereen gesynchroniseerd",
   "DEBUG_NO_TAB": "Geen doeltabblad geselecteerd.",
+  "DEBUG_TARGET_ACTIVATING": "Doeltabblad geselecteerd; video-injectie wordt voorbereid.",
   "DEBUG_COMM_FAIL": "Kon niet communiceren met de videotab.",
   "EMPTY_PEERS_TITLE": "Nog geen deelnemers",
   "EMPTY_PEERS_HINT": "Deel uw uitnodigingslink om te beginnen",

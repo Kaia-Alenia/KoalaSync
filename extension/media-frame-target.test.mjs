@@ -1,7 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import {
     MEDIA_FRAME_ACCESS_REQUIRED,
-    MEDIA_FRAME_AMBIGUOUS,
     inspectMediaFrame,
     resolveMediaContentTarget,
     selectMediaFrame
@@ -128,12 +127,16 @@ describe('cross-origin media-frame targeting', () => {
             documentId: 'document-8',
             frameUrl: 'https://player-8.example/embed',
             hasVideo: true,
-            scriptTarget: { tabId: 42, documentIds: ['document-8'] }
+            scriptTarget: { tabId: 42, documentIds: ['document-8'] },
+            monitorTargets: [
+                { tabId: 42, documentIds: ['document-0'] },
+                { tabId: 42, documentIds: ['document-8'] }
+            ]
         });
         const visibilityDispatches = executeScript.mock.calls.filter(([options]) => (
             options.func?.name === 'dispatchParentFrameVisibilityProbe'
         ));
-        expect(visibilityDispatches).toHaveLength(4);
+        expect(visibilityDispatches.length).toBeGreaterThanOrEqual(4);
     });
 
     it('keeps the top target inactive when the only discovered video is hidden', async () => {
@@ -151,7 +154,11 @@ describe('cross-origin media-frame targeting', () => {
             documentId: null,
             frameUrl: null,
             hasVideo: false,
-            scriptTarget: { tabId: 42 }
+            scriptTarget: { tabId: 42 },
+            monitorTargets: [
+                { tabId: 42, documentIds: ['document-0'] },
+                { tabId: 42, documentIds: ['document-6'] }
+            ]
         });
     });
 
@@ -165,9 +172,108 @@ describe('cross-origin media-frame targeting', () => {
         )).resolves.toMatchObject({
             frameId: 8,
             hasVideo: true,
-            scriptTarget: { tabId: 42, documentIds: ['document-8'] }
+            scriptTarget: { tabId: 42, documentIds: ['document-8'] },
+            monitorTargets: expect.arrayContaining([
+                { tabId: 42, documentIds: ['document-8'] }
+            ])
         });
-        expect(executeScript.mock.calls[0][0].target).toEqual({ tabId: 42, allFrames: true });
+        expect(executeScript.mock.calls.some(([options]) => (
+            options.target?.tabId === 42 && options.target?.allFrames === true
+        ))).toBe(true);
+    });
+
+    it('isolates a rejected all-frame sweep and still finds an embedded player', async () => {
+        const top = frame(0, {
+            href: 'https://anime.example/watch',
+            origin: 'https://anime.example',
+            bestVideo: null,
+            videoCount: 0,
+            embeddedFrames: [{
+                href: 'https://player.example/embed',
+                origin: 'https://player.example',
+                area: 860 * 490,
+                width: 860,
+                height: 490,
+                visible: true,
+                mediaHint: true
+            }]
+        });
+        const player = frame(1, {
+            href: 'https://player.example/embed'
+        });
+        const executeScript = vi.fn(async options => {
+            if (options.target?.allFrames === true) throw new Error('one frame rejected');
+            const frameId = options.target?.frameIds?.[0];
+            if (options.func?.name === 'inspectMediaFrame') {
+                if (frameId === 0) return [top];
+                if (frameId === 1) return [player];
+                return [];
+            }
+            return [];
+        });
+
+        await expect(resolveMediaContentTarget(
+            { scripting: { executeScript } },
+            47,
+            { attempts: 1, probeDelayMs: 0 }
+        )).resolves.toMatchObject({
+            frameId: 1,
+            documentId: 'document-1',
+            hasVideo: true,
+            scriptTarget: { tabId: 47, documentIds: ['document-1'] },
+            monitorTargets: expect.arrayContaining([
+                { tabId: 47, documentIds: ['document-0'] },
+                { tabId: 47, documentIds: ['document-1'] }
+            ])
+        });
+    });
+
+    it('sweeps individual frame IDs when an all-frame result is partial', async () => {
+        const top = frame(0, {
+            href: 'https://anime.example/watch',
+            origin: 'https://anime.example',
+            bestVideo: null,
+            videoCount: 0,
+            embeddedFrames: [{
+                href: 'https://player.example/embed',
+                origin: 'https://player.example',
+                area: 860 * 490,
+                width: 860,
+                height: 490,
+                visible: true,
+                mediaHint: true
+            }]
+        });
+        const partialFrame = frame(2, { bestVideo: null, videoCount: 0 });
+        const player = frame(3, { href: 'https://player.example/embed' });
+        const executeScript = vi.fn(async options => {
+            if (options.target?.allFrames === true) {
+                return options.func?.name === 'inspectMediaFrame' ? [top, partialFrame] : [];
+            }
+            const frameId = options.target?.frameIds?.[0];
+            if (options.func?.name === 'inspectMediaFrame') {
+                if (frameId === 0) return [top];
+                if (frameId === 3) return [player];
+                return [];
+            }
+            return [];
+        });
+
+        await expect(resolveMediaContentTarget(
+            { scripting: { executeScript } },
+            48,
+            { attempts: 1, probeDelayMs: 0 }
+        )).resolves.toMatchObject({
+            frameId: 3,
+            documentId: 'document-3',
+            hasVideo: true,
+            scriptTarget: { tabId: 48, documentIds: ['document-3'] },
+            monitorTargets: expect.arrayContaining([
+                { tabId: 48, documentIds: ['document-0'] },
+                { tabId: 48, documentIds: ['document-2'] },
+                { tabId: 48, documentIds: ['document-3'] }
+            ])
+        });
     });
 
     it('does not trust parent visibility from an older probe token', () => {
@@ -432,7 +538,7 @@ describe('cross-origin media-frame targeting', () => {
         )).resolves.toMatchObject({ frameId: 0, scriptTarget: { tabId: 44 } });
     });
 
-    it('reports ambiguity rather than controlling an arbitrary equal player', async () => {
+    it('keeps the tab target active when equal player frames are ambiguous', async () => {
         const results = [
             frame(3, { parentFrameVisible: null }),
             frame(4, { parentFrameVisible: null })
@@ -442,6 +548,10 @@ describe('cross-origin media-frame targeting', () => {
             { scripting: { executeScript } },
             45,
             { attempts: 1, probeDelayMs: 0 }
-        )).rejects.toMatchObject({ code: MEDIA_FRAME_AMBIGUOUS });
+        )).resolves.toMatchObject({
+            frameId: 0,
+            hasVideo: false,
+            scriptTarget: { tabId: 45 }
+        });
     });
 });

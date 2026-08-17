@@ -176,63 +176,6 @@ async function compile() {
     fs.mkdirSync(wwwDir, { recursive: true });
     removeBuildMetadata(wwwDir);
 
-    // ── 0. Auto-generate website logo sizes and sync favicons ──
-    console.log('Generating responsive website logos...');
-    const rawLogoSrc = path.join(websiteDir, '..', 'assets', 'icon', 'TwoPointZero_Logo_Icon_600.webp');
-    const targetAssetsDir = path.join(websiteDir, 'assets');
-    
-    if (fs.existsSync(rawLogoSrc)) {
-        fs.mkdirSync(targetAssetsDir, { recursive: true });
-        
-        // Generate NewLogoIcon_64.webp (64x64)
-        await sharp(rawLogoSrc)
-            .resize(64, 64)
-            .toFile(path.join(targetAssetsDir, 'NewLogoIcon_64.webp'));
-            
-        // Generate NewLogoIcon_128.webp (128x128)
-        await sharp(rawLogoSrc)
-            .resize(128, 128)
-            .toFile(path.join(targetAssetsDir, 'NewLogoIcon_128.webp'));
-            
-        // Generate NewLogoIcon.webp (256x256)
-        await sharp(rawLogoSrc)
-            .resize(256, 256)
-            .toFile(path.join(targetAssetsDir, 'NewLogoIcon.webp'));
-            
-        console.log('  ✓ WebP logo variants successfully generated in website/assets/');
-    } else {
-        console.warn(`  ⚠️ Warning: Source logo ${rawLogoSrc} not found. Skipping auto-generation.`);
-    }
-
-    const pngMappings = [
-        { src: 'TwoPointZero_Logo_Icon_16.png', dest: 'favicon-16x16.png' },
-        { src: 'TwoPointZero_Logo_Icon_32.png', dest: 'favicon-32x32.png' },
-        { src: 'TwoPointZero_Logo_Icon_256.png', dest: 'apple-touch-icon.png' },
-        { src: 'TwoPointZero_Logo_Icon_256.png', dest: 'icon-192x192.png' }
-    ];
-    for (const mapping of pngMappings) {
-        const srcPath = path.join(websiteDir, '..', 'assets', 'icon', mapping.src);
-        const destPath = path.join(targetAssetsDir, mapping.dest);
-        if (fs.existsSync(srcPath)) {
-            fs.copyFileSync(srcPath, destPath);
-        } else {
-            console.warn(`  ⚠️ Warning: Source PNG ${srcPath} not found.`);
-        }
-    }
-    console.log('  ✓ Favicons/touch icons successfully synced to website/assets/');
-
-    // Social link preview image (og:image / twitter:image), same artwork as the
-    // GitHub repository OpenGraph card. PNG kept for maximum scraper support.
-    const ogSrc = path.join(websiteDir, '..', 'assets', 'StoreAssets', 'RepositoryOpenGraph.png');
-    if (fs.existsSync(ogSrc)) {
-        await sharp(ogSrc)
-            .png({ quality: 80, palette: true })
-            .toFile(path.join(targetAssetsDir, 'og-image.png'));
-        console.log('  ✓ og-image.png generated from RepositoryOpenGraph.png');
-    } else {
-        console.warn(`  ⚠️ Warning: ${ogSrc} not found. Skipping og-image generation.`);
-    }
-
     // ── 0.7 Stage the committed flag-font subset (~45% smaller) ──
     console.log('Staging flag font subset...');
     const flagFontName = stageFlagFontSubset(websiteDir, wwwDir);
@@ -593,6 +536,64 @@ async function compile() {
         fs.rmSync(path.join(destAssets, 'TwemojiCountryFlags.subset.woff2'), { force: true });
         fs.rmSync(path.join(destAssets, 'TwemojiCountryFlags.subset.json'), { force: true });
         console.log('  Assets copied.');
+    }
+
+    // ── 6.1 Generate build-only logo, favicon, and social-preview assets ──
+    // Keep generated files out of website/assets; that directory is source input.
+    console.log('Generating responsive website logos...');
+    const rawLogoSrc = path.join(websiteDir, '..', 'assets', 'icon', 'TwoPointZero_Logo_Icon_600.webp');
+    const targetAssetsDir = destAssets;
+
+    if (fs.existsSync(rawLogoSrc)) {
+        fs.mkdirSync(targetAssetsDir, { recursive: true });
+
+        // Generate NewLogoIcon_64.webp (64x64)
+        await sharp(rawLogoSrc)
+            .resize(64, 64)
+            .toFile(path.join(targetAssetsDir, 'NewLogoIcon_64.webp'));
+
+        // Generate NewLogoIcon_128.webp (128x128)
+        await sharp(rawLogoSrc)
+            .resize(128, 128)
+            .toFile(path.join(targetAssetsDir, 'NewLogoIcon_128.webp'));
+
+        // Generate NewLogoIcon.webp (256x256)
+        await sharp(rawLogoSrc)
+            .resize(256, 256)
+            .toFile(path.join(targetAssetsDir, 'NewLogoIcon.webp'));
+
+        console.log('  ✓ WebP logo variants successfully generated in website/www/assets/');
+    } else {
+        console.warn(`  ⚠️ Warning: Source logo ${rawLogoSrc} not found. Skipping auto-generation.`);
+    }
+
+    const pngMappings = [
+        { src: 'TwoPointZero_Logo_Icon_16.png', dest: 'favicon-16x16.png' },
+        { src: 'TwoPointZero_Logo_Icon_32.png', dest: 'favicon-32x32.png' },
+        { src: 'TwoPointZero_Logo_Icon_256.png', dest: 'apple-touch-icon.png' },
+        { src: 'TwoPointZero_Logo_Icon_256.png', dest: 'icon-192x192.png' }
+    ];
+    for (const mapping of pngMappings) {
+        const srcPath = path.join(websiteDir, '..', 'assets', 'icon', mapping.src);
+        const destPath = path.join(targetAssetsDir, mapping.dest);
+        if (fs.existsSync(srcPath)) {
+            fs.copyFileSync(srcPath, destPath);
+        } else {
+            console.warn(`  ⚠️ Warning: Source PNG ${srcPath} not found.`);
+        }
+    }
+    console.log('  ✓ Favicons/touch icons successfully synced to website/www/assets/');
+
+    // Social link preview image (og:image / twitter:image), same artwork as the
+    // GitHub repository OpenGraph card. PNG kept for maximum scraper support.
+    const ogSrc = path.join(websiteDir, '..', 'assets', 'StoreAssets', 'RepositoryOpenGraph.png');
+    if (fs.existsSync(ogSrc)) {
+        await sharp(ogSrc)
+            .png({ quality: 80, palette: true })
+            .toFile(path.join(targetAssetsDir, 'og-image.png'));
+        console.log('  ✓ og-image.png generated from RepositoryOpenGraph.png');
+    } else {
+        console.warn(`  ⚠️ Warning: ${ogSrc} not found. Skipping og-image generation.`);
     }
 
     // Copy apple-touch-icon to www root (browsers/iOS request these at /)

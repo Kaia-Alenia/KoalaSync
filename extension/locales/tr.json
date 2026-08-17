@@ -190,6 +190,7 @@
   "NOTIF_FORCE_PREPARE": "zorunlu eşitleme başlattı",
   "NOTIF_FORCE_EXECUTE": "herkesi eşitledi",
   "DEBUG_NO_TAB": "Hedef sekme seçilmedi.",
+  "DEBUG_TARGET_ACTIVATING": "Hedef sekme seçildi; video enjeksiyonu hazırlanıyor.",
   "DEBUG_COMM_FAIL": "Sekme videosuyla iletişim kurulamadı.",
   "EMPTY_PEERS_TITLE": "Henüz kimse yok",
   "EMPTY_PEERS_HINT": "Başlamak için davet bağlantınızı paylaşın",
