@@ -103,19 +103,23 @@ jobs:
           jq --arg v "$VERSION" '.version = $v' package.json > tmp.json && mv tmp.json package.json
           echo "  ✓ package.json -> $VERSION"
 
-          # 4. website/version.json
+          # 4. package-lock.json root package metadata
+          jq --arg v "$VERSION" '.version = $v | .packages[""].version = $v' package-lock.json > tmp.json && mv tmp.json package-lock.json
+          echo "  ✓ package-lock.json -> $VERSION"
+
+          # 5. website/version.json
           jq -n --arg v "$VERSION" --arg d "$DATE" '{version: $v, date: $d}' > website/version.json
           echo "  ✓ website/version.json -> version $VERSION, date $DATE"
 
-          # 5. website/template.html — SoftwareApplication schema
+          # 6. website/template.html — SoftwareApplication schema
           sed -i "s/\"softwareVersion\": \".*\"/\"softwareVersion\": \"$VERSION\"/" website/template.html
           echo "  ✓ website/template.html -> softwareVersion $VERSION"
 
-          # 6. website/llms.txt — machine-readable release metadata
+          # 7. website/llms.txt — machine-readable release metadata
           sed -i "s/Current website release: .*/Current website release: $VERSION/" website/llms.txt
           echo "  ✓ website/llms.txt -> $VERSION"
 
-          # 7. README.md — version badge & banner
+          # 8. README.md — version badge & banner
           sed -i "s|Release-v[0-9]\+\.[0-9]\+\.[0-9]\+-blue|Release-v$VERSION-blue|g" README.md
           sed -i "s/New v[0-9]\+\.[0-9]\+\.[0-9]\+ Release/New v$VERSION Release/g" README.md
           echo "  ✓ README.md -> v$VERSION"
@@ -126,7 +130,7 @@ jobs:
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
-          git add extension/manifest.base.json shared/constants.js package.json website/version.json website/template.html website/llms.txt README.md
+          git add extension/manifest.base.json shared/constants.js package.json package-lock.json website/version.json website/template.html website/llms.txt README.md
           git commit -m "chore(release): update versions to $GITHUB_REF_NAME [skip ci]" || echo "No changes to commit"
           git push origin HEAD:main
         env:

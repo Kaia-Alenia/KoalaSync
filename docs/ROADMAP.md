@@ -49,14 +49,6 @@
 
 *Ideas and feature requests under evaluation.*
 
-### Cross-origin frame video detection and control
-
-- **Priority:** P3
-- **Category:** Compatibility / Embedded Players
-- **Background:** KoalaSync injects on demand into the selected tab's top frame. Since the same-origin frame walk shipped, the top-frame script also reaches players inside first-party iframes (`jkanime.net`-style `/jkplayer/` frames, `srcdoc` and `about:blank` frames that inherit the parent origin). What remains uncovered is the real `<video>` living inside a **cross-origin** iframe, where `contentDocument` is unreachable by design.
-- **Possible approach:** Add an opt-in frame bridge (`allFrames: true` injection) where child frames announce detected videos to the top frame, and the top frame routes remote play/pause/seek commands to the active child video. Needs a frame-election rule so ad frames cannot claim the session.
-- **Status:** Same-origin part completed; cross-origin frame bridge still open. Not needed for current Emby behavior.
-
 ### Sticky player selection
 
 - **Priority:** P3
@@ -87,6 +79,17 @@
 - **Category:** Compatibility / Player Selection
 - **Background:** Detection picks exactly one `<video>` per tab. Pages that legitimately show two players side by side (a lecture feed plus slides, a multi-camera stream) can only ever sync one of them.
 - **Status:** Backlog, no demand yet. Listed so the single-player assumption in the ranking is a recorded decision rather than an accident.
+
+---
+
+## ✅ Completed
+
+### Cross-origin frame video detection and control
+
+- **Priority:** P3
+- **Category:** Compatibility / Embedded Players
+- **Completed:** v3.1.2
+- **Outcome:** The background probes accessible frames, elects the visible HTML5 player without trusting child-frame claims, and routes injection, ordered commands, state, chat, audio and teardown to the selected document. Hidden equal candidates without visibility evidence are rejected. A tab-wide frame sentinel plus subframe-navigation events recover CSS visibility switches, document reloads, lazy video insertion and failed delivery. Google Drive and YummyAnime-style nested external players are covered by live topology inspection plus packed-Chromium E2E fixtures; live two-peer service runs remain tracked separately.
 
 ---
 

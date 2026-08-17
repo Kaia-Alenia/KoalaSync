@@ -1,0 +1,10 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Deep hidden cross-origin player</title>
+<style>body { margin: 0; } iframe { border: 0; } #hidden-wrapper { visibility: hidden; }</style>
+<iframe id="hidden-wrapper" width="870" height="500" src="frames/deep-wrapper-1.html" allowfullscreen></iframe>
+<script>
+  document.getElementById('hidden-wrapper').addEventListener('load', () => {
+    window.__fixtureReady = true;
+  }, { once: true });
+</script>

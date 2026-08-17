@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Cross-origin internal wrapper switch</title>
+  <style>
+    iframe { width: 640px; height: 360px; border: 0; display: block; }
+  </style>
+</head>
+<body>
+  <iframe id="first" allow="autoplay; fullscreen"></iframe>
+  <iframe id="second" allow="autoplay; fullscreen"></iframe>
+  <script>
+    const playerOrigin = `http://127.0.0.1:${location.port}`;
+    const first = document.getElementById('first');
+    const second = document.getElementById('second');
+    first.src = `${playerOrigin}/pages/frames/wrapper-switch-player.html?slot=first&visible=1`;
+    second.src = `${playerOrigin}/pages/frames/wrapper-switch-player.html?slot=second&visible=0`;
+    let loaded = 0;
+    const ready = () => {
+      loaded++;
+      if (loaded === 2) window.__fixtureReady = true;
+    };
+    first.addEventListener('load', ready);
+    second.addEventListener('load', ready);
+    window.switchInternalPlayer = () => {
+      first.contentWindow.postMessage('koala-hide', playerOrigin);
+      second.contentWindow.postMessage('koala-show', playerOrigin);
+    };
+  </script>
+</body>
+</html>

@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Wrapper-switch player</title>
+  <style>
+    html, body { margin: 0; }
+    #wrapper.hidden { visibility: hidden; }
+    video { width: 640px; height: 360px; }
+  </style>
+</head>
+<body>
+  <div id="wrapper">
+    <video id="player" controls preload="auto"></video>
+  </div>
+  <script>
+    const params = new URLSearchParams(location.search);
+    const wrapper = document.getElementById('wrapper');
+    const player = document.getElementById('player');
+    wrapper.classList.toggle('hidden', params.get('visible') !== '1');
+    player.src = params.get('slot') === 'second'
+      ? '../../media/player-1080p-30s.mp4'
+      : '../../media/player-480p-12s.mp4';
+    window.addEventListener('message', event => {
+      if (event.data === 'koala-show') wrapper.classList.remove('hidden');
+      if (event.data === 'koala-hide') wrapper.classList.add('hidden');
+    });
+  </script>
+</body>
+</html>

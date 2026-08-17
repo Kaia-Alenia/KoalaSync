@@ -1,0 +1,18 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Nested cross-origin player</title>
+<style>
+  body { margin: 0; }
+  iframe { border: 0; }
+  #hidden-player { display: none; }
+</style>
+<iframe id="wrapper" width="870" height="500" src="frames/cross-origin-wrapper.html" allowfullscreen></iframe>
+<iframe id="hidden-player" width="870" height="500" allowfullscreen></iframe>
+<script>
+  const hidden = document.getElementById('hidden-player');
+  hidden.src = `http://127.0.0.1:${location.port}/pages/frames/player-frame-2.html?hidden=1`;
+  Promise.all([
+    new Promise(resolve => document.getElementById('wrapper').addEventListener('load', resolve, { once: true })),
+    new Promise(resolve => hidden.addEventListener('load', resolve, { once: true }))
+  ]).then(() => { window.__fixtureReady = true; });
+</script>

@@ -17,6 +17,7 @@
     const lifecycleTimeouts = new Set();
     const seekPollTimers = new Set();
     const attachedVideos = new Set();
+    let activeVideo = null;
 
     function scheduleLifecycleTimeout(callback, delay) {
         const timer = setTimeout(() => {
@@ -39,6 +40,34 @@
             destroyContentScript();
             return Promise.resolve(undefined);
         }
+    }
+
+    const isEmbeddedContentFrame = (() => {
+        try { return window.top !== window; } catch (_e) { return true; }
+    })();
+    let mediaTargetRefreshTimeout = null;
+    let mediaTargetRefreshBlockedUntil = 0;
+    let lastMediaFrameVisible = window.innerWidth > 0 && window.innerHeight > 0;
+
+    function requestMediaTargetRefresh(reason) {
+        if (destroyed || mediaTargetRefreshTimeout || Date.now() < mediaTargetRefreshBlockedUntil) return;
+        mediaTargetRefreshTimeout = scheduleLifecycleTimeout(() => {
+            mediaTargetRefreshTimeout = null;
+            mediaTargetRefreshBlockedUntil = Date.now() + 1500;
+            runtimeMessage({ type: 'MEDIA_TARGET_REFRESH', reason }).catch(() => {});
+        }, 750);
+    }
+
+    function handleMediaFrameResize() {
+        if (destroyed || !isEmbeddedContentFrame) return;
+        const visible = window.innerWidth > 0 && window.innerHeight > 0;
+        if (visible === lastMediaFrameVisible) return;
+        lastMediaFrameVisible = visible;
+        runtimeMessage({ type: 'MEDIA_FRAME_VISIBILITY', visible }).catch(() => {});
+    }
+
+    if (isEmbeddedContentFrame) {
+        window.addEventListener('resize', handleMediaFrameResize, { passive: true });
     }
 
     // --- SHARED_EVENTS_INJECT_START ---
@@ -225,8 +254,9 @@
     // still run synchronously on event arrival (see reportEvent) — only the
     // network emit is governed here.
     const PLAY_PAUSE_COALESCE_MS = 150;
-    let playPauseCoalesceTimer = null;  // non-null = a coalescing window is open
-    let pendingPlayPauseAction = null;  // last play/pause seen during the window, awaiting trailing flush
+    let playPauseCoalesceTimer = null;  // non-null = a coalescing window is open
+    let pendingPlayPauseAction = null;  // last play/pause seen during the window, awaiting trailing flush
+    let pendingPlayPauseVideo = null;   // source element for rejecting a stale trailing flush
 
     // --- Episode Auto-Sync State ---
     let lastKnownMediaTitle = null;
@@ -599,12 +629,75 @@
         return out;
     }
 
-    // Rendered size in CSS pixels. Intrinsic resolution (videoWidth) is
-    // deliberately not used here: a display:none element still reports its full
-    // intrinsic size, which let hidden preloads outrank the visible player.
-    function getRenderedVideoArea(video) {
-        return (video.offsetWidth || 0) * (video.offsetHeight || 0);
-    }
+    function getElementRenderBox(element) {
+        try {
+            if (typeof element.getBoundingClientRect === 'function') {
+                const rect = element.getBoundingClientRect();
+                return {
+                    width: Math.max(0, Number(rect.width) || 0),
+                    height: Math.max(0, Number(rect.height) || 0),
+                    top: Number(rect.top) || 0,
+                    right: Number(rect.right) || 0,
+                    bottom: Number(rect.bottom) || 0,
+                    left: Number(rect.left) || 0
+                };
+            }
+        } catch (_e) { /* detached element */ }
+        const width = Math.max(0, Number(element.offsetWidth) || 0);
+        const height = Math.max(0, Number(element.offsetHeight) || 0);
+        return { width, height, top: 0, right: width, bottom: height, left: 0 };
+    }
+
+    function elementStylesAllowRendering(element) {
+        let current = element;
+        while (current) {
+            try {
+                const view = current.ownerDocument?.defaultView;
+                const style = view?.getComputedStyle?.(current);
+                if (style && (style.display === 'none'
+                    || style.visibility === 'hidden'
+                    || Number(style.opacity) === 0)) {
+                    return false;
+                }
+                if (typeof current.checkVisibility === 'function'
+                    && !current.checkVisibility({ checkOpacity: true, checkVisibilityCSS: true })) {
+                    return false;
+                }
+            } catch (_e) { /* use geometry when style inspection is unavailable */ }
+            const parent = current.parentElement;
+            if (parent) {
+                current = parent;
+                continue;
+            }
+            try { current = current.getRootNode?.().host || null; } catch (_e) { current = null; }
+        }
+        return true;
+    }
+
+    function isElementRendered(element) {
+        if (!element || !elementStylesAllowRendering(element)) return false;
+        const rect = getElementRenderBox(element);
+        if (rect.width <= 0 || rect.height <= 0) return false;
+        const view = element.ownerDocument?.defaultView;
+        const viewportWidth = Number(view?.innerWidth);
+        const viewportHeight = Number(view?.innerHeight);
+        if (Number.isFinite(viewportWidth) && Number.isFinite(viewportHeight)
+            && viewportWidth > 0 && viewportHeight > 0) {
+            return rect.bottom > 0
+                && rect.right > 0
+                && rect.top < viewportHeight
+                && rect.left < viewportWidth;
+        }
+        return true;
+    }
+
+    // Rendered size in CSS pixels. Intrinsic resolution (videoWidth) is
+    // deliberately not used here: hidden preloads keep their intrinsic size.
+    function getRenderedVideoArea(video) {
+        if (!isVideoRendered(video)) return 0;
+        const rect = getElementRenderBox(video);
+        return rect.width * rect.height;
+    }
 
     // Coarse size steps, so two players of roughly the same size tie and the
     // playback signal decides between them instead of a few stray pixels.
@@ -612,11 +705,19 @@
         return Math.round(Math.sqrt(getRenderedVideoArea(video)) / 40);
     }
 
-    function isVideoRendered(video) {
-        // A non-zero box is proof enough, and it also covers position:fixed
-        // players, whose offsetParent is null even though they are on screen.
-        if (getRenderedVideoArea(video) > 0) return true;
-        return video.offsetParent !== null && video.offsetParent !== undefined;
+    function isVideoRendered(video) {
+        if (!isElementRendered(video)) return false;
+        // Same-origin videos may be discovered recursively from the top frame.
+        // Their own box can remain non-zero while an ancestor iframe is hidden.
+        let view = video.ownerDocument?.defaultView;
+        const seen = new Set();
+        while (view?.frameElement && !seen.has(view.frameElement)) {
+            const frame = view.frameElement;
+            seen.add(frame);
+            if (!isElementRendered(frame)) return false;
+            view = frame.ownerDocument?.defaultView;
+        }
+        return true;
     }
 
     function hasPlayableVideoSource(video) {
@@ -631,22 +732,32 @@
         return !!video.loop && !!video.muted && !video.controls;
     }
 
-    function isVideoPlaying(video) {
-        return video.paused === false && video.ended !== true;
-    }
+    function isVideoPlaying(video) {
+        return video.paused === false && video.ended !== true;
+    }
+
+    function isShortUncontrolledVideo(video) {
+        return !video.controls
+            && video.duration
+            && isFinite(video.duration)
+            && video.duration > 0
+            && video.duration < 300;
+    }
 
     // Highest priority first. Every signal is a plain number and they are
     // compared one after another, so an earlier signal is never traded off
     // against a later one. Mute state is intentionally absent: it is a viewer
     // preference, not evidence about which element is the real player.
-    const VIDEO_RANKING_SIGNALS = [
-        video => (hasPlayableVideoSource(video) ? 1 : 0),
-        video => (isVideoRendered(video) ? 1 : 0),
-        video => (isBackgroundVideo(video) ? 0 : 1),
-        video => getVideoSizeBucket(video),
-        video => (isVideoPlaying(video) ? 1 : 0),
-        video => (video.controls ? 1 : 0),
-        video => (video.duration && isFinite(video.duration) ? video.duration : 0)
+    const VIDEO_RANKING_SIGNALS = [
+        video => (hasPlayableVideoSource(video) ? 1 : 0),
+        video => (isVideoRendered(video) ? 1 : 0),
+        video => (isBackgroundVideo(video) ? 0 : 1),
+        video => (isShortUncontrolledVideo(video) ? 0 : 1),
+        video => (isVideoPlaying(video) ? 1 : 0),
+        video => (video.controls ? 1 : 0),
+        video => Number.isInteger(video.readyState) ? video.readyState : 0,
+        video => (video.duration && isFinite(video.duration) ? video.duration : 0),
+        video => getVideoSizeBucket(video)
     ];
 
     function compareVideoRanks(a, b) {
@@ -658,11 +769,11 @@
 
     // Ranking, not filtering: even an all-bad candidate set still yields the
     // least bad element, so this never returns null where a video exists.
-    function pickBestVideo(candidates) {
+    function pickBestVideo(candidates) {
         let best = null;
         let bestRank = null;
         for (const video of candidates) {
-            if (!video || video.tagName !== 'VIDEO') continue;
+            if (!video || video.tagName !== 'VIDEO' || !isVideoRendered(video)) continue;
             const rank = VIDEO_RANKING_SIGNALS.map(signal => signal(video));
             if (!best || compareVideoRanks(rank, bestRank) > 0) {
                 best = video;
@@ -1307,7 +1418,10 @@
 
             const platform = (() => {
                 const h = window.location.hostname.toLowerCase();
-                if (h === 'youtube.com' || h.endsWith('.youtube.com')) return 'YouTube';
+                if (h === 'youtube.com' || h.endsWith('.youtube.com')) return 'YouTube';
+                if (h === 'youtube.googleapis.com'
+                    && (new URLSearchParams(window.location.search).get('origin') === 'https://drive.google.com'
+                        || new URLSearchParams(window.location.search).get('post_message_origin') === 'https://drive.google.com')) return 'Google Drive';
                 if (h === 'twitch.tv' || h.endsWith('.twitch.tv')) return 'Twitch';
                 if (h === 'netflix.com' || h.endsWith('.netflix.com')) return 'Netflix';
                 if (h === 'primevideo.com' || h.endsWith('.primevideo.com') || /(^|\.)amazon\.(com\.[a-z]{2}|co\.[a-z]{2}|[a-z]{2,})$/.test(h)) return 'Prime Video';
@@ -1447,10 +1561,10 @@
     // Build the relay payload from the *current* media state and send it to
     // background.js. Re-reads the video each call so deferred (coalesced) emits
     // carry an up-to-date position. Safe with no/invalid video — it no-ops.
-    function sendContentEvent(action) {
+    function sendContentEvent(action, expectedVideo = null) {
         if (destroyed) return;
         const video = findVideo();
-        if (!video) return;
+        if (!video || (expectedVideo && (video !== expectedVideo || activeVideo !== expectedVideo))) return;
 
         const current = getSyncCurrentTime(video);
         if (current === null) return;
@@ -1477,12 +1591,14 @@
     // when the state matches the leading send — a remote command may have changed
     // the shared state mid-window, so re-sending is the safe (idempotent) choice.
     function flushPlayPause() {
-        playPauseCoalesceTimer = null;
-        const finalAction = pendingPlayPauseAction;
-        pendingPlayPauseAction = null;
+        playPauseCoalesceTimer = null;
+        const finalAction = pendingPlayPauseAction;
+        const sourceVideo = pendingPlayPauseVideo;
+        pendingPlayPauseAction = null;
+        pendingPlayPauseVideo = null;
         // No burst follow-up (only the leading edge fired), or invalid state.
         if (finalAction !== EVENTS.PLAY && finalAction !== EVENTS.PAUSE) return;
-        sendContentEvent(finalAction);
+        sendContentEvent(finalAction, sourceVideo);
     }
 
     function reportEvent(action) {
@@ -1529,12 +1645,14 @@
         if (action === EVENTS.PLAY || action === EVENTS.PAUSE) {
             if (playPauseCoalesceTimer === null) {
                 // Window closed → fresh action. Emit now (zero added latency).
-                sendContentEvent(action);
-                pendingPlayPauseAction = null;
-            } else {
+                sendContentEvent(action, video);
+                pendingPlayPauseAction = null;
+                pendingPlayPauseVideo = null;
+            } else {
                 // Window open → part of a burst. Defer to the trailing flush.
-                pendingPlayPauseAction = action;
-                clearTimeout(playPauseCoalesceTimer);
+                pendingPlayPauseAction = action;
+                pendingPlayPauseVideo = video;
+                clearTimeout(playPauseCoalesceTimer);
             }
             playPauseCoalesceTimer = setTimeout(flushPlayPause, PLAY_PAUSE_COALESCE_MS);
             return;
@@ -1589,7 +1707,7 @@
         // Drop any pending coalesced play/pause: we are tearing down and will
         // disconnect — peers learn we are gone via PEER_STATUS 'left'. This also
         // intentionally suppresses the teardown play/pause burst at the source.
-        if (playPauseCoalesceTimer) { clearTimeout(playPauseCoalesceTimer); playPauseCoalesceTimer = null; pendingPlayPauseAction = null; }
+        cancelPendingVideoEvents();
         observer.disconnect();
         observedDocs = new WeakSet();
     }
@@ -1600,7 +1718,12 @@
         pageSuspended = false;
         pageVisible = !document.hidden;
         if (pageVisible) visibilityGraceUntil = Date.now() + VISIBILITY_GRACE_MS;
-        observer.observe(document.documentElement, { childList: true, subtree: true });
+        observer.observe(document.documentElement, {
+            childList: true,
+            subtree: true,
+            attributes: true,
+            attributeFilter: ['style', 'class', 'hidden', 'aria-hidden']
+        });
         observeSameOriginFrames();
         setupListeners();
         connectKeepAlivePort();
@@ -1612,17 +1735,28 @@
     window.addEventListener('pagehide', handlePageHide);
     window.addEventListener('pageshow', handlePageShow);
 
-    const handlePlay = () => reportEvent(EVENTS.PLAY);
-    const handlePause = () => reportEvent(EVENTS.PAUSE);
+    function isCurrentVideoEvent(event) {
+        const source = event?.currentTarget;
+        return !!source && source === activeVideo && source === findVideo();
+    }
+
+    const handlePlay = event => {
+        if (isCurrentVideoEvent(event)) reportEvent(EVENTS.PLAY);
+    };
+    const handlePause = event => {
+        if (isCurrentVideoEvent(event)) reportEvent(EVENTS.PAUSE);
+    };
     // Host Control Mode: a 'waiting' (buffering) event opens a grace window so the
     // pause it may trigger isn't misread as a deliberate guest action (EC-1).
-    const handleWaiting = () => { hcmBufferingUntil = Date.now() + HCM_BUFFERING_GRACE_MS; };
+    const handleWaiting = event => {
+        if (isCurrentVideoEvent(event)) hcmBufferingUntil = Date.now() + HCM_BUFFERING_GRACE_MS;
+    };
 
     // Seek filtering: ignore HLS/DASH buffering micro-seeks.
     // Only relay if delta >= MIN_SEEK_DELTA AND not already debouncing.
-    const handleSeeked = () => {
-        const video = findVideo();
-        if (!video) return;
+    const handleSeeked = event => {
+        if (!isCurrentVideoEvent(event)) return;
+        const video = event.currentTarget;
         const current = getSyncCurrentTime(video);
         if (current === null) return;
 
@@ -1653,11 +1787,11 @@
 
         // Step 4: Debounce rapid consecutive seeks (e.g. scrubbing)
         // — wait 300ms for the user to settle before relaying
-        if (seekDebounceTimer) clearTimeout(seekDebounceTimer);
-        seekDebounceTimer = setTimeout(() => {
-            seekDebounceTimer = null;
-            const v = findVideo();
-            if (!v) return;
+        if (seekDebounceTimer) clearTimeout(seekDebounceTimer);
+        seekDebounceTimer = setTimeout(() => {
+            seekDebounceTimer = null;
+            if (activeVideo !== video || findVideo() !== video) return;
+            const v = video;
             const settled = getSyncCurrentTime(v);
             if (settled === null) return;
             const finalDelta = lastReportedSeekTime !== null ? Math.abs(settled - lastReportedSeekTime) : null;
@@ -1672,25 +1806,48 @@
     let lastVideoSrc = undefined;
 
     // Episode detection handler for loadeddata event
-    const handleLoadedData = () => {
-        checkEpisodeTransition();
-    };
-
+    const handleLoadedData = event => {
+        if (isCurrentVideoEvent(event)) checkEpisodeTransition();
+    };
+
+    function detachVideoListeners(video) {
+        if (!video) return;
+        const handlers = video._koalaHandlers;
+        if (handlers) {
+            video.removeEventListener('play', handlers.play);
+            video.removeEventListener('pause', handlers.pause);
+            video.removeEventListener('seeked', handlers.seeked);
+            video.removeEventListener('loadeddata', handlers.loadeddata);
+            if (handlers.waiting) video.removeEventListener('waiting', handlers.waiting);
+            delete video._koalaHandlers;
+        }
+        try { delete video.dataset.koalaAttached; } catch (_e) { /* detached element */ }
+        attachedVideos.delete(video);
+        if (activeVideo === video) activeVideo = null;
+    }
+
+    function cancelPendingVideoEvents() {
+        if (seekDebounceTimer) { clearTimeout(seekDebounceTimer); seekDebounceTimer = null; }
+        if (playPauseCoalesceTimer) { clearTimeout(playPauseCoalesceTimer); playPauseCoalesceTimer = null; }
+        pendingPlayPauseAction = null;
+        pendingPlayPauseVideo = null;
+    }
+
     function setupListeners() {
         if (destroyed) return;
         const video = findVideo();
+        if (activeVideo !== video) cancelPendingVideoEvents();
+        for (const attached of [...attachedVideos]) {
+            if (attached !== video) detachVideoListeners(attached);
+        }
+        activeVideo = video || null;
         if (video) {
             if (currentAudioVideo && currentAudioVideo !== video) {
                 bypassCurrentAudioProcessing();
-            }
-            const existing = video._koalaHandlers;
-            if (existing) {
-                video.removeEventListener('play', existing.play);
-                video.removeEventListener('pause', existing.pause);
-                video.removeEventListener('seeked', existing.seeked);
-                video.removeEventListener('loadeddata', existing.loadeddata);
-                if (existing.waiting) video.removeEventListener('waiting', existing.waiting);
-            }
+            }
+            const existing = video._koalaHandlers;
+            if (existing) detachVideoListeners(video);
+            activeVideo = video;
             video._koalaHandlers = { play: handlePlay, pause: handlePause, seeked: handleSeeked, loadeddata: handleLoadedData, waiting: handleWaiting };
             video.addEventListener('play', handlePlay);
             video.addEventListener('pause', handlePause);
@@ -1717,16 +1874,24 @@
         if (destroyed) return;
         lastMutate = Date.now();
         observeSameOriginFrames();
-        const video = findVideo();
-
-        if (!video && lastVideoSrc !== undefined) {
-            reportLog('Video element removed from page', 'warn');
-            lastVideoSrc = undefined;
-            closeAudioContext();
-            return;
-        }
-
-        if (!video) return;
+        const video = findVideo();
+
+        if (!video && lastVideoSrc !== undefined) {
+            setupListeners();
+            reportLog('Video element removed from page', 'warn');
+            lastVideoSrc = undefined;
+            closeAudioContext();
+            requestMediaTargetRefresh('video_removed');
+            return;
+        }
+
+        if (!video) {
+            setupListeners();
+            if (isEmbeddedContentFrame || document.querySelector('iframe, frame')) {
+                requestMediaTargetRefresh('video_missing');
+            }
+            return;
+        }
 
         const currentSrc = video.currentSrc || video.src || null;
 
@@ -1750,7 +1915,12 @@
             if (doc === document || observedDocs.has(doc)) continue;
             if (!doc.documentElement) continue;
             observedDocs.add(doc);
-            observer.observe(doc.documentElement, { childList: true, subtree: true });
+            observer.observe(doc.documentElement, {
+                childList: true,
+                subtree: true,
+                attributes: true,
+                attributeFilter: ['style', 'class', 'hidden', 'aria-hidden']
+            });
         }
         // Ad and SPA frames get torn down and recreated constantly; drop the
         // detached ones so the hook set doesn't grow for the page's lifetime.
@@ -1775,7 +1945,12 @@
         // document's tree.
         observer.disconnect();
         observedDocs = new WeakSet();
-        observer.observe(document.documentElement, { childList: true, subtree: true });
+        observer.observe(document.documentElement, {
+            childList: true,
+            subtree: true,
+            attributes: true,
+            attributeFilter: ['style', 'class', 'hidden', 'aria-hidden']
+        });
         observeSameOriginFrames();
         checkVideo();
     }
@@ -1790,7 +1965,12 @@
             observerTimeout = setTimeout(checkVideo, 1000 - (now - lastMutate));
         }
     });
-    observer.observe(document.documentElement, { childList: true, subtree: true });
+    observer.observe(document.documentElement, {
+        childList: true,
+        subtree: true,
+        attributes: true,
+        attributeFilter: ['style', 'class', 'hidden', 'aria-hidden']
+    });
     observeSameOriginFrames();
 
     // --- SHARED_HEARTBEAT_INJECT_START ---
@@ -1851,8 +2031,9 @@
         }, 500); // 500ms stabilization delay
     }
 
-    // Initial Setup
-    setupListeners();
+    // Initial Setup
+    setupListeners();
+    checkVideo();
 
     // Maintain a persistent keep-alive port connection to prevent background SW suspension
     let keepAlivePort = null;
@@ -1889,13 +2070,11 @@
 
         if (hcmDialogTimer) { clearTimeout(hcmDialogTimer); hcmDialogTimer = null; }
         if (episodeTransitionDebounce) { clearTimeout(episodeTransitionDebounce); episodeTransitionDebounce = null; }
-        if (seekDebounceTimer) { clearTimeout(seekDebounceTimer); seekDebounceTimer = null; }
-        if (playPauseCoalesceTimer) { clearTimeout(playPauseCoalesceTimer); playPauseCoalesceTimer = null; }
+        cancelPendingVideoEvents();
         if (observerTimeout) { clearTimeout(observerTimeout); observerTimeout = null; }
         if (heartbeatTimeout) { clearTimeout(heartbeatTimeout); heartbeatTimeout = null; }
         if (proactiveHeartbeatTimeout) { clearTimeout(proactiveHeartbeatTimeout); proactiveHeartbeatTimeout = null; }
         stopLobbyPoll();
-        pendingPlayPauseAction = null;
         hcmDeferredSnapPending = false;
 
         observer.disconnect();
@@ -1909,25 +2088,16 @@
             keepAlivePort = null;
         }
 
-        for (const video of attachedVideos) {
-            const handlers = video._koalaHandlers;
-            if (handlers) {
-                video.removeEventListener('play', handlers.play);
-                video.removeEventListener('pause', handlers.pause);
-                video.removeEventListener('seeked', handlers.seeked);
-                video.removeEventListener('loadeddata', handlers.loadeddata);
-                if (handlers.waiting) video.removeEventListener('waiting', handlers.waiting);
-                delete video._koalaHandlers;
-            }
-            delete video.dataset.koalaAttached;
-        }
+        for (const video of [...attachedVideos]) detachVideoListeners(video);
         attachedVideos.clear();
+        activeVideo = null;
 
         document.removeEventListener('keydown', _hcmGesture, true);
         document.removeEventListener('pointerdown', _hcmGesture, true);
         document.removeEventListener('visibilitychange', handleVisibilityChange);
         window.removeEventListener('pagehide', handlePageHide);
         window.removeEventListener('pageshow', handlePageShow);
+        window.removeEventListener('resize', handleMediaFrameResize);
         window.removeEventListener('message', handlePageApiTime);
         if (hcmBadgeDomReadyHandler) {
             document.removeEventListener('DOMContentLoaded', hcmBadgeDomReadyHandler);

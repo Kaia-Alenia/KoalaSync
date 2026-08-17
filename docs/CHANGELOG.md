@@ -4,6 +4,27 @@ All notable changes to the KoalaSync browser extension and relay server.
 
 ---
 
+## [v3.1.2] — 2026-08-17
+
+This release adds generic control for HTML5 players inside cross-origin frames.
+It restores the intended Google Drive support, whose earlier workaround was
+developed on a separate branch but never merged into `main`, and covers nested
+external players such as YummyAnime without a site-specific host list.
+
+### Added
+- **Extension: Cross-origin player targeting** — Probes every accessible frame, elects the visible real player from video readiness, source, rendering, playback, controls, size and background-video signals, then injects and routes playback, force sync, heartbeat, chat and audio processing to that exact frame and document.
+- **Extension: Embedded-player recovery** — Re-elects the target when a player frame becomes hidden, loses its video, reloads or is replaced by another frame. Equally ranked frames without visibility evidence are rejected instead of controlling an arbitrary preload or ad.
+- **Testing: Cross-origin lifecycle E2E coverage** — Drives the packed Chromium extension through ordered play, pause and seek in a two-level external player; verifies hidden duplicate rejection, CSS visibility switches without a remote-command trigger, selected-frame document reloads and videos inserted late inside child frames.
+
+### Fixed
+- **Extension: Google Drive playback** — Detects Drive's current visible `youtube.googleapis.com/embed` player and keeps Drive's top-page title, URL and platform identity in debug output while controlling the embedded video.
+- **Extension: External anime players** — Supports same-origin wrappers whose real player is hosted on a different origin, including the current YummyAnime structure with a visible external player and hidden duplicate frames.
+- **Extension: Frame-specific message routing** — Sends remote commands, state reads, audio settings, host-control feedback, episode-lobby events and teardown only to the selected frame/document instead of assuming the top frame.
+- **Extension: Force Sync in embedded players** — Reads the current time through the background's selected-frame route, so Jump to Me no longer queries only the top document.
+
+### Changed
+- **Extension: Debug frame context** — Reports the selected frame ID and origin while preserving the selected tab's top-level URL and title. Google Drive is identified as Google Drive instead of the embedded YouTube API host.
+
 ## [v3.1.1] — 2026-08-15
 
 A single fix: the popup could get stuck at double width for the rest of a

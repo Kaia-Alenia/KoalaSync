@@ -1,0 +1,14 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Hidden same-origin frame</title>
+  <style>
+    iframe { width: 800px; height: 450px; border: 0; visibility: hidden; }
+  </style>
+</head>
+<body>
+  <iframe src="frames/player-frame.html?hidden=same-origin" allow="autoplay; fullscreen"></iframe>
+  <script>window.__fixtureReady = true;</script>
+</body>
+</html>

@@ -1,0 +1,9 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Deep wrapper 2</title>
+<style>body { margin: 0; } iframe { border: 0; }</style>
+<iframe id="deep-player" width="850" height="480" allowfullscreen></iframe>
+<script>
+  document.getElementById('deep-player').src =
+    `http://127.0.0.1:${location.port}/pages/frames/player-frame-2.html?deep=hidden`;
+</script>

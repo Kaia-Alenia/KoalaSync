@@ -1,0 +1,38 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Switching cross-origin players</title>
+<style>
+  body { margin: 0; }
+  iframe { border: 0; }
+  #second { display: none; }
+</style>
+<iframe id="first" width="860" height="490" allowfullscreen></iframe>
+<iframe id="second" width="860" height="490" allowfullscreen></iframe>
+<script>
+  const first = document.getElementById('first');
+  const second = document.getElementById('second');
+  first.src = `http://127.0.0.1:${location.port}/pages/frames/player-frame.html?slot=first`;
+  second.src = `http://127.0.0.1:${location.port}/pages/frames/player-frame-2.html?slot=second`;
+  Promise.all([
+    new Promise(resolve => first.addEventListener('load', resolve, { once: true })),
+    new Promise(resolve => second.addEventListener('load', resolve, { once: true }))
+  ]).then(() => { window.__fixtureReady = true; });
+  window.switchPlayer = () => {
+    first.style.visibility = 'hidden';
+    first.style.position = 'absolute';
+    first.style.left = '-10000px';
+    second.style.display = 'block';
+  };
+  let geometryChurn = null;
+  window.startGeometryChurn = () => {
+    let wide = false;
+    geometryChurn = setInterval(() => {
+      wide = !wide;
+      first.style.width = wide ? '840px' : '800px';
+    }, 80);
+  };
+  window.stopGeometryChurn = () => {
+    clearInterval(geometryChurn);
+    geometryChurn = null;
+  };
+</script>

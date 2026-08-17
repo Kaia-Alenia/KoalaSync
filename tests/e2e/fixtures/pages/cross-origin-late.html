@@ -1,0 +1,10 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Late cross-origin player</title>
+<style>body { margin: 0; } iframe { border: 0; }</style>
+<iframe id="player" width="860" height="490" allowfullscreen></iframe>
+<script>
+  const player = document.getElementById('player');
+  player.src = `http://127.0.0.1:${location.port}/pages/frames/late-player-frame.html`;
+  player.addEventListener('load', () => { window.__fixtureReady = true; }, { once: true });
+</script>

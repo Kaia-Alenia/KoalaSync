@@ -20,6 +20,13 @@ const TYPES = {
 
 const server = http.createServer((req, res) => {
     const requested = decodeURIComponent(new URL(req.url, 'http://localhost').pathname);
+    if (requested === '/redirect/hidden-player') {
+        res.writeHead(302, {
+            Location: `http://127.0.0.1:${port}/pages/frames/player-frame-2.html?redirected=hidden`,
+            'Cache-Control': 'no-store'
+        }).end();
+        return;
+    }
     const filePath = path.resolve(root, `.${requested}`);
 
     if (!filePath.startsWith(root + path.sep)) {

@@ -19,6 +19,7 @@ When you push a Git tag matching `v*` (e.g., `v2.5.1`), the GitHub Actions relea
    - `extension/manifest.base.json`
    - `shared/constants.js` (updates `APP_VERSION`)
    - `package.json`
+   - `package-lock.json` (root package metadata)
    - `website/version.json`
    - `website/template.html` (updates `softwareVersion` schema)
    - `README.md` (updates badge and announcement banner)

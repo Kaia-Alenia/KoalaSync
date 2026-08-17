@@ -1,0 +1,13 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Reloading cross-origin player</title>
+<style>body { margin: 0; } iframe { border: 0; }</style>
+<iframe id="player" width="860" height="490" allowfullscreen></iframe>
+<script>
+  const player = document.getElementById('player');
+  player.src = `http://127.0.0.1:${location.port}/pages/frames/player-frame.html?generation=first`;
+  player.addEventListener('load', () => { window.__fixtureReady = true; }, { once: true });
+  window.reloadPlayer = () => {
+    player.src = `http://127.0.0.1:${location.port}/pages/frames/player-frame-2.html?generation=second`;
+  };
+</script>

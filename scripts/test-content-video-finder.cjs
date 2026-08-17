@@ -36,6 +36,10 @@ function makeVideo(name, width, height, options = {}) {
     offsetWidth: width,
     offsetHeight: height,
     muted: options.muted ?? true,
+    controls: options.controls ?? true,
+    paused: options.paused ?? true,
+    ended: options.ended ?? false,
+    currentSrc: options.currentSrc ?? 'fixture.mp4',
     duration: options.duration ?? 0,
     currentTime: options.currentTime ?? 0,
     seekable: options.seekable ?? makeSeekable()
@@ -66,12 +70,16 @@ const fakeDocument = {
 const VIDEO_FINDER_PARTS = [
   'findVideo',
   'collectVideoCandidates',
+  'getElementRenderBox',
+  'elementStylesAllowRendering',
+  'isElementRendered',
   'getRenderedVideoArea',
   'getVideoSizeBucket',
   'isVideoRendered',
   'hasPlayableVideoSource',
   'isBackgroundVideo',
   'isVideoPlaying',
+  'isShortUncontrolledVideo',
   'compareVideoRanks',
   'pickBestVideo'
 ];
@@ -97,9 +105,9 @@ assert.strictEqual(
   'findVideo should score Shadow DOM videos together with light DOM videos'
 );
 
-// Invariant that protects every already-working single-player site: with one
-// candidate the ranking is never consulted, so no signal can turn a page that
-// used to sync into "no video found".
+// A hidden preload must not become the active controller merely because it is
+// the only video currently present. The media-frame monitor re-runs discovery
+// if its geometry becomes visible later.
 const lonelyBadCandidate = makeVideo('lonely', 0, 0, { muted: true, duration: 0 });
 lonelyBadCandidate.loop = true;
 lonelyBadCandidate.controls = false;
@@ -115,8 +123,88 @@ const lonelyDocument = {
 
 assert.strictEqual(
   findVideo(lonelyDocument),
-  lonelyBadCandidate,
-  'a single candidate is returned even when every ranking signal is against it'
+  null,
+  'a hidden single candidate is not returned as an active player'
+);
+
+function attachRenderEnvironment(documentNode, elements, { frameElement = null } = {}) {
+  const view = {
+    innerWidth: 1000,
+    innerHeight: 700,
+    frameElement,
+    getComputedStyle(element) {
+      return element._style || { display: 'block', visibility: 'visible', opacity: '1' };
+    }
+  };
+  documentNode.defaultView = view;
+  for (const element of elements) {
+    element.ownerDocument = documentNode;
+    element.getBoundingClientRect = () => element._rect || {
+      width: element.offsetWidth,
+      height: element.offsetHeight,
+      top: 0,
+      left: 0,
+      right: element.offsetWidth,
+      bottom: element.offsetHeight
+    };
+  }
+  return view;
+}
+
+const hiddenPlayingVideo = makeVideo('hidden-playing', 900, 506, {
+  controls: true,
+  paused: false,
+  duration: 1200
+});
+hiddenPlayingVideo._style = { display: 'block', visibility: 'hidden', opacity: '1' };
+const visiblePausedVideo = makeVideo('visible-paused', 800, 450, {
+  controls: true,
+  paused: true,
+  duration: 1200
+});
+const visibilityDocument = {
+  querySelectorAll(selector) {
+    if (selector === 'video') return [hiddenPlayingVideo, visiblePausedVideo];
+    return [];
+  }
+};
+attachRenderEnvironment(visibilityDocument, [hiddenPlayingVideo, visiblePausedVideo]);
+assert.strictEqual(
+  findVideo(visibilityDocument),
+  visiblePausedVideo,
+  'a hidden playing preload must not outrank the visible paused player'
+);
+
+const framedHiddenVideo = makeVideo('framed-hidden', 900, 506, {
+  controls: true,
+  paused: false,
+  duration: 1200
+});
+const hiddenFrameDocument = {
+  querySelectorAll(selector) {
+    if (selector === 'video') return [framedHiddenVideo];
+    return [];
+  }
+};
+const hiddenAncestorFrame = {
+  offsetWidth: 900,
+  offsetHeight: 506,
+  _style: { display: 'block', visibility: 'hidden', opacity: '1' },
+  contentDocument: hiddenFrameDocument
+};
+const hiddenFrameTopDocument = {
+  querySelectorAll(selector) {
+    if (selector === 'video') return [];
+    if (selector === 'iframe, frame') return [hiddenAncestorFrame];
+    return [];
+  }
+};
+attachRenderEnvironment(hiddenFrameTopDocument, [hiddenAncestorFrame]);
+attachRenderEnvironment(hiddenFrameDocument, [framedHiddenVideo], { frameElement: hiddenAncestorFrame });
+assert.strictEqual(
+  findVideo(hiddenFrameTopDocument),
+  null,
+  'a video inside a hidden same-origin ancestor frame must not be selected'
 );
 
 // Same-origin player iframe (jkanime.net): the top document has no <video>,

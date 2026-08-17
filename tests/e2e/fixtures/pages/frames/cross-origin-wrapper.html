@@ -1,0 +1,9 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Cross-origin wrapper</title>
+<style>body { margin: 0; } iframe { border: 0; }</style>
+<iframe id="inner-player" width="860" height="490" allowfullscreen></iframe>
+<script>
+  document.getElementById('inner-player').src =
+    `http://127.0.0.1:${location.port}/pages/frames/player-frame.html?visible=1`;
+</script>

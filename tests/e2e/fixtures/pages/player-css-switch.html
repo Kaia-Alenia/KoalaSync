@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>CSS player switch</title>
+  <style>
+    video { width: 640px; height: 360px; }
+    #second { visibility: hidden; }
+  </style>
+</head>
+<body>
+  <video id="first" controls preload="auto" src="../media/player-480p-12s.mp4"></video>
+  <video id="second" controls preload="auto" src="../media/player-1080p-30s.mp4"></video>
+  <script>
+    window.switchPlayer = () => {
+      document.getElementById('first').style.visibility = 'hidden';
+      document.getElementById('second').style.visibility = 'visible';
+    };
+    window.__fixtureReady = true;
+  </script>
+</body>
+</html>

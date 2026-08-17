@@ -27,14 +27,49 @@ async function selectTargetTab(context, extensionId, pageUrl) {
 
 async function sendServerCommand(context, extensionId, tabId, action, payload) {
     return withExtensionPage(context, extensionId, page => page.evaluate(async ({ tabId, action, payload }) => {
-        return chrome.tabs.sendMessage(tabId, {
-            type: 'SERVER_COMMAND',
+        return chrome.runtime.sendMessage({
+            type: 'CONTENT_EVENT',
             action,
-            payload,
-            actionTimestamp: Date.now(),
-            commandSenderId: 'e2e'
+            payload: payload || {},
+            expectedTabId: tabId
         });
     }, { tabId, action, payload }));
+}
+
+async function sendServerCommandBurst(context, extensionId, tabId, commands) {
+    return withExtensionPage(context, extensionId, page => page.evaluate(async ({ tabId, commands }) => {
+        return Promise.all(commands.map(({ action, payload }) => chrome.runtime.sendMessage({
+            type: 'CONTENT_EVENT',
+            action,
+            payload: payload || {},
+            expectedTabId: tabId
+        })));
+    }, { tabId, commands }));
+}
+
+async function getExtensionState(context, extensionId, message) {
+    return withExtensionPage(context, extensionId, page => page.evaluate(
+        request => chrome.runtime.sendMessage(request),
+        message
+    ));
+}
+
+async function getFrameMonitorState(context, extensionId, pageUrl, frameUrlPart) {
+    return withExtensionPage(context, extensionId, page => page.evaluate(async ({ pageUrl, frameUrlPart }) => {
+        const [tab] = await chrome.tabs.query({ url: pageUrl });
+        if (!tab) throw new Error(`no tab matched ${pageUrl}`);
+        const frames = await chrome.webNavigation.getAllFrames({ tabId: tab.id });
+        const frame = frames.find(candidate => candidate.url.includes(frameUrlPart));
+        if (!frame) throw new Error(`no frame matched ${frameUrlPart}`);
+        const target = frame.documentId
+            ? { tabId: tab.id, documentIds: [frame.documentId] }
+            : { tabId: tab.id, frameIds: [frame.frameId] };
+        const [result] = await chrome.scripting.executeScript({
+            target,
+            func: () => typeof window.__koalaMediaFrameMonitorCleanup
+        });
+        return result?.result;
+    }, { pageUrl, frameUrlPart }));
 }
 
 test('injects into the target tab and attaches to a same-origin frame player', async ({ context, extensionId, baseURL }) => {
@@ -67,7 +102,8 @@ test('applies remote play, pause and seek to the framed player', async ({ contex
         return video ? video.dataset.koalaAttached : null;
     })).toBe('true');
 
-    await sendServerCommand(context, extensionId, tabId, 'play');
+    const playResponse = await sendServerCommand(context, extensionId, tabId, 'play');
+    expect(playResponse).toMatchObject({ status: 'ok_solo' });
     await expect.poll(() => page.evaluate(FRAMED_VIDEO_PAUSED), { message: 'remote play should start playback' }).toBe(false);
 
     await sendServerCommand(context, extensionId, tabId, 'pause');
@@ -157,6 +193,271 @@ test('re-attaches when a nested player frame swaps its document', async ({ conte
         () => innerVideo('framed-player-2'),
         { message: 'a frame two levels down should be watched for reloads too' }
     ).toBe('true');
+});
+
+test('moves local event listeners after a CSS-only player switch', async ({ context, extensionId, baseURL }) => {
+    const url = `${baseURL}/pages/player-css-switch.html`;
+    const page = await context.newPage();
+    await page.goto(url);
+    await page.waitForFunction(() => window.__fixtureReady === true);
+    await selectTargetTab(context, extensionId, url);
+
+    await expect.poll(() => page.locator('#first').getAttribute('data-koala-attached')).toBe('true');
+    await page.waitForTimeout(250);
+    const beforeBurst = await getExtensionState(context, extensionId, { type: 'GET_STATUS' });
+    await page.evaluate(() => {
+        const first = document.getElementById('first');
+        first.dispatchEvent(new window.Event('play'));
+        first.dispatchEvent(new window.Event('pause'));
+        window.switchPlayer();
+    });
+    await expect.poll(async () => {
+        const status = await getExtensionState(context, extensionId, { type: 'GET_STATUS' });
+        return status.lastActionState.action === 'play'
+            && status.lastActionState.timestamp > beforeBurst.lastActionState.timestamp;
+    }).toBe(true);
+    const leading = await getExtensionState(context, extensionId, { type: 'GET_STATUS' });
+    await expect.poll(
+        () => page.locator('#second').getAttribute('data-koala-attached'),
+        { message: 'attribute-only visibility changes must move the active controller' }
+    ).toBe('true');
+    expect(await page.locator('#first').getAttribute('data-koala-attached')).toBeNull();
+    const afterSwitch = await getExtensionState(context, extensionId, { type: 'GET_STATUS' });
+    expect(afterSwitch.lastActionState.action).toBe('play');
+    expect(afterSwitch.lastActionState.timestamp).toBe(leading.lastActionState.timestamp);
+
+    const before = await getExtensionState(context, extensionId, { type: 'GET_STATUS' });
+    await page.locator('#first').evaluate(video => video.dispatchEvent(new window.Event('play')));
+    await page.waitForTimeout(250);
+    const afterStale = await getExtensionState(context, extensionId, { type: 'GET_STATUS' });
+    expect(afterStale.lastActionState.timestamp).toBe(before.lastActionState.timestamp);
+
+    await page.locator('#second').evaluate(video => video.dispatchEvent(new window.Event('play')));
+    await expect.poll(async () => {
+        const status = await getExtensionState(context, extensionId, { type: 'GET_STATUS' });
+        return status.lastActionState.timestamp;
+    }).toBeGreaterThan(afterStale.lastActionState.timestamp);
+});
+
+test('re-elects after a wrapper-only change inside an unselected cross-origin frame', async ({ context, extensionId, baseURL }) => {
+    const url = `${baseURL}/pages/cross-origin-internal-switching.html`;
+    const page = await context.newPage();
+    await page.goto(url);
+    await page.waitForFunction(() => window.__fixtureReady === true);
+    const first = page.frames().find(frame => frame.url().includes('slot=first'));
+    const second = page.frames().find(frame => frame.url().includes('slot=second'));
+    await selectTargetTab(context, extensionId, url);
+
+    await expect.poll(() => first.locator('video').getAttribute('data-koala-attached')).toBe('true');
+    expect(await second.locator('video').getAttribute('data-koala-attached')).toBeNull();
+    await page.evaluate(() => window.switchInternalPlayer());
+    await expect.poll(
+        () => second.locator('video').getAttribute('data-koala-attached'),
+        { message: 'an unselected frame must announce its internally-visible player' }
+    ).toBe('true');
+    expect(await first.locator('video').getAttribute('data-koala-attached')).toBeNull();
+});
+
+test('targets a visible nested cross-origin player and keeps top-page debug context', async ({ context, extensionId, baseURL }) => {
+    const url = `${baseURL}/pages/cross-origin-nested.html`;
+    const page = await context.newPage();
+    await page.goto(url);
+    await page.waitForFunction(() => window.__fixtureReady === true);
+
+    const visiblePlayer = () => page.frames().find(frame => frame.url().includes('/frames/player-frame.html?visible=1'));
+    await expect.poll(async () => visiblePlayer()?.locator('video').getAttribute('src')).toContain('player-480p-12s.mp4');
+
+    const { tabId, response } = await selectTargetTab(context, extensionId, url);
+    expect(response).toMatchObject({ status: 'ok' });
+    expect(response.frameId).toBeGreaterThan(0);
+
+    await expect.poll(() => visiblePlayer()?.locator('video').getAttribute('data-koala-attached')).toBe('true');
+    const hiddenPlayer = page.frames().find(frame => frame.url().includes('/frames/player-frame-2.html?hidden=1'));
+    expect(await hiddenPlayer.locator('video').getAttribute('data-koala-attached')).toBeNull();
+
+    const playResponse = await sendServerCommand(context, extensionId, tabId, 'play');
+    expect(playResponse).toMatchObject({ status: 'ok_solo' });
+    await expect.poll(() => visiblePlayer().locator('video').evaluate(video => video.paused)).toBe(false);
+    await sendServerCommand(context, extensionId, tabId, 'pause');
+    await expect.poll(() => visiblePlayer().locator('video').evaluate(video => video.paused)).toBe(true);
+    await sendServerCommand(context, extensionId, tabId, 'seek', { targetTime: 6 });
+    await expect.poll(() => visiblePlayer().locator('video').evaluate(video => video.currentTime)).toBeGreaterThan(5);
+
+    await sendServerCommand(context, extensionId, tabId, 'pause');
+    await sendServerCommandBurst(context, extensionId, tabId, [
+        { action: 'seek', payload: { targetTime: 8 } },
+        { action: 'play', payload: { currentTime: 8 } }
+    ]);
+    await expect.poll(() => visiblePlayer().locator('video').evaluate(video => ({
+        paused: video.paused,
+        currentTime: video.currentTime
+    }))).toMatchObject({ paused: false, currentTime: expect.any(Number) });
+    await expect.poll(() => visiblePlayer().locator('video').evaluate(video => video.currentTime)).toBeGreaterThan(7);
+
+    const state = await getExtensionState(context, extensionId, { type: 'GET_VIDEO_STATE', tabId });
+    expect(state).toMatchObject({
+        found: true,
+        url,
+        pageTitle: 'Nested cross-origin player',
+        frameOrigin: new URL(baseURL.replace('localhost', '127.0.0.1')).origin,
+        inIframe: true
+    });
+});
+
+test('re-elects the visible cross-origin player after an iframe switch', async ({ context, extensionId, baseURL }) => {
+    const url = `${baseURL}/pages/cross-origin-switching.html`;
+    const page = await context.newPage();
+    await page.goto(url);
+    await page.waitForFunction(() => window.__fixtureReady === true);
+    const first = page.frames().find(frame => frame.url().includes('/frames/player-frame.html?slot=first'));
+    const second = page.frames().find(frame => frame.url().includes('/frames/player-frame-2.html?slot=second'));
+    const { tabId, response } = await selectTargetTab(context, extensionId, url);
+    expect(response).toMatchObject({ status: 'ok' });
+    const firstFrameId = response.frameId;
+
+    await expect.poll(() => first.locator('video').getAttribute('data-koala-attached')).toBe('true');
+    await page.evaluate(() => window.switchPlayer());
+    await expect.poll(() => second.locator('video').getAttribute('data-koala-attached')).toBe('true');
+    await expect.poll(async () => {
+        const status = await getExtensionState(context, extensionId, { type: 'GET_STATUS' });
+        return status.targetFrameId;
+    }).not.toBe(firstFrameId);
+
+    const playResponse = await sendServerCommand(context, extensionId, tabId, 'play');
+    expect(playResponse).toMatchObject({ status: 'ok_solo' });
+    await expect.poll(() => second.locator('video').evaluate(video => video.paused)).toBe(false);
+    expect(await first.locator('video').evaluate(video => video.paused)).toBe(true);
+});
+
+test('keeps commands flowing during continuous player-frame geometry changes', async ({ context, extensionId, baseURL }) => {
+    const url = `${baseURL}/pages/cross-origin-switching.html`;
+    const page = await context.newPage();
+    await page.goto(url);
+    await page.waitForFunction(() => window.__fixtureReady === true);
+    const first = page.frames().find(frame => frame.url().includes('/frames/player-frame.html?slot=first'));
+    const { tabId, response } = await selectTargetTab(context, extensionId, url);
+    expect(response).toMatchObject({ status: 'ok' });
+    await expect.poll(() => first.locator('video').getAttribute('data-koala-attached')).toBe('true');
+
+    await page.evaluate(() => window.startGeometryChurn());
+    try {
+        await page.waitForTimeout(300);
+        await sendServerCommand(context, extensionId, tabId, 'play', { currentTime: 1 });
+        await expect.poll(
+            () => first.locator('video').evaluate(video => video.paused),
+            { timeout: 3000, message: 'bounded refresh passes must not starve commands' }
+        ).toBe(false);
+    } finally {
+        await page.evaluate(() => window.stopGeometryChurn());
+    }
+});
+
+test('deactivates media monitors in child frames after a target-tab switch', async ({ context, extensionId, baseURL }) => {
+    const firstUrl = `${baseURL}/pages/cross-origin-nested.html`;
+    const secondUrl = `${baseURL}/pages/simple-player.html`;
+    const firstPage = await context.newPage();
+    const secondPage = await context.newPage();
+    await firstPage.goto(firstUrl);
+    await firstPage.waitForFunction(() => window.__fixtureReady === true);
+    await secondPage.goto(secondUrl);
+    await secondPage.waitForFunction(() => window.__fixtureReady === true);
+    await selectTargetTab(context, extensionId, firstUrl);
+    await expect.poll(() => getFrameMonitorState(
+        context,
+        extensionId,
+        firstUrl,
+        '/frames/player-frame.html?visible=1'
+    )).toBe('function');
+    await selectTargetTab(context, extensionId, secondUrl);
+    await expect.poll(
+        () => getFrameMonitorState(
+            context,
+            extensionId,
+            firstUrl,
+            '/frames/player-frame.html?visible=1'
+        ),
+        { message: 'child-frame monitor should be destroyed with the old target tab' }
+    ).toBe('undefined');
+});
+
+test('re-attaches after a selected cross-origin frame navigates', async ({ context, extensionId, baseURL }) => {
+    const url = `${baseURL}/pages/cross-origin-reloading.html`;
+    const page = await context.newPage();
+    await page.goto(url);
+    await page.waitForFunction(() => window.__fixtureReady === true);
+    const first = page.frames().find(frame => frame.url().includes('generation=first'));
+    const { tabId, response } = await selectTargetTab(context, extensionId, url);
+    expect(response).toMatchObject({ status: 'ok' });
+    await expect.poll(() => first.locator('video').getAttribute('data-koala-attached')).toBe('true');
+    const firstDocumentId = (await getExtensionState(context, extensionId, { type: 'GET_STATUS' })).targetDocumentId;
+
+    await page.evaluate(() => window.reloadPlayer());
+    await expect.poll(() => page.frames().find(frame => frame.url().includes('generation=second'))?.locator('video').getAttribute('data-koala-attached')).toBe('true');
+    await expect.poll(async () => {
+        const status = await getExtensionState(context, extensionId, { type: 'GET_STATUS' });
+        return status.targetDocumentId;
+    }).not.toBe(firstDocumentId);
+
+    const state = await getExtensionState(context, extensionId, { type: 'GET_VIDEO_STATE', tabId });
+    expect(state).toMatchObject({ found: true, inIframe: true });
+});
+
+test('discovers a video inserted late inside a cross-origin frame', async ({ context, extensionId, baseURL }) => {
+    const url = `${baseURL}/pages/cross-origin-late.html`;
+    const page = await context.newPage();
+    await page.goto(url);
+    await page.waitForFunction(() => window.__fixtureReady === true);
+    const lateFrame = page.frames().find(frame => frame.url().includes('/frames/late-player-frame.html'));
+    const { response } = await selectTargetTab(context, extensionId, url);
+    expect(response).toMatchObject({ status: 'ok', hasVideo: false });
+
+    await expect.poll(
+        () => lateFrame.locator('#late-player').getAttribute('data-koala-attached'),
+        { timeout: 12_000, message: 'late cross-origin video should trigger target re-election' }
+    ).toBe('true');
+    await expect.poll(async () => {
+        const status = await getExtensionState(context, extensionId, { type: 'GET_STATUS' });
+        return status.targetHasVideo;
+    }).toBe(true);
+});
+
+test('rejects a cross-origin player hidden three frame levels deep', async ({ context, extensionId, baseURL }) => {
+    const url = `${baseURL}/pages/deep-hidden-cross-origin.html`;
+    const page = await context.newPage();
+    await page.goto(url);
+    await page.waitForFunction(() => window.__fixtureReady === true);
+    const hiddenFrame = page.frames().find(frame => frame.url().includes('deep=hidden'));
+    await expect.poll(() => hiddenFrame?.locator('video').getAttribute('src')).toContain('player-1080p-30s.mp4');
+
+    const { response } = await selectTargetTab(context, extensionId, url);
+    expect(response).toMatchObject({ status: 'ok', frameId: 0, hasVideo: false });
+    expect(await hiddenFrame.locator('video').getAttribute('data-koala-attached')).toBeNull();
+});
+
+test('rejects a player inside a hidden same-origin frame', async ({ context, extensionId, baseURL }) => {
+    const url = `${baseURL}/pages/hidden-same-origin.html`;
+    const page = await context.newPage();
+    await page.goto(url);
+    await page.waitForFunction(() => window.__fixtureReady === true);
+    const hiddenFrame = page.frames().find(frame => frame.url().includes('hidden=same-origin'));
+    await expect.poll(() => hiddenFrame?.locator('video').getAttribute('src')).toContain('player-480p-12s.mp4');
+
+    const { response } = await selectTargetTab(context, extensionId, url);
+    expect(response).toMatchObject({ status: 'ok', frameId: 0, hasVideo: false });
+    expect(await hiddenFrame.locator('video').getAttribute('data-koala-attached')).toBeNull();
+});
+
+test('rejects a hidden cross-origin player after its iframe URL redirects', async ({ context, extensionId, baseURL }) => {
+    const url = `${baseURL}/pages/hidden-redirect-cross-origin.html`;
+    const page = await context.newPage();
+    await page.goto(url);
+    await page.waitForFunction(() => window.__fixtureReady === true);
+    const redirectedFrame = page.frames().find(frame => frame.url().includes('redirected=hidden'));
+    await expect.poll(() => redirectedFrame?.locator('video').getAttribute('src')).toContain('player-1080p-30s.mp4');
+
+    const { response } = await selectTargetTab(context, extensionId, url);
+    expect(response).toMatchObject({ status: 'ok', frameId: 0, hasVideo: false });
+    expect(await redirectedFrame.locator('video').getAttribute('data-koala-attached')).toBeNull();
 });
 
 function FRAMED_VIDEO_PAUSED() {

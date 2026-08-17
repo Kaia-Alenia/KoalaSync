@@ -1,0 +1,15 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Late player frame</title>
+<style>body { margin: 0; }</style>
+<script>
+  setTimeout(() => {
+    const video = document.createElement('video');
+    video.id = 'late-player';
+    video.width = 854;
+    video.height = 480;
+    video.controls = true;
+    video.src = '../../media/player-480p-12s.mp4';
+    document.body.append(video);
+  }, 8000);
+</script>

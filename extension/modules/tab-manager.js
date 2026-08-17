@@ -1,7 +1,8 @@
 export function initTabManager({
     getCurrentTabId,
     reactivateCurrentTarget,
-    ensureState
+    ensureState,
+    sendToCurrentContent
 }) {
     chrome.storage.onChanged.addListener(async (changes, area) => {
         if (area !== 'local' || !changes.audioSettings) return;
@@ -9,7 +10,7 @@ export function initTabManager({
         const tabId = getCurrentTabId();
         if (!tabId) return;
 
-        chrome.tabs.sendMessage(tabId, {
+        sendToCurrentContent({
             action: 'APPLY_AUDIO_SETTINGS',
             settings: changes.audioSettings.newValue
         }).catch(() => {});

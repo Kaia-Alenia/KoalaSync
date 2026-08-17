@@ -7,12 +7,15 @@ const extensionDir = path.dirname(fileURLToPath(import.meta.url));
 const backgroundSource = fs.readFileSync(path.join(extensionDir, 'background.js'), 'utf8');
 const contentSource = fs.readFileSync(path.join(extensionDir, 'content.js'), 'utf8');
 const overlaySource = fs.readFileSync(path.join(extensionDir, 'chat-overlay.js'), 'utf8');
+const monitorSource = fs.readFileSync(path.join(extensionDir, 'media-frame-monitor.js'), 'utf8');
+const manifest = JSON.parse(fs.readFileSync(path.join(extensionDir, 'manifest.base.json'), 'utf8'));
 
 describe('target tab lifecycle', () => {
     it('injects playback and chat scripts only into the explicitly selected tab', () => {
         expect(backgroundSource).not.toContain('chrome.tabs.onActivated');
         expect(backgroundSource).not.toContain('chrome.tabs.query({})');
-        expect(backgroundSource).toContain("target: { tabId }");
+        expect(backgroundSource).toContain('contentTarget = await resolveMediaContentTarget(chrome, tabId)');
+        expect(backgroundSource).toContain('target: scriptTarget');
         expect(backgroundSource).toContain("files: ['chat-format.js', 'chat-overlay.js', 'content.js']");
         expect(backgroundSource).toContain("chrome.tabs.query({ url: 'https://sync.koalastuff.net/*' })");
 
@@ -27,20 +30,49 @@ describe('target tab lifecycle', () => {
     });
 
     it('fully deactivates old and superseded target injections', () => {
-        expect(backgroundSource).toContain("chrome.tabs.sendMessage(normalizedTabId, { type: 'TARGET_DEACTIVATE' })");
-        expect(backgroundSource.match(/await deactivateTargetTab\(selectedTabId\)/g)?.length).toBeGreaterThanOrEqual(4);
+        expect(backgroundSource).toContain("{ type: 'TARGET_DEACTIVATE' }");
+        expect(backgroundSource).toContain('target.documentId');
+        expect(backgroundSource.match(/await deactivateTargetTab\(selectedTabId,/g)?.length).toBeGreaterThanOrEqual(6);
         expect(contentSource).toContain("if (message.type === 'TARGET_DEACTIVATE')");
         expect(overlaySource).toContain("message?.type === 'TARGET_DEACTIVATE'");
+    });
+
+    it('binds cross-origin targets to an exact document and monitors every accessible frame', () => {
+        expect(backgroundSource).toContain("files: ['media-frame-monitor.js']");
+        expect(backgroundSource).toContain('const targets = await listMediaFrameScriptTargets(chrome, tabId)');
+        expect(backgroundSource).toContain('One denied widget frame must not block the selected player');
+        expect(backgroundSource).toContain("navigationError.code = 'media_target_navigated'");
+        expect(backgroundSource).toContain("{ type: 'MEDIA_MONITOR_DEACTIVATE' }");
+        expect(backgroundSource).toContain('async function deactivateMediaFrameMonitors(tabId)');
+        expect(backgroundSource).toContain('{ documentId }');
+        expect(monitorSource).toContain("type: 'MEDIA_FRAME_CANDIDATE_CHANGED'");
+        expect(monitorSource).toContain("attributeFilter: ['class', 'style', 'hidden', 'src', 'controls']");
+        expect(monitorSource).toContain('if (!force && nextSignature === lastCandidateSignature) return');
+        expect(monitorSource).toContain("const MEDIA_STATE_EVENTS = ['play', 'pause', 'loadedmetadata'");
+        expect(monitorSource).toContain("node.querySelector?.('video, iframe, frame')");
+        expect(manifest.permissions).toContain('webNavigation');
+        expect(backgroundSource).toContain('chrome.webNavigation.onCompleted.addListener');
+    });
+
+    it('serializes content commands and coalesces target refreshes', () => {
+        expect(backgroundSource).toContain('contentCommandQueue.catch(() => {}).then(deliver)');
+        expect(backgroundSource).toContain('if (mediaTargetRefreshTask && mediaTargetRefreshTabId === selectedTabId)');
+        expect(backgroundSource).toContain('if (queueIfRunning) mediaTargetRefreshDirty = true');
+        expect(backgroundSource).toContain('&& pass < 2');
+        expect(backgroundSource).toContain('const needsFollowup = mediaTargetRefreshDirty');
+        expect(backgroundSource).not.toContain('Re-elect before every remote command');
+        expect(backgroundSource).toContain('await sendMessageToContentTab(tabId');
     });
 
     it('tears down every persistent content-script resource', () => {
         expect(contentSource).toContain('function destroyContentScript()');
         expect(contentSource).toContain('observer.disconnect()');
         expect(contentSource).toContain('keepAlivePort.disconnect()');
-        expect(contentSource).toContain('for (const video of attachedVideos)');
+        expect(contentSource).toContain('for (const video of [...attachedVideos]) detachVideoListeners(video);');
         expect(contentSource).toContain("document.removeEventListener('visibilitychange', handleVisibilityChange)");
         expect(contentSource).toContain("window.removeEventListener('pagehide', handlePageHide)");
         expect(contentSource).toContain("window.removeEventListener('pageshow', handlePageShow)");
+        expect(contentSource).toContain("window.removeEventListener('resize', handleMediaFrameResize)");
         expect(contentSource).toContain('chrome.storage.onChanged.removeListener(handleStorageChanged)');
         expect(contentSource).toContain('chrome.runtime.onMessage.removeListener(handleRuntimeMessage)');
         expect(contentSource).toContain('window.koalaSyncInjected = false');

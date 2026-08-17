@@ -2196,7 +2196,7 @@ elements.forceSyncBtn.addEventListener('click', async () => {
                 failForceSyncTime();
                 return;
             }
-            chrome.tabs.sendMessage(tabId, { action: 'get_current_time' }, (retryResponse) => {
+            chrome.runtime.sendMessage({ type: 'GET_VIDEO_STATE', tabId }, (retryResponse) => {
                 if (chrome.runtime.lastError || !retryResponse || !Number.isFinite(retryResponse.currentTime)) {
                     failForceSyncTime();
                     return;
@@ -2204,7 +2204,7 @@ elements.forceSyncBtn.addEventListener('click', async () => {
                 sendForceSync(retryResponse.currentTime);
             });
         };
-        chrome.tabs.sendMessage(tabId, { action: 'get_current_time' }, (response) => {
+        chrome.runtime.sendMessage({ type: 'GET_VIDEO_STATE', tabId }, (response) => {
             if (Number.isFinite(response?.currentTime)) {
                 sendForceSync(response.currentTime);
                 return;

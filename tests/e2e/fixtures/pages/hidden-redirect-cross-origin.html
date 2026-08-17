@@ -1,0 +1,10 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Hidden redirected cross-origin player</title>
+<style>body { margin: 0; } iframe { border: 0; visibility: hidden; }</style>
+<iframe id="player" width="860" height="490" allowfullscreen></iframe>
+<script>
+  const player = document.getElementById('player');
+  player.src = `http://localhost:${location.port}/redirect/hidden-player`;
+  player.addEventListener('load', () => { window.__fixtureReady = true; }, { once: true });
+</script>
