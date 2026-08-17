@@ -58,8 +58,11 @@ async function getFrameMonitorState(context, extensionId, pageUrl, frameUrlPart)
     return withExtensionPage(context, extensionId, page => page.evaluate(async ({ pageUrl, frameUrlPart }) => {
         const [tab] = await chrome.tabs.query({ url: pageUrl });
         if (!tab) throw new Error(`no tab matched ${pageUrl}`);
-        const frames = await chrome.webNavigation.getAllFrames({ tabId: tab.id });
-        const frame = frames.find(candidate => candidate.url.includes(frameUrlPart));
+        const frameResults = await chrome.scripting.executeScript({
+            target: { tabId: tab.id, allFrames: true },
+            func: () => ({ href: location.href, cleanup: typeof window.__koalaMediaFrameMonitorCleanup })
+        });
+        const frame = frameResults.find(candidate => candidate.result?.href.includes(frameUrlPart));
         if (!frame) throw new Error(`no frame matched ${frameUrlPart}`);
         const target = frame.documentId
             ? { tabId: tab.id, documentIds: [frame.documentId] }

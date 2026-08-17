@@ -1,4 +1,5 @@
 import { defineConfig } from '@playwright/test';
+import { fileURLToPath } from 'node:url';
 
 const PORT = Number(process.env.KOALA_E2E_PORT || 4173);
 
@@ -25,7 +26,7 @@ export default defineConfig({
         }
     },
     webServer: {
-        command: `node ${new URL('./fixture-server.mjs', import.meta.url).pathname} ${PORT}`,
+        command: `node "${fileURLToPath(new URL('./fixture-server.mjs', import.meta.url))}" ${PORT}`,
         url: `http://localhost:${PORT}/pages/simple-player.html`,
         reuseExistingServer: !process.env.CI,
         stdout: 'ignore',

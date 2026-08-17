@@ -39,14 +39,14 @@ describe('target tab lifecycle', () => {
 
     it('removes monitors injected by a superseded cross-tab activation', () => {
         expect(backgroundSource).toContain('function isTargetActivationSuperseded(tabId, activationGeneration)');
-        expect(backgroundSource).toContain('activationGeneration\n            });');
+        expect(backgroundSource).toMatch(/navigationRetries: navigationRetries - 1,\s*activationGeneration\s*\}\)/);
         expect(backgroundSource).toMatch(/await injectMediaFrameMonitors\(tabId, contentTarget\);[\s\S]*if \(isTargetActivationSuperseded\(tabId, activationGeneration\)\)[\s\S]*await deactivateMediaFrameMonitors\(tabId\);/);
         expect(backgroundSource).toContain("error.code = 'target_activation_superseded'");
     });
 
-    it('binds cross-origin targets to an exact document and monitors every accessible frame', () => {
+    it('uses all-frame probing for cross-origin targets without navigation permissions', () => {
         expect(backgroundSource).toContain("files: ['media-frame-monitor.js']");
-        expect(backgroundSource).toContain('const targets = await listMediaFrameScriptTargets(chrome, tabId)');
+        expect(backgroundSource).toContain('const targets = listMediaFrameScriptTargets(tabId)');
         expect(backgroundSource).toContain('One denied widget frame must not block the selected player');
         expect(backgroundSource).toContain("navigationError.code = 'media_target_navigated'");
         expect(backgroundSource).toContain("{ type: 'MEDIA_MONITOR_DEACTIVATE' }");
@@ -57,8 +57,15 @@ describe('target tab lifecycle', () => {
         expect(monitorSource).toContain('if (!force && nextSignature === lastCandidateSignature) return');
         expect(monitorSource).toContain("const MEDIA_STATE_EVENTS = ['play', 'pause', 'loadedmetadata'");
         expect(monitorSource).toContain("node.querySelector?.('video, iframe, frame')");
-        expect(manifest.permissions).toContain('webNavigation');
-        expect(backgroundSource).toContain('chrome.webNavigation.onCompleted.addListener');
+        expect(manifest.permissions).toEqual([
+            'storage',
+            'tabs',
+            'scripting',
+            'alarms',
+            'activeTab',
+            'notifications'
+        ]);
+        expect(backgroundSource).not.toMatch(/chrome\.(?:web)?Navigation/);
     });
 
     it('serializes content commands and coalesces target refreshes', () => {

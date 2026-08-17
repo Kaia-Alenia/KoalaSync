@@ -427,21 +427,7 @@ function contentTarget(tabId, selected) {
     };
 }
 
-export async function listMediaFrameScriptTargets(chromeApi, tabId) {
-    if (chromeApi.webNavigation?.getAllFrames) {
-        try {
-            const frames = await chromeApi.webNavigation.getAllFrames({ tabId });
-            if (Array.isArray(frames) && frames.length > 0) {
-                return frames
-                    .filter(frame => Number.isInteger(frame?.frameId))
-                    .map(frame => (typeof frame.documentId === 'string' && frame.documentId
-                        ? { tabId, documentIds: [frame.documentId] }
-                        : { tabId, frameIds: [frame.frameId] }));
-            }
-        } catch {
-            // Older browsers fall back to the all-frames probe below.
-        }
-    }
+export function listMediaFrameScriptTargets(tabId) {
     return [{ tabId, allFrames: true }];
 }
 
@@ -466,7 +452,7 @@ export async function resolveMediaContentTarget(chromeApi, tabId, {
     let ambiguous = false;
 
     for (let attempt = 0; attempt < attempts; attempt++) {
-        const scriptTargets = await listMediaFrameScriptTargets(chromeApi, tabId);
+        const scriptTargets = listMediaFrameScriptTargets(tabId);
         let results = await executeInAccessibleFrames(
             chromeApi,
             scriptTargets,

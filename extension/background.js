@@ -2190,7 +2190,7 @@ function setPageApiSeekEnabled(enabled) {
 }
 
 async function deactivateMediaFrameMonitors(tabId) {
-    const targets = await listMediaFrameScriptTargets(chrome, tabId);
+    const targets = listMediaFrameScriptTargets(tabId);
     await Promise.all(targets.map(async target => {
         const documentId = target.documentIds?.[0];
         const frameId = target.frameIds?.[0];
@@ -2293,7 +2293,7 @@ function createTargetActivationSupersededError() {
 }
 
 async function injectMediaFrameMonitors(tabId, contentTarget) {
-    const targets = await listMediaFrameScriptTargets(chrome, tabId);
+    const targets = listMediaFrameScriptTargets(tabId);
     let injectedCount = 0;
     await Promise.all(targets.map(async target => {
         try {
@@ -2920,22 +2920,6 @@ if (chrome.permissions?.onAdded?.addListener) {
                 requireGrantedAccess: true
             });
         }).catch(error => addLog(`Website access retry failed: ${error.message}`, 'warn'));
-    });
-}
-
-if (chrome.webNavigation?.onCompleted?.addListener) {
-    chrome.webNavigation.onCompleted.addListener((details) => {
-        ensureState().then(async () => {
-            const tabId = normalizeTabId(details?.tabId);
-            const frameId = normalizeFrameId(details?.frameId);
-            if (tabId === null
-                || tabId !== normalizeTabId(currentTabId)
-                || frameId === 0
-                || (frameId !== normalizeFrameId(currentTargetFrameId) && currentTargetHasVideo)) {
-                return;
-            }
-            await refreshCurrentMediaTarget(tabId, { queueIfRunning: true });
-        }).catch(error => addLog(`Media frame navigation refresh failed: ${error.message}`, 'warn'));
     });
 }
 

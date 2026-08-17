@@ -155,55 +155,19 @@ describe('cross-origin media-frame targeting', () => {
         });
     });
 
-    it('keeps an accessible player when an unrelated child frame is denied', async () => {
-        const top = frame(0, {
-            bestVideo: null,
-            videoCount: 0,
-            embeddedFrames: [
-                {
-                    href: 'https://player-8.example/embed',
-                    origin: 'https://player-8.example',
-                    area: 830 * 498,
-                    width: 830,
-                    height: 498,
-                    visible: true,
-                    mediaHint: true
-                },
-                {
-                    href: 'https://widget-denied.example/frame',
-                    origin: 'https://widget-denied.example',
-                    area: 300 * 250,
-                    width: 300,
-                    height: 250,
-                    visible: true,
-                    mediaHint: false
-                }
-            ]
-        });
-        const player = frame(8);
-        const getAllFrames = vi.fn().mockResolvedValue([
-            { frameId: 0, documentId: 'document-0' },
-            { frameId: 8, documentId: 'document-8' },
-            { frameId: 9, documentId: 'document-9' }
-        ]);
-        const executeScript = vi.fn().mockImplementation(async ({ target, func }) => {
-            const documentId = target.documentIds?.[0];
-            if (documentId === 'document-9') throw new Error('Cannot access contents of the page');
-            if (func?.name !== 'inspectMediaFrame') return [];
-            return documentId === 'document-8' ? [player] : [top];
-        });
+    it('uses all-frame probing without a navigation permission', async () => {
+        const executeScript = vi.fn().mockResolvedValue([frame(8)]);
 
         await expect(resolveMediaContentTarget(
-            { scripting: { executeScript }, webNavigation: { getAllFrames } },
+            { scripting: { executeScript } },
             42,
             { attempts: 1, probeDelayMs: 0 }
         )).resolves.toMatchObject({
             frameId: 8,
-            documentId: 'document-8',
-            hasVideo: true
+            hasVideo: true,
+            scriptTarget: { tabId: 42, documentIds: ['document-8'] }
         });
-        expect(executeScript.mock.calls.some(([options]) => options.target.allFrames === true)).toBe(false);
-        expect(executeScript.mock.calls.some(([options]) => options.target.documentIds?.[0] === 'document-9')).toBe(true);
+        expect(executeScript.mock.calls[0][0].target).toEqual({ tabId: 42, allFrames: true });
     });
 
     it('does not trust parent visibility from an older probe token', () => {
