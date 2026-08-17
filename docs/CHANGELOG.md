@@ -4,6 +4,28 @@ All notable changes to the KoalaSync browser extension and relay server.
 
 ---
 
+## [v3.1.3] — Unreleased
+
+This release hardens target selection and chat visibility across player-frame
+recovery, failed tab switches and short connection interruptions.
+
+### Fixed
+- **Extension: Atomic target switching** — Keeps the previously working target
+  active until the newly selected tab has been injected successfully, so a
+  failed selection cannot leave the room without a target.
+- **Extension: Target recovery** — Keeps the selected tab recoverable when a
+  transient content-script or embedded-player refresh fails.
+- **Extension: Chat visibility persistence** — Remembers the user's manual
+  open/closed state across popup reopen, content refresh and reconnect cycles.
+
+### Testing
+- **Release gate** — Unit, server/WebSocket, locale, theme, lint, production
+  dependency audit, Chrome/Firefox build, AMO validation and website build
+  pass locally.
+- **Browser E2E** — 35 extension and player lifecycle scenarios pass.
+
+---
+
 ## [v3.1.2] — 2026-08-17
 
 This release adds generic control for HTML5 players inside cross-origin frames.

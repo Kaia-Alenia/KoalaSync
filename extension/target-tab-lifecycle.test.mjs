@@ -22,9 +22,10 @@ describe('target tab lifecycle', () => {
         const activationStart = backgroundSource.indexOf('async function activateTargetTab');
         const activationEnd = backgroundSource.indexOf('async function reactivateCurrentTarget', activationStart);
         const activationSource = backgroundSource.slice(activationStart, activationEnd);
-        expect(activationSource.indexOf('await deactivateTargetTab(previousTabId)'))
-            .toBeLessThan(activationSource.indexOf('await injectContentScript(selectedTabId'));
+        expect(activationSource.indexOf('await injectContentScript(selectedTabId'))
+            .toBeLessThan(activationSource.indexOf('await deactivateTargetTab(previousTabId, previousContentTarget)'));
         expect(activationSource).toContain('previousTabId !== selectedTabId');
+        expect(activationSource).toContain('keeping tab ${previousTabId} selected');
         expect(contentSource).toContain('if (window.koalaSyncInjected && chrome.runtime.id)');
         expect(overlaySource).toContain('if (window.koalaSyncChatOverlay?.refresh)');
     });

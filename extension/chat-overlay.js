@@ -596,6 +596,7 @@
 
     function applyContext(next) {
         const previousRoomId = context?.roomId;
+        const previousEnabled = context?.enabled === true;
         context = next || null;
         const supported = !!context?.supported;
         const optedIn = !!context?.enabled;
@@ -611,7 +612,7 @@
         if (!optedIn) startStateApplied = false;
         if (!context?.enabled) {
             setOpened(false, false);
-        } else if (preferencesLoaded && !startStateApplied) {
+        } else if (preferencesLoaded && (!startStateApplied || !previousEnabled)) {
             startStateApplied = true;
             setOpened(lastUserOpenState ?? (chatStartMode === 'open'), false);
         }

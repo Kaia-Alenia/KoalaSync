@@ -181,6 +181,8 @@ describe('chat overlay contract', () => {
         expect(overlaySource).toContain('setOpened(false, false)');
         expect(overlaySource).toContain('setOpened(lastUserOpenState ?? (chatStartMode === \'open\'), false)');
         expect(overlaySource).toContain('typeof data[openStateKey] === \'boolean\'');
+        expect(overlaySource).toContain('const previousEnabled = context?.enabled === true');
+        expect(overlaySource).toContain('(!startStateApplied || !previousEnabled)');
     });
 
     it('keeps chat hidden by default without discarding the room chat key', () => {

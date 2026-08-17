@@ -2658,9 +2658,6 @@ async function activateTargetTab(tabId, tabTitle, {
     let injectedContentTarget = { frameId: 0, documentId: null, hasVideo: false };
 
     try {
-        if (previousTabId && previousTabId !== selectedTabId) {
-            await deactivateTargetTab(previousTabId);
-        }
         if (activationGeneration !== targetActivationGeneration) {
             return { status: 'superseded' };
         }
@@ -2696,26 +2693,26 @@ async function activateTargetTab(tabId, tabTitle, {
                 );
                 throw error;
             }
-            currentTabId = null;
-            currentTabTitle = null;
-            clearCurrentContentTarget();
-            lastContentHeartbeatAt = null;
-            if (currentRoom) roomIdleSince = Date.now();
             const failedContentTarget = error?.contentTarget || injectedContentTarget;
             await deactivateTargetTab(selectedTabId, failedContentTarget);
-            if (previousTabId && (previousTabId !== selectedTabId
-                || !sameContentTarget(previousContentTarget, failedContentTarget))) {
-                await deactivateTargetTab(previousTabId, previousContentTarget);
+            if (previousTabId === null) {
+                currentTabId = null;
+                currentTabTitle = null;
+                clearCurrentContentTarget();
+                lastContentHeartbeatAt = null;
+                if (currentRoom) roomIdleSince = Date.now();
+                await chrome.storage.session.set({
+                    currentTabId: null,
+                    currentTabTitle: null,
+                    currentTargetFrameId: 0,
+                    currentTargetDocumentId: null,
+                    currentTargetHasVideo: false,
+                    roomIdleSince,
+                    lastContentHeartbeatAt: null
+                });
+            } else {
+                addLog(`Target switch to tab ${selectedTabId} failed; keeping tab ${previousTabId} selected`, 'warn');
             }
-            await chrome.storage.session.set({
-                currentTabId: null,
-                currentTabTitle: null,
-                currentTargetFrameId: 0,
-                currentTargetDocumentId: null,
-                currentTargetHasVideo: false,
-                roomIdleSince,
-                lastContentHeartbeatAt: null
-            });
             if (activationGeneration !== targetActivationGeneration) {
                 return { status: 'superseded' };
             }
@@ -2765,7 +2762,9 @@ async function activateTargetTab(tabId, tabTitle, {
             if (currentTabId !== selectedTabId) await deactivateTargetTab(selectedTabId, injectedContentTarget);
             return { status: 'superseded' };
         }
-        if (previousTabId === selectedTabId
+        if (previousTabId && previousTabId !== selectedTabId) {
+            await deactivateTargetTab(previousTabId, previousContentTarget);
+        } else if (previousTabId === selectedTabId
             && !sameContentTarget(previousContentTarget, injectedContentTarget)) {
             await deactivateTargetTab(previousTabId, previousContentTarget, { deactivateMonitor: false });
         }
