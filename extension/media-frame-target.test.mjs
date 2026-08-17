@@ -132,7 +132,10 @@ describe('cross-origin media-frame targeting', () => {
         const visibilityDispatches = executeScript.mock.calls.filter(([options]) => (
             options.func?.name === 'dispatchParentFrameVisibilityProbe'
         ));
-        expect(visibilityDispatches).toHaveLength(4);
+        // Four passes across both discovered frames, each addressed on its own
+        // so a frame that never answers cannot cancel the others.
+        expect(visibilityDispatches).toHaveLength(8);
+        expect(visibilityDispatches.every(([options]) => options.target.allFrames !== true)).toBe(true);
     });
 
     it('keeps the top target inactive when the only discovered video is hidden', async () => {

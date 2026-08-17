@@ -437,6 +437,30 @@ export function listMediaFrameScriptTargets(tabId) {
     return [{ tabId, allFrames: true }];
 }
 
+/** Pins one probe to one frame, preferring the exact document when known. */
+function frameScriptTarget(tabId, entry) {
+    const frameId = normalizeFrameId(entry?.frameId);
+    return typeof entry?.documentId === 'string' && entry.documentId
+        ? { tabId, documentIds: [entry.documentId] }
+        : { tabId, frameIds: [frameId] };
+}
+
+/**
+ * Later results replace earlier ones for the same frame. A frame that navigated
+ * between two probes must not appear twice, because two stale copies of one
+ * frame look exactly like two competing players.
+ */
+function mergeFrameResults(...groups) {
+    const merged = new Map();
+    for (const group of groups) {
+        for (const entry of Array.isArray(group) ? group : []) {
+            if (!Number.isInteger(entry?.frameId)) continue;
+            merged.set(`frame:${entry.frameId}`, entry);
+        }
+    }
+    return Array.from(merged.values());
+}
+
 function probeTimeoutError(label, timeoutMs) {
     const error = new Error(`${label} timed out after ${timeoutMs}ms`);
     error.code = MEDIA_FRAME_PROBE_TIMEOUT;
@@ -544,10 +568,17 @@ export async function resolveMediaContentTarget(chromeApi, tabId, {
 
         if (results.length > 1) {
             const token = `${tabId}:${attempt}:${Date.now()}:${Math.random()}`;
+            // Address each discovered frame on its own from here on. A single
+            // allFrames call is all-or-nothing: one player or ad frame that
+            // never answers takes the whole probe down with it. v3.1.2 avoided
+            // that by listing frames through webNavigation — but the sweep
+            // above already reports frameId and documentId for every frame it
+            // reached, so the same isolation costs no permission at all.
+            const frameTargets = results.map(entry => frameScriptTarget(tabId, entry));
             try {
                 await executeInAccessibleFrames(
                     chromeApi,
-                    scriptTargets,
+                    frameTargets,
                     installParentFrameVisibilityProbe,
                     [token],
                     probeTimeoutMs
@@ -556,7 +587,7 @@ export async function resolveMediaContentTarget(chromeApi, tabId, {
                 for (let pass = 0; pass < 4; pass++) {
                     await executeInAccessibleFrames(
                         chromeApi,
-                        scriptTargets,
+                        frameTargets,
                         dispatchParentFrameVisibilityProbe,
                         [token],
                         probeTimeoutMs
@@ -565,12 +596,12 @@ export async function resolveMediaContentTarget(chromeApi, tabId, {
                 }
                 const { results: inspected } = await executeInAccessibleFrames(
                     chromeApi,
-                    scriptTargets,
+                    frameTargets,
                     inspectMediaFrame,
                     [token],
                     probeTimeoutMs
                 );
-                if (inspected.length > 0) results = inspected;
+                if (inspected.length > 0) results = mergeFrameResults(results, inspected);
             } catch {
                 // Initial results remain usable, but equally-ranked unknown
                 // frames will be rejected below rather than guessed.

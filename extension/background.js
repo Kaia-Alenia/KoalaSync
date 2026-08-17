@@ -2330,15 +2330,46 @@ function createTargetActivationSupersededError() {
     return error;
 }
 
+const SCRIPT_INJECTION_TIMEOUT_MS = 5000;
+
+/**
+ * chrome.scripting.executeScript can stay pending indefinitely when a target
+ * frame is busy or navigating — an embedded player or ad frame is enough, and
+ * an allFrames call only needs one of them. An activation that never settles
+ * leaves the popup on "activating" forever, so every injection is bounded.
+ */
+function executeScriptWithTimeout(options, timeoutMs = SCRIPT_INJECTION_TIMEOUT_MS) {
+    if (!Number.isFinite(timeoutMs) || timeoutMs <= 0) {
+        return chrome.scripting.executeScript(options);
+    }
+    let timeoutId = null;
+    const label = Array.isArray(options?.files) && options.files.length > 0
+        ? options.files.join(', ')
+        : 'function injection';
+    const timeout = new Promise((_, reject) => {
+        timeoutId = setTimeout(() => {
+            const error = new Error(`Script injection timed out after ${timeoutMs}ms (${label})`);
+            error.code = 'script_injection_timeout';
+            reject(error);
+        }, timeoutMs);
+    });
+    return Promise.race([
+        chrome.scripting.executeScript(options),
+        timeout
+    ]).finally(() => {
+        if (timeoutId !== null) clearTimeout(timeoutId);
+    });
+}
+
 async function injectMediaFrameMonitors(tabId, contentTarget) {
     const targets = listMediaFrameScriptTargets(tabId);
     let injectedCount = 0;
     await Promise.all(targets.map(async target => {
         try {
-            await chrome.scripting.executeScript({
+            await executeScriptWithTimeout({
                 target,
                 files: ['media-frame-monitor.js']
-            });
+            }, 2000);
             injectedCount++;
         } catch {
             // One denied widget frame must not block the selected player.
@@ -2353,10 +2384,10 @@ async function injectMediaFrameMonitors(tabId, contentTarget) {
         if (seen.has(key)) continue;
         seen.add(key);
         try {
-            await chrome.scripting.executeScript({
+            await executeScriptWithTimeout({
                 target,
                 files: ['media-frame-monitor.js']
-            });
+            }, 2000);
             injectedCount++;
         } catch {
             // Main injection below reports a real selected-target failure.
@@ -2425,12 +2456,12 @@ async function injectContentScript(tabId, {
         }
         if (needsPageApiSeek) {
             try {
-                await chrome.scripting.executeScript({
+                await executeScriptWithTimeout({
                     target: scriptTarget,
                     world: 'MAIN',
                     files: ['page-api-seek-overrides.js']
                 });
-                await chrome.scripting.executeScript({
+                await executeScriptWithTimeout({
                     target: scriptTarget,
                     world: 'MAIN',
                     func: installPageApiSeekBridge
@@ -2441,11 +2472,11 @@ async function injectContentScript(tabId, {
             }
         }
 
-        await chrome.scripting.executeScript({
+        await executeScriptWithTimeout({
             target: scriptTarget,
             files: ['page-api-seek-overrides.js']
         });
-        await chrome.scripting.executeScript({
+        await executeScriptWithTimeout({
             target: scriptTarget,
             func: setPageApiSeekEnabled,
             args: [pageApiSeekReady]
@@ -2456,13 +2487,13 @@ async function injectContentScript(tabId, {
         // selected media frame.
         let injectionResults;
         if (contentTarget.frameId === 0) {
-            injectionResults = await chrome.scripting.executeScript({
+            injectionResults = await executeScriptWithTimeout({
                 target: scriptTarget,
                 files: ['chat-format.js', 'chat-overlay.js', 'content.js']
             });
         } else {
             try {
-                await chrome.scripting.executeScript({
+                await executeScriptWithTimeout({
                     target: { tabId, frameIds: [0] },
                     files: ['chat-format.js', 'chat-overlay.js']
                 });
@@ -2477,7 +2508,7 @@ async function injectContentScript(tabId, {
                 null,
                 contentTarget.documentId
             ).catch(() => {});
-            injectionResults = await chrome.scripting.executeScript({
+            injectionResults = await executeScriptWithTimeout({
                 target: scriptTarget,
                 files: ['content.js']
             });
@@ -2684,6 +2715,35 @@ async function clearPendingTarget({ expectedRequestId = null, expectedTabId = nu
     });
 }
 
+const ACTIVATION_DEADLINE_MS = 30000;
+
+/**
+ * Last line of defence for the "activating" state.
+ *
+ * Every known way an activation can stall is bounded by now, but a browser call
+ * that never settles would still pin activeTargetActivation and leave the popup
+ * spinning with nothing in the log. Past the deadline the attempt is declared
+ * dead so the selection can report a real error and be retried deliberately.
+ */
+function expireStuckActivation() {
+    const startedAt = activeTargetActivation?.startedAt;
+    if (!Number.isFinite(startedAt) || Date.now() - startedAt < ACTIVATION_DEADLINE_MS) {
+        return false;
+    }
+    const stalledTabId = normalizeTabId(activeTargetActivation.tabId);
+    addLog(`Target activation for tab ${stalledTabId} exceeded ${ACTIVATION_DEADLINE_MS}ms; abandoning it`, 'warn');
+    activeTargetActivation = null;
+    if (stalledTabId !== null && normalizeTabId(userSelectedTabId) === stalledTabId) {
+        userSelectionErrorTabId = stalledTabId;
+        userSelectionErrorMessage = 'The page never finished responding to script injection';
+        chrome.storage.session.set({
+            selectionErrorTabId: userSelectionErrorTabId,
+            selectionErrorMessage: userSelectionErrorMessage
+        }).catch(() => {});
+    }
+    return true;
+}
+
 async function rememberUserSelection(tabId, tabTitle) {
     const normalizedTabId = normalizeTabId(tabId);
     if (normalizedTabId === null) return false;
@@ -2758,7 +2818,11 @@ async function activateTargetTab(tabId, tabTitle, {
 
     completeForceSyncBeforeTargetChange(selectedTabId);
     const activationGeneration = ++targetActivationGeneration;
-    activeTargetActivation = { generation: activationGeneration, tabId: selectedTabId };
+    activeTargetActivation = {
+        generation: activationGeneration,
+        tabId: selectedTabId,
+        startedAt: Date.now()
+    };
     const previousTabId = normalizeTabId(currentTabId);
     const previousContentTarget = currentContentTarget();
     let injectedContentTarget = { frameId: 0, documentId: null, hasVideo: false };
@@ -3444,6 +3508,7 @@ async function handleAsyncMessage(message, sender, sendResponse) {
         if (message.retryPendingTarget === true) {
             await retryPendingTarget();
         }
+        expireStuckActivation();
         const pendingTarget = await readPendingTarget();
         const settings = await getSettings();
         const isConnected = socket && socket.readyState === WebSocket.OPEN && isNamespaceJoined;
