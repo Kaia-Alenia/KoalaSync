@@ -150,7 +150,9 @@ function forgetFrameIds(tabId) {
 // there later. Reinstalling monitors is cheap, bounded and idempotent, unlike a
 // full reactivation — but it still needs a floor so page churn cannot turn it
 // into a storm.
-const MONITOR_REFRESH_INTERVAL_MS = 1500;
+// Reinstalling is now informative rather than amnesic, but it is still work in
+// every frame; keep it well clear of the discovery poll's own cadence.
+const MONITOR_REFRESH_INTERVAL_MS = 5000;
 const lastMonitorRefreshByTab = new Map();
 const pendingMonitorRefreshByTab = new Map();
 

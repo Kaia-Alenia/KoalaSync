@@ -191,6 +191,11 @@
     });
     hookFrames();
     lastCandidateSignature = candidateSignature();
+    // A monitor installed after the player already exists would otherwise take
+    // that player as its baseline and never mention it. Frames get a monitor
+    // late all the time — a rebuilt document, a reinstall — so announce an
+    // already-present video once instead of staying silent about it.
+    if (document.querySelector('video')) schedule('monitor_installed', { force: true });
     window.addEventListener('pagehide', handlePageHide);
     window.addEventListener('pageshow', handlePageShow);
     window.addEventListener('resize', handleResize, { passive: true });
