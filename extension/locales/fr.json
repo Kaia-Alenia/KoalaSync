@@ -190,7 +190,6 @@
   "NOTIF_FORCE_PREPARE": "lancé une synchronisation forcée",
   "NOTIF_FORCE_EXECUTE": "synchronisé tout le monde",
   "DEBUG_NO_TAB": "Aucun onglet cible sélectionné.",
-  "DEBUG_TARGET_ACTIVATING": "Onglet cible sélectionné ; préparation de l’injection vidéo.",
   "DEBUG_COMM_FAIL": "Impossible de communiquer avec l'onglet vidéo.",
   "EMPTY_PEERS_TITLE": "Aucun membre pour l'instant",
   "EMPTY_PEERS_HINT": "Partagez votre lien d'invitation pour commencer",

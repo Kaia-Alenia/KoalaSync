@@ -476,6 +476,37 @@ test('re-elects the visible cross-origin player after an iframe switch', async (
     expect(await first.locator('video').evaluate(video => video.paused)).toBe(true);
 });
 
+test('immediately adopts and syncs when switching mirrors while first mirror was active and playing', async ({ context, extensionId, baseURL }) => {
+    const url = `${baseURL}/pages/cross-origin-switching.html`;
+    const page = await context.newPage();
+    await page.goto(url);
+    await page.waitForFunction(() => window.__fixtureReady === true);
+    const first = page.frames().find(frame => frame.url().includes('/frames/player-frame.html?slot=first'));
+    const second = page.frames().find(frame => frame.url().includes('/frames/player-frame-2.html?slot=second'));
+    const { tabId } = await selectTargetTab(context, extensionId, url);
+
+    await expect.poll(() => first.locator('video').getAttribute('data-koala-attached')).toBe('true');
+    await sendServerCommand(context, extensionId, tabId, 'play');
+    await expect.poll(() => first.locator('video').evaluate(video => !video.paused)).toBe(true);
+
+    const firstStatus = await getExtensionState(context, extensionId, { type: 'GET_STATUS' });
+    expect(firstStatus.targetHasVideo).toBe(true);
+
+    // Switch mirror and play second video directly in the new frame
+    await page.evaluate(() => window.switchPlayer());
+    await second.locator('video').evaluate(video => video.play());
+
+    // Should immediately adopt the second mirror
+    await expect.poll(async () => {
+        const status = await getExtensionState(context, extensionId, { type: 'GET_STATUS' });
+        return status.targetFrameId;
+    }).not.toBe(firstStatus.targetFrameId);
+
+    // Commands must now control the second frame without delay
+    await sendServerCommand(context, extensionId, tabId, 'pause');
+    await expect.poll(() => second.locator('video').evaluate(video => video.paused)).toBe(true);
+});
+
 test('keeps commands flowing during continuous player-frame geometry changes', async ({ context, extensionId, baseURL }) => {
     const url = `${baseURL}/pages/cross-origin-switching.html`;
     const page = await context.newPage();
@@ -605,6 +636,366 @@ test('rejects a hidden cross-origin player after its iframe URL redirects', asyn
     const { response } = await selectTargetTab(context, extensionId, url);
     expect(response).toMatchObject({ status: 'ok', frameId: 0, hasVideo: false });
     expect(await redirectedFrame.locator('video').getAttribute('data-koala-attached')).toBeNull();
+});
+
+test('selects the visible anime player nested behind a same-origin wrapper', async ({ context, extensionId, baseURL }) => {
+    const url = `${baseURL}/pages/yummy-style-player.html`;
+    const page = await context.newPage();
+    await page.goto(url);
+    await page.waitForFunction(() => window.__fixtureReady === true);
+
+    const { tabId, response } = await selectTargetTab(context, extensionId, url);
+    expect(response).toMatchObject({ status: 'ok', hasVideo: true });
+    expect(response.frameId).not.toBe(0);
+
+    // The playable element is the one inside the visible wrapper. The two
+    // zero-sized mirrors must be ignored, not treated as equal candidates.
+    const playerFrame = suffix => page.frames()
+        .find(frame => frame.url().endsWith(`/frames/${suffix}`));
+    await expect
+        .poll(() => playerFrame('player-frame.html').locator('video').getAttribute('data-koala-attached'))
+        .toBe('true');
+    expect(await playerFrame('player-frame-2.html').locator('video')
+        .getAttribute('data-koala-attached')).toBeNull();
+
+    // And the selection has to settle, not keep re-resolving.
+    await page.waitForTimeout(1500);
+    const status = await getExtensionState(context, extensionId, { type: 'GET_STATUS' });
+    expect(status).toMatchObject({
+        targetTabId: tabId,
+        targetReady: true,
+        targetActivationState: 'ready'
+    });
+});
+
+test('selects an anime tab before playback and promotes the player once it appears', async ({ context, extensionId, baseURL }) => {
+    // The live case: at selection time the page has no video anywhere, because
+    // the host only builds the player when the viewer presses play.
+    const url = `${baseURL}/pages/yummy-deferred-player.html`;
+    const page = await context.newPage();
+    await page.goto(url);
+    await page.waitForFunction(() => window.__fixtureReady === true);
+
+    const { tabId, response } = await selectTargetTab(context, extensionId, url);
+    // Selecting must succeed and settle even with nothing to control yet.
+    expect(response).toMatchObject({ status: 'ok', frameId: 0, hasVideo: false });
+
+    await page.waitForTimeout(1200);
+    const idle = await getExtensionState(context, extensionId, { type: 'GET_STATUS' });
+    expect(idle).toMatchObject({
+        targetTabId: tabId,
+        targetReady: true,
+        targetActivationState: 'ready'
+    });
+
+    const deferred = page.frames().find(frame => frame.url().endsWith('/frames/deferred-player-frame.html'));
+    await deferred.locator('#poster').click();
+
+    // The monitor has to hand the target over to the frame that now owns the
+    // video, without the user touching the popup again.
+    await expect
+        .poll(() => deferred.locator('video').getAttribute('data-koala-attached'), { timeout: 15000 })
+        .toBe('true');
+    await expect
+        .poll(() => getExtensionState(context, extensionId, { type: 'GET_STATUS' })
+            .then(state => ({ ready: state.targetReady, frame: state.targetFrameId })), { timeout: 15000 })
+        .toMatchObject({ ready: true });
+    const promoted = await getExtensionState(context, extensionId, { type: 'GET_STATUS' });
+    expect(promoted.targetFrameId).not.toBe(0);
+    expect(promoted).toMatchObject({ targetTabId: tabId, targetActivationState: 'ready' });
+});
+
+test('polling video state on a page with no video does not restart the target', async ({ context, extensionId, baseURL }) => {
+    // The dev panel polls GET_VIDEO_STATE on a timer. On an anime page the
+    // answer is legitimately "no video" until playback starts, and treating
+    // that as a broken injection reactivated the target on every poll — which
+    // is what pinned the popup on "activating" forever.
+    const url = `${baseURL}/pages/yummy-deferred-player.html`;
+    const page = await context.newPage();
+    await page.goto(url);
+    await page.waitForFunction(() => window.__fixtureReady === true);
+
+    const { tabId } = await selectTargetTab(context, extensionId, url);
+
+    for (let poll = 0; poll < 6; poll++) {
+        const state = await getExtensionState(context, extensionId, { type: 'GET_VIDEO_STATE', tabId });
+        expect(state?.error, 'reading video state must not report a target change').toBeFalsy();
+        expect(state).toMatchObject({ found: false });
+        const status = await getExtensionState(context, extensionId, { type: 'GET_STATUS' });
+        expect(status, `poll ${poll} must leave the target ready`).toMatchObject({
+            targetTabId: tabId,
+            targetReady: true,
+            targetActivationState: 'ready'
+        });
+    }
+
+    // And the player is still picked up once it exists.
+    const deferred = page.frames().find(frame => frame.url().endsWith('/frames/deferred-player-frame.html'));
+    await deferred.locator('#poster').click();
+    await expect
+        .poll(() => deferred.locator('video').getAttribute('data-koala-attached'), { timeout: 15000 })
+        .toBe('true');
+});
+
+test('stays ready on a page whose ad frames keep mutating', async ({ context, extensionId, baseURL }) => {
+    test.setTimeout(90000);
+    // Live ad churn wakes the media-frame monitor several times a second. Each
+    // wake used to schedule a trailing refresh that rebuilt the target
+    // unconditionally, and rebuilding produced more churn — a loop that never
+    // let the activation settle and pinned the popup on "activating".
+    const url = `${baseURL}/pages/yummy-churning-player.html`;
+    const page = await context.newPage();
+    await page.goto(url);
+    await page.waitForFunction(() => window.__fixtureReady === true);
+
+    const { tabId } = await selectTargetTab(context, extensionId, url);
+
+    for (let sample = 0; sample < 8; sample++) {
+        await page.waitForTimeout(700);
+        const status = await getExtensionState(context, extensionId, { type: 'GET_STATUS' });
+        expect(status, `sample ${sample} must not be stuck activating`).toMatchObject({
+            targetTabId: tabId,
+            targetReady: true,
+            targetActivationState: 'ready'
+        });
+    }
+
+    // The player still has to be picked up while the churn continues.
+    const deferred = page.frames().find(frame => frame.url().endsWith('/frames/deferred-player-frame.html'));
+    await deferred.locator('#poster').click();
+    await expect
+        .poll(() => deferred.locator('video').getAttribute('data-koala-attached'), { timeout: 20000 })
+        .toBe('true');
+    await expect
+        .poll(() => getExtensionState(context, extensionId, { type: 'GET_STATUS' })
+            .then(state => state.targetActivationState), { timeout: 20000 })
+        .toBe('ready');
+});
+
+test('controls and adopts a nested player even while the top frame is elected', async ({ context, extensionId, baseURL }) => {
+    // The failure mode reported from the live site: the election names the top
+    // frame, which holds no video, so commands go nowhere and the user's own
+    // play/pause from the real player frame is discarded as a stale sender.
+    const url = `${baseURL}/pages/yummy-deferred-player.html`;
+    const page = await context.newPage();
+    await page.goto(url);
+    await page.waitForFunction(() => window.__fixtureReady === true);
+
+    const { tabId, response } = await selectTargetTab(context, extensionId, url);
+    expect(response).toMatchObject({ status: 'ok', frameId: 0, hasVideo: false });
+
+    // Build the player without giving the monitor a chance to promote first.
+    const deferred = page.frames().find(frame => frame.url().endsWith('/frames/deferred-player-frame.html'));
+    await deferred.locator('#poster').click();
+    await expect.poll(() => deferred.locator('video').count()).toBe(1);
+
+    // A command must reach the frame that owns the video regardless of election.
+    await sendServerCommand(context, extensionId, tabId, 'play', { time: 1 });
+    await expect
+        .poll(() => deferred.locator('video').evaluate(video => video.paused), { timeout: 15000 })
+        .toBe(false);
+
+    // And once that frame reports playback, it becomes the addressed target.
+    await expect
+        .poll(() => getExtensionState(context, extensionId, { type: 'GET_STATUS' })
+            .then(state => state.targetFrameId), { timeout: 15000 })
+        .not.toBe(0);
+    const status = await getExtensionState(context, extensionId, { type: 'GET_STATUS' });
+    expect(status).toMatchObject({ targetTabId: tabId, targetHasVideo: true });
+});
+
+test('recovers when the adopted player frame is torn down and rebuilt', async ({ context, extensionId, baseURL }) => {
+    test.setTimeout(90000);
+    // Kodik rebuilds its player frame on quality and part changes, which kills
+    // the documentId the election is pinned to. The election has to be given up,
+    // otherwise every later message fails with "Receiving end does not exist"
+    // and nothing moves the target back.
+    const url = `${baseURL}/pages/yummy-deferred-player.html`;
+    const page = await context.newPage();
+    await page.goto(url);
+    await page.waitForFunction(() => window.__fixtureReady === true);
+
+    const { tabId } = await selectTargetTab(context, extensionId, url);
+    // After the rebuild both the detached and the live frame carry the same URL,
+    // so take the most recent attached one or the test drives a dead document.
+    const deferredFrame = () => page.frames()
+        .filter(frame => !frame.isDetached()
+            && frame.url().endsWith('/frames/deferred-player-frame.html'))
+        .pop();
+
+    await deferredFrame().locator('#poster').click();
+    await expect
+        .poll(() => getExtensionState(context, extensionId, { type: 'GET_STATUS' })
+            .then(state => state.targetHasVideo), { timeout: 20000 })
+        .toBe(true);
+    const adoptedFrameId = (await getExtensionState(context, extensionId, { type: 'GET_STATUS' })).targetFrameId;
+    expect(adoptedFrameId).not.toBe(0);
+
+    // Destroy the elected document the way the real player does.
+    const wrapper = page.frames().find(frame => frame.url().includes('xfp-wrapper.html?player=deferred'));
+    await wrapper.evaluate(() => {
+        const inner = document.getElementById('inner');
+        inner.src = inner.src;
+    });
+    await expect.poll(() => deferredFrame()?.locator('#poster').count().catch(() => 0)).toBe(1);
+
+    // The dead election must be released rather than kept forever.
+    await expect
+        .poll(() => getExtensionState(context, extensionId, { type: 'GET_VIDEO_STATE', tabId })
+            .then(state => state?.error || null), { timeout: 20000 })
+        .toBeNull();
+    const released = await getExtensionState(context, extensionId, { type: 'GET_STATUS' });
+    expect(released).toMatchObject({ targetTabId: tabId, targetHasVideo: false });
+
+    // And the rebuilt player is picked up again without touching the popup. The
+    // rebuilt document wires its poster from an inline script, so a click can
+    // land before the handler exists — retry until the player is really built.
+    await expect.poll(async () => {
+        const frame = deferredFrame();
+        if (!frame) return 0;
+        if (await frame.locator('video').count() > 0) return 1;
+        await frame.locator('#poster').click({ timeout: 2000 }).catch(() => {});
+        return 0;
+    }, { timeout: 20000 }).toBe(1);
+    await expect
+        .poll(() => deferredFrame().locator('video').getAttribute('data-koala-attached'), { timeout: 20000 })
+        .toBe('true');
+    await expect
+        .poll(() => getExtensionState(context, extensionId, { type: 'GET_STATUS' })
+            .then(state => state.targetHasVideo), { timeout: 20000 })
+        .toBe(true);
+});
+
+test('keeps the tab selected when its activation fails', async ({ context, extensionId }) => {
+    // A page the extension is not allowed to script stands in for any activation
+    // failure the user can act on. Losing the selection here is what made the
+    // popup come back empty after it was closed and reopened.
+    const page = await context.newPage();
+    await page.goto('chrome://version');
+
+    const { tabId, response } = await selectTargetTab(context, extensionId, 'chrome://version/*');
+    expect(response?.status).not.toBe('ok');
+
+    const status = await getExtensionState(context, extensionId, { type: 'GET_STATUS' });
+    expect(status).toMatchObject({
+        targetTabId: tabId,
+        targetReady: false,
+        targetActivationState: 'error'
+    });
+    expect(status.targetActivationError).toBeTruthy();
+
+    // Reopening the popup must not quietly retry and must not lose the choice.
+    const second = await getExtensionState(context, extensionId, { type: 'GET_STATUS' });
+    expect(second).toMatchObject({ targetTabId: tabId, targetActivationState: 'error' });
+});
+
+test('drops the selection only when the user clears it', async ({ context, extensionId, baseURL }) => {
+    const url = `${baseURL}/pages/simple-player.html`;
+    const page = await context.newPage();
+    await page.goto(url);
+    await page.waitForFunction(() => window.__fixtureReady === true);
+
+    const { tabId } = await selectTargetTab(context, extensionId, url);
+    await expect
+        .poll(() => getExtensionState(context, extensionId, { type: 'GET_STATUS' })
+            .then(state => state.targetTabId))
+        .toBe(tabId);
+
+    const cleared = await getExtensionState(context, extensionId, {
+        type: 'SET_TARGET_TAB',
+        tabId: null
+    });
+    expect(cleared).toMatchObject({ status: 'ok', tabId: null });
+
+    const status = await getExtensionState(context, extensionId, { type: 'GET_STATUS' });
+    expect(status).toMatchObject({
+        targetTabId: null,
+        targetReady: false,
+        targetActivationState: 'none'
+    });
+});
+
+/**
+ * Reads one global from the top document and from the player frame separately,
+ * so a test can prove which frame a script was installed in.
+ */
+async function readPerFrameGlobal(context, extensionId, pageUrl, globalName) {
+    return withExtensionPage(context, extensionId, page => page.evaluate(async ({ pageUrl, globalName }) => {
+        const [tab] = await chrome.tabs.query({ url: pageUrl });
+        if (!tab) throw new Error(`no tab matched ${pageUrl}`);
+        const results = await chrome.scripting.executeScript({
+            target: { tabId: tab.id, allFrames: true },
+            func: name => ({
+                href: location.href,
+                isTop: window.top === window,
+                present: typeof window[name] !== 'undefined' && window[name] !== null
+            }),
+            args: [globalName]
+        });
+        const entries = results.map(entry => entry.result).filter(Boolean);
+        return {
+            top: entries.find(entry => entry.isTop)?.present ?? null,
+            player: entries.find(entry => !entry.isTop && entry.href.includes('player-frame'))?.present ?? null
+        };
+    }, { pageUrl, globalName }));
+}
+
+test('controls a Drive-style cross-origin player without moving the chat into it', async ({ context, extensionId, baseURL }) => {
+    const url = `${baseURL}/pages/drive-style-player.html`;
+    const page = await context.newPage();
+    await page.goto(url);
+    await page.waitForFunction(() => window.__fixtureReady === true);
+
+    const { response } = await selectTargetTab(context, extensionId, url);
+    // The top document hosts no video, so the target must be the player frame.
+    expect(response).toMatchObject({ status: 'ok', hasVideo: true });
+    expect(response.frameId).not.toBe(0);
+
+    const playerFrame = page.frames().find(frame => frame.url().includes('player-frame'));
+    await expect
+        .poll(() => playerFrame.locator('video').getAttribute('data-koala-attached'))
+        .toBe('true');
+
+    // The controller belongs in the player frame...
+    await expect
+        .poll(() => readPerFrameGlobal(context, extensionId, url, 'koalaSyncInjected'))
+        .toMatchObject({ player: true });
+    // ...and the chat overlay belongs in the top document, never inside the
+    // video. Installing it in the player frame is what rendered the chat on top
+    // of the picture and made closing it affect only that frame.
+    await expect
+        .poll(() => readPerFrameGlobal(context, extensionId, url, 'koalaSyncChatOverlay'))
+        .toMatchObject({ top: true, player: false });
+});
+
+test('keeps controlling a Drive-style player across an ordinary play and pause', async ({ context, extensionId, baseURL }) => {
+    const url = `${baseURL}/pages/drive-style-player.html`;
+    const page = await context.newPage();
+    await page.goto(url);
+    await page.waitForFunction(() => window.__fixtureReady === true);
+
+    const { tabId, response } = await selectTargetTab(context, extensionId, url);
+    expect(response).toMatchObject({ status: 'ok' });
+    const selectedFrameId = response.frameId;
+
+    const playerFrame = page.frames().find(frame => frame.url().includes('player-frame'));
+    await playerFrame.locator('video').evaluate(video => video.play());
+    await playerFrame.locator('video').evaluate(video => video.pause());
+    await page.waitForTimeout(750);
+
+    // Playback state changes are not frame layout changes. If they were treated
+    // as such, the target would be torn down and re-injected mid-playback.
+    const status = await getExtensionState(context, extensionId, { type: 'GET_STATUS' });
+    expect(status).toMatchObject({
+        targetTabId: tabId,
+        targetReady: true,
+        targetActivationState: 'ready',
+        targetFrameId: selectedFrameId
+    });
+
+    const command = await sendServerCommand(context, extensionId, tabId, 'play', { time: 1 });
+    expect(command).toMatchObject({ status: 'ok_solo' });
+    await expect.poll(() => playerFrame.locator('video').evaluate(video => video.paused)).toBe(false);
 });
 
 function FRAMED_VIDEO_PAUSED() {

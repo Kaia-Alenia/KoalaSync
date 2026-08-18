@@ -71,20 +71,157 @@ let peerId = null; // initialized via getPeerId()
 let currentRoom = null;
 let currentTabId = null;
 let currentTabTitle = null; // New: for Smart Matching
+// The tab the user picked, kept separately from the tab we managed to inject
+// into. A failed or refused activation is a state of the selection, not a
+// reason to silently discard it: dropping it here is what made the popup show
+// no target again as soon as it was reopened.
+let userSelectedTabId = null;
+let userSelectedTabTitle = null;
+let userSelectionErrorTabId = null;
+let userSelectionErrorMessage = null;
 let currentTargetFrameId = 0;
 let currentTargetDocumentId = null;
 let currentTargetHasVideo = false;
-// The user's selection is kept separately from the currently injected media
-// target.  Dynamic player pages can be between frame documents while the
-// popup is closed; losing the selection in that window makes reopening the
-// popup look as if the user never selected a tab.
-let requestedTargetTabId = null;
-let requestedTargetTitle = null;
-let requestedTargetRetryBlockedTabId = null;
-let requestedTargetRetryBlockedMessage = null;
-let pendingRequestedActivationCount = 0;
 let targetActivationGeneration = 0;
 let activeTargetActivation = null;
+// Frame ids seen in this tab, learned from script results and from the frames
+// that message us. An allFrames sweep is all-or-nothing — one ad frame tearing
+// down while it runs makes Chromium reject the whole call, and the resolver
+// then sees nothing but the top frame. v3.1.2 avoided that by listing frames
+// through webNavigation; this registry rebuilds the same knowledge from
+// sender.frameId, which every content script hands us for free.
+const knownFrameIdsByTab = new Map();
+const MAX_KNOWN_FRAMES_PER_TAB = 24;
+
+function rememberFrameId(tabId, frameId) {
+    const normalizedTabId = normalizeTabId(tabId);
+    if (normalizedTabId === null || !Number.isInteger(frameId) || frameId < 0) return;
+    let frames = knownFrameIdsByTab.get(normalizedTabId);
+    if (!frames) {
+        frames = new Set();
+        knownFrameIdsByTab.set(normalizedTabId, frames);
+    }
+    frames.add(frameId);
+    // Every id in here is probed individually when a sweep is rejected, so the
+    // set is also a cost ceiling. Keep it small: a page with more media-bearing
+    // frames than this is not a player page, and the sweep still covers the
+    // normal case. The top frame is never evicted.
+    while (frames.size > MAX_KNOWN_FRAMES_PER_TAB) {
+        const evictable = Array.from(frames).find(candidate => candidate !== 0);
+        if (evictable === undefined) break;
+        frames.delete(evictable);
+    }
+}
+
+/**
+ * Replaces the registry when a probe actually saw the tab's frame layout.
+ *
+ * Clearing on navigation looked right and was wrong: tabs.onUpdated reports
+ * status 'loading' for same-document History API navigations too, which is
+ * exactly what these sites do when you switch mirror or episode part. The wipe
+ * therefore landed the moment the player frame was being built, leaving the
+ * recovery probe with nothing. A successful multi-frame probe is authoritative
+ * and current, so it supersedes whatever was there instead.
+ */
+function refreshFrameIds(tabId, frameIds) {
+    const normalizedTabId = normalizeTabId(tabId);
+    if (normalizedTabId === null) return;
+    const ids = (Array.isArray(frameIds) ? frameIds : [])
+        .filter(frameId => Number.isInteger(frameId) && frameId >= 0);
+    if (ids.length > 1) {
+        knownFrameIdsByTab.set(normalizedTabId, new Set(ids.slice(0, MAX_KNOWN_FRAMES_PER_TAB)));
+        return;
+    }
+    // A probe that only reached the top frame proves nothing about the rest.
+    for (const frameId of ids) rememberFrameId(normalizedTabId, frameId);
+}
+
+function listKnownFrameIds(tabId) {
+    const frames = knownFrameIdsByTab.get(normalizeTabId(tabId));
+    return frames ? Array.from(frames) : [];
+}
+
+function forgetFrameIds(tabId) {
+    knownFrameIdsByTab.delete(normalizeTabId(tabId));
+}
+
+// A frame that was rebuilt is a new document: it carries neither the content
+// script nor a monitor, so nothing in it can report the player that appears
+// there later. Reinstalling monitors is cheap, bounded and idempotent, unlike a
+// full reactivation — but it still needs a floor so page churn cannot turn it
+// into a storm.
+// Reinstalling is now informative rather than amnesic, but it is still work in
+// every frame; keep it well clear of the discovery poll's own cadence.
+const MONITOR_REFRESH_INTERVAL_MS = 1200;
+const lastMonitorRefreshByTab = new Map();
+const pendingMonitorRefreshByTab = new Map();
+
+async function refreshMediaFrameMonitors(tabId) {
+    const normalizedTabId = normalizeTabId(tabId);
+    if (normalizedTabId === null) return false;
+    const last = lastMonitorRefreshByTab.get(normalizedTabId) || 0;
+    const waited = Date.now() - last;
+    if (waited < MONITOR_REFRESH_INTERVAL_MS) {
+        // Run once more after the cooldown instead of dropping this call. A
+        // rebuilt frame announces itself while its new document is still
+        // loading, so the reinstall that matters is usually the one a
+        // leading-edge-only debounce throws away.
+        if (!pendingMonitorRefreshByTab.has(normalizedTabId)) {
+            const timer = setTimeout(() => {
+                pendingMonitorRefreshByTab.delete(normalizedTabId);
+                refreshMediaFrameMonitors(normalizedTabId).catch(() => {});
+            }, MONITOR_REFRESH_INTERVAL_MS - waited);
+            pendingMonitorRefreshByTab.set(normalizedTabId, timer);
+        }
+        return false;
+    }
+    lastMonitorRefreshByTab.set(normalizedTabId, Date.now());
+    await injectMediaFrameMonitors(normalizedTabId, currentContentTarget()).catch(() => {});
+    return true;
+}
+
+/**
+ * Bounded poll for a player that no monitor can announce.
+ *
+ * Discovery is event-driven, and events come from monitors — so a frame that was
+ * rebuilt without one is invisible, and the video created there is never
+ * reported. Nothing then triggers the upkeep that would install the monitor:
+ * that is a deadlock, and it is what a real player does on a quality or part
+ * change. This runs only while a tab is selected and no video has been found,
+ * stops the moment one is, and costs a resolve that is fast precisely because
+ * there is no video to rank.
+ */
+const MEDIA_DISCOVERY_POLL_MS = 2000;
+const MEDIA_DISCOVERY_POLL_LIMIT = 20;
+let mediaDiscoveryPollTimer = null;
+let mediaDiscoveryPollTicks = 0;
+
+function stopMediaDiscoveryPoll() {
+    if (mediaDiscoveryPollTimer !== null) {
+        clearTimeout(mediaDiscoveryPollTimer);
+        mediaDiscoveryPollTimer = null;
+    }
+    mediaDiscoveryPollTicks = 0;
+}
+
+function startMediaDiscoveryPoll(tabId) {
+    const normalizedTabId = normalizeTabId(tabId);
+    if (normalizedTabId === null) return;
+    stopMediaDiscoveryPoll();
+    const tick = async () => {
+        mediaDiscoveryPollTimer = null;
+        if (normalizeTabId(currentTabId) !== normalizedTabId) return;
+        if (currentTargetHasVideo === true) return;
+        if (++mediaDiscoveryPollTicks > MEDIA_DISCOVERY_POLL_LIMIT) return;
+        await refreshCurrentMediaTarget(normalizedTabId, { onlyIfTargetMoved: true })
+            .catch(() => {});
+        if (normalizeTabId(currentTabId) !== normalizedTabId) return;
+        if (currentTargetHasVideo === true) return;
+        mediaDiscoveryPollTimer = setTimeout(tick, MEDIA_DISCOVERY_POLL_MS);
+    };
+    mediaDiscoveryPollTimer = setTimeout(tick, MEDIA_DISCOVERY_POLL_MS);
+}
+
 let mediaTargetRefreshTask = null;
 let mediaTargetRefreshTabId = null;
 let mediaTargetRefreshDirty = false;
@@ -225,14 +362,22 @@ function ensureState() {
                 'eventQueue', 'isForceSyncInitiator', 'forceSyncAcks', 
                 'forceSyncDeadline', 'reconnectFailed', 'reconnectStartTime', 'reconnectAttempts', 'currentTabId', 'currentTabTitle',
                 'currentTargetFrameId', 'currentTargetDocumentId', 'currentTargetHasVideo',
-                'requestedTargetTabId', 'requestedTargetTitle',
-                'requestedTargetRetryBlockedTabId', 'requestedTargetRetryBlockedMessage',
+                'selectedTabId', 'selectedTabTitle', 'selectionErrorTabId', 'selectionErrorMessage',
                 'episodeLobby', 'localSeq', 'lastSeqBySender', 'expectedAcksCount', 'roomIdleSince', 'lastContentHeartbeatAt',
                 'hcmDesynced', 'chatActivityTimeline'
             ], (data) => {
                 clearTimeout(storageTimeout);
                 if (data.expectedAcksCount !== undefined) expectedAcksCount = data.expectedAcksCount;
                 if (data.currentTabId !== undefined) currentTabId = normalizeTabId(data.currentTabId);
+                userSelectedTabId = normalizeTabId(data.selectedTabId);
+                userSelectedTabTitle = userSelectedTabId !== null && typeof data.selectedTabTitle === 'string'
+                    ? data.selectedTabTitle
+                    : null;
+                userSelectionErrorTabId = normalizeTabId(data.selectionErrorTabId);
+                userSelectionErrorMessage = userSelectionErrorTabId !== null
+                    && typeof data.selectionErrorMessage === 'string'
+                    ? data.selectionErrorMessage
+                    : null;
                 currentTargetFrameId = currentTabId !== null
                     && Number.isInteger(data.currentTargetFrameId)
                     && data.currentTargetFrameId >= 0
@@ -244,16 +389,6 @@ function ensureState() {
                     ? data.currentTargetDocumentId
                     : null;
                 currentTargetHasVideo = currentTabId !== null && data.currentTargetHasVideo === true;
-                requestedTargetTabId = normalizeTabId(data.requestedTargetTabId);
-                requestedTargetTitle = requestedTargetTabId !== null
-                    && typeof data.requestedTargetTitle === 'string'
-                    ? data.requestedTargetTitle
-                    : null;
-                requestedTargetRetryBlockedTabId = normalizeTabId(data.requestedTargetRetryBlockedTabId);
-                requestedTargetRetryBlockedMessage = requestedTargetRetryBlockedTabId !== null
-                    && typeof data.requestedTargetRetryBlockedMessage === 'string'
-                    ? data.requestedTargetRetryBlockedMessage
-                    : null;
                 if (data.currentTabTitle !== undefined) {
                     currentTabTitle = currentTabId !== null && typeof data.currentTabTitle === 'string'
                         ? data.currentTabTitle
@@ -673,6 +808,39 @@ function sendMessageToCurrentContent(message, callback = null) {
     );
 }
 
+/**
+ * Chat is page UI, not player UI. The controlled video can live in a nested
+ * cross-origin frame (Drive, YummyAnime), but the overlay always belongs to the
+ * tab's top document: inside the player frame it renders on top of the video,
+ * and closing or minimizing it only affects that frame.
+ */
+function sendMessageToChatOverlay(message) {
+    const tabId = normalizeTabId(currentTabId);
+    if (tabId === null) return Promise.reject(new Error('No target tab selected'));
+    return sendMessageToFrame(tabId, 0, message);
+}
+
+/**
+ * Delivers a command to every frame in the tab instead of the elected one.
+ *
+ * Frame election is an intervention: executeScript has to enter each frame, it
+ * is all-or-nothing, and a player that renavigates or rebuilds its video — Kodik
+ * does both constantly — reliably lands in the window where that fails. The
+ * election then names the top frame, which holds no video, and playback commands
+ * go nowhere. webNavigation.getAllFrames() had no such window because it only
+ * observed; without it, the robust move is to stop needing the answer.
+ *
+ * Every content-script command handler already begins with findVideo() and
+ * returns when there is none, so exactly the frame that owns the video acts.
+ */
+function broadcastCommandToTab(tabId, message) {
+    const normalizedTabId = normalizeTabId(tabId);
+    if (normalizedTabId === null) {
+        return Promise.reject(new Error('Invalid tab ID'));
+    }
+    return chrome.tabs.sendMessage(normalizedTabId, message);
+}
+
 function sendMessageToContentTab(tabId, message, callback = null) {
     if (normalizeTabId(tabId) === normalizeTabId(currentTabId)) {
         return sendMessageToCurrentContent(message, callback);
@@ -681,14 +849,6 @@ function sendMessageToContentTab(tabId, message, callback = null) {
         return chrome.tabs.sendMessage(tabId, message, callback);
     }
     return chrome.tabs.sendMessage(tabId, message);
-}
-
-function isMissingContentReceiverError(error) {
-    const message = String(error?.message || error || '');
-    return message.includes('Receiving end does not exist')
-        || message.includes('Could not establish connection')
-        || message.includes('No document with id')
-        || message.includes('No document with ID');
 }
 
 function isCurrentContentSender(sender) {
@@ -700,9 +860,44 @@ function isCurrentContentSender(sender) {
         && (!activeTargetActivation?.documentId
             || sender.documentId === activeTargetActivation.documentId);
     if (Number.isInteger(activeTargetActivation?.frameId)) return matchesActivation;
-    return senderTabId === normalizeTabId(currentTabId)
-        && senderFrameId === normalizeFrameId(currentTargetFrameId)
+    if (senderTabId !== normalizeTabId(currentTabId)) return false;
+    const matchesElectedFrame = senderFrameId === normalizeFrameId(currentTargetFrameId)
         && (!currentTargetDocumentId || sender.documentId === currentTargetDocumentId);
+    if (matchesElectedFrame) return true;
+    // Any frame in the selected target tab reporting playback activity
+    // is a valid content sender (e.g. user interacted with or switched to another mirror).
+    return true;
+}
+
+/**
+ * Adopts the frame an accepted media event came from.
+ *
+ * This is the self-healing counterpart to the check above: once the real player
+ * frame identifies itself, later commands can be addressed to it directly
+ * instead of broadcast.
+ */
+function adoptReportingFrame(sender) {
+    if (!sender?.tab) return false;
+    const senderTabId = normalizeTabId(sender.tab.id);
+    if (senderTabId === null || senderTabId !== normalizeTabId(currentTabId)) return false;
+    const senderFrameId = normalizeFrameId(sender.frameId);
+    if (senderFrameId === normalizeFrameId(currentTargetFrameId)
+        && (!currentTargetDocumentId || sender.documentId === currentTargetDocumentId)) {
+        return false;
+    }
+
+    currentTargetFrameId = senderFrameId;
+    currentTargetDocumentId = typeof sender.documentId === 'string' ? sender.documentId : null;
+    currentTargetHasVideo = true;
+    stopMediaDiscoveryPoll();
+    rememberFrameId(senderTabId, senderFrameId);
+    addLog(`Adopted frame ${senderFrameId} as the media target; it reported playback`, 'info');
+    chrome.storage.session.set({
+        currentTargetFrameId,
+        currentTargetDocumentId,
+        currentTargetHasVideo
+    }).catch(() => {});
+    return true;
 }
 
 function isExtensionPageSender(sender) {
@@ -716,9 +911,81 @@ function sameContentTarget(left, right) {
 }
 
 function clearCurrentContentTarget() {
+    stopMediaDiscoveryPoll();
     currentTargetFrameId = 0;
     currentTargetDocumentId = null;
     currentTargetHasVideo = false;
+}
+
+/** The elected frame is gone, as opposed to merely holding no video. */
+function isContentUnreachableError(error) {
+    const message = String(typeof error === 'string' ? error : (error?.message || ''));
+    return message.includes('Receiving end does not exist')
+        || message.includes('Extension context invalidated')
+        || message.includes('No document with id')
+        || message.includes('No document with ID');
+}
+
+/**
+ * Gives up the frame election — never the tab selection — when the frame it
+ * names no longer exists.
+ *
+ * A player that rebuilds its frame (Kodik does this on quality and part
+ * changes) invalidates the documentId the election is pinned to. Without this,
+ * the pointer stayed dead forever: the guarded refresh reports "unchanged"
+ * because no video is reachable, and adoption had already set hasVideo, so
+ * nothing would move the target back. Clearing hasVideo re-opens both the
+ * ordinary promotion path and adoption.
+ */
+function releaseUnreachableFrameTarget(tabId) {
+    const normalizedTabId = normalizeTabId(tabId);
+    if (normalizedTabId === null || normalizedTabId !== normalizeTabId(currentTabId)) return false;
+    if (normalizeFrameId(currentTargetFrameId) === 0
+        && currentTargetDocumentId === null
+        && currentTargetHasVideo !== true) {
+        return false;
+    }
+    addLog(`Media frame ${currentTargetFrameId} is unreachable; releasing the frame election`, 'warn');
+    clearCurrentContentTarget();
+    startMediaDiscoveryPoll(normalizedTabId);
+    chrome.storage.session.set({
+        currentTargetFrameId: 0,
+        currentTargetDocumentId: null,
+        currentTargetHasVideo: false
+    }).catch(() => {});
+    return true;
+}
+
+function clearTargetTabForIdle(expectedTabId = null, expectedGeneration = null) {
+    if (expectedTabId !== null && normalizeTabId(currentTabId) !== normalizeTabId(expectedTabId)) {
+        return false;
+    }
+    if (expectedGeneration !== null && targetActivationGeneration !== expectedGeneration) {
+        return false;
+    }
+
+    completeForceSyncBeforeTargetChange(null);
+    invalidateTargetActivations();
+    clearPendingTarget().catch(() => {});
+    if (currentTabId) deactivateTargetTab(currentTabId).catch(() => {});
+    currentTabId = null;
+    currentTabTitle = null;
+    clearCurrentContentTarget();
+    lastContentHeartbeatAt = null;
+    if (currentRoom) {
+        roomIdleSince = Date.now();
+    }
+    chrome.storage.session.set({
+        currentTabId,
+        currentTabTitle,
+        currentTargetFrameId,
+        currentTargetDocumentId,
+        currentTargetHasVideo,
+        roomIdleSince,
+        lastContentHeartbeatAt
+    }).catch(() => {});
+    updateBadgeStatus();
+    return true;
 }
 
 async function leaveRoomAfterIdleGrace(reason) {
@@ -742,7 +1009,6 @@ async function leaveRoomAfterIdleGrace(reason) {
     broadcastControlMode();
     if (currentTabId) await deactivateTargetTab(currentTabId);
     invalidateTargetActivations();
-    await clearRequestedTarget();
     currentTabId = null;
     currentTabTitle = null;
     clearCurrentContentTarget();
@@ -1125,48 +1391,6 @@ function chatActivityDisplayName(senderId) {
     return typeof peer === 'object' ? peer.username || senderId : senderId;
 }
 
-async function deliverChatActivity(entry) {
-    const tabId = normalizeTabId(currentTabId);
-    if (tabId === null) return;
-
-    const generation = targetActivationGeneration;
-    try {
-        await sendMessageToCurrentContent({
-            type: 'CHAT_EVENT',
-            event: entry
-        });
-        return;
-    } catch (error) {
-        if (!isMissingContentReceiverError(error)) {
-            addLog(`Chat activity delivery failed: ${error.message}`, 'warn');
-            return;
-        }
-        if (!isCurrentTargetIdentity(tabId, generation)) return;
-    }
-
-    for (let attempt = 0; attempt < 3; attempt++) {
-        try {
-            const activation = await refreshCurrentMediaTarget(tabId, { queueIfRunning: true });
-            if (activation?.status === 'activation_in_progress') {
-                await new Promise(resolve => setTimeout(resolve, 150));
-                continue;
-            }
-            if (activation?.status !== 'ok') return;
-            if (!isCurrentTargetIdentity(tabId, activation.generation)) return;
-            await sendMessageToCurrentContent({
-                type: 'CHAT_EVENT',
-                event: entry
-            });
-            return;
-        } catch (error) {
-            if (!isMissingContentReceiverError(error) || isCurrentTargetIdentity(tabId, generation)) {
-                addLog(`Chat activity delivery failed after target recovery: ${error.message}`, 'warn');
-            }
-            return;
-        }
-    }
-}
-
 function sendChatActivity(action, senderId, timestamp = Date.now()) {
     if (!currentRoom || !serverSupportsChat()) return;
     if (![EVENTS.PLAY, EVENTS.PAUSE, EVENTS.SEEK, EVENTS.FORCE_SYNC_PREPARE, EVENTS.FORCE_SYNC_EXECUTE, 'joined', 'left'].includes(action)) return;
@@ -1179,9 +1403,10 @@ function sendChatActivity(action, senderId, timestamp = Date.now()) {
     if (!entry) return;
     if (storageInitialized) chrome.storage.session.set({ chatActivityTimeline: chatActivityStore.snapshot() }).catch(() => {});
     if (!currentTabId) return;
-    deliverChatActivity(entry).catch(error => {
-        addLog(`Chat activity delivery failed: ${error.message}`, 'warn');
-    });
+    sendMessageToChatOverlay({
+        type: 'CHAT_EVENT',
+        event: entry
+    }).catch(error => addLog(`Chat activity delivery failed: ${error.message}`, 'warn'));
 }
 
 function scheduleReconnect() {
@@ -1389,7 +1614,7 @@ async function handleServerEvent(event, data) {
             hostPeerId = data.hostPeerId || null;
             controllers = Array.isArray(data.controllers) ? data.controllers : [];
             serverCapabilities = Array.isArray(data.capabilities) ? data.capabilities : [];
-            if (currentTabId) sendMessageToCurrentContent({ type: 'CHAT_CONTEXT_UPDATE' }).catch(() => {});
+            if (currentTabId) sendMessageToChatOverlay({ type: 'CHAT_CONTEXT_UPDATE' }).catch(() => {});
             hcmEnforceDesyncInvariant();
             broadcastControlMode();
             markRoomPotentiallyIdle();
@@ -1488,7 +1713,7 @@ async function handleServerEvent(event, data) {
                         (typeof candidate === 'object' ? candidate.peerId : candidate) === received.senderId
                     );
                     if (Number.isInteger(tabId)) {
-                        sendMessageToCurrentContent({
+                        sendMessageToChatOverlay({
                             type: 'CHAT_MESSAGE',
                             message: {
                                 id: received.id,
@@ -2067,33 +2292,38 @@ async function getReadyTabVideoState(tabId, expectedGeneration = targetActivatio
     if (!isCurrentTargetIdentity(tabId, expectedGeneration)) {
         return { error: 'Target tab changed before video state could be read' };
     }
-    let state = null;
-    let targetGeneration = expectedGeneration;
-    for (let attempt = 0; attempt < 3; attempt++) {
-        state = await getTabVideoState(tabId);
-        if (state && !state.error && state.found !== false) break;
-        if (!isCurrentTargetIdentity(tabId, targetGeneration)) {
-            return { error: 'Target tab changed before video state could be read' };
-        }
-
-        const activation = await refreshCurrentMediaTarget(tabId, { queueIfRunning: true });
-        if (activation?.status === 'activation_in_progress') {
-            await new Promise(resolve => setTimeout(resolve, 150));
-            if (normalizeTabId(currentTabId) !== tabId) {
-                return { error: 'Target tab changed before video state could be read' };
-            }
-            targetGeneration = targetActivationGeneration;
-            continue;
-        }
-        if (activation?.status !== 'ok') {
+    let state = await getTabVideoState(tabId);
+    // "No video" is a legitimate answer, not a broken injection: an anime or
+    // Drive page has no video element until the viewer starts playback. Forcing
+    // a reactivation for it made every poll of this function tear the content
+    // script down and reinject it, which kept the target permanently activating.
+    // Only an unreachable content script justifies recovery.
+    if (!state || state.error) {
+        // Distinguish "this frame is gone" from "this page has no video yet".
+        // Only the former invalidates the election — and it also means there is
+        // no content script left to talk to: switching the target away from a
+        // frame tears its script down deliberately, so releasing the election
+        // alone would point at an empty frame. That needs a real rebuild, which
+        // cannot loop because only an unreachable script triggers it.
+        if (isContentUnreachableError(state?.error)) releaseUnreachableFrameTarget(tabId);
+        const activation = await refreshCurrentMediaTarget(tabId, { onlyIfTargetMoved: true });
+        if (activation?.status !== 'ok' && activation?.status !== 'unchanged') {
             return { error: 'Target tab changed before content script recovery completed' };
         }
-        targetGeneration = activation.generation;
-        if (!isCurrentTargetIdentity(tabId, targetGeneration)) {
+        // An unchanged target reports no generation of its own.
+        const generation = Number.isInteger(activation.generation)
+            ? activation.generation
+            : targetActivationGeneration;
+        await new Promise(resolve => setTimeout(resolve, 250));
+        if (!isCurrentTargetIdentity(tabId, generation)) {
             return { error: 'Target tab changed before video state could be read' };
         }
-        await new Promise(resolve => setTimeout(resolve, 150));
+        state = await getTabVideoState(tabId);
+        if (!isCurrentTargetIdentity(tabId, generation)) {
+            return { error: 'Target tab changed while video state was being read' };
+        }
     }
+    if (currentTargetHasVideo !== true) refreshMediaFrameMonitors(tabId).catch(() => {});
     return decorateVideoState(tabId, state);
 }
 
@@ -2239,44 +2469,45 @@ function setPageApiSeekEnabled(enabled) {
     window.KOALA_PAGE_API_SEEK_ENABLED = enabled === true;
 }
 
-function uniqueScriptTargets(targets) {
-    const seen = new Set();
-    return targets.filter(target => {
-        const key = JSON.stringify(target);
-        if (seen.has(key)) return false;
-        seen.add(key);
-        return true;
-    });
-}
-
-function deactivateMediaFrameMonitor() {
-    try { window.__koalaMediaFrameMonitorCleanup?.(); } catch { /* detached frame */ }
-}
-
-async function deactivateMediaFrameMonitors(tabId, contentTarget = null) {
-    const targets = uniqueScriptTargets([
-        contentTarget?.scriptTarget,
-        ...(contentTarget?.monitorTargets || []),
-        { tabId },
-        ...listMediaFrameScriptTargets(tabId)
-    ].filter(Boolean));
-    for (const target of targets) {
+async function deactivateMediaFrameMonitors(tabId) {
+    // Same reasoning as the injection: a rejected sweep must not leave a monitor
+    // running in a deep frame, or the old target keeps reporting after a switch.
+    const targets = [
+        ...listMediaFrameScriptTargets(tabId),
+        ...listKnownFrameIds(tabId)
+            .filter(frameId => frameId !== 0)
+            .map(frameId => ({ tabId, frameIds: [frameId] }))
+    ];
+    await Promise.all(targets.map(async target => {
+        const documentId = target.documentIds?.[0];
+        const frameId = target.frameIds?.[0];
         try {
-            await chrome.scripting.executeScript({
-                target,
-                func: deactivateMediaFrameMonitor
-            });
+            if (typeof documentId === 'string') {
+                await chrome.tabs.sendMessage(
+                    tabId,
+                    { type: 'MEDIA_MONITOR_DEACTIVATE' },
+                    { documentId }
+                );
+            } else if (Number.isInteger(frameId)) {
+                await chrome.tabs.sendMessage(
+                    tabId,
+                    { type: 'MEDIA_MONITOR_DEACTIVATE' },
+                    { frameId }
+                );
+            } else {
+                await chrome.tabs.sendMessage(tabId, { type: 'MEDIA_MONITOR_DEACTIVATE' });
+            }
         } catch {
             // Denied or already-navigated frames have no installed monitor.
         }
-    }
+    }));
 }
 
 async function deactivateTargetTab(tabId, contentTarget = null, { deactivateMonitor = true } = {}) {
     const normalizedTabId = normalizeTabId(tabId);
     if (normalizedTabId === null) return;
     if (deactivateMonitor) {
-        await deactivateMediaFrameMonitors(normalizedTabId, contentTarget);
+        await deactivateMediaFrameMonitors(normalizedTabId);
     }
     const target = contentTarget
         || (normalizedTabId === normalizeTabId(currentTabId) ? currentContentTarget() : null)
@@ -2287,7 +2518,7 @@ async function deactivateTargetTab(tabId, contentTarget = null, { deactivateMoni
             }
             : null)
         || { frameId: 0, documentId: null };
-    await resetAudioProcessingInTab(normalizedTabId, target);
+    resetAudioProcessingInTab(normalizedTabId, target);
     await sendMessageToFrame(
         normalizedTabId,
         target.frameId,
@@ -2302,6 +2533,15 @@ async function deactivateTargetTab(tabId, contentTarget = null, { deactivateMoni
         null,
         target.documentId
     ).catch(() => {});
+    // The overlay lives in the top document whenever the player is nested, so
+    // clearing only the media frame would leave a stale chat behind on Drive.
+    if (normalizeFrameId(target.frameId) !== 0) {
+        await sendMessageToFrame(
+            normalizedTabId,
+            0,
+            { type: 'CHAT_DESTROY' }
+        ).catch(() => {});
+    }
 }
 
 function createHostAccessRequiredError(access, requestAdded, cause) {
@@ -2350,6 +2590,12 @@ function createTargetActivationSupersededError() {
 
 const SCRIPT_INJECTION_TIMEOUT_MS = 5000;
 
+/**
+ * chrome.scripting.executeScript can stay pending indefinitely when a target
+ * frame is busy or navigating — an embedded player or ad frame is enough, and
+ * an allFrames call only needs one of them. An activation that never settles
+ * leaves the popup on "activating" forever, so every injection is bounded.
+ */
 function executeScriptWithTimeout(options, timeoutMs = SCRIPT_INJECTION_TIMEOUT_MS) {
     if (!Number.isFinite(timeoutMs) || timeoutMs <= 0) {
         return chrome.scripting.executeScript(options);
@@ -2365,8 +2611,11 @@ function executeScriptWithTimeout(options, timeoutMs = SCRIPT_INJECTION_TIMEOUT_
             reject(error);
         }, timeoutMs);
     });
+    const scriptPromise = chrome.scripting.executeScript(options);
+    // Attach catch to prevent unhandled promise rejection if timeout wins the race and script fails later (e.g. on tab close)
+    scriptPromise.catch(() => {});
     return Promise.race([
-        chrome.scripting.executeScript(options),
+        scriptPromise,
         timeout
     ]).finally(() => {
         if (timeoutId !== null) clearTimeout(timeoutId);
@@ -2374,31 +2623,45 @@ function executeScriptWithTimeout(options, timeoutMs = SCRIPT_INJECTION_TIMEOUT_
 }
 
 async function injectMediaFrameMonitors(tabId, contentTarget) {
-    // The all-frames target is only a best-effort sweep: one inaccessible
-    // frame can make Chromium reject the entire sweep. Always include the
-    // selected document explicitly so its lifecycle monitor is guaranteed.
-    const targets = uniqueScriptTargets([
-        contentTarget?.scriptTarget,
-        ...(contentTarget?.monitorTargets || []),
-        { tabId },
-        ...listMediaFrameScriptTargets(tabId)
-    ].filter(Boolean));
+    // The sweep is best effort; the known frames are addressed individually so a
+    // rejected sweep cannot leave the deep player frame without a monitor — and
+    // therefore without any way to report itself later.
+    const targets = [
+        ...listMediaFrameScriptTargets(tabId),
+        ...listKnownFrameIds(tabId)
+            .filter(frameId => frameId !== 0)
+            .map(frameId => ({ tabId, frameIds: [frameId] }))
+    ];
     let injectedCount = 0;
-    for (const target of targets) {
+    await Promise.all(targets.map(async target => {
         try {
             await executeScriptWithTimeout({
                 target,
                 files: ['media-frame-monitor.js']
-            }, 2000);
+            }, 750);
             injectedCount++;
-        } catch (error) {
-            if (error?.code === 'script_injection_timeout') {
-                addLog(`Media-frame monitor injection timed out for ${JSON.stringify(target)}`, 'warn');
-            }
+        } catch {
             // One denied widget frame must not block the selected player.
         }
+    }));
+    if (injectedCount > 0) return;
+
+    const fallbackTargets = [{ tabId }, contentTarget.scriptTarget];
+    const seen = new Set();
+    for (const target of fallbackTargets) {
+        const key = JSON.stringify(target);
+        if (seen.has(key)) continue;
+        seen.add(key);
+        try {
+            await executeScriptWithTimeout({
+                target,
+                files: ['media-frame-monitor.js']
+            }, 750);
+            injectedCount++;
+        } catch {
+            // Main injection below reports a real selected-target failure.
+        }
     }
-    return injectedCount;
 }
 
 async function injectContentScript(tabId, {
@@ -2423,7 +2686,14 @@ async function injectContentScript(tabId, {
         access = await inspectTabHostAccess(chrome, tabId);
         const url = access.url || '';
         needsPageApiSeek = shouldUsePageApiSeek(url);
-        contentTarget = await resolveMediaContentTarget(chrome, tabId);
+        contentTarget = await resolveMediaContentTarget(chrome, tabId, {
+            knownFrameIds: listKnownFrameIds(tabId)
+        });
+        // The probe reached these frames; remember them before anything is
+        // injected. Waiting for a content script to message us first would leave
+        // the registry empty exactly when it is needed most — the first
+        // activation, before any script exists to report itself.
+        refreshFrameIds(tabId, contentTarget.discoveredFrameIds);
         if (!isTargetActivationSuperseded(tabId, activationGeneration)
             && activeTargetActivation?.tabId === tabId) {
             activeTargetActivation.frameId = contentTarget.frameId;
@@ -2440,7 +2710,9 @@ async function injectContentScript(tabId, {
                 originPattern: error.originPattern
             }, requestAdded, error);
         }
-        throw error;
+        // MEDIA_FRAME_AMBIGUOUS is no longer fatal: the resolver falls back to
+        // the top frame and the monitor promotes the player that starts playing.
+        addLog(`Media frame probe fell back to the top frame: ${error.message}`, 'warn');
     }
 
     const scriptTarget = contentTarget.scriptTarget;
@@ -2485,10 +2757,38 @@ async function injectContentScript(tabId, {
             func: setPageApiSeekEnabled,
             args: [pageApiSeekReady]
         });
-        const injectionResults = await executeScriptWithTimeout({
-            target: scriptTarget,
-            files: ['chat-format.js', 'chat-overlay.js', 'content.js']
-        });
+        // The chat overlay is standalone page UI and carries its own runtime
+        // message listener, so it is installed in the top document regardless of
+        // where the player lives. Only the playback controller goes into the
+        // selected media frame.
+        let injectionResults;
+        if (contentTarget.frameId === 0) {
+            injectionResults = await executeScriptWithTimeout({
+                target: scriptTarget,
+                files: ['chat-format.js', 'chat-overlay.js', 'content.js']
+            });
+        } else {
+            try {
+                await executeScriptWithTimeout({
+                    target: { tabId, frameIds: [0] },
+                    files: ['chat-format.js', 'chat-overlay.js']
+                });
+            } catch (err) {
+                addLog(`Chat overlay injection failed in the top frame: ${err.message}`, 'warn');
+            }
+            // A pre-3.1.3 build may have left an overlay inside the player.
+            await sendMessageToFrame(
+                tabId,
+                contentTarget.frameId,
+                { type: 'CHAT_DESTROY' },
+                null,
+                contentTarget.documentId
+            ).catch(() => {});
+            injectionResults = await executeScriptWithTimeout({
+                target: scriptTarget,
+                files: ['content.js']
+            });
+        }
         const frameResult = Array.isArray(injectionResults)
             ? injectionResults.find(result => normalizeFrameId(result?.frameId) === contentTarget.frameId)
             : null;
@@ -2511,6 +2811,14 @@ async function injectContentScript(tabId, {
             try { error.contentTarget = contentTarget; } catch { /* immutable browser error */ }
             throw error;
         }
+        // Name the frame the injection was aimed at. Without it every failure
+        // reads the same in the log and there is no way to tell a denied player
+        // frame from a document that navigated mid-injection.
+        addLog(
+            `Content injection failed in frame ${contentTarget.frameId}`
+            + `${contentTarget.frameUrl ? ` (${contentTarget.frameUrl})` : ''}: ${error?.message}`,
+            'warn'
+        );
         if (navigationRetries > 0 && isMediaTargetNavigationError(error)) {
             return injectContentScript(tabId, {
                 requestHostAccess,
@@ -2683,81 +2991,88 @@ async function clearPendingTarget({ expectedRequestId = null, expectedTabId = nu
     });
 }
 
-async function rememberRequestedTarget(tabId, tabTitle) {
-    const normalizedTabId = normalizeTabId(tabId);
-    if (normalizedTabId === null) return false;
-    requestedTargetTabId = normalizedTabId;
-    requestedTargetTitle = typeof tabTitle === 'string' ? tabTitle : null;
-    requestedTargetRetryBlockedTabId = null;
-    requestedTargetRetryBlockedMessage = null;
-    await chrome.storage.session.set({
-        requestedTargetTabId,
-        requestedTargetTitle,
-        requestedTargetRetryBlockedTabId: null,
-        requestedTargetRetryBlockedMessage: null
-    });
-    return true;
-}
+const ACTIVATION_DEADLINE_MS = 30000;
 
-async function clearRequestedTarget(expectedTabId = null) {
-    if (expectedTabId !== null
-        && normalizeTabId(requestedTargetTabId) !== normalizeTabId(expectedTabId)) {
+/**
+ * Last line of defence for the "activating" state.
+ *
+ * Every known way an activation can stall is bounded by now, but a browser call
+ * that never settles would still pin activeTargetActivation and leave the popup
+ * spinning with nothing in the log. Past the deadline the attempt is declared
+ * dead so the selection can report a real error and be retried deliberately.
+ */
+function expireStuckActivation() {
+    const startedAt = activeTargetActivation?.startedAt;
+    if (!Number.isFinite(startedAt) || Date.now() - startedAt < ACTIVATION_DEADLINE_MS) {
         return false;
     }
-    requestedTargetTabId = null;
-    requestedTargetTitle = null;
-    requestedTargetRetryBlockedTabId = null;
-    requestedTargetRetryBlockedMessage = null;
+    const stalledTabId = normalizeTabId(activeTargetActivation.tabId);
+    addLog(`Target activation for tab ${stalledTabId} exceeded ${ACTIVATION_DEADLINE_MS}ms; abandoning it`, 'warn');
+    activeTargetActivation = null;
+    if (stalledTabId !== null && normalizeTabId(userSelectedTabId) === stalledTabId) {
+        userSelectionErrorTabId = stalledTabId;
+        userSelectionErrorMessage = 'The page never finished responding to script injection';
+        chrome.storage.session.set({
+            selectionErrorTabId: userSelectionErrorTabId,
+            selectionErrorMessage: userSelectionErrorMessage
+        }).catch(() => {});
+    }
+    return true;
+}
+
+async function rememberUserSelection(tabId, tabTitle) {
+    const normalizedTabId = normalizeTabId(tabId);
+    if (normalizedTabId === null) return false;
+    userSelectedTabId = normalizedTabId;
+    userSelectedTabTitle = typeof tabTitle === 'string' ? tabTitle : null;
+    userSelectionErrorTabId = null;
+    userSelectionErrorMessage = null;
     await chrome.storage.session.set({
-        requestedTargetTabId: null,
-        requestedTargetTitle: null,
-        requestedTargetRetryBlockedTabId: null,
-        requestedTargetRetryBlockedMessage: null
+        selectedTabId: userSelectedTabId,
+        selectedTabTitle: userSelectedTabTitle,
+        selectionErrorTabId: null,
+        selectionErrorMessage: null
     });
     return true;
 }
 
-async function retryRequestedTarget() {
-    const selectedTabId = normalizeTabId(requestedTargetTabId);
-    if (selectedTabId === null
-        || normalizeTabId(currentTabId) === selectedTabId
-        || pendingRequestedActivationCount > 0
-        || activeTargetActivation
-        || normalizeTabId(requestedTargetRetryBlockedTabId) === selectedTabId) {
-        return null;
+/**
+ * Records why a selection could not be activated, without discarding it. The
+ * popup keeps showing the chosen tab and can explain the problem or offer the
+ * host-access grant; nothing retries on its own.
+ */
+async function recordUserSelectionFailure(tabId, error) {
+    const normalizedTabId = normalizeTabId(tabId);
+    if (normalizedTabId === null || normalizeTabId(userSelectedTabId) !== normalizedTabId) {
+        return false;
     }
+    userSelectionErrorTabId = normalizedTabId;
+    userSelectionErrorMessage = error?.code === HOST_ACCESS_REQUIRED_STATUS
+        ? null
+        : (error?.message || 'Script injection failed');
+    await chrome.storage.session.set({
+        selectionErrorTabId: userSelectionErrorTabId,
+        selectionErrorMessage: userSelectionErrorMessage
+    });
+    return true;
+}
 
-    const pending = await readPendingTarget();
-    if (pending) return null;
-
-    try {
-        await chrome.tabs.get(selectedTabId);
-    } catch {
-        await clearRequestedTarget(selectedTabId);
-        return { status: 'target_closed' };
+async function clearUserSelection(expectedTabId = null) {
+    if (expectedTabId !== null
+        && normalizeTabId(userSelectedTabId) !== normalizeTabId(expectedTabId)) {
+        return false;
     }
-
-    try {
-        const response = await activateTargetTab(selectedTabId, requestedTargetTitle, {
-            requestHostAccess: true,
-            expectedGeneration: targetActivationGeneration
-        });
-        if (response?.status === 'ok') {
-            await clearRequestedTarget(selectedTabId);
-        }
-        return response;
-    } catch (error) {
-        if (error?.code !== HOST_ACCESS_REQUIRED_STATUS) {
-            requestedTargetRetryBlockedTabId = selectedTabId;
-            requestedTargetRetryBlockedMessage = error?.message || 'Script injection failed';
-            await chrome.storage.session.set({
-                requestedTargetRetryBlockedTabId,
-                requestedTargetRetryBlockedMessage
-            });
-        }
-        addLog(`Requested target retry failed: ${error.message}`, 'warn');
-        return injectionFailureResponse(error);
-    }
+    userSelectedTabId = null;
+    userSelectedTabTitle = null;
+    userSelectionErrorTabId = null;
+    userSelectionErrorMessage = null;
+    await chrome.storage.session.set({
+        selectedTabId: null,
+        selectedTabTitle: null,
+        selectionErrorTabId: null,
+        selectionErrorMessage: null
+    });
+    return true;
 }
 
 async function activateTargetTab(tabId, tabTitle, {
@@ -2779,12 +3094,19 @@ async function activateTargetTab(tabId, tabTitle, {
 
     completeForceSyncBeforeTargetChange(selectedTabId);
     const activationGeneration = ++targetActivationGeneration;
-    activeTargetActivation = { generation: activationGeneration, tabId: selectedTabId };
+    activeTargetActivation = {
+        generation: activationGeneration,
+        tabId: selectedTabId,
+        startedAt: Date.now()
+    };
     const previousTabId = normalizeTabId(currentTabId);
     const previousContentTarget = currentContentTarget();
     let injectedContentTarget = { frameId: 0, documentId: null, hasVideo: false };
 
     try {
+        if (previousTabId && previousTabId !== selectedTabId) {
+            await deactivateTargetTab(previousTabId);
+        }
         if (activationGeneration !== targetActivationGeneration) {
             return { status: 'superseded' };
         }
@@ -2809,37 +3131,32 @@ async function activateTargetTab(tabId, tabTitle, {
                 }
                 return { status: 'superseded' };
             }
-            const isCurrentTargetRefresh = previousTabId === selectedTabId
-                && expectedCurrentTabId === selectedTabId;
-            if (isCurrentTargetRefresh) {
-                addLog(
-                    isMediaTargetNavigationError(error)
-                        ? 'Media document changed during refresh; keeping the previous target until navigation completes'
-                        : `Media target refresh failed (${error.message}); keeping the selected target for recovery`,
-                    'warn'
-                );
+            if (previousTabId === selectedTabId
+                && expectedCurrentTabId === selectedTabId
+                && isMediaTargetNavigationError(error)) {
+                addLog('Media document changed during refresh; keeping the previous target until navigation completes', 'warn');
                 throw error;
             }
+            currentTabId = null;
+            currentTabTitle = null;
+            clearCurrentContentTarget();
+            lastContentHeartbeatAt = null;
+            if (currentRoom) roomIdleSince = Date.now();
             const failedContentTarget = error?.contentTarget || injectedContentTarget;
             await deactivateTargetTab(selectedTabId, failedContentTarget);
-            if (previousTabId === null) {
-                currentTabId = null;
-                currentTabTitle = null;
-                clearCurrentContentTarget();
-                lastContentHeartbeatAt = null;
-                if (currentRoom) roomIdleSince = Date.now();
-                await chrome.storage.session.set({
-                    currentTabId: null,
-                    currentTabTitle: null,
-                    currentTargetFrameId: 0,
-                    currentTargetDocumentId: null,
-                    currentTargetHasVideo: false,
-                    roomIdleSince,
-                    lastContentHeartbeatAt: null
-                });
-            } else {
-                addLog(`Target switch to tab ${selectedTabId} failed; keeping tab ${previousTabId} selected`, 'warn');
+            if (previousTabId && (previousTabId !== selectedTabId
+                || !sameContentTarget(previousContentTarget, failedContentTarget))) {
+                await deactivateTargetTab(previousTabId, previousContentTarget);
             }
+            await chrome.storage.session.set({
+                currentTabId: null,
+                currentTabTitle: null,
+                currentTargetFrameId: 0,
+                currentTargetDocumentId: null,
+                currentTargetHasVideo: false,
+                roomIdleSince,
+                lastContentHeartbeatAt: null
+            });
             if (activationGeneration !== targetActivationGeneration) {
                 return { status: 'superseded' };
             }
@@ -2889,19 +3206,28 @@ async function activateTargetTab(tabId, tabTitle, {
             if (currentTabId !== selectedTabId) await deactivateTargetTab(selectedTabId, injectedContentTarget);
             return { status: 'superseded' };
         }
-        if (previousTabId && previousTabId !== selectedTabId) {
-            await deactivateTargetTab(previousTabId, previousContentTarget);
-        } else if (previousTabId === selectedTabId
-            && !sameContentTarget(previousContentTarget, injectedContentTarget)) {
+        if (previousTabId === selectedTabId
+            && !sameContentTarget(previousContentTarget, injectedContentTarget)
+            && normalizeFrameId(previousContentTarget?.frameId) !== 0) {
+            // A frame switch inside the same tab must not tear down the top
+            // frame. It hosts the chat overlay, answers status queries, and is
+            // what the frame election falls back to when a player frame dies —
+            // destroying it is why chat delivery failed after promotion and why
+            // that fallback pointed at an empty frame.
             await deactivateTargetTab(previousTabId, previousContentTarget, { deactivateMonitor: false });
         }
         currentTabId = selectedTabId;
         currentTabTitle = typeof tabTitle === 'string' ? tabTitle : null;
+        // Activation can also start from the pending host-access flow, so keep
+        // the user-facing selection in step with what actually got injected.
+        await rememberUserSelection(selectedTabId, currentTabTitle);
         currentTargetFrameId = normalizeFrameId(injectedContentTarget.frameId);
         currentTargetDocumentId = typeof injectedContentTarget.documentId === 'string'
             ? injectedContentTarget.documentId
             : null;
         currentTargetHasVideo = injectedContentTarget.hasVideo === true;
+        if (currentTargetHasVideo) stopMediaDiscoveryPoll();
+        else startMediaDiscoveryPoll(selectedTabId);
         lastContentHeartbeatAt = null;
         if (currentRoom) roomIdleSince = Date.now();
         await chrome.storage.session.set({
@@ -2913,7 +3239,6 @@ async function activateTargetTab(tabId, tabTitle, {
             roomIdleSince,
             lastContentHeartbeatAt
         });
-        await clearRequestedTarget(selectedTabId);
         if (activationGeneration !== targetActivationGeneration) {
             return { status: 'superseded' };
         }
@@ -2947,7 +3272,49 @@ async function reactivateCurrentTarget(tabId, { expectedGeneration = targetActiv
     });
 }
 
-function refreshCurrentMediaTarget(tabId, { queueIfRunning = false } = {}) {
+/**
+ * Cheap pre-check for lifecycle-driven refreshes.
+ *
+ * Reactivation tears down and re-injects the content script, which interrupts
+ * playback and audio routing. That price is only worth paying when the selected
+ * frame or document actually moved — not for the constant DOM churn that pages
+ * like Drive and YouTube produce while simply playing.
+ */
+async function selectedMediaTargetMoved(tabId) {
+    let resolved;
+    try {
+        resolved = await resolveMediaContentTarget(chrome, tabId, {
+            attempts: 1,
+            knownFrameIds: listKnownFrameIds(tabId)
+        });
+        refreshFrameIds(tabId, resolved.discoveredFrameIds);
+    } catch {
+        // An access-required error must reach the full activation path so the
+        // popup can surface it.
+        return true;
+    }
+    if (normalizeTabId(currentTabId) !== normalizeTabId(tabId)) return false;
+    // An inconclusive probe is not a reason to move when on top frame.
+    // However, if a nested frame was elected (currentTargetFrameId !== 0) and is now
+    // no longer an accessible candidate with video, the target has vacated.
+    if (resolved.hasVideo !== true) {
+        refreshMediaFrameMonitors(tabId).catch(() => {});
+        if (normalizeFrameId(currentTargetFrameId) !== 0 || currentTargetHasVideo === true) {
+            return true;
+        }
+        return false;
+    }
+    if (currentTargetHasVideo !== true) return true;
+    return normalizeFrameId(resolved.frameId) !== normalizeFrameId(currentTargetFrameId)
+        || (typeof resolved.documentId === 'string'
+            && typeof currentTargetDocumentId === 'string'
+            && resolved.documentId !== currentTargetDocumentId);
+}
+
+// Reinjection is the exception, not the default. Every caller that merely
+// wants the target confirmed gets the guarded path; only a genuinely
+// unreachable content script or an explicit request forces a rebuild.
+function refreshCurrentMediaTarget(tabId, { queueIfRunning = false, onlyIfTargetMoved = true } = {}) {
     const selectedTabId = normalizeTabId(tabId);
     if (selectedTabId === null || normalizeTabId(currentTabId) !== selectedTabId) {
         return Promise.resolve({ status: 'superseded' });
@@ -2957,7 +3324,9 @@ function refreshCurrentMediaTarget(tabId, { queueIfRunning = false } = {}) {
         return mediaTargetRefreshTask;
     }
     if (activeTargetActivation?.tabId === selectedTabId) {
-        return Promise.resolve({ status: 'activation_in_progress' });
+        if (!expireStuckActivation()) {
+            return Promise.resolve({ status: 'activation_in_progress' });
+        }
     }
 
     const task = (async () => {
@@ -2966,6 +3335,10 @@ function refreshCurrentMediaTarget(tabId, { queueIfRunning = false } = {}) {
         do {
             pass++;
             mediaTargetRefreshDirty = false;
+            if (onlyIfTargetMoved && !(await selectedMediaTargetMoved(selectedTabId))) {
+                result = { status: 'unchanged' };
+                break;
+            }
             const expectedGeneration = targetActivationGeneration;
             result = await reactivateCurrentTarget(selectedTabId, { expectedGeneration });
             // Let lifecycle messages queued during the final probe/injection
@@ -2988,7 +3361,10 @@ function refreshCurrentMediaTarget(tabId, { queueIfRunning = false } = {}) {
         if (needsFollowup && mediaTargetRefreshFollowupTimer === null) {
             mediaTargetRefreshFollowupTimer = setTimeout(() => {
                 mediaTargetRefreshFollowupTimer = null;
-                refreshCurrentMediaTarget(selectedTabId, { queueIfRunning: true }).catch(() => {});
+                refreshCurrentMediaTarget(selectedTabId, {
+                    queueIfRunning: true,
+                    onlyIfTargetMoved
+                }).catch(() => {});
             }, 250);
         }
     });
@@ -3088,8 +3464,16 @@ if (chrome.tabs?.onRemoved?.addListener) {
             const isCurrent = normalizeTabId(currentTabId) === tabId;
             const isPending = pending?.tabId === tabId;
             const isActivating = activeTargetActivation?.tabId === tabId;
-            const isRequested = normalizeTabId(requestedTargetTabId) === tabId;
-            if (!isCurrent && !isPending && !isActivating && !isRequested) return;
+            forgetFrameIds(tabId);
+            lastMonitorRefreshByTab.delete(tabId);
+            const pendingMonitorTimer = pendingMonitorRefreshByTab.get(tabId);
+            if (pendingMonitorTimer !== undefined) {
+                clearTimeout(pendingMonitorTimer);
+                pendingMonitorRefreshByTab.delete(tabId);
+            }
+            const isSelected = normalizeTabId(userSelectedTabId) === tabId;
+            if (isSelected) await clearUserSelection(tabId);
+            if (!isCurrent && !isPending && !isActivating) return;
 
             const hasReplacementActivation = activeTargetActivation
                 && activeTargetActivation.tabId !== tabId;
@@ -3110,7 +3494,6 @@ if (chrome.tabs?.onRemoved?.addListener) {
                     expectedTabId: tabId
                 });
             }
-            if (isRequested) await clearRequestedTarget(tabId);
             await chrome.storage.session.set({
                 currentTabId,
                 currentTabTitle,
@@ -3166,14 +3549,22 @@ async function _routeToContentInternal(tabId, action, payload, actionTimestamp, 
     }
 
     const targetGeneration = targetActivationGeneration;
+    const command = {
+        type: 'SERVER_COMMAND',
+        action,
+        payload,
+        actionTimestamp,
+        commandSenderId
+    };
     try {
-        await sendMessageToContentTab(tabId, {
-            type: 'SERVER_COMMAND',
-            action,
-            payload,
-            actionTimestamp,
-            commandSenderId
-        });
+        // If the elected frame reports no video, the election is wrong or stale.
+        // Broadcasting reaches the frame that actually owns the player, and the
+        // ones that do not own it ignore the command.
+        if (currentTargetHasVideo === true) {
+            await sendMessageToContentTab(tabId, command);
+        } else {
+            await broadcastCommandToTab(tabId, command);
+        }
     } catch (error) {
         if (!isCurrentTargetIdentity(tabId, targetGeneration)) {
             if (normalizeTabId(currentTabId) === normalizeTabId(tabId) && retries < 3) {
@@ -3189,14 +3580,17 @@ async function _routeToContentInternal(tabId, action, payload, actionTimestamp, 
             return;
         }
         if (retries >= 3) {
-            addLog(`Content Script not responding in tab ${tabId} after ${retries} retries; keeping the selected target for recovery`, 'warn');
+            addLog(`Content Script not responding in tab ${tabId} after ${retries} retries`, 'warn');
+            clearTargetTabForIdle(tabId, targetGeneration);
             return;
         }
 
-        const message = String(error?.message || '');
-        if (isMissingContentReceiverError(error) || message.includes('Extension context invalidated')) {
+        if (isContentUnreachableError(error)) {
             try {
-                const response = await refreshCurrentMediaTarget(tabId);
+                // Drop the dead election first so the rebuild is not anchored to
+                // a frame that no longer exists.
+                releaseUnreachableFrameTarget(tabId);
+                const response = await refreshCurrentMediaTarget(tabId, { onlyIfTargetMoved: false });
                 if (response?.status !== 'ok' && response?.status !== 'activation_in_progress') return;
                 await new Promise(resolve => setTimeout(resolve, 150));
                 await _routeToContentInternal(
@@ -3214,6 +3608,7 @@ async function _routeToContentInternal(tabId, action, payload, actionTimestamp, 
         }
 
         addLog(`Content Script not responding in tab ${tabId}`, 'warn');
+        clearTargetTabForIdle(tabId, targetGeneration);
     }
 }
 
@@ -3257,7 +3652,7 @@ chrome.alarms.onAlarm.addListener(async (alarm) => {
 
 function leaveOldRoomIfSwitching(newRoomId) {
     if (currentRoom && currentRoom.roomId !== newRoomId) {
-        if (currentTabId) sendMessageToCurrentContent({ type: 'CHAT_RESET' }).catch(() => {});
+        if (currentTabId) sendMessageToChatOverlay({ type: 'CHAT_RESET' }).catch(() => {});
         addLog(`Switching rooms: leaving ${currentRoom.roomId} to join ${newRoomId}`, 'info');
         forceDisconnect();
         currentRoom = null;
@@ -3291,27 +3686,27 @@ function leaveOldRoomIfSwitching(newRoomId) {
     }
 }
 
-async function resetAudioProcessingInTab(tabId, contentTarget = null) {
-    const normalizedTabId = normalizeTabId(tabId);
-    if (normalizedTabId === null) return null;
+function resetAudioProcessingInTab(tabId, contentTarget = null) {
+    if (!tabId) return;
     if (contentTarget) {
-        return sendMessageToFrame(
-            normalizedTabId,
+        sendMessageToFrame(
+            tabId,
             contentTarget.frameId,
             { action: 'RESET_AUDIO_PROCESSING' },
             null,
             contentTarget.documentId
-        ).catch(() => null);
+        ).catch(() => {});
+        return;
     }
-    if (normalizedTabId === normalizeTabId(currentTabId)) {
-        return sendMessageToCurrentContent({ action: 'RESET_AUDIO_PROCESSING' }).catch(() => null);
+    if (normalizeTabId(tabId) === normalizeTabId(currentTabId)) {
+        sendMessageToCurrentContent({ action: 'RESET_AUDIO_PROCESSING' }).catch(() => {});
+        return;
     }
-    return chrome.tabs.sendMessage(normalizedTabId, { action: 'RESET_AUDIO_PROCESSING' }).catch(() => null);
+    chrome.tabs.sendMessage(tabId, { action: 'RESET_AUDIO_PROCESSING' }).catch(() => {});
 }
 
 async function applyAudioSettingsToTab(tabId, contentTarget = null) {
-    const normalizedTabId = normalizeTabId(tabId);
-    if (normalizedTabId === null) return;
+    if (!tabId) return;
     // Local-only: audioSettings are never read from storage.sync.
     const data = await chrome.storage.local.get(['audioSettings']);
     const message = {
@@ -3319,20 +3714,20 @@ async function applyAudioSettingsToTab(tabId, contentTarget = null) {
         settings: data.audioSettings
     };
     if (contentTarget) {
-        await sendMessageToFrame(
-            normalizedTabId,
+        sendMessageToFrame(
+            tabId,
             contentTarget.frameId,
             message,
             null,
             contentTarget.documentId
-        ).catch(() => null);
+        ).catch(() => {});
         return;
     }
-    if (normalizedTabId === normalizeTabId(currentTabId)) {
-        await sendMessageToCurrentContent(message).catch(() => null);
+    if (normalizeTabId(tabId) === normalizeTabId(currentTabId)) {
+        sendMessageToCurrentContent(message).catch(() => {});
         return;
     }
-    await chrome.tabs.sendMessage(normalizedTabId, message).catch(() => null);
+    chrome.tabs.sendMessage(tabId, message).catch(() => {});
 }
 
 // --- Extension Message Listeners ---
@@ -3347,12 +3742,12 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 chrome.storage.onChanged.addListener((changes, area) => {
     if (area !== 'local') return;
     if (changes.browserNotifications && currentTabId) {
-        sendMessageToCurrentContent({ type: 'CHAT_CONTEXT_UPDATE' }).catch(() => {});
+        sendMessageToChatOverlay({ type: 'CHAT_CONTEXT_UPDATE' }).catch(() => {});
     }
     if (!changes.roomId && !changes.chatKey && !changes.chatEnabled) return;
     if (changes.chatKey) chatSecretGuard = validateChatSecret(changes.chatKey.newValue);
     invalidateChatSession();
-    if (currentTabId) sendMessageToCurrentContent({ type: 'CHAT_CONTEXT_UPDATE' }).catch(() => {});
+    if (currentTabId) sendMessageToChatOverlay({ type: 'CHAT_CONTEXT_UPDATE' }).catch(() => {});
 });
 
 async function handleAsyncMessage(message, sender, sendResponse) {
@@ -3360,6 +3755,7 @@ async function handleAsyncMessage(message, sender, sendResponse) {
     await ensureState();
 
     const senderTabId = normalizeTabId(sender?.tab?.id);
+    if (senderTabId !== null) rememberFrameId(senderTabId, sender?.frameId);
     const mediaLifecycleMessage = message.type === 'MEDIA_FRAME_CANDIDATE_CHANGED'
         || message.type === 'MEDIA_FRAME_VISIBILITY'
         || message.type === 'MEDIA_TARGET_REFRESH';
@@ -3370,7 +3766,11 @@ async function handleAsyncMessage(message, sender, sendResponse) {
         && isCurrentContentSender(sender)
         && (message.type === 'CONTENT_EVENT' || message.type === 'HEARTBEAT');
     if (mustRevalidateEmbeddedSender) {
-        await refreshCurrentMediaTarget(senderTabId).catch(() => {});
+        // Heartbeats and content events arrive continuously. Revalidating a
+        // nested target is only about confirming the frame still holds the
+        // player, so it must not reinject the content script every time: that
+        // put Drive- and anime-style targets into a permanent activation loop.
+        await refreshCurrentMediaTarget(senderTabId, { onlyIfTargetMoved: true }).catch(() => {});
     }
 
     if (message.type === 'CONNECT') {
@@ -3381,7 +3781,7 @@ async function handleAsyncMessage(message, sender, sendResponse) {
 
         if (settings.roomId && currentRoom && currentRoom.roomId === settings.roomId && socket && socket.readyState === WebSocket.OPEN && isNamespaceJoined && desiredUrl === currentServerUrl) {
             broadcastConnectionStatus('connected');
-            if (currentTabId) sendMessageToCurrentContent({ type: 'CHAT_CONTEXT_UPDATE' }).catch(() => {});
+            if (currentTabId) sendMessageToChatOverlay({ type: 'CHAT_CONTEXT_UPDATE' }).catch(() => {});
             await broadcastJoinStatus({ type: 'JOIN_STATUS', success: true, message: 'Already in room' });
             if (typeof sendResponse === 'function') sendResponse({ status: 'ok' });
             return;
@@ -3424,7 +3824,7 @@ async function handleAsyncMessage(message, sender, sendResponse) {
         if (message.retryPendingTarget === true) {
             await retryPendingTarget();
         }
-        await retryRequestedTarget();
+        expireStuckActivation();
         const pendingTarget = await readPendingTarget();
         const settings = await getSettings();
         const isConnected = socket && socket.readyState === WebSocket.OPEN && isNamespaceJoined;
@@ -3432,36 +3832,41 @@ async function handleAsyncMessage(message, sender, sendResponse) {
         let status = isConnected ? 'connected' : (isConnecting || (socket && socket.readyState === WebSocket.CONNECTING) ? 'connecting' : (isReconnecting ? 'reconnecting' : 'disconnected'));
         // Distinguish the normal "not in a room" resting state from a real drop.
         if (status === 'disconnected' && !currentRoom && !connectIntent) status = 'idle';
-        const targetTabId = normalizeTabId(requestedTargetTabId)
-            ?? normalizeTabId(activeTargetActivation?.tabId)
-            ?? normalizeTabId(currentTabId);
-        const targetReady = targetTabId !== null
-            && normalizeTabId(currentTabId) === targetTabId
+        // One public selection, one derived state. The selection is whatever the
+        // user picked; readiness is whether we managed to inject into it. The
+        // state is terminal — nothing here retries on its own.
+        const publicTargetTabId = normalizeTabId(userSelectedTabId) ?? normalizeTabId(currentTabId);
+        const targetReady = publicTargetTabId !== null
+            && normalizeTabId(currentTabId) === publicTargetTabId
             && !activeTargetActivation;
-        const targetActivationState = targetTabId === null
+        const targetActivationState = publicTargetTabId === null
             ? 'none'
             : targetReady
                 ? 'ready'
-                : pendingTarget?.tabId === targetTabId
-                    ? 'access_required'
-                    : normalizeTabId(requestedTargetRetryBlockedTabId) === targetTabId
-                        ? 'error'
-                    : 'activating';
-        const targetActivationError = normalizeTabId(requestedTargetRetryBlockedTabId) === targetTabId
-            ? requestedTargetRetryBlockedMessage
-            : null;
-        sendResponse({ 
-            status, 
-            peerId, 
+                : activeTargetActivation
+                    ? 'activating'
+                    : pendingTarget?.tabId === publicTargetTabId
+                        ? 'access_required'
+                        // Nothing is in flight and the target is not live, so
+                        // this is a settled failure. Reporting it as
+                        // "activating" is what left the popup spinning forever
+                        // with no way to tell that it had already given up.
+                        : 'error';
+        sendResponse({
+            status,
+            peerId,
             peers: currentRoom ? currentRoom.peers : [],
             lastActionState,
-            targetTabId,
+            targetTabId: publicTargetTabId,
+            targetTabTitle: userSelectedTabTitle ?? currentTabTitle,
+            targetReady,
+            targetActivationState,
+            targetActivationError: normalizeTabId(userSelectionErrorTabId) === publicTargetTabId
+                ? userSelectionErrorMessage
+                : null,
             targetFrameId: currentTargetFrameId,
             targetDocumentId: currentTargetDocumentId,
             targetHasVideo: currentTargetHasVideo,
-            targetReady,
-            targetActivationState,
-            targetActivationError,
             pendingTargetTabId: pendingTarget?.tabId ?? null,
             pendingTargetHost: pendingTarget?.host ?? null,
             pendingTargetOriginPattern: pendingTarget?.originPattern ?? null,
@@ -3692,7 +4097,6 @@ async function handleAsyncMessage(message, sender, sendResponse) {
         broadcastControlMode();
         if (currentTabId) await deactivateTargetTab(currentTabId, currentContentTarget());
         invalidateTargetActivations();
-        await clearRequestedTarget();
         currentTabId = null;
         currentTabTitle = null;
         clearCurrentContentTarget();
@@ -3783,7 +4187,7 @@ async function handleAsyncMessage(message, sender, sendResponse) {
 
                 if (roomId && currentRoom && currentRoom.roomId === roomId && socket && socket.readyState === WebSocket.OPEN && isNamespaceJoined && desiredUrl === currentServerUrl) {
                     broadcastConnectionStatus('connected');
-                    if (currentTabId) sendMessageToCurrentContent({ type: 'CHAT_CONTEXT_UPDATE' }).catch(() => {});
+                    if (currentTabId) sendMessageToChatOverlay({ type: 'CHAT_CONTEXT_UPDATE' }).catch(() => {});
                     const statusSent = await broadcastJoinStatus(
                         { type: 'JOIN_STATUS', success: true, message: 'Already in room' },
                         isCurrentJoin
@@ -3865,6 +4269,9 @@ async function handleAsyncMessage(message, sender, sendResponse) {
         });
     } else if (message.type === 'CONTENT_EVENT') {
         const senderIsContent = !!sender?.tab && !isExtensionPageSender(sender);
+        // A real player frame just identified itself. Take it as the target so
+        // subsequent commands can be addressed instead of broadcast.
+        if (senderIsContent) adoptReportingFrame(sender);
         if (!senderIsContent && message.expectedTabId !== undefined) {
             const expectedTabId = normalizeTabId(message.expectedTabId);
             if (expectedTabId === null || normalizeTabId(currentTabId) !== expectedTabId) {
@@ -4121,7 +4528,7 @@ async function handleAsyncMessage(message, sender, sendResponse) {
             return true;
         }
 
-        refreshCurrentMediaTarget(tabId).then(response => {
+        refreshCurrentMediaTarget(tabId, { onlyIfTargetMoved: false }).then(response => {
             sendResponse(response);
         }).catch(err => {
             addLog(`Failed to inject into tab: ${err.message}`, 'warn');
@@ -4134,7 +4541,6 @@ async function handleAsyncMessage(message, sender, sendResponse) {
             const previousContentTarget = currentContentTarget();
             completeForceSyncBeforeTargetChange(null);
             invalidateTargetActivations();
-            await clearRequestedTarget();
             currentTabId = null;
             currentTabTitle = null;
             clearCurrentContentTarget();
@@ -4143,6 +4549,7 @@ async function handleAsyncMessage(message, sender, sendResponse) {
             if (previousTabId) {
                 await deactivateTargetTab(previousTabId, previousContentTarget);
             }
+            await clearUserSelection();
             await clearPendingTarget();
             await chrome.storage.session.set({
                 currentTabId: null,
@@ -4158,29 +4565,26 @@ async function handleAsyncMessage(message, sender, sendResponse) {
             return;
         }
 
+        // Persist the choice before activating. Injection can fail for reasons
+        // the user can act on (a player frame needing host access, a page still
+        // loading), and none of them mean they stopped wanting this tab.
+        await rememberUserSelection(message.tabId, message.tabTitle);
         try {
-            const selectedTabId = normalizeTabId(message.tabId);
-            if (selectedTabId === null) {
-                sendResponse({ status: 'invalid_tab' });
-                return;
-            }
-            pendingRequestedActivationCount++;
-            let response;
-            try {
-                await rememberRequestedTarget(selectedTabId, message.tabTitle);
-                response = await activateTargetTab(selectedTabId, message.tabTitle);
-            } finally {
-                pendingRequestedActivationCount = Math.max(0, pendingRequestedActivationCount - 1);
-            }
+            const response = await activateTargetTab(message.tabId, message.tabTitle);
             if (response?.status === 'ok') {
                 chrome.runtime.sendMessage({
                     type: 'TARGET_TAB_READY',
                     tabId: response.tabId
                 }).catch(() => {});
+            } else if (response?.status !== 'superseded') {
+                await recordUserSelectionFailure(message.tabId, {
+                    message: `Activation returned ${response?.status || 'no result'}`
+                });
             }
             sendResponse(response);
         } catch (error) {
             addLog(`Failed to select tab: ${error.message}`, 'warn');
+            await recordUserSelectionFailure(message.tabId, error);
             sendResponse(injectionFailureResponse(error));
         }
     } else if (message.type === 'LOG') {
@@ -4340,7 +4744,22 @@ async function handleAsyncMessage(message, sender, sendResponse) {
             sendResponse({ status: 'ignored_stale_tab' });
             return;
         }
-        const activation = await refreshCurrentMediaTarget(tabId, { queueIfRunning: true });
+        // A page-driven notification must never surface as a handler failure.
+        // Reporting it that way turned one unreachable player frame into an
+        // endless error cascade in the popup.
+        const activation = await refreshCurrentMediaTarget(tabId, {
+            queueIfRunning: true,
+            onlyIfTargetMoved: true
+        }).catch(error => {
+            addLog(`Media frame candidate refresh failed: ${error.message}`, 'warn');
+            return { status: 'error', message: error.message };
+        });
+        // A layout change is exactly the shape of a rebuilt player frame, and a
+        // new document carries no monitor, so the video it creates next would go
+        // unreported. Do this on every notification rather than on a particular
+        // status: a concurrent refresh masks the status, and the call is already
+        // debounced and idempotent.
+        await refreshMediaFrameMonitors(tabId);
         sendResponse(activation || { status: 'invalid_tab' });
     } else if (message.type === 'MEDIA_FRAME_VISIBILITY') {
         if (!isCurrentContentSender(sender)) {
@@ -4354,7 +4773,13 @@ async function handleAsyncMessage(message, sender, sendResponse) {
         const tabId = normalizeTabId(sender.tab?.id);
         const activation = tabId === null
             ? null
-            : await refreshCurrentMediaTarget(tabId, { queueIfRunning: true });
+            : await refreshCurrentMediaTarget(tabId, {
+                queueIfRunning: true,
+                onlyIfTargetMoved: true
+            }).catch(error => {
+                addLog(`Media frame visibility refresh failed: ${error.message}`, 'warn');
+                return { status: 'error', message: error.message };
+            });
         sendResponse(activation || { status: 'invalid_tab' });
     } else if (message.type === 'MEDIA_TARGET_REFRESH') {
         if (!isCurrentContentSender(sender)) {
@@ -4364,7 +4789,13 @@ async function handleAsyncMessage(message, sender, sendResponse) {
         const tabId = normalizeTabId(sender.tab?.id);
         const activation = tabId === null
             ? null
-            : await refreshCurrentMediaTarget(tabId, { queueIfRunning: true });
+            : await refreshCurrentMediaTarget(tabId, {
+                queueIfRunning: true,
+                onlyIfTargetMoved: true
+            }).catch(error => {
+                addLog(`Media target refresh failed: ${error.message}`, 'warn');
+                return { status: 'error', message: error.message };
+            });
         sendResponse(activation || { status: 'invalid_tab' });
     } else if (message.type === 'CONTENT_BOOT') {
         if (sender.tab) {
@@ -4394,7 +4825,10 @@ async function handleAsyncMessage(message, sender, sendResponse) {
 
 initTabManager({
     getCurrentTabId: () => currentTabId,
-    reactivateCurrentTarget: tabId => refreshCurrentMediaTarget(tabId, { queueIfRunning: true }),
+    reactivateCurrentTarget: tabId => refreshCurrentMediaTarget(tabId, {
+        queueIfRunning: true,
+        onlyIfTargetMoved: false
+    }),
     ensureState,
     sendToCurrentContent: sendMessageToCurrentContent
 });

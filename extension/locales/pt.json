@@ -190,7 +190,6 @@
   "NOTIF_FORCE_PREPARE": "iniciou uma sincronização forçada",
   "NOTIF_FORCE_EXECUTE": "sincronizou todos",
   "DEBUG_NO_TAB": "Nenhum separador selecionado.",
-  "DEBUG_TARGET_ACTIVATING": "Separador de destino selecionado; a preparar a injeção de vídeo.",
   "DEBUG_COMM_FAIL": "Erro ao comunicar com o vídeo.",
   "EMPTY_PEERS_TITLE": "Nenhum participante",
   "EMPTY_PEERS_HINT": "Partilhe o seu link de convite para começar",

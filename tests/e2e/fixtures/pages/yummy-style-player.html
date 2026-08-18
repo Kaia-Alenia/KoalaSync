@@ -1,0 +1,36 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Anime-style nested player</title>
+<style>
+  body { margin: 0; font: 14px sans-serif; }
+  #info { height: 900px; padding: 24px; }
+  iframe { border: 0; }
+  #visible-wrapper { display: block; }
+  #hidden-wrapper, #hidden-trailer { width: 0; height: 0; display: block; }
+</style>
+<!--
+  Mirrors the live yummyanime.tv layout:
+    top (no video)
+    ├── visible same-origin wrapper 830x498 -> cross-origin player  (the real one)
+    ├── hidden same-origin wrapper  0x0     -> cross-origin mirror
+    └── hidden cross-origin trailer 0x0
+  The player sits two levels down and below the fold, and two other players are
+  loaded at zero size. Picking the visible one is the whole job.
+-->
+<div id="info">
+  <h1>Series page</h1>
+  <p>Description block that pushes the player below the fold.</p>
+</div>
+<iframe id="visible-wrapper" name="xfplayer_visible" width="830" height="498"
+        src="frames/xfp-wrapper.html?player=player-frame.html" allowfullscreen></iframe>
+<iframe id="hidden-wrapper" name="xfplayer_hidden"
+        src="frames/xfp-wrapper.html?player=player-frame-2.html" allowfullscreen></iframe>
+<iframe id="hidden-trailer" allowfullscreen></iframe>
+<script>
+  const trailer = document.getElementById('hidden-trailer');
+  trailer.src = `http://127.0.0.1:${location.port}/pages/frames/late-player-frame.html`;
+  const frames = [...document.querySelectorAll('iframe')];
+  Promise.all(frames.map(f => new Promise(resolve => {
+    f.addEventListener('load', resolve, { once: true });
+  }))).then(() => { window.__fixtureReady = true; });
+</script>

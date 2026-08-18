@@ -1,0 +1,27 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Deferred player frame</title>
+<style>
+  body { margin: 0; background: #111; }
+  #poster { width: 854px; height: 480px; color: #fff; font: 16px sans-serif;
+            display: flex; align-items: center; justify-content: center; cursor: pointer; }
+</style>
+<!--
+  The shape anime hosts actually ship: a poster with a play overlay, and no
+  <video> in the document at all until the viewer starts playback. Selecting the
+  tab before that point must still work, and the real player has to be picked up
+  the moment it appears.
+-->
+<div id="poster">Play</div>
+<script>
+  document.getElementById('poster').addEventListener('click', () => {
+    const video = document.createElement('video');
+    video.id = 'deferred-player';
+    video.width = 854;
+    video.height = 480;
+    video.controls = true;
+    video.src = '../../media/player-480p-12s.mp4';
+    document.body.append(video);
+    document.getElementById('poster').remove();
+  }, { once: true });
+</script>

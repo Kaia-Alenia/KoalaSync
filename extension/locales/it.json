@@ -190,7 +190,6 @@
   "NOTIF_FORCE_PREPARE": "ha avviato una sincronizzazione forzata",
   "NOTIF_FORCE_EXECUTE": "ha sincronizzato tutti",
   "DEBUG_NO_TAB": "Nessuna scheda selezionata.",
-  "DEBUG_TARGET_ACTIVATING": "Scheda target selezionata; preparazione dell’iniezione video.",
   "DEBUG_COMM_FAIL": "Errore di comunicazione con il video.",
   "EMPTY_PEERS_TITLE": "Nessun partecipante",
   "EMPTY_PEERS_HINT": "Condividi il tuo link per iniziare",

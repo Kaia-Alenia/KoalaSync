@@ -1,0 +1,29 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Anime-style player built on demand</title>
+<style>
+  body { margin: 0; font: 14px sans-serif; }
+  #info { height: 900px; padding: 24px; }
+  iframe { border: 0; }
+  #visible-wrapper { display: block; }
+  #hidden-wrapper { width: 0; height: 0; display: block; }
+</style>
+<!--
+  Same layout as yummy-style-player.html, except the visible player builds its
+  <video> only when the viewer presses play. Until then the tab has no video at
+  all, which is the state the extension is in when the user picks the tab.
+-->
+<div id="info">
+  <h1>Series page</h1>
+  <p>Description block that pushes the player below the fold.</p>
+</div>
+<iframe id="visible-wrapper" name="xfplayer_visible" width="830" height="498"
+        src="frames/xfp-wrapper.html?player=deferred-player-frame.html" allowfullscreen></iframe>
+<iframe id="hidden-wrapper" name="xfplayer_hidden"
+        src="frames/xfp-wrapper.html?player=player-frame-2.html" allowfullscreen></iframe>
+<script>
+  const frames = [...document.querySelectorAll('iframe')];
+  Promise.all(frames.map(f => new Promise(resolve => {
+    f.addEventListener('load', resolve, { once: true });
+  }))).then(() => { window.__fixtureReady = true; });
+</script>
