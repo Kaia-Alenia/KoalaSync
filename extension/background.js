@@ -152,7 +152,7 @@ function forgetFrameIds(tabId) {
 // into a storm.
 // Reinstalling is now informative rather than amnesic, but it is still work in
 // every frame; keep it well clear of the discovery poll's own cadence.
-const MONITOR_REFRESH_INTERVAL_MS = 5000;
+const MONITOR_REFRESH_INTERVAL_MS = 1200;
 const lastMonitorRefreshByTab = new Map();
 const pendingMonitorRefreshByTab = new Map();
 
@@ -864,12 +864,9 @@ function isCurrentContentSender(sender) {
     const matchesElectedFrame = senderFrameId === normalizeFrameId(currentTargetFrameId)
         && (!currentTargetDocumentId || sender.documentId === currentTargetDocumentId);
     if (matchesElectedFrame) return true;
-    // The elected frame holds no video, so the election is wrong or stale and a
-    // frame that is reporting media activity knows better. Frame election is the
-    // fragile half of this system; sender.frameId is authoritative, costs no
-    // permission and has no timing window. Trust it rather than dropping the
-    // user's own play and pause because they came from the real player frame.
-    return currentTargetHasVideo !== true;
+    // Any frame in the selected target tab reporting playback activity
+    // is a valid content sender (e.g. user interacted with or switched to another mirror).
+    return true;
 }
 
 /**
@@ -883,13 +880,16 @@ function adoptReportingFrame(sender) {
     if (!sender?.tab) return false;
     const senderTabId = normalizeTabId(sender.tab.id);
     if (senderTabId === null || senderTabId !== normalizeTabId(currentTabId)) return false;
-    if (currentTargetHasVideo === true) return false;
     const senderFrameId = normalizeFrameId(sender.frameId);
-    if (senderFrameId === normalizeFrameId(currentTargetFrameId)) return false;
+    if (senderFrameId === normalizeFrameId(currentTargetFrameId)
+        && (!currentTargetDocumentId || sender.documentId === currentTargetDocumentId)) {
+        return false;
+    }
 
     currentTargetFrameId = senderFrameId;
     currentTargetDocumentId = typeof sender.documentId === 'string' ? sender.documentId : null;
     currentTargetHasVideo = true;
+    stopMediaDiscoveryPoll();
     rememberFrameId(senderTabId, senderFrameId);
     addLog(`Adopted frame ${senderFrameId} as the media target; it reported playback`, 'info');
     chrome.storage.session.set({
@@ -2611,8 +2611,11 @@ function executeScriptWithTimeout(options, timeoutMs = SCRIPT_INJECTION_TIMEOUT_
             reject(error);
         }, timeoutMs);
     });
+    const scriptPromise = chrome.scripting.executeScript(options);
+    // Attach catch to prevent unhandled promise rejection if timeout wins the race and script fails later (e.g. on tab close)
+    scriptPromise.catch(() => {});
     return Promise.race([
-        chrome.scripting.executeScript(options),
+        scriptPromise,
         timeout
     ]).finally(() => {
         if (timeoutId !== null) clearTimeout(timeoutId);
@@ -3291,16 +3294,14 @@ async function selectedMediaTargetMoved(tabId) {
         return true;
     }
     if (normalizeTabId(currentTabId) !== normalizeTabId(tabId)) return false;
-    // An inconclusive probe is not a reason to move. A page whose players are
-    // still loading, or that offers several equally-ranked mirrors, resolves
-    // differently from one moment to the next; acting on that flips the target
-    // back and forth and leaves activation running forever.
+    // An inconclusive probe is not a reason to move when on top frame.
+    // However, if a nested frame was elected (currentTargetFrameId !== 0) and is now
+    // no longer an accessible candidate with video, the target has vacated.
     if (resolved.hasVideo !== true) {
-        // No player anywhere yet. This runs on every lifecycle wake-up, so it is
-        // the reliable place to make sure freshly rebuilt documents carry a
-        // monitor — without one, the video created there next is never reported
-        // and the target can never come back.
         refreshMediaFrameMonitors(tabId).catch(() => {});
+        if (normalizeFrameId(currentTargetFrameId) !== 0 || currentTargetHasVideo === true) {
+            return true;
+        }
         return false;
     }
     if (currentTargetHasVideo !== true) return true;

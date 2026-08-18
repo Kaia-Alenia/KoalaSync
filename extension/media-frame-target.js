@@ -513,7 +513,9 @@ function executeWithTimeout(task, timeoutMs, label) {
     const timeout = new Promise((_, reject) => {
         timeoutId = setTimeout(() => reject(probeTimeoutError(label, timeoutMs)), timeoutMs);
     });
-    return Promise.race([task(), timeout]).finally(() => {
+    const taskPromise = Promise.resolve().then(task);
+    taskPromise.catch(() => {});
+    return Promise.race([taskPromise, timeout]).finally(() => {
         if (timeoutId !== null) clearTimeout(timeoutId);
     });
 }

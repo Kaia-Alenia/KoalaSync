@@ -476,6 +476,37 @@ test('re-elects the visible cross-origin player after an iframe switch', async (
     expect(await first.locator('video').evaluate(video => video.paused)).toBe(true);
 });
 
+test('immediately adopts and syncs when switching mirrors while first mirror was active and playing', async ({ context, extensionId, baseURL }) => {
+    const url = `${baseURL}/pages/cross-origin-switching.html`;
+    const page = await context.newPage();
+    await page.goto(url);
+    await page.waitForFunction(() => window.__fixtureReady === true);
+    const first = page.frames().find(frame => frame.url().includes('/frames/player-frame.html?slot=first'));
+    const second = page.frames().find(frame => frame.url().includes('/frames/player-frame-2.html?slot=second'));
+    const { tabId } = await selectTargetTab(context, extensionId, url);
+
+    await expect.poll(() => first.locator('video').getAttribute('data-koala-attached')).toBe('true');
+    await sendServerCommand(context, extensionId, tabId, 'play');
+    await expect.poll(() => first.locator('video').evaluate(video => !video.paused)).toBe(true);
+
+    const firstStatus = await getExtensionState(context, extensionId, { type: 'GET_STATUS' });
+    expect(firstStatus.targetHasVideo).toBe(true);
+
+    // Switch mirror and play second video directly in the new frame
+    await page.evaluate(() => window.switchPlayer());
+    await second.locator('video').evaluate(video => video.play());
+
+    // Should immediately adopt the second mirror
+    await expect.poll(async () => {
+        const status = await getExtensionState(context, extensionId, { type: 'GET_STATUS' });
+        return status.targetFrameId;
+    }).not.toBe(firstStatus.targetFrameId);
+
+    // Commands must now control the second frame without delay
+    await sendServerCommand(context, extensionId, tabId, 'pause');
+    await expect.poll(() => second.locator('video').evaluate(video => video.paused)).toBe(true);
+});
+
 test('keeps commands flowing during continuous player-frame geometry changes', async ({ context, extensionId, baseURL }) => {
     const url = `${baseURL}/pages/cross-origin-switching.html`;
     const page = await context.newPage();
