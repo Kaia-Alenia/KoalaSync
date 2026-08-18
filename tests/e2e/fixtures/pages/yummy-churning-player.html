@@ -1,0 +1,43 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Anime page with live ad churn</title>
+<style>
+  body { margin: 0; font: 14px sans-serif; }
+  #info { height: 900px; padding: 24px; }
+  iframe { border: 0; }
+  #visible-wrapper { display: block; }
+  #hidden-wrapper { width: 0; height: 0; display: block; }
+  #ads iframe { width: 300px; height: 60px; display: block; }
+</style>
+<!--
+  The anime layout plus what the real site actually does while you look at it:
+  ad slots that add, remove and resize frames continuously. Every one of those
+  mutations wakes the media-frame monitor, so this is the fixture that exposes a
+  reactivation loop — a static page never will.
+-->
+<div id="info">
+  <h1>Series page</h1>
+  <div id="ads"></div>
+</div>
+<iframe id="visible-wrapper" name="xfplayer_visible" width="830" height="498"
+        src="frames/xfp-wrapper.html?player=deferred-player-frame.html" allowfullscreen></iframe>
+<iframe id="hidden-wrapper" name="xfplayer_hidden"
+        src="frames/xfp-wrapper.html?player=player-frame-2.html" allowfullscreen></iframe>
+<script>
+  const ads = document.getElementById('ads');
+  let tick = 0;
+  setInterval(() => {
+    tick++;
+    const stale = ads.firstElementChild;
+    if (stale && tick % 2 === 0) stale.remove();
+    const slot = document.createElement('iframe');
+    slot.src = `about:blank#ad-${tick}`;
+    slot.style.height = `${40 + (tick % 5) * 8}px`;
+    ads.append(slot);
+  }, 150);
+
+  const wrappers = [...document.querySelectorAll('#visible-wrapper, #hidden-wrapper')];
+  Promise.all(wrappers.map(f => new Promise(resolve => {
+    f.addEventListener('load', resolve, { once: true });
+  }))).then(() => { window.__fixtureReady = true; });
+</script>

@@ -14,7 +14,10 @@ describe('target tab lifecycle', () => {
     it('injects playback and chat scripts only into the explicitly selected tab', () => {
         expect(backgroundSource).not.toContain('chrome.tabs.onActivated');
         expect(backgroundSource).not.toContain('chrome.tabs.query({})');
-        expect(backgroundSource).toContain('contentTarget = await resolveMediaContentTarget(chrome, tabId)');
+        expect(backgroundSource).toMatch(/contentTarget = await resolveMediaContentTarget\(chrome, tabId, \{\s*knownFrameIds/);
+        // Frame ids must come from observed senders, never from a navigation permission.
+        expect(backgroundSource).toContain('function rememberFrameId(tabId, frameId)');
+        expect(backgroundSource).toContain('rememberFrameId(senderTabId, sender?.frameId)');
         expect(backgroundSource).toContain('target: scriptTarget');
         expect(backgroundSource).toContain("files: ['chat-format.js', 'chat-overlay.js', 'content.js']");
         expect(backgroundSource).toContain("chrome.tabs.query({ url: 'https://sync.koalastuff.net/*' })");
@@ -45,8 +48,11 @@ describe('target tab lifecycle', () => {
 
     it('does not reactivate the target for ordinary playback churn', () => {
         expect(backgroundSource).toContain('async function selectedMediaTargetMoved(tabId)');
-        expect(backgroundSource).toContain('onlyIfTargetMoved = false');
-        expect(backgroundSource.match(/onlyIfTargetMoved: true/g)?.length).toBe(5);
+        expect(backgroundSource).toContain('onlyIfTargetMoved = true');
+        // Forcing a rebuild must stay rare and deliberate: an unreachable content
+        // script, an explicit request, and a completed navigation. Everything else
+        // takes the guarded path by default.
+        expect(backgroundSource.match(/onlyIfTargetMoved: false/g)?.length).toBe(3);
         // Playback state must stay out of the candidate signature, otherwise
         // every play/pause looks like a frame layout change.
         expect(monitorSource).not.toContain('element.paused ? 0 : 1');

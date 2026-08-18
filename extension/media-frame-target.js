@@ -335,11 +335,34 @@ function sameMeaningfulRank(left, right) {
     return leftRank.slice(0, 8).every((value, index) => value === rightRank[index]);
 }
 
+/**
+ * Frames whose own element was seen as hidden by an ancestor that could inspect
+ * it directly. A same-origin wrapper collapsed to 0x0 — the usual way an anime
+ * host parks the mirrors you are not watching — is reported here by the top
+ * frame itself, so the hidden player can be ruled out without waiting for the
+ * postMessage visibility handshake to complete.
+ */
+function hiddenFrameHrefs(injectionResults) {
+    const visibility = new Map();
+    for (const entry of Array.isArray(injectionResults) ? injectionResults : []) {
+        for (const frame of entry?.result?.embeddedFrames || []) {
+            if (typeof frame?.href !== 'string' || !frame.href) continue;
+            // Any ancestor reporting it visible wins over one reporting it hidden.
+            visibility.set(frame.href, (visibility.get(frame.href) === true) || frame.visible === true);
+        }
+    }
+    const hidden = new Set();
+    for (const [href, visible] of visibility) if (!visible) hidden.add(href);
+    return hidden;
+}
+
 export function selectMediaFrame(injectionResults) {
+    const hidden = hiddenFrameHrefs(injectionResults);
     const candidates = (Array.isArray(injectionResults) ? injectionResults : [])
         .filter(entry => Number.isInteger(entry?.frameId)
             && entry?.result?.bestVideo?.rendered === true)
         .filter(entry => entry.result.parentFrameVisible !== false)
+        .filter(entry => !hidden.has(entry.result.href))
         .sort(compareRanks);
     if (candidates.length === 0) return null;
     if (candidates.length > 1
@@ -532,6 +555,9 @@ export async function resolveMediaContentTarget(chromeApi, tabId, {
     retryDelayMs = 200,
     probeDelayMs = 60,
     probeTimeoutMs = DEFAULT_PROBE_TIMEOUT_MS,
+    // Frame ids the background has seen in this tab. They rescue the probe when
+    // the all-frames sweep is rejected wholesale by one unrelated frame.
+    knownFrameIds = [],
     // ...but the budget is now wall-clock bounded, so a page whose frames all
     // time out cannot hold the activation open for minutes.
     deadlineMs = 12000
@@ -551,6 +577,21 @@ export async function resolveMediaContentTarget(chromeApi, tabId, {
             [null],
             probeTimeoutMs
         );
+        // Any frame the sweep missed but that we know exists gets asked directly.
+        // One rejected probe then costs one frame, not the whole page.
+        const missingFrameIds = knownFrameIds.filter(frameId => Number.isInteger(frameId)
+            && !results.some(entry => entry.frameId === frameId));
+        if (missingFrameIds.length > 0) {
+            const { results: recovered } = await executeInAccessibleFrames(
+                chromeApi,
+                missingFrameIds.map(frameId => ({ tabId, frameIds: [frameId] })),
+                inspectMediaFrame,
+                [null],
+                probeTimeoutMs
+            );
+            if (recovered.length > 0) results = mergeFrameResults(results, recovered);
+        }
+
         if (results.length === 0) {
             // The all-frames sweep answered for nothing at all, so fall back to
             // the top document alone. Every probe is time-boxed: an unreachable
@@ -580,14 +621,23 @@ export async function resolveMediaContentTarget(chromeApi, tabId, {
             // that by listing frames through webNavigation — but the sweep
             // above already reports frameId and documentId for every frame it
             // reached, so the same isolation costs no permission at all.
-            const frameTargets = results.map(entry => frameScriptTarget(tabId, entry));
+            // A leaf frame with no video and no nested frames can never be a
+            // candidate nor an ancestor of one. Ad slots are exactly that, and
+            // they churn constantly, so every phase below would otherwise wait
+            // on a frame that was already being torn down.
+            const relevant = results.filter(entry => (entry?.result?.videoCount || 0) > 0
+                || (entry?.result?.embeddedFrames?.length || 0) > 0
+                || entry?.result?.isTop === true);
+            const frameTargets = (relevant.length > 0 ? relevant : results)
+                .map(entry => frameScriptTarget(tabId, entry));
             try {
+                const visibilityTimeoutMs = Math.min(probeTimeoutMs, 750);
                 await executeInAccessibleFrames(
                     chromeApi,
                     frameTargets,
                     installParentFrameVisibilityProbe,
                     [token],
-                    probeTimeoutMs
+                    visibilityTimeoutMs
                 );
                 // Four passes match the maximum same-origin recursion depth.
                 for (let pass = 0; pass < 4; pass++) {
@@ -596,7 +646,7 @@ export async function resolveMediaContentTarget(chromeApi, tabId, {
                         frameTargets,
                         dispatchParentFrameVisibilityProbe,
                         [token],
-                        probeTimeoutMs
+                        visibilityTimeoutMs
                     );
                     await new Promise(resolve => setTimeout(resolve, probeDelayMs));
                 }

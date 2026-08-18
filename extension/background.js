@@ -84,6 +84,40 @@ let currentTargetDocumentId = null;
 let currentTargetHasVideo = false;
 let targetActivationGeneration = 0;
 let activeTargetActivation = null;
+// Frame ids seen in this tab, learned from script results and from the frames
+// that message us. An allFrames sweep is all-or-nothing — one ad frame tearing
+// down while it runs makes Chromium reject the whole call, and the resolver
+// then sees nothing but the top frame. v3.1.2 avoided that by listing frames
+// through webNavigation; this registry rebuilds the same knowledge from
+// sender.frameId, which every content script hands us for free.
+const knownFrameIdsByTab = new Map();
+
+function rememberFrameId(tabId, frameId) {
+    const normalizedTabId = normalizeTabId(tabId);
+    if (normalizedTabId === null || !Number.isInteger(frameId) || frameId < 0) return;
+    let frames = knownFrameIdsByTab.get(normalizedTabId);
+    if (!frames) {
+        frames = new Set();
+        knownFrameIdsByTab.set(normalizedTabId, frames);
+    }
+    frames.add(frameId);
+    // A tab cannot plausibly hold this many media-bearing frames; cap the set so
+    // a page that recycles frames forever cannot grow it without bound.
+    if (frames.size > 64) {
+        const oldest = frames.values().next().value;
+        if (oldest !== 0) frames.delete(oldest);
+    }
+}
+
+function listKnownFrameIds(tabId) {
+    const frames = knownFrameIdsByTab.get(normalizeTabId(tabId));
+    return frames ? Array.from(frames) : [];
+}
+
+function forgetFrameIds(tabId) {
+    knownFrameIdsByTab.delete(normalizeTabId(tabId));
+}
+
 let mediaTargetRefreshTask = null;
 let mediaTargetRefreshTabId = null;
 let mediaTargetRefreshDirty = false;
@@ -2426,7 +2460,9 @@ async function injectContentScript(tabId, {
         access = await inspectTabHostAccess(chrome, tabId);
         const url = access.url || '';
         needsPageApiSeek = shouldUsePageApiSeek(url);
-        contentTarget = await resolveMediaContentTarget(chrome, tabId);
+        contentTarget = await resolveMediaContentTarget(chrome, tabId, {
+            knownFrameIds: listKnownFrameIds(tabId)
+        });
         if (!isTargetActivationSuperseded(tabId, activationGeneration)
             && activeTargetActivation?.tabId === tabId) {
             activeTargetActivation.frameId = contentTarget.frameId;
@@ -3008,7 +3044,10 @@ async function reactivateCurrentTarget(tabId, { expectedGeneration = targetActiv
 async function selectedMediaTargetMoved(tabId) {
     let resolved;
     try {
-        resolved = await resolveMediaContentTarget(chrome, tabId, { attempts: 1 });
+        resolved = await resolveMediaContentTarget(chrome, tabId, {
+            attempts: 1,
+            knownFrameIds: listKnownFrameIds(tabId)
+        });
     } catch {
         // An access-required error must reach the full activation path so the
         // popup can surface it.
@@ -3027,7 +3066,10 @@ async function selectedMediaTargetMoved(tabId) {
             && resolved.documentId !== currentTargetDocumentId);
 }
 
-function refreshCurrentMediaTarget(tabId, { queueIfRunning = false, onlyIfTargetMoved = false } = {}) {
+// Reinjection is the exception, not the default. Every caller that merely
+// wants the target confirmed gets the guarded path; only a genuinely
+// unreachable content script or an explicit request forces a rebuild.
+function refreshCurrentMediaTarget(tabId, { queueIfRunning = false, onlyIfTargetMoved = true } = {}) {
     const selectedTabId = normalizeTabId(tabId);
     if (selectedTabId === null || normalizeTabId(currentTabId) !== selectedTabId) {
         return Promise.resolve({ status: 'superseded' });
@@ -3072,7 +3114,10 @@ function refreshCurrentMediaTarget(tabId, { queueIfRunning = false, onlyIfTarget
         if (needsFollowup && mediaTargetRefreshFollowupTimer === null) {
             mediaTargetRefreshFollowupTimer = setTimeout(() => {
                 mediaTargetRefreshFollowupTimer = null;
-                refreshCurrentMediaTarget(selectedTabId, { queueIfRunning: true }).catch(() => {});
+                refreshCurrentMediaTarget(selectedTabId, {
+                    queueIfRunning: true,
+                    onlyIfTargetMoved
+                }).catch(() => {});
             }, 250);
         }
     });
@@ -3172,6 +3217,7 @@ if (chrome.tabs?.onRemoved?.addListener) {
             const isCurrent = normalizeTabId(currentTabId) === tabId;
             const isPending = pending?.tabId === tabId;
             const isActivating = activeTargetActivation?.tabId === tabId;
+            forgetFrameIds(tabId);
             const isSelected = normalizeTabId(userSelectedTabId) === tabId;
             if (isSelected) await clearUserSelection(tabId);
             if (!isCurrent && !isPending && !isActivating) return;
@@ -3284,7 +3330,7 @@ async function _routeToContentInternal(tabId, action, payload, actionTimestamp, 
             || message.includes('No document with id')
             || message.includes('No document with ID')) {
             try {
-                const response = await refreshCurrentMediaTarget(tabId);
+                const response = await refreshCurrentMediaTarget(tabId, { onlyIfTargetMoved: false });
                 if (response?.status !== 'ok' && response?.status !== 'activation_in_progress') return;
                 await new Promise(resolve => setTimeout(resolve, 150));
                 await _routeToContentInternal(
@@ -3449,6 +3495,7 @@ async function handleAsyncMessage(message, sender, sendResponse) {
     await ensureState();
 
     const senderTabId = normalizeTabId(sender?.tab?.id);
+    if (senderTabId !== null) rememberFrameId(senderTabId, sender?.frameId);
     const mediaLifecycleMessage = message.type === 'MEDIA_FRAME_CANDIDATE_CHANGED'
         || message.type === 'MEDIA_FRAME_VISIBILITY'
         || message.type === 'MEDIA_TARGET_REFRESH';
@@ -4218,7 +4265,7 @@ async function handleAsyncMessage(message, sender, sendResponse) {
             return true;
         }
 
-        refreshCurrentMediaTarget(tabId).then(response => {
+        refreshCurrentMediaTarget(tabId, { onlyIfTargetMoved: false }).then(response => {
             sendResponse(response);
         }).catch(err => {
             addLog(`Failed to inject into tab: ${err.message}`, 'warn');
@@ -4509,7 +4556,10 @@ async function handleAsyncMessage(message, sender, sendResponse) {
 
 initTabManager({
     getCurrentTabId: () => currentTabId,
-    reactivateCurrentTarget: tabId => refreshCurrentMediaTarget(tabId, { queueIfRunning: true }),
+    reactivateCurrentTarget: tabId => refreshCurrentMediaTarget(tabId, {
+        queueIfRunning: true,
+        onlyIfTargetMoved: false
+    }),
     ensureState,
     sendToCurrentContent: sendMessageToCurrentContent
 });

@@ -706,6 +706,41 @@ test('polling video state on a page with no video does not restart the target', 
         .toBe('true');
 });
 
+test('stays ready on a page whose ad frames keep mutating', async ({ context, extensionId, baseURL }) => {
+    test.setTimeout(90000);
+    // Live ad churn wakes the media-frame monitor several times a second. Each
+    // wake used to schedule a trailing refresh that rebuilt the target
+    // unconditionally, and rebuilding produced more churn — a loop that never
+    // let the activation settle and pinned the popup on "activating".
+    const url = `${baseURL}/pages/yummy-churning-player.html`;
+    const page = await context.newPage();
+    await page.goto(url);
+    await page.waitForFunction(() => window.__fixtureReady === true);
+
+    const { tabId } = await selectTargetTab(context, extensionId, url);
+
+    for (let sample = 0; sample < 8; sample++) {
+        await page.waitForTimeout(700);
+        const status = await getExtensionState(context, extensionId, { type: 'GET_STATUS' });
+        expect(status, `sample ${sample} must not be stuck activating`).toMatchObject({
+            targetTabId: tabId,
+            targetReady: true,
+            targetActivationState: 'ready'
+        });
+    }
+
+    // The player still has to be picked up while the churn continues.
+    const deferred = page.frames().find(frame => frame.url().endsWith('/frames/deferred-player-frame.html'));
+    await deferred.locator('#poster').click();
+    await expect
+        .poll(() => deferred.locator('video').getAttribute('data-koala-attached'), { timeout: 20000 })
+        .toBe('true');
+    await expect
+        .poll(() => getExtensionState(context, extensionId, { type: 'GET_STATUS' })
+            .then(state => state.targetActivationState), { timeout: 20000 })
+        .toBe('ready');
+});
+
 test('keeps the tab selected when its activation fails', async ({ context, extensionId }) => {
     // A page the extension is not allowed to script stands in for any activation
     // failure the user can act on. Losing the selection here is what made the
