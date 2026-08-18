@@ -38,7 +38,7 @@ Replace the reconstruction with browser-managed injection:
 ```js
 await chrome.scripting.registerContentScripts([{
     id: 'koala-media-frames',
-    matches: [originPatternOfSelectedTab],
+    matches: ['<all_urls>'],        // see "Scoping is not possible" below
     allFrames: true,
     js: ['media-frame-monitor.js'],
     runAt: 'document_idle'
@@ -55,10 +55,25 @@ Why this ends the whole failure class:
   declared, and dynamically registered scripts produce no additional permission warning.
 - Strictly better than v3.1.2, which still had to re-enumerate after every frame change.
 
-Suggested shape: register on `activateTargetTab()` scoped to the selected tab's origin,
-unregister in `clearUserSelection()` / tab removal. Keep the existing registry, broadcast
-and adoption as they are — they become belt-and-braces rather than the primary mechanism.
-The discovery poll (`startMediaDiscoveryPoll`) can then be deleted.
+Suggested shape: register on `activateTargetTab()`, unregister in `clearUserSelection()`
+and on tab removal. Keep the existing registry, broadcast and adoption as they are — they
+become belt-and-braces rather than the primary mechanism. The discovery poll
+(`startMediaDiscoveryPoll`) can then be deleted.
+
+### Scoping is not possible — this is the real cost
+
+`matches` is evaluated against **each frame's own URL**, not the tab's. A pattern like
+`https://yummyanime.tv/*` would therefore *not* reach the `kodikplayer.com` frame, which is
+the only frame that matters. To reach an embedded player whose origin is unknown before
+discovery has happened, the pattern has to be `<all_urls>`.
+
+There is also no tab scoping: registration is by URL pattern only. With three tabs open on
+the same site, all three get the script — the selected one and the two others.
+
+So the honest trade is: **the monitor runs in every frame of every http/https tab while a
+target is selected.** A narrower learned allowlist (register the player origins seen on a
+previous visit) helps from the second visit onward but cannot solve the first, which is
+the case that is broken today.
 
 ## The decision that blocks it
 
@@ -70,12 +85,17 @@ in `extension/target-tab-lifecycle.test.mjs`:
 
 Mitigations, if the owner accepts the trade:
 
-- Only `media-frame-monitor.js` is registered — a passive sentinel that controls nothing
-  and only posts `MEDIA_FRAME_CANDIDATE_CHANGED`.
-- The background already ignores messages from any tab that is not `currentTabId`.
+- Only `media-frame-monitor.js` is registered — a passive sentinel that controls nothing,
+  reads no page content and only posts `MEDIA_FRAME_CANDIDATE_CHANGED`.
+- The background already ignores messages from any tab that is not `currentTabId`, so
+  other tabs cost a message that is dropped.
 - `content.js`, `chat-overlay.js` and the page-API bridge stay programmatically injected
-  into the selected tab only, so the invariant holds for everything that acts.
-- Registration exists only while a tab is selected.
+  into the selected tab only, so the invariant holds for everything that *acts*.
+- Registration exists only while a tab is selected, and is removed on deselect.
+
+What it still means in plain terms: while a watch party is active, a passive script runs in
+every frame of every ordinary tab, not just the chosen one. That is a privacy-posture
+change for a project whose selling point is that it only touches the tab you picked.
 
 **Nothing should be built until the owner has decided this.** If the answer is no, the
 current event-driven design stays and the remaining races have to be accepted or papered
