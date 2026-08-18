@@ -743,6 +743,27 @@ function sendMessageToChatOverlay(message) {
     return sendMessageToFrame(tabId, 0, message);
 }
 
+/**
+ * Delivers a command to every frame in the tab instead of the elected one.
+ *
+ * Frame election is an intervention: executeScript has to enter each frame, it
+ * is all-or-nothing, and a player that renavigates or rebuilds its video — Kodik
+ * does both constantly — reliably lands in the window where that fails. The
+ * election then names the top frame, which holds no video, and playback commands
+ * go nowhere. webNavigation.getAllFrames() had no such window because it only
+ * observed; without it, the robust move is to stop needing the answer.
+ *
+ * Every content-script command handler already begins with findVideo() and
+ * returns when there is none, so exactly the frame that owns the video acts.
+ */
+function broadcastCommandToTab(tabId, message) {
+    const normalizedTabId = normalizeTabId(tabId);
+    if (normalizedTabId === null) {
+        return Promise.reject(new Error('Invalid tab ID'));
+    }
+    return chrome.tabs.sendMessage(normalizedTabId, message);
+}
+
 function sendMessageToContentTab(tabId, message, callback = null) {
     if (normalizeTabId(tabId) === normalizeTabId(currentTabId)) {
         return sendMessageToCurrentContent(message, callback);
@@ -762,9 +783,44 @@ function isCurrentContentSender(sender) {
         && (!activeTargetActivation?.documentId
             || sender.documentId === activeTargetActivation.documentId);
     if (Number.isInteger(activeTargetActivation?.frameId)) return matchesActivation;
-    return senderTabId === normalizeTabId(currentTabId)
-        && senderFrameId === normalizeFrameId(currentTargetFrameId)
+    if (senderTabId !== normalizeTabId(currentTabId)) return false;
+    const matchesElectedFrame = senderFrameId === normalizeFrameId(currentTargetFrameId)
         && (!currentTargetDocumentId || sender.documentId === currentTargetDocumentId);
+    if (matchesElectedFrame) return true;
+    // The elected frame holds no video, so the election is wrong or stale and a
+    // frame that is reporting media activity knows better. Frame election is the
+    // fragile half of this system; sender.frameId is authoritative, costs no
+    // permission and has no timing window. Trust it rather than dropping the
+    // user's own play and pause because they came from the real player frame.
+    return currentTargetHasVideo !== true;
+}
+
+/**
+ * Adopts the frame an accepted media event came from.
+ *
+ * This is the self-healing counterpart to the check above: once the real player
+ * frame identifies itself, later commands can be addressed to it directly
+ * instead of broadcast.
+ */
+function adoptReportingFrame(sender) {
+    if (!sender?.tab) return false;
+    const senderTabId = normalizeTabId(sender.tab.id);
+    if (senderTabId === null || senderTabId !== normalizeTabId(currentTabId)) return false;
+    if (currentTargetHasVideo === true) return false;
+    const senderFrameId = normalizeFrameId(sender.frameId);
+    if (senderFrameId === normalizeFrameId(currentTargetFrameId)) return false;
+
+    currentTargetFrameId = senderFrameId;
+    currentTargetDocumentId = typeof sender.documentId === 'string' ? sender.documentId : null;
+    currentTargetHasVideo = true;
+    rememberFrameId(senderTabId, senderFrameId);
+    addLog(`Adopted frame ${senderFrameId} as the media target; it reported playback`, 'info');
+    chrome.storage.session.set({
+        currentTargetFrameId,
+        currentTargetDocumentId,
+        currentTargetHasVideo
+    }).catch(() => {});
+    return true;
 }
 
 function isExtensionPageSender(sender) {
@@ -3346,14 +3402,22 @@ async function _routeToContentInternal(tabId, action, payload, actionTimestamp, 
     }
 
     const targetGeneration = targetActivationGeneration;
+    const command = {
+        type: 'SERVER_COMMAND',
+        action,
+        payload,
+        actionTimestamp,
+        commandSenderId
+    };
     try {
-        await sendMessageToContentTab(tabId, {
-            type: 'SERVER_COMMAND',
-            action,
-            payload,
-            actionTimestamp,
-            commandSenderId
-        });
+        // If the elected frame reports no video, the election is wrong or stale.
+        // Broadcasting reaches the frame that actually owns the player, and the
+        // ones that do not own it ignore the command.
+        if (currentTargetHasVideo === true) {
+            await sendMessageToContentTab(tabId, command);
+        } else {
+            await broadcastCommandToTab(tabId, command);
+        }
     } catch (error) {
         if (!isCurrentTargetIdentity(tabId, targetGeneration)) {
             if (normalizeTabId(currentTabId) === normalizeTabId(tabId) && retries < 3) {
@@ -4059,6 +4123,9 @@ async function handleAsyncMessage(message, sender, sendResponse) {
         });
     } else if (message.type === 'CONTENT_EVENT') {
         const senderIsContent = !!sender?.tab && !isExtensionPageSender(sender);
+        // A real player frame just identified itself. Take it as the target so
+        // subsequent commands can be addressed instead of broadcast.
+        if (senderIsContent) adoptReportingFrame(sender);
         if (!senderIsContent && message.expectedTabId !== undefined) {
             const expectedTabId = normalizeTabId(message.expectedTabId);
             if (expectedTabId === null || normalizeTabId(currentTabId) !== expectedTabId) {

@@ -741,6 +741,38 @@ test('stays ready on a page whose ad frames keep mutating', async ({ context, ex
         .toBe('ready');
 });
 
+test('controls and adopts a nested player even while the top frame is elected', async ({ context, extensionId, baseURL }) => {
+    // The failure mode reported from the live site: the election names the top
+    // frame, which holds no video, so commands go nowhere and the user's own
+    // play/pause from the real player frame is discarded as a stale sender.
+    const url = `${baseURL}/pages/yummy-deferred-player.html`;
+    const page = await context.newPage();
+    await page.goto(url);
+    await page.waitForFunction(() => window.__fixtureReady === true);
+
+    const { tabId, response } = await selectTargetTab(context, extensionId, url);
+    expect(response).toMatchObject({ status: 'ok', frameId: 0, hasVideo: false });
+
+    // Build the player without giving the monitor a chance to promote first.
+    const deferred = page.frames().find(frame => frame.url().endsWith('/frames/deferred-player-frame.html'));
+    await deferred.locator('#poster').click();
+    await expect.poll(() => deferred.locator('video').count()).toBe(1);
+
+    // A command must reach the frame that owns the video regardless of election.
+    await sendServerCommand(context, extensionId, tabId, 'play', { time: 1 });
+    await expect
+        .poll(() => deferred.locator('video').evaluate(video => video.paused), { timeout: 15000 })
+        .toBe(false);
+
+    // And once that frame reports playback, it becomes the addressed target.
+    await expect
+        .poll(() => getExtensionState(context, extensionId, { type: 'GET_STATUS' })
+            .then(state => state.targetFrameId), { timeout: 15000 })
+        .not.toBe(0);
+    const status = await getExtensionState(context, extensionId, { type: 'GET_STATUS' });
+    expect(status).toMatchObject({ targetTabId: tabId, targetHasVideo: true });
+});
+
 test('keeps the tab selected when its activation fails', async ({ context, extensionId }) => {
     // A page the extension is not allowed to script stands in for any activation
     // failure the user can act on. Losing the selection here is what made the
