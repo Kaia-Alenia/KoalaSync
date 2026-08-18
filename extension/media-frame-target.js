@@ -167,10 +167,16 @@ export function inspectMediaFrame(expectedVisibilityToken = null) {
             const rect = frame.getBoundingClientRect();
             const directVisible = elementIsVisible(frame, rect);
             const visible = ancestorVisible && directVisible;
+            // An iframe without src resolves to the *parent* document's URL, so
+            // record whether the element really carried one. Treating a srcless
+            // ad slot's href as its own would let a hidden slot mark the page
+            // that contains it as hidden.
+            const rawSrc = frame.getAttribute?.('src') || '';
             let href = '';
             try { href = new URL(frame.src || '', doc.location.href).href; } catch { href = ''; }
             embeddedFrames.push({
                 href,
+                explicitSrc: rawSrc.trim().length > 0,
                 origin: (() => { try { return new URL(href).origin; } catch { return null; } })(),
                 area: Math.max(0, rect.width) * Math.max(0, rect.height),
                 width: Math.max(0, rect.width),
@@ -347,6 +353,10 @@ function hiddenFrameHrefs(injectionResults) {
     for (const entry of Array.isArray(injectionResults) ? injectionResults : []) {
         for (const frame of entry?.result?.embeddedFrames || []) {
             if (typeof frame?.href !== 'string' || !frame.href) continue;
+            // Without an explicit src the href is the parent's, not this frame's.
+            if (frame.explicitSrc !== true) continue;
+            // A frame cannot testify about the document that reported it.
+            if (frame.href === entry?.result?.href) continue;
             // Any ancestor reporting it visible wins over one reporting it hidden.
             visibility.set(frame.href, (visibility.get(frame.href) === true) || frame.visible === true);
         }
@@ -442,11 +452,14 @@ function accessRequiredError(access) {
     return error;
 }
 
-function contentTarget(tabId, selected) {
+function contentTarget(tabId, selected, discoveredFrameIds = null) {
     const frameId = normalizeFrameId(selected?.frameId);
     const documentId = typeof selected?.documentId === 'string' ? selected.documentId : null;
     return {
         frameId,
+        // Every frame this probe reached, so the caller can remember them and
+        // recover directly next time the all-frames sweep is rejected.
+        discoveredFrameIds: Array.isArray(discoveredFrameIds) ? discoveredFrameIds : [],
         documentId,
         frameUrl: typeof selected?.result?.href === 'string' ? selected.result.href : null,
         hasVideo: !!selected?.result?.bestVideo,
@@ -567,6 +580,7 @@ export async function resolveMediaContentTarget(chromeApi, tabId, {
     let missingAccess = null;
     let ambiguous = false;
     let unresolvedGrantedHost = null;
+    const discovered = new Set(Array.isArray(knownFrameIds) ? knownFrameIds : []);
 
     for (let attempt = 0; attempt < attempts; attempt++) {
         const scriptTargets = listMediaFrameScriptTargets(tabId);
@@ -664,6 +678,9 @@ export async function resolveMediaContentTarget(chromeApi, tabId, {
             }
         }
 
+        for (const entry of results) {
+            if (Number.isInteger(entry?.frameId)) discovered.add(entry.frameId);
+        }
         const selected = selectMediaFrame(results);
         const videoCandidates = results.filter(entry => entry?.result?.bestVideo?.rendered === true
             && entry.result.parentFrameVisible !== false);
@@ -688,7 +705,7 @@ export async function resolveMediaContentTarget(chromeApi, tabId, {
             if (selected.result.bestVideo.hasSource
                 && selected.result.bestVideo.rendered
                 && !shouldPreferMissingAccess(currentMissingAccess, selected)) {
-                return contentTarget(tabId, selected);
+                return contentTarget(tabId, selected, Array.from(discovered));
             }
         }
 
@@ -701,17 +718,17 @@ export async function resolveMediaContentTarget(chromeApi, tabId, {
     }
 
     if (missingAccess) throw accessRequiredError(missingAccess);
-    if (fallback) return contentTarget(tabId, fallback);
+    if (fallback) return contentTarget(tabId, fallback, Array.from(discovered));
     // A player whose origin is already granted but which never answered is a
     // timing problem, not a user decision. Keep the tab selected on its top
     // frame so the injected monitor can promote the real player once it loads,
     // instead of failing the activation or prompting for nothing.
-    if (unresolvedGrantedHost) return contentTarget(tabId, null);
+    if (unresolvedGrantedHost) return contentTarget(tabId, null, Array.from(discovered));
     // Several equally-ranked players — anime mirrors, alternative dubs — are a
     // normal page layout, not an error. Refusing to activate made those pages
     // unusable, and flipping between candidates restarted the target forever.
     // Hold the top frame and let the monitor promote the one that starts
     // playing, which is the signal that breaks the tie.
-    if (ambiguous) return { ...contentTarget(tabId, null), ambiguous: true };
-    return contentTarget(tabId, null);
+    if (ambiguous) return { ...contentTarget(tabId, null, Array.from(discovered)), ambiguous: true };
+    return contentTarget(tabId, null, Array.from(discovered));
 }

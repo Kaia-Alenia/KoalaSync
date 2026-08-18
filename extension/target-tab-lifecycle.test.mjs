@@ -59,6 +59,17 @@ describe('target tab lifecycle', () => {
         expect(monitorSource).toContain('element.readyState > 0 ? 1 : 0');
     });
 
+    it('keeps the frame registry bounded and free of a navigation permission', () => {
+        expect(backgroundSource).toContain('const MAX_KNOWN_FRAMES_PER_TAB = 24');
+        // Frame ids are learned, never enumerated through a permission.
+        expect(backgroundSource).toContain('function rememberFrameId(tabId, frameId)');
+        expect(backgroundSource).toContain('rememberFrameId(senderTabId, sender?.frameId)');
+        expect(backgroundSource).toContain('contentTarget.discoveredFrameIds');
+        // A committed navigation invalidates every id from the previous page.
+        expect(backgroundSource).toMatch(/changeInfo\.status === 'loading'[\s\S]{0,120}forgetFrameIds\(tabId\)/);
+        expect(backgroundSource).not.toMatch(/chrome\.webNavigation/);
+    });
+
     it('bounds every frame probe and verifies withheld origins', () => {
         const resolverSource = fs.readFileSync(
             path.join(extensionDir, 'media-frame-target.js'),
@@ -90,7 +101,10 @@ describe('target tab lifecycle', () => {
 
     it('uses all-frame probing for cross-origin targets without navigation permissions', () => {
         expect(backgroundSource).toContain("files: ['media-frame-monitor.js']");
-        expect(backgroundSource).toContain('const targets = listMediaFrameScriptTargets(tabId)');
+        // Monitors must reach the frames we know about, not only whatever the
+        // all-frames sweep happens to accept — both on the way in and out.
+        expect(backgroundSource.match(/\.\.\.listMediaFrameScriptTargets\(tabId\),/g)?.length).toBe(2);
+        expect(backgroundSource.match(/\.\.\.listKnownFrameIds\(tabId\)/g)?.length).toBe(2);
         expect(backgroundSource).toContain('One denied widget frame must not block the selected player');
         expect(backgroundSource).toContain("navigationError.code = 'media_target_navigated'");
         expect(backgroundSource).toContain("{ type: 'MEDIA_MONITOR_DEACTIVATE' }");

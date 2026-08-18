@@ -108,6 +108,63 @@ describe('cross-origin media-frame targeting', () => {
         expect(selected.frameId).toBe(0);
     });
 
+    it('ignores a hidden srcless ad slot that resolves to another frame url', () => {
+        // An iframe without src resolves to its parent document's URL. A hidden
+        // ad slot must therefore never be able to declare a real player hidden.
+        const selected = selectMediaFrame([
+            frame(0, {
+                bestVideo: null,
+                videoCount: 0,
+                embeddedFrames: [{
+                    href: 'https://player-5.example/embed',
+                    explicitSrc: false,
+                    visible: false,
+                    area: 0,
+                    width: 0,
+                    height: 0,
+                    depth: 1,
+                    mediaHint: false
+                }]
+            }),
+            frame(5, { parentFrameVisible: null })
+        ]);
+        expect(selected?.frameId).toBe(5);
+    });
+
+    it('drops a player parked inside a collapsed same-origin wrapper', () => {
+        const selected = selectMediaFrame([
+            frame(0, {
+                bestVideo: null,
+                videoCount: 0,
+                embeddedFrames: [
+                    {
+                        href: 'https://player-5.example/embed',
+                        explicitSrc: true,
+                        visible: true,
+                        area: 830 * 498,
+                        width: 830,
+                        height: 498,
+                        depth: 2,
+                        mediaHint: true
+                    },
+                    {
+                        href: 'https://player-6.example/embed',
+                        explicitSrc: true,
+                        visible: false,
+                        area: 0,
+                        width: 0,
+                        height: 0,
+                        depth: 2,
+                        mediaHint: true
+                    }
+                ]
+            }),
+            frame(5, { parentFrameVisible: null }),
+            frame(6, { parentFrameVisible: null })
+        ]);
+        expect(selected?.frameId).toBe(5);
+    });
+
     it('refuses to guess between equally-ranked frames without visibility evidence', () => {
         expect(selectMediaFrame([
             frame(3, { parentFrameVisible: null }),
@@ -127,6 +184,9 @@ describe('cross-origin media-frame targeting', () => {
             documentId: 'document-8',
             frameUrl: 'https://player-8.example/embed',
             hasVideo: true,
+            // Reported back so the caller can address these frames directly when
+            // a later all-frames sweep is rejected wholesale.
+            discoveredFrameIds: [0, 8],
             scriptTarget: { tabId: 42, documentIds: ['document-8'] }
         });
         const visibilityDispatches = executeScript.mock.calls.filter(([options]) => (
@@ -153,6 +213,7 @@ describe('cross-origin media-frame targeting', () => {
             documentId: null,
             frameUrl: null,
             hasVideo: false,
+            discoveredFrameIds: [0, 6],
             scriptTarget: { tabId: 42 }
         });
     });
@@ -492,6 +553,7 @@ describe('embedded player access diagnosis', () => {
             documentId: null,
             frameUrl: null,
             hasVideo: false,
+            discoveredFrameIds: [0],
             scriptTarget: { tabId: 42 }
         });
         expect(contains).toHaveBeenCalledWith({

@@ -91,6 +91,7 @@ let activeTargetActivation = null;
 // through webNavigation; this registry rebuilds the same knowledge from
 // sender.frameId, which every content script hands us for free.
 const knownFrameIdsByTab = new Map();
+const MAX_KNOWN_FRAMES_PER_TAB = 24;
 
 function rememberFrameId(tabId, frameId) {
     const normalizedTabId = normalizeTabId(tabId);
@@ -101,11 +102,14 @@ function rememberFrameId(tabId, frameId) {
         knownFrameIdsByTab.set(normalizedTabId, frames);
     }
     frames.add(frameId);
-    // A tab cannot plausibly hold this many media-bearing frames; cap the set so
-    // a page that recycles frames forever cannot grow it without bound.
-    if (frames.size > 64) {
-        const oldest = frames.values().next().value;
-        if (oldest !== 0) frames.delete(oldest);
+    // Every id in here is probed individually when a sweep is rejected, so the
+    // set is also a cost ceiling. Keep it small: a page with more media-bearing
+    // frames than this is not a player page, and the sweep still covers the
+    // normal case. The top frame is never evicted.
+    while (frames.size > MAX_KNOWN_FRAMES_PER_TAB) {
+        const evictable = Array.from(frames).find(candidate => candidate !== 0);
+        if (evictable === undefined) break;
+        frames.delete(evictable);
     }
 }
 
@@ -2262,7 +2266,14 @@ function setPageApiSeekEnabled(enabled) {
 }
 
 async function deactivateMediaFrameMonitors(tabId) {
-    const targets = listMediaFrameScriptTargets(tabId);
+    // Same reasoning as the injection: a rejected sweep must not leave a monitor
+    // running in a deep frame, or the old target keeps reporting after a switch.
+    const targets = [
+        ...listMediaFrameScriptTargets(tabId),
+        ...listKnownFrameIds(tabId)
+            .filter(frameId => frameId !== 0)
+            .map(frameId => ({ tabId, frameIds: [frameId] }))
+    ];
     await Promise.all(targets.map(async target => {
         const documentId = target.documentIds?.[0];
         const frameId = target.frameIds?.[0];
@@ -2405,7 +2416,15 @@ function executeScriptWithTimeout(options, timeoutMs = SCRIPT_INJECTION_TIMEOUT_
 }
 
 async function injectMediaFrameMonitors(tabId, contentTarget) {
-    const targets = listMediaFrameScriptTargets(tabId);
+    // The sweep is best effort; the known frames are addressed individually so a
+    // rejected sweep cannot leave the deep player frame without a monitor — and
+    // therefore without any way to report itself later.
+    const targets = [
+        ...listMediaFrameScriptTargets(tabId),
+        ...listKnownFrameIds(tabId)
+            .filter(frameId => frameId !== 0)
+            .map(frameId => ({ tabId, frameIds: [frameId] }))
+    ];
     let injectedCount = 0;
     await Promise.all(targets.map(async target => {
         try {
@@ -2463,6 +2482,13 @@ async function injectContentScript(tabId, {
         contentTarget = await resolveMediaContentTarget(chrome, tabId, {
             knownFrameIds: listKnownFrameIds(tabId)
         });
+        // The probe reached these frames; remember them before anything is
+        // injected. Waiting for a content script to message us first would leave
+        // the registry empty exactly when it is needed most — the first
+        // activation, before any script exists to report itself.
+        for (const frameId of contentTarget.discoveredFrameIds || []) {
+            rememberFrameId(tabId, frameId);
+        }
         if (!isTargetActivationSuperseded(tabId, activationGeneration)
             && activeTargetActivation?.tabId === tabId) {
             activeTargetActivation.frameId = contentTarget.frameId;
@@ -3048,6 +3074,9 @@ async function selectedMediaTargetMoved(tabId) {
             attempts: 1,
             knownFrameIds: listKnownFrameIds(tabId)
         });
+        for (const frameId of resolved.discoveredFrameIds || []) {
+            rememberFrameId(tabId, frameId);
+        }
     } catch {
         // An access-required error must reach the full activation path so the
         // popup can surface it.
@@ -3079,7 +3108,9 @@ function refreshCurrentMediaTarget(tabId, { queueIfRunning = false, onlyIfTarget
         return mediaTargetRefreshTask;
     }
     if (activeTargetActivation?.tabId === selectedTabId) {
-        return Promise.resolve({ status: 'activation_in_progress' });
+        if (!expireStuckActivation()) {
+            return Promise.resolve({ status: 'activation_in_progress' });
+        }
     }
 
     const task = (async () => {
@@ -3188,6 +3219,14 @@ async function retryPendingTarget({ expectedRequestId = null, requireGrantedAcce
         return injectionFailureResponse(error);
     }
 }
+
+chrome.tabs.onUpdated.addListener((tabId, changeInfo) => {
+    // A committed navigation replaces every frame in the tab. Keeping the old
+    // ids would mean probing dead frames on every resolve from then on.
+    if (changeInfo.status === 'loading' && typeof changeInfo.url === 'string') {
+        forgetFrameIds(tabId);
+    }
+});
 
 if (chrome.permissions?.onAdded?.addListener) {
     chrome.permissions.onAdded.addListener((addedPermissions) => {
