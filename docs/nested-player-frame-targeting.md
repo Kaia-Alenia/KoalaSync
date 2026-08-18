@@ -1,8 +1,7 @@
-# Targeting a nested cross-origin player without `webNavigation` (open)
+# Targeting a nested cross-origin player without `webNavigation`
 
-> **Status:** Largely fixed, one confirmed defect still open — see
-> [Open: a dead frame election is never released](#open-a-dead-frame-election-is-never-released).
-> Everything under *Fixed* was verified against the live site or a fixture rebuilt from it.
+> **Status:** Fixed. Everything below was verified against the live site or a fixture
+> rebuilt from it.
 >
 > Context: v3.1.2 added support for players inside cross-origin frames (Google Drive,
 > anime hosts) and shipped with a `webNavigation` permission. The permission was not
@@ -148,48 +147,39 @@ overlay, content script), not discovery.
 
 ---
 
-## Open: a dead frame election is never released
+## A dead frame election, and the deadlock behind it
 
-**Reported:** 2026-08-18, against the build at `e0c6865`.
+**Reported:** 2026-08-18. `Could not establish connection. Receiving end does not exist.`
+with `targetReady: true` and no activation errors — the election named a frame the player
+had already torn down.
 
-Symptom in the dev panel:
+Three defects were stacked here, each hidden by the one in front of it.
 
-```
-Kommunikation mit dem Tab-Video fehlgeschlagen.
-(Could not establish connection. Receiving end does not exist.)
-```
+**The election was never released.** `getReadyTabVideoState()` recovered through the
+guarded refresh, which reports `unchanged` when no video is reachable, so the stale
+`frameId`/`documentId` survived. Adoption compounded it: it sets `hasVideo`, and once that
+is true the target only moves on a frame change. An unreachable content script — as
+opposed to a page that simply has no video yet — now releases the **frame** election back
+to the top frame. The tab selection is never touched.
 
-with `targetReady: true`, `Video Count: 0`, `In Iframe: NO`, and no activation errors in
-the log.
+**Switching frames destroyed the top frame's scripts.** Promoting the target from frame 0
+into a nested player called `deactivateTargetTab()` on the previous target, which sent
+`TARGET_DEACTIVATE` to frame 0 and tore down both its content script and the chat overlay
+there. That is why chat delivery failed after promotion, and why releasing the election
+pointed at an empty frame. An in-tab frame switch now leaves the top frame alone.
 
-### What is verified
+**Discovery could deadlock.** Monitors announce new players, but a rebuilt frame is a new
+document with no monitor, so the video created in it was never reported — and nothing then
+triggered the upkeep that would have installed one. Reinstalling monitors is cheap,
+bounded and idempotent, so it now runs on every lifecycle notification with a
+trailing-edge debounce; and a bounded discovery poll (2s, capped, only while a tab is
+selected with no video found, stopping the moment one is) breaks the cycle when no
+notification arrives at all.
 
-- `targetReady` is true, so activation completed and the tab selection is intact.
-- The error is the raw failure of `chrome.tabs.sendMessage` to the **elected frame**:
-  nothing is listening there.
-- Kodik rebuilds and renavigates its player frame, which invalidates the `documentId` the
-  election is pinned to.
-
-### Root cause (verified by reading, not yet by instrumentation)
-
-`getReadyTabVideoState()` recovers via
-`refreshCurrentMediaTarget(tabId, { onlyIfTargetMoved: true })`. On a page with no
-reachable video, `selectedMediaTargetMoved()` returns `false`, the refresh reports
-`unchanged`, and **the stale `currentTargetFrameId` / `currentTargetDocumentId` are kept**.
-The second read fails identically and the error is returned.
-
-`adoptReportingFrame()` compounds it: adoption sets `currentTargetHasVideo = true`, and
-once that is true `selectedMediaTargetMoved()` only moves on a frame/document *change*. If
-the adopted frame then dies, there is no path back.
-
-### Intended fix
-
-When the content script in the elected frame is provably unreachable
-(`Receiving end does not exist`, `No document with id`), the election is invalid: reset
-the **frame** election to the top frame with `hasVideo: false` — never the tab selection —
-so ordinary discovery and adoption can find the player again. Apply it in both places that
-see the error: `getReadyTabVideoState()` and the connection-error branch of
-`_routeToContentInternal()`.
+Covered by `recovers when the adopted player frame is torn down and rebuilt`, which
+adopts a nested player, destroys its document the way the real player does, and asserts
+both that the election is released and that the rebuilt player is picked up again without
+touching the popup.
 
 ---
 

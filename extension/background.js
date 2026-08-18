@@ -145,6 +145,81 @@ function forgetFrameIds(tabId) {
     knownFrameIdsByTab.delete(normalizeTabId(tabId));
 }
 
+// A frame that was rebuilt is a new document: it carries neither the content
+// script nor a monitor, so nothing in it can report the player that appears
+// there later. Reinstalling monitors is cheap, bounded and idempotent, unlike a
+// full reactivation — but it still needs a floor so page churn cannot turn it
+// into a storm.
+const MONITOR_REFRESH_INTERVAL_MS = 1500;
+const lastMonitorRefreshByTab = new Map();
+const pendingMonitorRefreshByTab = new Map();
+
+async function refreshMediaFrameMonitors(tabId) {
+    const normalizedTabId = normalizeTabId(tabId);
+    if (normalizedTabId === null) return false;
+    const last = lastMonitorRefreshByTab.get(normalizedTabId) || 0;
+    const waited = Date.now() - last;
+    if (waited < MONITOR_REFRESH_INTERVAL_MS) {
+        // Run once more after the cooldown instead of dropping this call. A
+        // rebuilt frame announces itself while its new document is still
+        // loading, so the reinstall that matters is usually the one a
+        // leading-edge-only debounce throws away.
+        if (!pendingMonitorRefreshByTab.has(normalizedTabId)) {
+            const timer = setTimeout(() => {
+                pendingMonitorRefreshByTab.delete(normalizedTabId);
+                refreshMediaFrameMonitors(normalizedTabId).catch(() => {});
+            }, MONITOR_REFRESH_INTERVAL_MS - waited);
+            pendingMonitorRefreshByTab.set(normalizedTabId, timer);
+        }
+        return false;
+    }
+    lastMonitorRefreshByTab.set(normalizedTabId, Date.now());
+    await injectMediaFrameMonitors(normalizedTabId, currentContentTarget()).catch(() => {});
+    return true;
+}
+
+/**
+ * Bounded poll for a player that no monitor can announce.
+ *
+ * Discovery is event-driven, and events come from monitors — so a frame that was
+ * rebuilt without one is invisible, and the video created there is never
+ * reported. Nothing then triggers the upkeep that would install the monitor:
+ * that is a deadlock, and it is what a real player does on a quality or part
+ * change. This runs only while a tab is selected and no video has been found,
+ * stops the moment one is, and costs a resolve that is fast precisely because
+ * there is no video to rank.
+ */
+const MEDIA_DISCOVERY_POLL_MS = 2000;
+const MEDIA_DISCOVERY_POLL_LIMIT = 20;
+let mediaDiscoveryPollTimer = null;
+let mediaDiscoveryPollTicks = 0;
+
+function stopMediaDiscoveryPoll() {
+    if (mediaDiscoveryPollTimer !== null) {
+        clearTimeout(mediaDiscoveryPollTimer);
+        mediaDiscoveryPollTimer = null;
+    }
+    mediaDiscoveryPollTicks = 0;
+}
+
+function startMediaDiscoveryPoll(tabId) {
+    const normalizedTabId = normalizeTabId(tabId);
+    if (normalizedTabId === null) return;
+    stopMediaDiscoveryPoll();
+    const tick = async () => {
+        mediaDiscoveryPollTimer = null;
+        if (normalizeTabId(currentTabId) !== normalizedTabId) return;
+        if (currentTargetHasVideo === true) return;
+        if (++mediaDiscoveryPollTicks > MEDIA_DISCOVERY_POLL_LIMIT) return;
+        await refreshCurrentMediaTarget(normalizedTabId, { onlyIfTargetMoved: true })
+            .catch(() => {});
+        if (normalizeTabId(currentTabId) !== normalizedTabId) return;
+        if (currentTargetHasVideo === true) return;
+        mediaDiscoveryPollTimer = setTimeout(tick, MEDIA_DISCOVERY_POLL_MS);
+    };
+    mediaDiscoveryPollTimer = setTimeout(tick, MEDIA_DISCOVERY_POLL_MS);
+}
+
 let mediaTargetRefreshTask = null;
 let mediaTargetRefreshTabId = null;
 let mediaTargetRefreshDirty = false;
@@ -834,9 +909,49 @@ function sameContentTarget(left, right) {
 }
 
 function clearCurrentContentTarget() {
+    stopMediaDiscoveryPoll();
     currentTargetFrameId = 0;
     currentTargetDocumentId = null;
     currentTargetHasVideo = false;
+}
+
+/** The elected frame is gone, as opposed to merely holding no video. */
+function isContentUnreachableError(error) {
+    const message = String(typeof error === 'string' ? error : (error?.message || ''));
+    return message.includes('Receiving end does not exist')
+        || message.includes('Extension context invalidated')
+        || message.includes('No document with id')
+        || message.includes('No document with ID');
+}
+
+/**
+ * Gives up the frame election — never the tab selection — when the frame it
+ * names no longer exists.
+ *
+ * A player that rebuilds its frame (Kodik does this on quality and part
+ * changes) invalidates the documentId the election is pinned to. Without this,
+ * the pointer stayed dead forever: the guarded refresh reports "unchanged"
+ * because no video is reachable, and adoption had already set hasVideo, so
+ * nothing would move the target back. Clearing hasVideo re-opens both the
+ * ordinary promotion path and adoption.
+ */
+function releaseUnreachableFrameTarget(tabId) {
+    const normalizedTabId = normalizeTabId(tabId);
+    if (normalizedTabId === null || normalizedTabId !== normalizeTabId(currentTabId)) return false;
+    if (normalizeFrameId(currentTargetFrameId) === 0
+        && currentTargetDocumentId === null
+        && currentTargetHasVideo !== true) {
+        return false;
+    }
+    addLog(`Media frame ${currentTargetFrameId} is unreachable; releasing the frame election`, 'warn');
+    clearCurrentContentTarget();
+    startMediaDiscoveryPoll(normalizedTabId);
+    chrome.storage.session.set({
+        currentTargetFrameId: 0,
+        currentTargetDocumentId: null,
+        currentTargetHasVideo: false
+    }).catch(() => {});
+    return true;
 }
 
 function clearTargetTabForIdle(expectedTabId = null, expectedGeneration = null) {
@@ -2182,6 +2297,13 @@ async function getReadyTabVideoState(tabId, expectedGeneration = targetActivatio
     // script down and reinject it, which kept the target permanently activating.
     // Only an unreachable content script justifies recovery.
     if (!state || state.error) {
+        // Distinguish "this frame is gone" from "this page has no video yet".
+        // Only the former invalidates the election — and it also means there is
+        // no content script left to talk to: switching the target away from a
+        // frame tears its script down deliberately, so releasing the election
+        // alone would point at an empty frame. That needs a real rebuild, which
+        // cannot loop because only an unreachable script triggers it.
+        if (isContentUnreachableError(state?.error)) releaseUnreachableFrameTarget(tabId);
         const activation = await refreshCurrentMediaTarget(tabId, { onlyIfTargetMoved: true });
         if (activation?.status !== 'ok' && activation?.status !== 'unchanged') {
             return { error: 'Target tab changed before content script recovery completed' };
@@ -2199,6 +2321,7 @@ async function getReadyTabVideoState(tabId, expectedGeneration = targetActivatio
             return { error: 'Target tab changed while video state was being read' };
         }
     }
+    if (currentTargetHasVideo !== true) refreshMediaFrameMonitors(tabId).catch(() => {});
     return decorateVideoState(tabId, state);
 }
 
@@ -3079,7 +3202,13 @@ async function activateTargetTab(tabId, tabTitle, {
             return { status: 'superseded' };
         }
         if (previousTabId === selectedTabId
-            && !sameContentTarget(previousContentTarget, injectedContentTarget)) {
+            && !sameContentTarget(previousContentTarget, injectedContentTarget)
+            && normalizeFrameId(previousContentTarget?.frameId) !== 0) {
+            // A frame switch inside the same tab must not tear down the top
+            // frame. It hosts the chat overlay, answers status queries, and is
+            // what the frame election falls back to when a player frame dies —
+            // destroying it is why chat delivery failed after promotion and why
+            // that fallback pointed at an empty frame.
             await deactivateTargetTab(previousTabId, previousContentTarget, { deactivateMonitor: false });
         }
         currentTabId = selectedTabId;
@@ -3092,6 +3221,8 @@ async function activateTargetTab(tabId, tabTitle, {
             ? injectedContentTarget.documentId
             : null;
         currentTargetHasVideo = injectedContentTarget.hasVideo === true;
+        if (currentTargetHasVideo) stopMediaDiscoveryPoll();
+        else startMediaDiscoveryPoll(selectedTabId);
         lastContentHeartbeatAt = null;
         if (currentRoom) roomIdleSince = Date.now();
         await chrome.storage.session.set({
@@ -3162,7 +3293,14 @@ async function selectedMediaTargetMoved(tabId) {
     // still loading, or that offers several equally-ranked mirrors, resolves
     // differently from one moment to the next; acting on that flips the target
     // back and forth and leaves activation running forever.
-    if (resolved.hasVideo !== true) return false;
+    if (resolved.hasVideo !== true) {
+        // No player anywhere yet. This runs on every lifecycle wake-up, so it is
+        // the reliable place to make sure freshly rebuilt documents carry a
+        // monitor — without one, the video created there next is never reported
+        // and the target can never come back.
+        refreshMediaFrameMonitors(tabId).catch(() => {});
+        return false;
+    }
     if (currentTargetHasVideo !== true) return true;
     return normalizeFrameId(resolved.frameId) !== normalizeFrameId(currentTargetFrameId)
         || (typeof resolved.documentId === 'string'
@@ -3324,6 +3462,12 @@ if (chrome.tabs?.onRemoved?.addListener) {
             const isPending = pending?.tabId === tabId;
             const isActivating = activeTargetActivation?.tabId === tabId;
             forgetFrameIds(tabId);
+            lastMonitorRefreshByTab.delete(tabId);
+            const pendingMonitorTimer = pendingMonitorRefreshByTab.get(tabId);
+            if (pendingMonitorTimer !== undefined) {
+                clearTimeout(pendingMonitorTimer);
+                pendingMonitorRefreshByTab.delete(tabId);
+            }
             const isSelected = normalizeTabId(userSelectedTabId) === tabId;
             if (isSelected) await clearUserSelection(tabId);
             if (!isCurrent && !isPending && !isActivating) return;
@@ -3438,12 +3582,11 @@ async function _routeToContentInternal(tabId, action, payload, actionTimestamp, 
             return;
         }
 
-        const message = String(error?.message || '');
-        if (message.includes('Receiving end does not exist')
-            || message.includes('Extension context invalidated')
-            || message.includes('No document with id')
-            || message.includes('No document with ID')) {
+        if (isContentUnreachableError(error)) {
             try {
+                // Drop the dead election first so the rebuild is not anchored to
+                // a frame that no longer exists.
+                releaseUnreachableFrameTarget(tabId);
                 const response = await refreshCurrentMediaTarget(tabId, { onlyIfTargetMoved: false });
                 if (response?.status !== 'ok' && response?.status !== 'activation_in_progress') return;
                 await new Promise(resolve => setTimeout(resolve, 150));
@@ -4608,6 +4751,12 @@ async function handleAsyncMessage(message, sender, sendResponse) {
             addLog(`Media frame candidate refresh failed: ${error.message}`, 'warn');
             return { status: 'error', message: error.message };
         });
+        // A layout change is exactly the shape of a rebuilt player frame, and a
+        // new document carries no monitor, so the video it creates next would go
+        // unreported. Do this on every notification rather than on a particular
+        // status: a concurrent refresh masks the status, and the call is already
+        // debounced and idempotent.
+        await refreshMediaFrameMonitors(tabId);
         sendResponse(activation || { status: 'invalid_tab' });
     } else if (message.type === 'MEDIA_FRAME_VISIBILITY') {
         if (!isCurrentContentSender(sender)) {

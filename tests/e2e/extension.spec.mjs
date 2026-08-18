@@ -773,6 +773,68 @@ test('controls and adopts a nested player even while the top frame is elected', 
     expect(status).toMatchObject({ targetTabId: tabId, targetHasVideo: true });
 });
 
+test('recovers when the adopted player frame is torn down and rebuilt', async ({ context, extensionId, baseURL }) => {
+    test.setTimeout(90000);
+    // Kodik rebuilds its player frame on quality and part changes, which kills
+    // the documentId the election is pinned to. The election has to be given up,
+    // otherwise every later message fails with "Receiving end does not exist"
+    // and nothing moves the target back.
+    const url = `${baseURL}/pages/yummy-deferred-player.html`;
+    const page = await context.newPage();
+    await page.goto(url);
+    await page.waitForFunction(() => window.__fixtureReady === true);
+
+    const { tabId } = await selectTargetTab(context, extensionId, url);
+    // After the rebuild both the detached and the live frame carry the same URL,
+    // so take the most recent attached one or the test drives a dead document.
+    const deferredFrame = () => page.frames()
+        .filter(frame => !frame.isDetached()
+            && frame.url().endsWith('/frames/deferred-player-frame.html'))
+        .pop();
+
+    await deferredFrame().locator('#poster').click();
+    await expect
+        .poll(() => getExtensionState(context, extensionId, { type: 'GET_STATUS' })
+            .then(state => state.targetHasVideo), { timeout: 20000 })
+        .toBe(true);
+    const adoptedFrameId = (await getExtensionState(context, extensionId, { type: 'GET_STATUS' })).targetFrameId;
+    expect(adoptedFrameId).not.toBe(0);
+
+    // Destroy the elected document the way the real player does.
+    const wrapper = page.frames().find(frame => frame.url().includes('xfp-wrapper.html?player=deferred'));
+    await wrapper.evaluate(() => {
+        const inner = document.getElementById('inner');
+        inner.src = inner.src;
+    });
+    await expect.poll(() => deferredFrame()?.locator('#poster').count().catch(() => 0)).toBe(1);
+
+    // The dead election must be released rather than kept forever.
+    await expect
+        .poll(() => getExtensionState(context, extensionId, { type: 'GET_VIDEO_STATE', tabId })
+            .then(state => state?.error || null), { timeout: 20000 })
+        .toBeNull();
+    const released = await getExtensionState(context, extensionId, { type: 'GET_STATUS' });
+    expect(released).toMatchObject({ targetTabId: tabId, targetHasVideo: false });
+
+    // And the rebuilt player is picked up again without touching the popup. The
+    // rebuilt document wires its poster from an inline script, so a click can
+    // land before the handler exists — retry until the player is really built.
+    await expect.poll(async () => {
+        const frame = deferredFrame();
+        if (!frame) return 0;
+        if (await frame.locator('video').count() > 0) return 1;
+        await frame.locator('#poster').click({ timeout: 2000 }).catch(() => {});
+        return 0;
+    }, { timeout: 20000 }).toBe(1);
+    await expect
+        .poll(() => deferredFrame().locator('video').getAttribute('data-koala-attached'), { timeout: 20000 })
+        .toBe('true');
+    await expect
+        .poll(() => getExtensionState(context, extensionId, { type: 'GET_STATUS' })
+            .then(state => state.targetHasVideo), { timeout: 20000 })
+        .toBe(true);
+});
+
 test('keeps the tab selected when its activation fails', async ({ context, extensionId }) => {
     // A page the extension is not allowed to script stands in for any activation
     // failure the user can act on. Losing the selection here is what made the
