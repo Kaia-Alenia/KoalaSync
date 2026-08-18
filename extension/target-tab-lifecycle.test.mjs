@@ -65,8 +65,12 @@ describe('target tab lifecycle', () => {
         expect(backgroundSource).toContain('function rememberFrameId(tabId, frameId)');
         expect(backgroundSource).toContain('rememberFrameId(senderTabId, sender?.frameId)');
         expect(backgroundSource).toContain('contentTarget.discoveredFrameIds');
-        // A committed navigation invalidates every id from the previous page.
-        expect(backgroundSource).toMatch(/changeInfo\.status === 'loading'[\s\S]{0,120}forgetFrameIds\(tabId\)/);
+        // The registry must never be cleared on navigation: tabs.onUpdated
+        // reports 'loading' for same-document History API navigations too, which
+        // is exactly when these players are built. It self-corrects instead.
+        expect(backgroundSource).toContain('function refreshFrameIds(tabId, frameIds)');
+        expect(backgroundSource).not.toMatch(/changeInfo\.status === 'loading'[\s\S]{0,160}forgetFrameIds/);
+        expect(backgroundSource).toContain('refreshFrameIds(tabId, contentTarget.discoveredFrameIds)');
         expect(backgroundSource).not.toMatch(/chrome\.webNavigation/);
     });
 

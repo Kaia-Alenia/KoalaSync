@@ -113,6 +113,29 @@ function rememberFrameId(tabId, frameId) {
     }
 }
 
+/**
+ * Replaces the registry when a probe actually saw the tab's frame layout.
+ *
+ * Clearing on navigation looked right and was wrong: tabs.onUpdated reports
+ * status 'loading' for same-document History API navigations too, which is
+ * exactly what these sites do when you switch mirror or episode part. The wipe
+ * therefore landed the moment the player frame was being built, leaving the
+ * recovery probe with nothing. A successful multi-frame probe is authoritative
+ * and current, so it supersedes whatever was there instead.
+ */
+function refreshFrameIds(tabId, frameIds) {
+    const normalizedTabId = normalizeTabId(tabId);
+    if (normalizedTabId === null) return;
+    const ids = (Array.isArray(frameIds) ? frameIds : [])
+        .filter(frameId => Number.isInteger(frameId) && frameId >= 0);
+    if (ids.length > 1) {
+        knownFrameIdsByTab.set(normalizedTabId, new Set(ids.slice(0, MAX_KNOWN_FRAMES_PER_TAB)));
+        return;
+    }
+    // A probe that only reached the top frame proves nothing about the rest.
+    for (const frameId of ids) rememberFrameId(normalizedTabId, frameId);
+}
+
 function listKnownFrameIds(tabId) {
     const frames = knownFrameIdsByTab.get(normalizeTabId(tabId));
     return frames ? Array.from(frames) : [];
@@ -2486,9 +2509,7 @@ async function injectContentScript(tabId, {
         // injected. Waiting for a content script to message us first would leave
         // the registry empty exactly when it is needed most — the first
         // activation, before any script exists to report itself.
-        for (const frameId of contentTarget.discoveredFrameIds || []) {
-            rememberFrameId(tabId, frameId);
-        }
+        refreshFrameIds(tabId, contentTarget.discoveredFrameIds);
         if (!isTargetActivationSuperseded(tabId, activationGeneration)
             && activeTargetActivation?.tabId === tabId) {
             activeTargetActivation.frameId = contentTarget.frameId;
@@ -3074,9 +3095,7 @@ async function selectedMediaTargetMoved(tabId) {
             attempts: 1,
             knownFrameIds: listKnownFrameIds(tabId)
         });
-        for (const frameId of resolved.discoveredFrameIds || []) {
-            rememberFrameId(tabId, frameId);
-        }
+        refreshFrameIds(tabId, resolved.discoveredFrameIds);
     } catch {
         // An access-required error must reach the full activation path so the
         // popup can surface it.
@@ -3219,14 +3238,6 @@ async function retryPendingTarget({ expectedRequestId = null, requireGrantedAcce
         return injectionFailureResponse(error);
     }
 }
-
-chrome.tabs.onUpdated.addListener((tabId, changeInfo) => {
-    // A committed navigation replaces every frame in the tab. Keeping the old
-    // ids would mean probing dead frames on every resolve from then on.
-    if (changeInfo.status === 'loading' && typeof changeInfo.url === 'string') {
-        forgetFrameIds(tabId);
-    }
-});
 
 if (chrome.permissions?.onAdded?.addListener) {
     chrome.permissions.onAdded.addListener((addedPermissions) => {
