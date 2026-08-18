@@ -4,7 +4,11 @@ export const MEDIA_FRAME_PROBE_TIMEOUT = 'media_frame_probe_timeout';
 const MIN_PLAYER_FRAME_AREA = 320 * 180;
 const MIN_PLAYER_ASPECT_RATIO = 1.15;
 const MAX_PLAYER_ASPECT_RATIO = 2.6;
-const DEFAULT_PROBE_TIMEOUT_MS = 2000;
+// inspectMediaFrame is synchronous DOM work: a live frame answers in tens of
+// milliseconds, and anything slower is a frame that is navigating or being torn
+// down. Waiting seconds for those only delays the answer — a frame dropped here
+// is re-probed on the next attempt and reports itself through its monitor.
+const DEFAULT_PROBE_TIMEOUT_MS = 750;
 
 function normalizeFrameId(value) {
     return Number.isInteger(value) && value >= 0 ? value : 0;
@@ -627,7 +631,14 @@ export async function resolveMediaContentTarget(chromeApi, tabId, {
             }
         }
 
-        if (results.length > 1) {
+        const candidateCount = results.filter(
+            entry => entry?.result?.bestVideo?.rendered === true
+        ).length;
+        // The visibility handshake only exists to rank and exclude video
+        // candidates. With no video on the page yet there is nothing to rank, and
+        // running it anyway cost several seconds on every attempt — the whole
+        // reason selecting an anime tab before playback felt broken.
+        if (results.length > 1 && candidateCount > 0) {
             const token = `${tabId}:${attempt}:${Date.now()}:${Math.random()}`;
             // Address each discovered frame on its own from here on. A single
             // allFrames call is all-or-nothing: one player or ad frame that
@@ -653,8 +664,15 @@ export async function resolveMediaContentTarget(chromeApi, tabId, {
                     [token],
                     visibilityTimeoutMs
                 );
-                // Four passes match the maximum same-origin recursion depth.
-                for (let pass = 0; pass < 4; pass++) {
+                // One pass per nesting level actually present. Four was the
+                // worst case, not the common one; these players sit two levels
+                // down and each surplus pass is a full round trip.
+                const observedDepth = results.reduce((deepest, entry) => Math.max(
+                    deepest,
+                    ...(entry?.result?.embeddedFrames || []).map(frame => frame.depth || 1)
+                ), 1);
+                const passes = Math.min(4, Math.max(2, observedDepth));
+                for (let pass = 0; pass < passes; pass++) {
                     await executeInAccessibleFrames(
                         chromeApi,
                         frameTargets,
@@ -711,6 +729,18 @@ export async function resolveMediaContentTarget(chromeApi, tabId, {
 
         if (Number.isFinite(deadlineMs) && deadlineMs > 0 && Date.now() - startedAt >= deadlineMs) {
             break;
+        }
+        // Nothing on the page has a video element yet. Spending the retry budget
+        // cannot change that; the injected monitor reports the player the moment
+        // it is created, so return now and let selection be instant.
+        const anyVideo = results.some(entry => (entry?.result?.videoCount || 0) > 0);
+        if (!anyVideo) {
+            // Discovery worked and simply found no player yet, so stop: the
+            // monitor reports one within a fraction of a second once it exists.
+            // Retry only when the sweep itself came back thin, which is the case
+            // a second pass can actually fix.
+            if (results.length > 1) break;
+            if (attempt >= 1) break;
         }
         if (attempt < attempts - 1) {
             await new Promise(resolve => setTimeout(resolve, retryDelayMs));

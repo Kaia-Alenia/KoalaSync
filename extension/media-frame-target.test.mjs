@@ -192,10 +192,39 @@ describe('cross-origin media-frame targeting', () => {
         const visibilityDispatches = executeScript.mock.calls.filter(([options]) => (
             options.func?.name === 'dispatchParentFrameVisibilityProbe'
         ));
-        // Four passes across both discovered frames, each addressed on its own
-        // so a frame that never answers cannot cancel the others.
-        expect(visibilityDispatches).toHaveLength(8);
+        // Two passes — the floor — across both discovered frames, each addressed
+        // on its own so a frame that never answers cannot cancel the others.
+        // These fixtures report no nesting, so the depth-scaled pass count must
+        // not spend the worst-case four round trips here.
+        expect(visibilityDispatches).toHaveLength(4);
         expect(visibilityDispatches.every(([options]) => options.target.allFrames !== true)).toBe(true);
+    });
+
+    it('skips the visibility handshake when no frame has a video yet', async () => {
+        // Selecting an anime tab before playback must be immediate: there is
+        // nothing to rank, so the handshake and the retry budget are pure delay.
+        const results = [
+            frame(0, { bestVideo: null, videoCount: 0 }),
+            frame(3, { bestVideo: null, videoCount: 0 }),
+            frame(4, { bestVideo: null, videoCount: 0 })
+        ];
+        const executeScript = vi.fn().mockResolvedValue(results);
+        await expect(resolveMediaContentTarget(
+            { scripting: { executeScript } },
+            42,
+            { probeDelayMs: 0, retryDelayMs: 0 }
+        )).resolves.toMatchObject({ frameId: 0, hasVideo: false });
+
+        expect(executeScript.mock.calls.filter(([options]) => (
+            options.func?.name === 'dispatchParentFrameVisibilityProbe'
+                || options.func?.name === 'installParentFrameVisibilityProbe'
+        ))).toHaveLength(0);
+        // And it must not burn all eight attempts waiting for a video that no
+        // frame has: the injected monitor reports one the moment it appears.
+        const inspections = executeScript.mock.calls.filter(([options]) => (
+            options.func?.name === 'inspectMediaFrame'
+        ));
+        expect(inspections.length).toBeLessThanOrEqual(4);
     });
 
     it('keeps the top target inactive when the only discovered video is hidden', async () => {

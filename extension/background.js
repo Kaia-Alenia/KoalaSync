@@ -2510,7 +2510,7 @@ async function injectMediaFrameMonitors(tabId, contentTarget) {
             await executeScriptWithTimeout({
                 target,
                 files: ['media-frame-monitor.js']
-            }, 2000);
+            }, 750);
             injectedCount++;
         } catch {
             // One denied widget frame must not block the selected player.
@@ -2528,7 +2528,7 @@ async function injectMediaFrameMonitors(tabId, contentTarget) {
             await executeScriptWithTimeout({
                 target,
                 files: ['media-frame-monitor.js']
-            }, 2000);
+            }, 750);
             injectedCount++;
         } catch {
             // Main injection below reports a real selected-target failure.
