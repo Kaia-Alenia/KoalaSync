@@ -1,65 +1,39 @@
+
 # KoalaSync Changelog
 
 All notable changes to the KoalaSync browser extension and relay server.
 
 ---
 
-## [v3.1.3] — Unreleased
+## [v3.1.3] — 2026-08-18
 
-This release hardens target selection and chat visibility across player-frame
-recovery, failed tab switches and short connection interruptions.
-
-### Fixed
-- **Extension: Atomic target switching** — Keeps the previously working target
-  active until the newly selected tab has been injected successfully, so a
-  failed selection cannot leave the room without a target.
-- **Extension: Target recovery** — Keeps the selected tab recoverable when a
-  transient content-script or embedded-player refresh fails.
-- **Extension: Dynamic-frame target persistence** — Keeps the user's selected
-  tab visible across popup close/reopen and retries activation after a dynamic
-  player frame changes, without restoring the removed `webNavigation`
-  permission.
-- **Extension: Target selection independent of video detection** — Exposes one
-  public `targetTabId`, keeps a selected no-video page active, and reports
-  activation readiness separately instead of treating a missing or ambiguous
-  player frame as a lost tab.
-- **Extension: Defensive frame probing without `webNavigation`** — Isolates
-  rejected embedded-frame probes, retries known frame IDs individually, and
-  keeps visible-player discovery working when one child frame blocks an
-  `allFrames` sweep.
-- **Extension: Chat visibility persistence** — Remembers the user's manual
-  open/closed state across popup reopen, content refresh and reconnect cycles.
-
-### Testing
-- **Release gate** — Unit, server/WebSocket, locale, theme, lint, production
-  dependency audit, Chrome/Firefox build, AMO validation and website build
-  pass locally.
-- **Browser E2E** — 38 extension and player lifecycle scenarios pass locally,
-  including popup close/reopen persistence, selectable no-video pages,
-  rejected all-frame recovery and repeated cross-origin frame switching.
-
----
-
-## [v3.1.2] — 2026-08-17
-
-This release adds generic control for HTML5 players inside cross-origin frames.
-It restores the intended Google Drive support, whose earlier workaround was
-developed on a separate branch but never merged into `main`, and covers nested
-external players such as YummyAnime without a site-specific host list.
+This release adds generic control for HTML5 players inside nested and cross-origin
+frames (such as Google Drive embeds and anime streaming portals like YummyAnime)
+without requiring any additional browser permissions. It hardens target selection,
+enables instant mirror switching, resolves unhandled injection rejections, and
+persists chat visibility across recovery cycles.
 
 ### Added
-- **Extension: Cross-origin player targeting** — Probes every accessible frame, elects the visible real player from video readiness, source, rendering, playback, controls, size and background-video signals, then injects and routes playback, force sync, heartbeat, chat and audio processing to that exact frame and document.
-- **Extension: Embedded-player recovery** — Re-elects the target when a player frame becomes hidden, loses its video, reloads or is replaced by another frame. Equally ranked frames without visibility evidence are rejected instead of controlling an arbitrary preload or ad.
-- **Testing: Cross-origin lifecycle E2E coverage** — Drives the packed Chromium extension through ordered play, pause and seek in a two-level external player; verifies hidden duplicate rejection, CSS visibility switches without a remote-command trigger, selected-frame document reloads and videos inserted late inside child frames.
+- **Extension: Cross-origin & nested player targeting** — Probes every accessible frame, elects the visible real player from video readiness, source, rendering, playback, controls, size and background-video signals, then injects and routes playback, force sync, heartbeat, and audio processing to that exact frame and document without requiring `webNavigation` permissions.
+- **Extension: Embedded-player recovery & learned frame registry** — Remembers discovered frame IDs per tab and re-elects the target when a player frame becomes hidden, loses its video, reloads or is replaced by another frame. Equally ranked frames without visibility evidence are rejected instead of controlling an arbitrary preload or ad.
+- **Extension: Instant mirror switching** — Automatically adopts newly active/playing mirror frames in the target tab without delay, and frees vacated frame targets back to discovery.
+- **Testing: Cross-origin lifecycle & mirror switching E2E coverage** — 49 Playwright scenarios covering ordered play/pause/seek in multi-level external players, hidden duplicate rejection, CSS visibility switches, selected-frame document reloads, late-inserted videos, anime-style wrapper nesting, and instant mirror switches during playback.
 
 ### Fixed
-- **Extension: Google Drive playback** — Detects Drive's current visible `youtube.googleapis.com/embed` player and keeps Drive's top-page title, URL and platform identity in debug output while controlling the embedded video.
-- **Extension: External anime players** — Supports same-origin wrappers whose real player is hosted on a different origin, including the current YummyAnime structure with a visible external player and hidden duplicate frames.
-- **Extension: Frame-specific message routing** — Sends remote commands, state reads, audio settings, host-control feedback, episode-lobby events and teardown only to the selected frame/document instead of assuming the top frame.
-- **Extension: Force Sync in embedded players** — Reads the current time through the background's selected-frame route, so Jump to Me no longer queries only the top document.
+- **Extension: Zero-permission operation** — Completely removes any reliance on `webNavigation`, preserving user trust and store compliance while providing full nested iframe targeting.
+- **Extension: Google Drive playback** — Detects Drive's visible `youtube.googleapis.com/embed` player and keeps Drive's top-page title, URL and platform identity in debug output while controlling the embedded video.
+- **Extension: External anime players** — Supports same-origin wrappers whose real player is hosted on a different origin, including complex structures with multiple hidden and active mirrors (e.g. YummyAnime).
+- **Extension: Unhandled injection timeout on tab closure** — Shields underlying `executeScript` and probe task promises with error containment handlers, preventing unhandled promise rejections when tabs close or navigate mid-injection.
+- **Extension: Discovery deadlock prevention** — Bounded polling and monitor installation sentinels ensure player frame rebuilds are discovered without cyclic IPC loops.
+- **Extension: Frame-specific message routing & Frame-0 chat isolation** — Sends remote playback commands directly to the elected video subframe while strictly anchoring the chat overlay in top-level Frame 0.
+- **Extension: Force Sync in embedded players** — Reads the current time through the background's selected-frame route, so Jump to Me accurately queries the nested player document.
+- **Extension: Atomic target switching & selection persistence** — Keeps the previously working target active until the newly selected tab has been injected successfully, preserves user selection across popup close/reopen, and allows selecting tabs prior to video load.
+- **Extension: Chat visibility persistence** — Remembers the user's manual open/closed state across popup reopen, content refresh and reconnect cycles.
 
 ### Changed
-- **Extension: Debug frame context** — Reports the selected frame ID and origin while preserving the selected tab's top-level URL and title. Google Drive is identified as Google Drive instead of the embedded YouTube API host.
+- **Extension: Debug frame context** — Reports the selected frame ID, origin, and resolution while preserving the selected tab's top-level URL and title. Google Drive is identified as Google Drive instead of the embedded YouTube host.
+
+---
 
 ## [v3.1.1] — 2026-08-15
 

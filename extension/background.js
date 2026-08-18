@@ -4756,10 +4756,11 @@ async function handleAsyncMessage(message, sender, sendResponse) {
         });
         // A layout change is exactly the shape of a rebuilt player frame, and a
         // new document carries no monitor, so the video it creates next would go
-        // unreported. Do this on every notification rather than on a particular
-        // status: a concurrent refresh masks the status, and the call is already
-        // debounced and idempotent.
-        await refreshMediaFrameMonitors(tabId);
+        // unreported. Do this on DOM/layout notifications, but skip when the
+        // monitor was just installed to prevent a cyclic re-injection loop.
+        if (message.reason !== 'monitor_installed') {
+            await refreshMediaFrameMonitors(tabId);
+        }
         sendResponse(activation || { status: 'invalid_tab' });
     } else if (message.type === 'MEDIA_FRAME_VISIBILITY') {
         if (!isCurrentContentSender(sender)) {
