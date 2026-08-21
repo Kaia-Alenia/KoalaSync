@@ -2622,10 +2622,46 @@ function executeScriptWithTimeout(options, timeoutMs = SCRIPT_INJECTION_TIMEOUT_
     });
 }
 
+/**
+ * Runs as a tiny all-frame beacon before the heavier monitor injection.
+ * Chromium can reject an allFrames result wholesale when one unrelated ad
+ * frame disappears mid-sweep, even though stable frames already executed the
+ * function. Those stable frames announce their ids through the sender metadata,
+ * letting the next step address them individually without webNavigation.
+ */
+async function announcePotentialMediaFrame() {
+    let relevant = false;
+    try {
+        const identity = `${window.location.href} ${window.name || ''}`;
+        relevant = !!document.querySelector('video, iframe, frame')
+            || /player|video|stream|watch|embed|media|xfp/i.test(identity);
+    } catch { /* inaccessible or already-detached document */ }
+    if (!relevant) return false;
+    try {
+        await chrome.runtime.sendMessage({ type: 'MEDIA_FRAME_DISCOVERED' });
+    } catch { /* extension context or document disappeared */ }
+    return true;
+}
+
 async function injectMediaFrameMonitors(tabId, contentTarget) {
     // The sweep is best effort; the known frames are addressed individually so a
     // rejected sweep cannot leave the deep player frame without a monitor — and
     // therefore without any way to report itself later.
+    try {
+        const discoveries = await executeScriptWithTimeout({
+            target: { tabId, allFrames: true },
+            func: announcePotentialMediaFrame
+        }, 750);
+        for (const entry of discoveries || []) {
+            if (entry?.result === true) rememberFrameId(tabId, entry.frameId);
+        }
+    } catch {
+        // Stable frames still announce themselves if a disappearing ad frame
+        // makes Chromium reject the aggregate allFrames result.
+    }
+    // Give those sender messages one task boundary to update the registry before
+    // taking the snapshot used for individual monitor injections below.
+    await new Promise(resolve => setTimeout(resolve, 0));
     const targets = [
         ...listMediaFrameScriptTargets(tabId),
         ...listKnownFrameIds(tabId)
@@ -3756,6 +3792,10 @@ async function handleAsyncMessage(message, sender, sendResponse) {
 
     const senderTabId = normalizeTabId(sender?.tab?.id);
     if (senderTabId !== null) rememberFrameId(senderTabId, sender?.frameId);
+    if (message.type === 'MEDIA_FRAME_DISCOVERED') {
+        sendResponse({ status: 'ok' });
+        return;
+    }
     const mediaLifecycleMessage = message.type === 'MEDIA_FRAME_CANDIDATE_CHANGED'
         || message.type === 'MEDIA_FRAME_VISIBILITY'
         || message.type === 'MEDIA_TARGET_REFRESH';

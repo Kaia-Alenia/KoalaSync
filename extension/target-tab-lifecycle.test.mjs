@@ -105,6 +105,9 @@ describe('target tab lifecycle', () => {
 
     it('uses all-frame probing for cross-origin targets without navigation permissions', () => {
         expect(backgroundSource).toContain("files: ['media-frame-monitor.js']");
+        expect(backgroundSource).toContain('async function announcePotentialMediaFrame()');
+        expect(backgroundSource).toContain("{ type: 'MEDIA_FRAME_DISCOVERED' }");
+        expect(backgroundSource).toContain('func: announcePotentialMediaFrame');
         // Monitors must reach the frames we know about, not only whatever the
         // all-frames sweep happens to accept — both on the way in and out.
         expect(backgroundSource.match(/\.\.\.listMediaFrameScriptTargets\(tabId\),/g)?.length).toBe(2);

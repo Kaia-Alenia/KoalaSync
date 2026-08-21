@@ -5,6 +5,28 @@ All notable changes to the KoalaSync browser extension and relay server.
 
 ---
 
+## [v3.1.4] — 2026-08-21
+
+This patch restores player detection on pages that use boxless CSS wrappers,
+including Crunchyroll, without adding site-specific matching.
+
+### Fixed
+- **Extension: Crunchyroll playback synchronization** — Detects and controls
+  Crunchyroll's visible Bitmovin HTML5 player even though the page wraps it in
+  a boxless `display: contents` ancestor. The general fix keeps equivalent
+  players selectable on other sites while continuing to reject hidden players,
+  preloads, ads and background videos.
+- **Extension: Player discovery during iframe churn** — Keeps stable nested
+  player frames discoverable when rapidly replaced ad frames make Chromium
+  reject an aggregate frame sweep, without restoring the `webNavigation`
+  permission or injecting globally into unselected tabs.
+
+### Testing
+- **Regression coverage** — Adds unit and browser E2E coverage for visible
+  players inside `display: contents` wrappers.
+
+---
+
 ## [v3.1.3] — 2026-08-18
 
 This release adds generic control for HTML5 players inside nested and cross-origin
